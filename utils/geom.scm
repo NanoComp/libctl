@@ -76,11 +76,6 @@
   (define-property size 'vector3 (make-default (vector3 1 1 1)))
   (define-property basis-size 'vector3 (make-default (vector3 1 1 1)))
 
-  (define-derived-property 'lattice-size 'vector3
-    (lambda (object)
-      (vector-map * (object-property-value object 'basis-size)
-		  (object-property-value object 'size))))
-
   (define-derived-property b1 'vector3
     (lambda (object)
       (vector3-scale (vector3-x (object-property-value object 'basis-size))
