@@ -737,45 +737,45 @@ SCM SCM_list_ref(list l, int index)
   return(cur_list); \
 } \
 
-list make_integer_list(int num_items, integer *items)
+list make_integer_list(int num_items, const integer *items)
 MAKE_LIST(gh_int2scm)
 
-list make_number_list(int num_items, number *items)
+list make_number_list(int num_items, const number *items)
 MAKE_LIST(gh_double2scm)
 
-list make_cnumber_list(int num_items, cnumber *items)
+list make_cnumber_list(int num_items, const cnumber *items)
 MAKE_LIST(cnumber2scm)
 
-list make_boolean_list(int num_items, boolean *items)
+list make_boolean_list(int num_items, const boolean *items)
 MAKE_LIST(gh_bool2scm)
 
-list make_string_list(int num_items, char **items)
+list make_string_list(int num_items, const char **items)
 MAKE_LIST(gh_str02scm)
 
-list make_vector3_list(int num_items, vector3 *items)
+list make_vector3_list(int num_items, const vector3 *items)
 MAKE_LIST(vector32scm)
 
-list make_matrix3x3_list(int num_items, matrix3x3 *items)
+list make_matrix3x3_list(int num_items, const matrix3x3 *items)
 MAKE_LIST(matrix3x32scm)
 
-list make_cvector3_list(int num_items, cvector3 *items)
+list make_cvector3_list(int num_items, const cvector3 *items)
 MAKE_LIST(cvector32scm)
 
-list make_cmatrix3x3_list(int num_items, cmatrix3x3 *items)
+list make_cmatrix3x3_list(int num_items, const cmatrix3x3 *items)
 MAKE_LIST(cmatrix3x32scm)
 
 #define NO_CONVERSION  
 
-list make_list_list(int num_items, list *items)
+list make_list_list(int num_items, const list *items)
 MAKE_LIST(NO_CONVERSION)
 
-list make_object_list(int num_items, object *items)
+list make_object_list(int num_items, const object *items)
 MAKE_LIST(NO_CONVERSION)
 
-list make_function_list(int num_items, object *items)
+list make_function_list(int num_items, const object *items)
 MAKE_LIST(NO_CONVERSION)
 
-list make_SCM_list(int num_items, object *items)
+list make_SCM_list(int num_items, const object *items)
 MAKE_LIST(NO_CONVERSION)
 
 

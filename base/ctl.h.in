@@ -243,19 +243,19 @@ extern SCM SCM_list_ref(list l, int index);
 
   /* list creation */
 
-extern list make_integer_list(int num_items, integer *items);
-extern list make_number_list(int num_items, number *items);
-extern list make_cnumber_list(int num_items, cnumber *items);
-extern list make_boolean_list(int num_items, boolean *items);
-extern list make_string_list(int num_items, char **items);
-extern list make_vector3_list(int num_items, vector3 *items);
-extern list make_matrix3x3_list(int num_items, matrix3x3 *items);
-extern list make_cvector3_list(int num_items, cvector3 *items);
-extern list make_cmatrix3x3_list(int num_items, cmatrix3x3 *items);
-extern list make_list_list(int num_items, list *items);
-extern list make_object_list(int num_items, object *items);
-extern list make_function_list(int num_items, function *items);
-extern list make_SCM_list(int num_items, function *items);
+extern list make_integer_list(int num_items, const integer *items);
+extern list make_number_list(int num_items, const number *items);
+extern list make_cnumber_list(int num_items, const cnumber *items);
+extern list make_boolean_list(int num_items, const boolean *items);
+extern list make_string_list(int num_items, const char **items);
+extern list make_vector3_list(int num_items, const vector3 *items);
+extern list make_matrix3x3_list(int num_items, const matrix3x3 *items);
+extern list make_cvector3_list(int num_items, const cvector3 *items);
+extern list make_cmatrix3x3_list(int num_items, const cmatrix3x3 *items);
+extern list make_list_list(int num_items, const list *items);
+extern list make_object_list(int num_items, const object *items);
+extern list make_function_list(int num_items, const function *items);
+extern list make_SCM_list(int num_items, const function *items);
 
 /**************************************************************************/
 
