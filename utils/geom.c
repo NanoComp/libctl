@@ -19,6 +19,8 @@
  * Steven G. Johnson can be contacted at stevenj@alum.mit.edu.
  */
 
+#include <math.h>
+
 #include "geom.h"
 
 /**************************************************************************/
@@ -47,7 +49,7 @@ boolean point_in_objectp(vector3 p, geometric_object o)
     {
       vector3 rm = matrix3x3_vector3_mult(geometry_lattice.metric, r);
       number proj = vector3_dot(o.subclass.cylinder_data->axis, rm);
-      if (proj <= 0.5 * o.subclass.cylinder_data->height) {
+      if (fabs(proj) <= 0.5 * o.subclass.cylinder_data->height) {
 	number radius = o.subclass.cylinder_data->radius;
 	return(radius > 0.0 && vector3_dot(r,rm) - proj*proj <= radius*radius);
       }
@@ -60,9 +62,9 @@ boolean point_in_objectp(vector3 p, geometric_object o)
       case BLOCK_SELF:
 	{
 	  vector3 size = o.subclass.block_data->size;
-	  return(proj.x <= 0.5 * size.x &&
-		 proj.y <= 0.5 * size.y &&
-		 proj.z <= 0.5 * size.z);
+	  return(fabs(proj.x) <= 0.5 * size.x &&
+		 fabs(proj.y) <= 0.5 * size.y &&
+		 fabs(proj.z) <= 0.5 * size.z);
 	}
       case ELLIPSOID:
 	{
@@ -100,8 +102,7 @@ material_type material_of_point(vector3 p)
 	for (i = -1; i <= 1; ++i) {
 	  vector3 shift1 = p;
 	  shift1.x += i * geometry_lattice.size.x;
-	  if (point_in_objectp(vector3_plus(p,shift1),
-			       geometry.items[index]))
+	  if (point_in_objectp(shift1, geometry.items[index]))
 	    return(geometry.items[index].material);
 	}
 	break;
@@ -112,8 +113,7 @@ material_type material_of_point(vector3 p)
 	  for (j = -1; j <= 1; ++j) {
 	    vector3 shift2 = shift1;
 	    shift2.y += j * geometry_lattice.size.y;
-	    if (point_in_objectp(vector3_plus(p,shift2),
-				 geometry.items[index]))
+	    if (point_in_objectp(shift2, geometry.items[index]))
 	      return(geometry.items[index].material);
 	  }
 	}
@@ -128,8 +128,7 @@ material_type material_of_point(vector3 p)
 	    for (k = -1; k <= 1; ++k) {
 	      vector3 shift3 = shift2;
 	      shift2.z += k * geometry_lattice.size.z;
-	      if (point_in_objectp(vector3_plus(p,shift3),
-				   geometry.items[index]))
+	      if (point_in_objectp(shift3, geometry.items[index]))
 		return(geometry.items[index].material);
 	    }
 	  }

@@ -118,7 +118,7 @@
 (define-input-var default-material '() 'material-type)
 (define-input-var geometry-lattice (make lattice) 'lattice)
 (define-input-var geometry '() (make-list-type 'geometric-object))
-(define-input-var ensure-periodicity false 'boolean)
+(define-input-var ensure-periodicity true 'boolean)
 
 (define-external-function point-in-object? true false
   'boolean 'vector3 'geometric-object)
