@@ -52,6 +52,8 @@
 ;    find-root: find the root of a function of one argument
 ; All routines use quadratically convergent methods.
 
+; ****************************************************************
+
 (define min-arg car)
 (define min-val cdr)
 (define max-arg min-arg)
@@ -176,6 +178,8 @@
 		  (sixth bracket)
 		  0 0))))))))
 
+; ****************************************************************
+
 ; (minimize-multiple f tol arg1 arg2 ... argN) :
 ;      Minimize a function f of N arguments, given the fractional tolerance
 ; desired and initial guesses for the arguments.
@@ -280,6 +284,7 @@
 		       (append (list (compose - f) tol) guess-args))))
     (cons (min-arg result) (- (min-val result)))))
 
+; ****************************************************************
 ; Find a root of a function of one argument using Ridder's method.
 
 ; (find-root f tol x-min x-max) : returns the root of the function (f x),
@@ -319,6 +324,52 @@
 		      (apply ridder (best-bracket a b x m fa fb fx fm))))))))))
 	
   (ridder x-min x-max (f x-min) (f x-max)))
+
+; ****************************************************************
+; Find a root by Newton's method with bounds and bisection,
+; given a function f that returns a pair of (value . derivative)
+
+(define (find-root-deriv f tol x-min x-max . x-guess)
+  ; Some trickiness: we only need to evaluate the function at x-min and
+  ; x-max if a Newton step fails, and even then only if we haven't already
+  ; bracketed the root, so do this via lazy evaluation.
+  (define f-memo (memoize f))
+  (define (lazy x) (if (number? x) x (x)))
+  (define ((pick-bound which?))
+    (let ((fmin-pair (f-memo x-min)) (fmax-pair (f-memo x-max)))
+      (let ((fmin (car fmin-pair)) (fmax (car fmax-pair)))
+	(if (which? fmin) x-min
+	    (if (which? fmax) x-max
+		(error "failed to bracket the root in find-root-deriv"))))))
+
+  (define (in-bounds? x f df a b)
+    (negative? (* (- f (* df (- x a)))
+		  (- f (* df (- x b))))))
+	  
+  (define (newton x a b dx)
+    (if (< (abs dx) (abs (* tol x)))
+	x
+	(let ((fx-pair (f-memo x)))
+	  (let ((f (car fx-pair)) (df (cdr fx-pair)))
+	    (if (= f 0)
+		x
+		(let ((a' (if (< f 0) x a)) (b' (if (> f 0) x b)))
+		  (if (and (if (and (number? a) (number? b))
+			       (in-bounds? x f df a b)
+			       (in-bounds? x f df x-min x-max))
+;			   (> (abs (* 0.5 dx df)) (abs f))
+			   )
+		      (newton (- x (/ f df)) a' b' (/ f df))
+		      (let ((av (lazy a)) (bv (lazy b)))
+			(let ((dx' (* 0.5 (- bv av)))
+			      (a'' (if (eq? a a') av a'))
+			      (b'' (if (eq? b b') bv b')))
+			  (newton (* (+ av bv) 0.5) a'' b'' dx'))))))))))
+
+  (newton (if (null? x-guess) (* (+ x-min x-max) 0.5) (car x-guess))
+	  (pick-bound negative?)
+	  (pick-bound positive?)
+	  (- x-max x-min)))
 
 ; ****************************************************************
 
