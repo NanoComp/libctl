@@ -24,7 +24,7 @@
 
 #include <guile/gh.h>
 
-#include <config.h>
+#include <ctl-config.h>
 
 #ifdef __cplusplus
 extern "C" {

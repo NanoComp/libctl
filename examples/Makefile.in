@@ -40,7 +40,7 @@ LIBCTL_SCM_INCLUDE_SRC = $(LIBCTL_DIR)/src/include.scm
 LIBCTL_SCM_SRC = $(LIBCTL_DIR)/src/ctl.scm
 LIBCTL_C_SRC = $(LIBCTL_DIR)/src/ctl.c
 LIBCTL_OBJ = $(LIBCTL_C_SRC:.c=.o)
-LIBCTL_HEADERS = $(LIBCTL_DIR)/src/ctl.h $(LIBCTL_DIR)/src/config.h
+LIBCTL_HEADERS = $(LIBCTL_DIR)/src/ctl.h $(LIBCTL_DIR)/src/ctl-config.h
 
 CTL_IO_GEN_SRC = $(LIBCTL_DIR)/utils/ctl-io.scm
 CTL_IO_GEN = $(LIBCTL_DIR)/utils/gen-ctl-io
@@ -70,7 +70,7 @@ ctl-io.h: $(SPECIFICATION_FILE) \
 	$(CTL_IO_GEN) $(SPECIFICATION_FILE)
 
 $(PROGRAM_NAME): $(HEADERS) $(OBJECTS) 
-	gcc $(OBJECTS) $(LIBS) -o $@
+	$(CC) $(CFLAGS) $(OBJECTS) $(LIBS) -o $@
 
 .c.o: $(HEADERS)
 	$(CC) -c $(DEFINE_FLAGS) $(INCLUDE_FLAGS) $(CFLAGS) $< -o $@
