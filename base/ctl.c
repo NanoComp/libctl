@@ -1,5 +1,8 @@
 #include "ctl.h"
 
+/* Guile 1.2 is missing gh_bool2scm for some reason; redefine: */
+#define gh_bool2scm(b) ((b) ? SCM_BOOL_T : SCM_BOOL_F)
+
 /**************************************************************************/
 
 /* vector3 utilities: */
@@ -237,11 +240,13 @@ SCM vector32scm(vector3 v)
 list make_vector3_list(int num_items, vector3 *items)
 MAKE_LIST(vector32scm)
 
+#define NO_CONVERSION  
+
 list make_list_list(int num_items, list *items)
-MAKE_LIST()
+MAKE_LIST(NO_CONVERSION)
 
 list make_object_list(int num_items, object *items)
-MAKE_LIST()
+MAKE_LIST(NO_CONVERSION)
 
 
 /**************************************************************************/
