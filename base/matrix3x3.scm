@@ -115,3 +115,12 @@
 	(* (matrix3x3-ref m 1 0) (matrix3x3-ref m 0 1)))))))
 
 ; ****************************************************************
+
+; Return the rotation matrix for rotating by theta around axis:
+(define (rotation-matrix3x3 axis theta)
+  (matrix3x3
+   (rotate-vector3 axis theta (vector3 1 0 0))
+   (rotate-vector3 axis theta (vector3 0 1 0))
+   (rotate-vector3 axis theta (vector3 0 0 1))))
+
+; ****************************************************************

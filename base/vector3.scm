@@ -80,3 +80,22 @@
   (if (and (vector3? x) (number? y)) (vector3-scale (/ y) x) (/ x y)))
 
 ; ****************************************************************
+
+; Rotating a vector (see also rotation-matrix3x3 in matrix3x3.scm):
+
+(define (deg->rad theta)
+  (* theta (/ 3.141592653589793238462643383279502884197 180.0)))
+
+(define (rad->deg theta)
+  (* theta (/ 180.0 3.141592653589793238462643383279502884197)))
+
+(define (rotate-vector3 axis theta v)
+  (let ((u (unit-vector3 axis)))
+    (let ((vpar (vector3-scale (vector3-dot v u) u))
+	  (vcross (vector3-cross u v)))
+      (let ((vperp (vector3- v vpar)))
+	(vector3+ vpar (vector3+ (vector3-scale (cos theta) vperp)
+				 (vector3-scale (sin theta) vcross)))))))
+
+; ****************************************************************
+
