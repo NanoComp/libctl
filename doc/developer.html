@@ -424,6 +424,14 @@ and do everything else needed to compile your program.
 (see above for how to export functions).  This will usually include,
 at least, a <code>run</code> function (see above).
 
+<p>The default <code>main.c</code> handles a couple of additional
+command-line options, including <code>--version</code> (or
+<code>-v</code>), which sets a global variable <code>verbose</code> to
+<code>1</code> (it is otherwise <code>0</code>).  You can access this
+variable (it is intended to enable verbose output in programs) by
+declaring the global "<code>extern int verbose;</code>" in your
+program.
+
 <p>Have fun!
 
 <hr>

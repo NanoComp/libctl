@@ -34,6 +34,49 @@
 
 #include <ctl-io.h>
 
+/* define a global "verbose" variable set by the --verbose command-line opt. */
+int verbose = 0;
+
+/**************************************************************************/
+
+/* Handle command-line args, returning first arg not handled.
+   Also return, in spec_file_loaded, whether we have loaded
+   the specifications file due to a command-line arg.  Also return,
+   in continue_run, whether or not to continue the run.  */
+int handle_args(int argc, char *argv[], 
+		boolean *spec_file_loaded, boolean *continue_run)
+{
+     int i;
+
+     *continue_run = 1;
+     *spec_file_loaded = 0;
+
+     for (i = 1; i < argc; ++i) {
+	  if (argv[i][0] != '-')
+	       break;
+	  if (!strcmp(argv[i], "--version") ||
+	      !strcmp(argv[i], "-V")) {
+#ifdef VERSION_STRING
+	       /* print version string, if defined: */
+	       printf(VERSION_STRING);
+#endif
+	       printf("\nUsing libctl and Guile ");
+	       gh_eval_str("(display (version))");  /* Guile version */
+	       printf(".\n");
+	       *continue_run = 0;
+	  }
+	  else if (!strcmp(argv[i], "--verbose") ||
+		   !strcmp(argv[i], "-v"))
+	       verbose = 1;
+	  else if (!strncmp(argv[i], "--spec-file=", strlen("--spec-file="))) {
+	       ctl_include(argv[i] + strlen("--spec-file="));
+	       *spec_file_loaded = 1;
+	  }
+     }
+
+     return i;
+}
+
 /**************************************************************************/
 
 /* Main program.  Start up Guile, declare functions, load any
@@ -43,6 +86,7 @@
 void main_entry(int argc, char *argv[])
 {
   int i;
+  boolean spec_file_loaded, continue_run;
   SCM interactive;
 
   /* Notify Guile of functions that we are making callable from Scheme.
@@ -65,30 +109,36 @@ void main_entry(int argc, char *argv[])
   ctl_include(CTL_SCM);
 #endif
 
-  /* load the specification file if it was given at compile time */
+  i = handle_args(argc, argv, &spec_file_loaded, &continue_run);
+
+  if (!continue_run)
+       return;
+
+  /* load the specification file if it was given at compile time,
+     and if it wasn't specified on the command-line: */
 #ifdef SPEC_SCM
-  ctl_include(SPEC_SCM);
+  if (!spec_file_loaded)
+       ctl_include(SPEC_SCM);
 #endif
 
-  /* define any variables specified on the command line */
-  for (i = 1; i < argc; ++i) {
-    char *eq = strchr(argv[i],'=');
-    if (eq) {
+  /* define any variables and load any scheme files specified on the
+     command line: */
+  for (; i < argc; ++i) {
+    if (strchr(argv[i],'=')) {
+      char *eq;
       char *definestr = malloc(strlen("(define ") + strlen(argv[i]) + 2);
-      *eq = ' ';
       strcpy(definestr,"(define ");
       strcat(definestr,argv[i]);
       strcat(definestr,")");
+      *eq = strchr(definestr,'=');
+      *eq = ' ';
       gh_eval_str(definestr);
       free(definestr);
       argv[i][0] = 0;
     }
-  }
-
-  /* load any scheme files specified on the command-line: */
-  for (i = 1; i < argc; ++i)
-    if (argv[i][0])
+    else if (argv[i][0])
       ctl_include(argv[i]);
+  }
 
   /* Check if we should run an interactive prompt.  We do this if
      either the Scheme variable "interactive" is true, or if it is not
@@ -96,7 +146,7 @@ void main_entry(int argc, char *argv[])
 
   interactive = gh_lookup("interactive");
   if (interactive != SCM_BOOL_F)
-    gh_repl(0, argv); /* pass 0 for argc since we have already handled args */
+       gh_repl(argc - i, argv + i); /* skip already-handled args */
 }
 
 int main (int argc, char *argv[])
