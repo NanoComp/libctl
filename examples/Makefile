@@ -37,7 +37,6 @@ INCLUDE_FLAGS = -I$(LIBCTL_DIR)/src
 
 DEFINE_FLAGS = -DCTL_SCM='"'$(PWD)/$(LIBCTL_SCM_SRC)'"' \
                -DSPEC_SCM='"'$(PWD)/$(SPECIFICATION_FILE)'"' \
-	       -DHAVE_GUILE_1_3
 
 OBJECTS = $(MY_OBJECTS) $(LIBCTL_OBJ) ctl-io.o
 HEADERS = $(MY_HEADERS) $(LIBCTL_HEADERS) ctl-io.h
@@ -55,7 +54,7 @@ ctl-io.h: $(SPECIFICATION_FILE) \
 	$(CTL_IO_GEN) $(SPECIFICATION_FILE)
 
 $(PROGRAM_NAME): $(HEADERS) $(OBJECTS) 
-	$(CC) $(CFLAGS) $(OBJECTS) -lguile -lm -o $@
+	gcc $(OBJECTS) -lguile -lm -o $@
 
 .c.o: $(HEADERS)
 	$(CC) -c $(DEFINE_FLAGS) $(INCLUDE_FLAGS) $(CFLAGS) $< -o $@
