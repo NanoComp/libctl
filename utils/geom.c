@@ -231,12 +231,16 @@ boolean point_in_periodic_fixed_objectp(vector3 p, geometric_object o)
    dimensions, default_material and ensure_periodicity already be
    initialized. 
 
-   Also requires that geom_fix_objects() has been called! */
+   Also requires that geom_fix_objects() has been called! 
 
-material_type material_of_point(vector3 p)
+   material_of_point_inobject is a variant that also returns whether
+   or not the point was in any object.  */
+
+material_type material_of_point_inobject(vector3 p, boolean *inobject)
 {
      int index;
      
+     *inobject = 1;
      /* loop in reverse order so that later items are given precedence: */
      for (index = geometry.num_items - 1; index >= 0; --index) {
 	  if ((ensure_periodicity
@@ -244,7 +248,14 @@ material_type material_of_point(vector3 p)
 	      || point_in_fixed_objectp(p, geometry.items[index]))
 	       return(geometry.items[index].material);
      }
+     *inobject = 0;
      return default_material;
+}
+
+material_type material_of_point(vector3 p)
+{
+     boolean inobject;
+     return material_of_point_inobject(p, &inobject);
 }
 
 /**************************************************************************/
@@ -847,16 +858,27 @@ static void shift_to_unit_cell(vector3 *p)
 	  p->z += geometry_lattice.size.z;
 }
 
-material_type material_of_point_in_tree(vector3 p, geom_box_tree t)
+material_type material_of_point_in_tree_inobject(vector3 p, geom_box_tree t,
+						 boolean *inobject)
 {
      geom_box_object *gbo;
 
      shift_to_unit_cell(&p);
      gbo = find_box_object(p, t);
-     if (gbo)
+     if (gbo) {
+	  *inobject = 1;
 	  return (gbo->o->material);
-     else
+     }
+     else {
+	  *inobject = 0;
 	  return default_material;
+     }
+}
+
+material_type material_of_point_in_tree(vector3 p, geom_box_tree t)
+{
+     boolean inobject;
+     return material_of_point_in_tree_inobject(p, t, &inobject);
 }
 
 /**************************************************************************/

@@ -36,6 +36,7 @@ extern boolean point_in_objectp(vector3 p, geometric_object o);
 extern boolean point_in_periodic_objectp(vector3 p, geometric_object o);
 extern boolean point_in_fixed_objectp(vector3 p, geometric_object o);
 extern boolean point_in_periodic_fixed_objectp(vector3 p, geometric_object o);
+extern material_type material_of_point(vector3 p, boolean *inobject);
 extern material_type material_of_point(vector3 p);
 extern void display_geometric_object_info(int indentby, geometric_object o);
 extern matrix3x3 square_basis(matrix3x3 lattice_basis, vector3 size);
@@ -59,6 +60,7 @@ typedef struct geom_box_tree_struct {
 
 extern void destroy_geom_box_tree(geom_box_tree t);
 extern geom_box_tree create_geom_box_tree(void);
+extern material_type material_of_point_in_tree_inobject(vector3 p, geom_box_tree t, boolean *inobject);
 extern material_type material_of_point_in_tree(vector3 p, geom_box_tree t);
 extern void display_geom_box_tree(int indentby, geom_box_tree t);
 extern void geom_box_tree_stats(geom_box_tree t, int *depth, int *nobjects);
