@@ -1,3 +1,10 @@
+libctl 1.1 (1/2/2000)
+
+  * geom: radius and height of objects is now permitted to be zero.
+
+  * geom: material_of_point_* routines now report whether the point
+    is in any object; necessary for use with MPB 0.9.
+
 libctl 1.0.1 (11/22/1999)
 
   * geom: handle case where ensure-periodicity is false.
