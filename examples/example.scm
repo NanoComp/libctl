@@ -31,7 +31,7 @@
 
 (define-input-var k-points '() (make-list-type 'vector3))
 
-(define-input-output-var dummy (vector3 3.7+1.1i 2.3-0.1i 1.9) 'cvector3)
+(define-input-output-var dummy (vector3 3.7+1.1i 2.3-0.1i 19) 'cvector3)
 
 (define-output-var mean-dielectric 'number)
 

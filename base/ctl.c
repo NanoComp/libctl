@@ -337,10 +337,10 @@ SCM matrix3x32scm(matrix3x3 m)
 
 cnumber scm2cnumber(SCM sx)
 {
-     cnumber x;
-     x.re = SCM_REALPART(sx);
-     x.im = SCM_CPLXP(sx) ? SCM_IMAG(sx) : 0.0;
-     return x;
+     if (scm_real_p(sx))
+	  return make_cnumber(gh_scm2double(sx), 0.0);
+     else
+	  return make_cnumber(SCM_REALPART(sx), SCM_IMAG(sx));
 }
 
 SCM cnumber2scm(cnumber x)
