@@ -1,0 +1,93 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML><HEAD>
+<TITLE>libctl Introduction</TITLE>
+<LINK rel="Bookmark" title="libctl Manual" href="index.html">
+<LINK rel="Bookmark" title="Ab Initio Physics Home Page"
+      href="http://ab-initio.it.edu">
+<LINK rel="Contents" href="index.html">
+<LINK rel="Copyright" href="license.html">
+<LINK rel="Start" href="index.html">
+<LINK rel="Previous" href="index.html">
+<LINK rel="Next" href="basic-user.html">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+
+Go to the <a href="basic-user.html">next</a>, <a
+href="index.html">previous</a>, or <a href="index.html">main</a>
+section.
+<hr>
+
+<h1>Introduction</h1>
+
+Scientific software for performing large computations is typically
+managed using textual control files that specify the parameters of the
+computation.  Historically, these control files have typically
+consisted of long, inflexible collections of numbers whose meaning and
+format is hard-coded into the program.  With <b>libctl</b>, we make it
+easy for programmers to support a greatly superior control file
+structure, and with less effort than was required for traditional
+input formats.
+
+<p>The "ctl" in "libctl" stands for <i>Control Language</i> (by
+convention, libctl control files end with ".ctl" and are referred to
+as ctl files).  Thus, libctl is the <i>Control Language Library</i>
+(where the "lib" prefix follows the Unix idiom).
+
+<h2>Design Principles</h2>
+
+The libctl design has the following goals:
+
+<ul>
+
+<li><b>Input readability</b>: The control file should be
+self-annotating and human-readable (as opposed to an inscrutable
+sequence of numbers).  Of course, it should allow comments.
+
+<li><b>Input flexibility</b>: The control file should not be sensitive
+to the ordering or spacing of the inputs.
+
+<li><b>Input intelligence</b>: The user should never have to enter any
+information that the program could reasonably infer.  For example,
+reasonable defaults should be available wherever possible for
+unspecified parameters.
+
+<li><b>Flexibility</b>: It should be easy to add new parameters and
+features to the control file without breaking older control files or
+increasing complexity.
+
+<li><b>Scriptability</b>: Simple things should be simple, but complex
+things should be possible.  The control file should be more than just
+a file format.  It must be a programming language, able to script the
+computation and add new functionality without modifying the simulation
+source code.
+
+<li><b>Programmer Convenience</b>: All of this power should not come
+at the expense of the programmer.  Rather, it should be easier to
+program than ever before--the programmer need only specify the
+interaction with the control file in an abstract form, and everything
+else should be taken care of automatically.
+
+</ul>
+
+<p>All of these goals are achieved by libctl with the help of Guile, the
+GNU scripting and extensibility language.  Guile does all of the hard
+work for us, and allows us to embed a complete interpreter in a
+program with minimal effort.
+
+<p>Despite its power, libctl is designed to be easy to use.  A basic
+user only sees a convenient file format...with a programming language
+to back it up if her needs become more complex.  For the programmer,
+all headaches associated with reading input files are lifted--once an
+abstract specification is supplied, and interaction with the user is
+handled automatically.
+
+<p>In the subsequent sections of this manual, we will discuss in more
+detail the interaction of the user and the programmer with libctl.
+
+<hr>
+Go to the <a href="basic-user.html">next</a>, <a
+href="index.html">previous</a>, or <a href="index.html">main</a>
+section.
+
+</BODY>
+</HTML>

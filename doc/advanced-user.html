@@ -1,0 +1,106 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML><HEAD>
+<TITLE>Advanced User Experience</TITLE>
+<LINK rel="Bookmark" title="libctl Manual" href="index.html">
+<LINK rel="Bookmark" title="Ab Initio Physics Home Page"
+      href="http://ab-initio.it.edu">
+<LINK rel="Contents" href="index.html">
+<LINK rel="Copyright" href="license.html">
+<LINK rel="Start" href="index.html">
+<LINK rel="Previous" href="basic-user.html">
+<LINK rel="Next" href="developer.html">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+
+Go to the <a href="developer.html">next</a>, <a
+href="basic-user.html">previous</a>, or <a href="index.html">main</a>
+section.
+<hr>
+
+<h1>Advanced Control Files</h1>
+
+Many more things can be accomplished in a control file besides simply
+specifying the parameters of a computation, and even that can be done
+in a more sophisticated way than we have already described.  The key
+to this functionality is the fact that the ctl file is actually
+written in a full programming language, called Scheme.  This language
+is interpreted and executed at run-time using an interpreter called
+Guile.  The fact that it is a full programming language means that you
+can do practically anything--the only limitations are in the degree of
+interaction supported by the simulation program.
+
+<p>In a <a href="guile-links.html">later section</a>, we provide links
+to more information on Scheme and Guile.
+
+<h2><a name="interactive">Interactive Mode</a></h2>
+
+The easiest way to learn Scheme is to experiment.  Guile supports an
+interactive mode where you can type in commands and have them executed
+immediately.  To get into this mode, you can just type
+<code>guile</code> at the command-line.
+
+<p>If you run your libctl program without passing any arguments, or
+pass a ctl file that never invokes <code>(run)</code>, this will also
+drop you into a Guile interactive mode.  What's more, all the special
+features supported by libctl and your program are available from this
+interactive mode.  So, you can set parameters of your program, invoke
+it with <code>(run)</code>, get help with <code>(help)</code>, and do
+anything else you might otherwise do in a ctl file. It is possible
+that your program supports other calls than just <code>(run)</code>,
+in which case you could control it on an even more detailed leve.
+
+<h2>Programmatic Parameter Setting</h2>
+
+A simple use of the programmatic features of Scheme is to give you
+more power in assigning the variables in the control file.  You can
+use arithmetic expressions, loops and functions, or define your own
+variables and functions.
+
+<p>For example, consider the following case where we set the
+<code>k-points</code> of a band-structure computation.  We define the
+corners of the Brillouin zone, and then call a libctl-provided
+function, interpolate, to linearly interpolate between them.
+
+<pre>
+(define Gamma-point (vector3 0 0))
+(define X-point (vector3 0.5 0))
+(define M-point (vector3 0.5 0.5))
+(set! k-points (list Gamma-point X-point M-point Gamma-point))
+(set! k-points (interpolate 4 k-points))
+</pre>
+
+<p>The resulting list has 4 points interpolated between each pair of
+corners:
+
+<blockquote><code>
+ (0,0,0) (0.1,0,0) (0.2,0,0) (0.3,0,0) (0.4,0,0) (0.5,0,0) (0.5,0.1,0)
+ (0.5,0.2,0) (0.5,0.3,0) (0.5,0.4,0) (0.5,0.5,0) (0.4,0.4,0)
+ (0.3,0.3,0) (0.2,0.2,0) (0.1,0.1,0) (0,0,0)
+</code></blockquote>
+
+<p>The <code>interpolate</code> function is provided as a convenience
+by libctl, but you could have written it yourself if it weren't.  With
+past programs, it has often been necessary to write a program to
+generate control files--now, the program can be in the control file
+itself.
+
+<h2>Interacting with the Simulation</h2>
+
+So far, the communication with the simulation program has been
+one-way, with us passing information to the simulation.  It is
+possible, however, to get information back.  The <code>(help)</code>
+command lists not only input variables, but also <i>output</i>
+variables--these variables are set by the simulation and are available
+for the ctl program to examine after <code>(run)</code> returns.
+
+<p>For example, a band-structure computation might return a list of
+the band-gaps.  Using this, the ctl file could vary, say, the radius
+of a sphere and loop until a band-gap is maximized.
+
+<hr>
+Go to the <a href="developer.html">next</a>, <a
+href="basic-user.html">previous</a>, or <a href="index.html">main</a>
+section.
+
+</BODY>
+</HTML>

@@ -1,0 +1,71 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML><HEAD>
+<META name="description"
+      content="Documentation for libctl, a Guile-based library for implementing flexible control files for scientific simulations.">
+<TITLE>libctl Documentation</TITLE>
+<LINK rel="Bookmark" title="libctl Manual" href="index.html">
+<LINK rel="Bookmark" title="Ab Initio Physics Home Page"
+      href="http://ab-initio.it.edu">
+<LINK rel="Contents" href="index.html">
+<LINK rel="Copyright" href="license.html">
+<LINK rel="Start" href="index.html">
+<LINK rel="Next" href="introduction.html">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+
+<h1 align=center>libctl</h1>
+
+Welcome to the manual for <b>libctl</b>, a Guile-based library 
+implementing flexible control files for scientific simulations!
+
+This documentation is divided into the following sections, which you
+should read roughly in order if you are new to libctl:
+
+<h2><a href="introduction.html">Introduction</a></h2>
+
+The introductory section describes the motivation, history, and
+high-level structure of libctl.
+
+<h2><a href="basic-user.html">Basic User Experience</a></h2>
+
+Here, we disuss what a basic <b>ctl</b> control file looks like.  From
+this perspective, ctl is just another control-file format with lots of
+parentheses.
+
+<h2><a href="advanced-user.html">Advanced User Experience</a></h2>
+
+The advanced user can take advantage of the fact that the ctl file is
+actually a Scheme program running in a full interpreter (called
+Guile).  Literally anything is possible, especially since the
+simulation program can support dynamic passing of information back and
+forth with the control file.
+
+<h2><a href="developer.html">Developer Experience</a></h2>
+
+libctl is powerful for the developer, too.  One merely specifies an
+abstract <b>specification file</b> that describes the information that
+is exchanged with the ctl file, and nearly everything else is
+automatic.
+
+<h2><a href="guile-links.html">Guile Information</a></h2>
+
+Guile is a standard GNU program for adding scripting and extensibility
+to software.  It implements an embeddable interpreter for the Scheme
+language.  There are many places that you can go to learn more about
+Guile and Scheme, and we link to a few of them here.
+
+<h2><a href="license.html">License and Copyright</a></h2>
+
+libctl is free software under the <a
+href="http://www.gnu.org/copyleft/lgpl.html">GNU General Public
+Library License</a> (GNU LGPL).
+
+<h2>Feedback</h2>
+
+If you have comments or questions regarding libctl, you can contact <a
+href="http://web.mit.edu/stevenj/mosaic/steven.html" title="SGJ's home
+page">Steven G. Johnson</a> at <a
+href="mailto:stevenj@alum.mit.edu">stevenj@alum.mit.edu</a>.
+
+</BODY>
+</HTML>
