@@ -36,7 +36,7 @@
 (define (c-identifier s)
   (list->string (map (lambda (c) 
 		       (if (or (eq? c #\-) (eq? c #\space))
-			   #\_ (if (eq? c #\?) #\p c)))
+			   #\_ (if (eq? c #\?) #\p (if (eq? c #\!) #\B c))))
 		     (string->list s))))
 
 (define symbol->c-identifier (compose c-identifier symbol->string))
