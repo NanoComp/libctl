@@ -904,6 +904,19 @@ geom_box_tree restrict_geom_box_tree(geom_box_tree t, const geom_box *b)
 
      tr->t1 = restrict_geom_box_tree(t->t1, b);
      tr->t2 = restrict_geom_box_tree(t->t2, b);
+
+     if (tr->nobjects == 0) {
+	  if (tr->t1 && !tr->t2) {
+	       geom_box_tree tr0 = tr;
+	       tr = tr->t1;
+	       free(tr0);
+	  }
+	  else if (tr->t2 && !tr->t1) {
+	       geom_box_tree tr0 = tr;
+	       tr = tr->t2;
+	       free(tr0);
+	  }
+     }
 }
 
 /**************************************************************************/
