@@ -54,8 +54,7 @@ int handle_args(int argc, char *argv[],
      for (i = 1; i < argc; ++i) {
 	  if (argv[i][0] != '-')
 	       break;
-	  if (!strcmp(argv[i], "--version") ||
-	      !strcmp(argv[i], "-V")) {
+	  if (!strcmp(argv[i], "--version") || !strcmp(argv[i], "-V")) {
 #ifdef VERSION_STRING
 	       /* print version string, if defined: */
 	       printf(VERSION_STRING);
@@ -65,12 +64,30 @@ int handle_args(int argc, char *argv[],
 	       printf(".\n");
 	       *continue_run = 0;
 	  }
-	  else if (!strcmp(argv[i], "--verbose") ||
-		   !strcmp(argv[i], "-v"))
+	  else if (!strcmp(argv[i], "--verbose") || !strcmp(argv[i], "-v"))
 	       verbose = 1;
 	  else if (!strncmp(argv[i], "--spec-file=", strlen("--spec-file="))) {
 	       ctl_include(argv[i] + strlen("--spec-file="));
 	       *spec_file_loaded = 1;
+	  }
+	  else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
+	       char *slash = strrchr(argv[0], '/');
+	       printf("Usage: %s [options] [definitions] [ctl files]\n"
+		      "options:\n"
+		      "             --help, -h: this help\n"
+		      "          --version, -V: display version information\n"
+		      "          --verbose, -v: enable verbose output\n"
+		      "     --spec-file=<file>: use <file> for spec. file\n"
+		      "definitions: assignments of the form "
+		      "<variable>=<value>\n"
+		      "ctl files: zero or more Scheme/ctl files to execute\n",
+		      slash ? slash + 1 : argv[0]);
+	       *continue_run = 0;
+	  }
+	  else {
+	       fprintf(stderr, "Unknown option %s!  Use the --help option"
+		       " for more information.\n", argv[i]);
+	       exit(EXIT_FAILURE);
 	  }
      }
 
