@@ -766,10 +766,14 @@ geom_box_tree create_geom_box_tree(void)
      t->b.high = vector3_scale(0.5, geometry_lattice.size);
 
      for (i = geometry.num_items - 1; i >= 0; --i) {
-	  vector3 shiftby;
-	  LOOP_PERIODIC(shiftby,
-			if (object_in_box(geometry.items[i], shiftby,
-					  &b, &t->b)) ++t->nobjects);
+	  vector3 shiftby = {0,0,0};
+	  if (ensure_periodicity) {
+	       LOOP_PERIODIC(shiftby,
+			     if (object_in_box(geometry.items[i], shiftby,
+					       &b, &t->b)) ++t->nobjects);
+	  }
+	  else if (object_in_box(geometry.items[i], shiftby, &b, &t->b))
+	       ++t->nobjects;
      }
 
      t->objects = (geom_box_object *) malloc(t->nobjects *
@@ -777,15 +781,23 @@ geom_box_tree create_geom_box_tree(void)
      CHECK(t->objects, "out of memory");
 	  
      for (i = geometry.num_items - 1, index = 0; i >= 0; --i) {
-	  vector3 shiftby;
-	  LOOP_PERIODIC(shiftby,
-			if (object_in_box(geometry.items[i], shiftby,
-					  &b, &t->b)) {
-			     t->objects[index].box = b;
-			     t->objects[index].o = &geometry.items[i];
-			     t->objects[index].shiftby = shiftby;
-			     index++;
-			});
+	  vector3 shiftby = {0,0,0};
+	  if (ensure_periodicity) {
+	       LOOP_PERIODIC(shiftby,
+			     if (object_in_box(geometry.items[i], shiftby,
+					       &b, &t->b)) {
+				  t->objects[index].box = b;
+				  t->objects[index].o = &geometry.items[i];
+				  t->objects[index].shiftby = shiftby;
+				  index++;
+			     });
+	  }
+	  else if (object_in_box(geometry.items[i], shiftby, &b, &t->b)) {
+	       t->objects[index].box = b;
+	       t->objects[index].o = &geometry.items[i];
+	       t->objects[index].shiftby = shiftby;
+	       index++;
+	  }
      }
 
      divide_geom_box_tree(t);
