@@ -38,7 +38,7 @@ LIBCTL_SCM_INCLUDE_SRC = $(LIBCTL_DIR)/src/include.scm
 LIBCTL_SCM_SRC = $(LIBCTL_DIR)/src/ctl.scm
 LIBCTL_C_SRC = $(LIBCTL_DIR)/src/ctl.c
 LIBCTL_OBJ = $(LIBCTL_C_SRC:.c=.o)
-LIBCTL_HEADERS = $(LIBCTL_DIR)/src/ctl.h
+LIBCTL_HEADERS = $(LIBCTL_DIR)/src/ctl.h $(LIBCTL_DIR)/src/config.h
 
 CTL_IO_GEN_SRC = $(LIBCTL_DIR)/utils/ctl-io.scm
 CTL_IO_GEN = $(LIBCTL_DIR)/utils/gen-ctl-io
