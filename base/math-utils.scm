@@ -467,14 +467,14 @@
 	(cons a0 (deriv-a (binary/
 			   (binary- (binary* a0 fac) (car prev-a)) 
 			   (- fac 1))
-			  (cdr prev-a) (* fac fac0) (sqrt fac0)))))
+			  (cdr prev-a) (* fac fac0) fac0))))
   (define fx (f x))
   
   (define (deriv dx df0 err0 prev-a fac0)
     (let ((a (deriv-a (binary/ (binary- (f (+ x dx)) fx) dx)
 		      prev-a fac0 fac0)))
       (if (null? prev-a)
-	  (deriv (/ dx (sqrt fac0)) (car a) err0 a fac0)
+	  (deriv (/ dx fac0) (car a) err0 a fac0)
 	  (let* ((errs
 		  (map max
 		       (map unary-abs (map binary- (cdr a) (reverse (cdr (reverse a)))))
@@ -488,9 +488,9 @@
 		    (> (unary-abs (binary- (car (reverse a)) (car (reverse prev-a))))
 		       (* 2 err)))
 		(list df err)
-		(deriv (/ dx (sqrt fac0)) df err a fac0))))))
+		(deriv (/ dx fac0) df err a fac0))))))
 
-  (deriv dx 0 1e30 '() 2))
+  (deriv dx 0 1e30 '() (sqrt 2)))
       
 (define (derivative+ f x . dx-and-tol)
   (do-derivative-wrap do-derivative+ f x dx-and-tol))
