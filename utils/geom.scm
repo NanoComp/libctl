@@ -112,20 +112,26 @@
 		     shift-vector min-multiple max-multiple go))
 		  go-list)))
 
-(define (geometric-objects-lattice-duplicates go-list)
-  (let ((b1 (object-property-value geometry-lattice 'basis1))
-	(b2 (object-property-value geometry-lattice 'basis2))
-	(b3 (object-property-value geometry-lattice 'basis3))
-	(n1 (vector-ref (object-property-value geometry-lattice 'size) 0))
-	(n2 (vector-ref (object-property-value geometry-lattice 'size) 1))
-	(n3 (vector-ref (object-property-value geometry-lattice 'size) 2)))
-    (geometric-objects-duplicates
-     b1 (- (floor (/ (- n1 1) 2))) (ceiling (/ (- n1 1) 2))
-     (geometric-objects-duplicates
-      b2 (- (floor (/ (- n2 1) 2))) (ceiling (/ (- n2 1) 2))
+(define (geometric-objects-lattice-duplicates go-list . usize)
+  (let ((u1 (if (>= (length usize) 1) (list-ref usize 0) 1))
+	(u2 (if (>= (length usize) 2) (list-ref usize 1) 1))
+	(u3 (if (>= (length usize) 3) (list-ref usize 2) 1)))
+    (let ((b1 (object-property-value geometry-lattice 'basis1))
+	  (b2 (object-property-value geometry-lattice 'basis2))
+	  (b3 (object-property-value geometry-lattice 'basis3))
+	  (n1 (/ (vector-ref (object-property-value geometry-lattice 'size) 0)
+		 u1))
+	  (n2 (/ (vector-ref (object-property-value geometry-lattice 'size) 1)
+		 u2))
+	  (n3 (/ (vector-ref (object-property-value geometry-lattice 'size) 2)
+		 u3)))
       (geometric-objects-duplicates
-       b3 (- (floor (/ (- n3 1) 2))) (ceiling (/ (- n3 1) 2))
-       go-list)))))
+       (vector3* u1 b1) (- (floor (/ (- n1 1) 2))) (ceiling (/ (- n1 1) 2))
+       (geometric-objects-duplicates
+	(vector3* u2 b2) (- (floor (/ (- n2 1) 2))) (ceiling (/ (- n2 1) 2))
+	(geometric-objects-duplicates
+	 (vector3* u3 b3) (- (floor (/ (- n3 1) 2))) (ceiling (/ (- n3 1) 2))
+	 go-list))))))
 
 ; ****************************************************************
 
