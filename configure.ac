@@ -1,9 +1,11 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT(base/ctl.c)
+AC_INIT
+AC_CONFIG_SRCDIR([base/ctl.c])
 AC_CONFIG_HEADER(base/ctl.h)
 
-LIBCTL_VERSION=1.4
-AC_DEFINE_UNQUOTED(LIBCTL_VERSION, "$LIBCTL_VERSION")
+LIBCTL_VERSION=1.4.1
+AC_DEFINE_UNQUOTED(LIBCTL_VERSION, "$LIBCTL_VERSION",
+	   	   [Define to version string for libctl.])
 AC_SUBST(LIBCTL_VERSION)
 
 # Checks for programs.
@@ -21,7 +23,7 @@ AC_ARG_PROGRAM
 AC_ARG_ENABLE(debug, [  --enable-debug          compile for debugging], ok=$enableval, ok=no)
 if test "$ok" = "yes"; then
         CFLAGS="-g"
-        AC_DEFINE(DEBUG)
+        AC_DEFINE(DEBUG, 1, [Define to enable debugging checks.])
 fi
 
 AC_CANONICAL_HOST
@@ -57,37 +59,37 @@ AC_MSG_ERROR(Guile could not be found)
 AC_MSG_CHECKING([for gh_load])
 ok=yes
 AC_TRY_LINK([#include <guile/gh.h>
-], gh_load(0);, AC_DEFINE(HAVE_GH_LOAD), ok=no)
+], gh_load(0);, AC_DEFINE(HAVE_GH_LOAD, 1, [Define if we have gh_load.]), ok=no)
 AC_MSG_RESULT($ok)
 
 AC_MSG_CHECKING([for gh_bool2scm])
 ok=yes
 AC_TRY_LINK([#include <guile/gh.h>
-], gh_bool2scm(0);, AC_DEFINE(HAVE_GH_BOOL2SCM), ok=no)
+], gh_bool2scm(0);, AC_DEFINE(HAVE_GH_BOOL2SCM, 1, [Define if we have gh_bool2scm]), ok=no)
 AC_MSG_RESULT($ok)
 
 AC_MSG_CHECKING([for gh_vector_ref])
 ok=yes
 AC_TRY_LINK([#include <guile/gh.h>
-], gh_vector_ref(0,0);, AC_DEFINE(HAVE_GH_VECTOR_REF), ok=no)
+], gh_vector_ref(0,0);, AC_DEFINE(HAVE_GH_VECTOR_REF, 1, [Define if we have gh_vector_ref])), ok=no)
 AC_MSG_RESULT($ok)
 
 AC_MSG_CHECKING([for gh_list_ref])
 ok=yes
 AC_TRY_LINK([#include <guile/gh.h>
-], gh_list_ref(0,0);, AC_DEFINE(HAVE_GH_LIST_REF), ok=no)
+], gh_list_ref(0,0);, AC_DEFINE(HAVE_GH_LIST_REF, 1, [Define if we have gh_list_ref]), ok=no)
 AC_MSG_RESULT($ok)
 
 AC_MSG_CHECKING([for gh_length])
 ok=yes
 AC_TRY_LINK([#include <guile/gh.h>
-], gh_length(0);, AC_DEFINE(HAVE_GH_LENGTH), ok=no)
+], gh_length(0);, AC_DEFINE(HAVE_GH_LENGTH, 1, [Define if we have gh_length]), ok=no)
 AC_MSG_RESULT($ok)
 
 AC_MSG_CHECKING([for scm_flush_all_ports])
 ok=yes
 AC_TRY_LINK([#include <guile/gh.h>
-], scm_flush_all_ports();, AC_DEFINE(HAVE_SCM_FLUSH_ALL_PORTS), ok=no)
+], scm_flush_all_ports();, AC_DEFINE(HAVE_SCM_FLUSH_ALL_PORTS, 1, [Define if we have scm_flush_all_ports]), ok=no)
 AC_MSG_RESULT($ok)
 
 AC_MSG_CHECKING([whether gh_lookup works properly])
@@ -106,7 +108,7 @@ int main (int argc, char *argv[])
      gh_enter (argc, argv, main_entry);
      return EXIT_SUCCESS;
 }
-], AC_DEFINE(GH_LOOKUP_OK), ok=no, ok=no)
+], AC_DEFINE(GH_LOOKUP_OK, 1, [Define if gh_lookup works]), ok=no, ok=no)
 AC_MSG_RESULT($ok)
 
 ###########################################################################
@@ -129,4 +131,5 @@ AC_SUBST(LIBCTL_DIR)
 GEN_CTL_IO="`pwd`/$srcdir/utils/gen-ctl-io"
 AC_SUBST(GEN_CTL_IO)
 
-AC_OUTPUT(Makefile base/Makefile utils/Makefile examples/Makefile utils/gen-ctl-io)
+AC_CONFIG_FILES([Makefile base/Makefile utils/Makefile examples/Makefile utils/gen-ctl-io])
+AC_OUTPUT
