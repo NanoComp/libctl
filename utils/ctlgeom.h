@@ -86,6 +86,7 @@ extern void display_geom_box_tree(int indentby, geom_box_tree t);
 extern void geom_box_tree_stats(geom_box_tree t, int *depth, int *nobjects);
 
 extern vector3 get_grid_size(void);
+extern vector3 get_resolution(void);
 extern void get_grid_size_n(int *nx, int *ny, int *nz);
 
 /**************************************************************************/

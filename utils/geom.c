@@ -1046,6 +1046,11 @@ vector3 get_grid_size(void)
      return ctl_convert_vector3_to_c(gh_call0(gh_lookup("get-grid-size")));
 }
 
+vector3 get_resolution(void)
+{
+     return ctl_convert_vector3_to_c(gh_call0(gh_lookup("get-resolution")));
+}
+
 void get_grid_size_n(int *nx, int *ny, int *nz)
 {
      vector3 grid_size;

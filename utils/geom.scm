@@ -178,12 +178,14 @@
 (define-param resolution 10)   ; the resolution (may be a vector3)
 (define-param grid-size false) ; force grid size, if set
 
+(define (get-resolution)
+  (if (vector3? resolution)
+      resolution
+      (vector3 resolution resolution resolution)))
 (define (get-grid-size)
   (if grid-size
       grid-size
-      (let ((res (if (vector3? resolution)
-		     resolution
-		     (vector3 resolution resolution resolution))))
+      (let ((res (get-resolution)))
 	(vector-map
 	 (lambda (x) (inexact->exact (max (ceiling x) 1)))
 	 (vector-map * res (object-property-value geometry-lattice 'size))))))
