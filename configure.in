@@ -8,6 +8,9 @@ AC_PROG_MAKE_SET
 AC_PROG_INSTALL
 AC_PROG_RANLIB
 
+# check how to transform the name of the installed program:
+AC_ARG_PROGRAM
+
 AC_CANONICAL_HOST
 
 dnl Checks for header files.
