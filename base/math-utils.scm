@@ -277,7 +277,8 @@
 	    (list x1 x2 f1 f2)
 	    (list x2 x1 f2 f1))))
 
-  (define (converged? a b x) (< (min (abs (- x a)) (abs (- x b))) (* tol x)))
+  (define (converged? a b x) (< (min (abs (- x a)) (abs (- x b))) 
+				(* tol (abs x))))
   
   ; find the root by Ridder's method:
   (define (ridder a b fa fb)
