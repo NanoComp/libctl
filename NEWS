@@ -1,3 +1,5 @@
+libctl 1.0.1 (11/22/1999)
+
   * geom: handle case where ensure-periodicity is false.
 
   * geom: bug fix in geometric-objects-lattice-duplicates for
