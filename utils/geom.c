@@ -310,7 +310,7 @@ void display_geometric_object_info(int indentby, geometric_object o)
                      o.subclass.cylinder_data->axis.x,
                      o.subclass.cylinder_data->axis.y,
                      o.subclass.cylinder_data->axis.z);
-	      if (o.subclass.block_data->which_subclass == CONE)
+	      if (o.subclass.cylinder_data->which_subclass == CONE)
 		   printf("%*s     radius2 %g\n", indentby, "",
 		        o.subclass.cylinder_data->subclass.cone_data->radius2);
 	      break;
