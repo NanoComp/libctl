@@ -116,7 +116,7 @@ extern matrix3x3 matrix3x3_mult(matrix3x3 m1, matrix3x3 m2);
 extern matrix3x3 matrix3x3_transpose(matrix3x3 m);
 extern number matrix3x3_determinant(matrix3x3 m);
 extern matrix3x3 matrix3x3_inverse(matrix3x3 m);
-extern matrix3x3_equal(matrix3x3 m1, matrix3x3 m2);
+extern int matrix3x3_equal(matrix3x3 m1, matrix3x3 m2);
 
 /**************************************************************************/
 
