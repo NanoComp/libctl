@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 AC_INIT
 AC_CONFIG_SRCDIR([base/ctl.c])
-AC_CONFIG_HEADER(base/ctl.h)
+AC_CONFIG_HEADER([base/ctl.h base/f77_func.h])
 
 LIBCTL_VERSION=2.1
 AC_DEFINE_UNQUOTED(LIBCTL_VERSION, "$LIBCTL_VERSION",
@@ -115,6 +115,13 @@ int main (int argc, char *argv[])
 }
 ], [AC_DEFINE(GH_LOOKUP_OK, 1, [Define if gh_lookup works])], ok=no, ok=no)
 AC_MSG_RESULT($ok)
+
+###########################################################################
+
+# Find Fortran name-mangling routines, for wrapper functions
+
+AC_F77_DUMMY_MAIN([], [AC_MSG_WARN([Fortran wrapper functions will not be included])])
+AC_F77_WRAPPERS
 
 ###########################################################################
 

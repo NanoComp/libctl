@@ -1,0 +1,5 @@
+/* name-mangling macros for compatibility with the F77 linker, determined
+   by the configure script: */
+
+#undef F77_FUNC
+#undef F77_FUNC_
