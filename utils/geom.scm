@@ -74,22 +74,38 @@
     (make-default (vector3 0 0 1)))
 
   (define-property size 'vector3 (make-default (vector3 1 1 1)))
+  (define-property basis-size 'vector3 (make-default (vector3 1 1 1)))
+
+  (define-derived-property 'lattice-size 'vector3
+    (lambda (object)
+      (vector-map * (object-property-value object 'basis-size)
+		  (object-property-value object 'size))))
+
+  (define-derived-property b1 'vector3
+    (lambda (object)
+      (vector3-scale (vector3-x (object-property-value object 'basis-size))
+				(object-property-value object 'basis1))))
+  (define-derived-property b2 'vector3
+    (lambda (object)
+      (vector3-scale (vector3-y (object-property-value object 'basis-size))
+				(object-property-value object 'basis2))))
+  (define-derived-property b3 'vector3
+    (lambda (object)
+      (vector3-scale (vector3-z (object-property-value object 'basis-size))
+				(object-property-value object 'basis3))))
 
   (define-derived-property basis 'matrix3x3
     (lambda (object)
       (let ((B (matrix3x3
-		(object-property-value object 'basis1)
-		(object-property-value object 'basis2)
-		(object-property-value object 'basis3))))
+		(object-property-value object 'b1)
+		(object-property-value object 'b2)
+		(object-property-value object 'b3))))
 	(if (zero? (matrix3x3-determinant B))
 	    (error "lattice basis vectors must be linearly independent!"))
 	B)))
   (define-derived-property metric 'matrix3x3
     (lambda (object)
-      (let ((B (matrix3x3
-		(object-property-value object 'basis1)
-		(object-property-value object 'basis2)
-		(object-property-value object 'basis3))))
+      (let ((B (object-property-value object 'basis)))
 	(matrix3x3* (matrix3x3-transpose B) B)))))
 
 ; ****************************************************************

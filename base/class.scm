@@ -188,12 +188,11 @@
 		     (get-property-value property property-values))
 		   (list-transform-negative
 		     (class-properties class) property-derived?)))))
-	(apply modify-object
-	       (cons o
-		     (map (lambda (property)
-			    (derive-property property o))
-			  (list-transform-positive 
-			      (class-properties class) property-derived?)))))
+	(fold-left (lambda (o p)
+		     (modify-object o (derive-property p o)))
+		   o
+		   (list-transform-positive 
+		       (class-properties class) property-derived?)))
       null-object))
 
 ; ****************************************************************

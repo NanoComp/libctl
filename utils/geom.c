@@ -479,15 +479,17 @@ static void get_bounding_box(geometric_object o, geom_box *box)
 		 The math comes out surpisingly simple--try it! */
 
 	      number radius = o.subclass.sphere_data->radius;
-	      number r1 = compute_dot_cross(geometry_lattice.basis1,
-					    geometry_lattice.basis2,
-					    geometry_lattice.basis3) * radius;
-	      number r2 = compute_dot_cross(geometry_lattice.basis2,
-					    geometry_lattice.basis3,
-					    geometry_lattice.basis1) * radius;
-	      number r3 = compute_dot_cross(geometry_lattice.basis3,
-					    geometry_lattice.basis1,
-					    geometry_lattice.basis2) * radius;
+	      /* actually, we could achieve the same effect here
+		 by inverting the geometry_lattice.basis matrix... */
+	      number r1 = compute_dot_cross(geometry_lattice.b1,
+					    geometry_lattice.b2,
+					    geometry_lattice.b3) * radius;
+	      number r2 = compute_dot_cross(geometry_lattice.b2,
+					    geometry_lattice.b3,
+					    geometry_lattice.b1) * radius;
+	      number r3 = compute_dot_cross(geometry_lattice.b3,
+					    geometry_lattice.b1,
+					    geometry_lattice.b2) * radius;
 	      box->low.x -= r1;
 	      box->low.y -= r2;
 	      box->low.z -= r3;
@@ -525,17 +527,17 @@ static void get_bounding_box(geometric_object o, geom_box *box)
 	      elen2 = vector3_dot(e23, e23);
 	      eproj = vector3_dot(e23, axis);
 	      r1 = fabs(sqrt(fabs(elen2 - eproj*eproj)) /
-			vector3_dot(e23, geometry_lattice.basis1));
+			vector3_dot(e23, geometry_lattice.b1));
 	      
 	      elen2 = vector3_dot(e31, e31);
 	      eproj = vector3_dot(e31, axis);
 	      r2 = fabs(sqrt(fabs(elen2 - eproj*eproj)) /
-			vector3_dot(e31, geometry_lattice.basis2));
+			vector3_dot(e31, geometry_lattice.b2));
 
 	      elen2 = vector3_dot(e12, e12);
 	      eproj = vector3_dot(e12, axis);
 	      r3 = fabs(sqrt(fabs(elen2 - eproj*eproj)) /
-			vector3_dot(e12, geometry_lattice.basis3));
+			vector3_dot(e12, geometry_lattice.b3));
 
 	      /* Get axis in lattice coords: */
 	      axis = o.subclass.cylinder_data->axis;
