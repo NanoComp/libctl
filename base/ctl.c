@@ -1,7 +1,8 @@
 #include "ctl.h"
 
 /* Guile 1.2 is missing gh_bool2scm for some reason; redefine: */
-#define gh_bool2scm(b) ((b) ? SCM_BOOL_T : SCM_BOOL_F)
+#define gh_bool2scm bool2scm
+SCM bool2scm(int b) { return (b ? SCM_BOOL_T : SCM_BOOL_F); }
 
 /**************************************************************************/
 
@@ -101,7 +102,7 @@ object ctl_get_object(char *identifier)
 
 /**** Setters ****/
 
-static set_value(char *identifier, SCM value)
+static void set_value(char *identifier, SCM value)
 {
   gh_call2(gh_lookup("set!"), gh_lookup(identifier), value);
 }
@@ -159,7 +160,7 @@ int list_length(list l)
 /* Note: index must be in [0,list_length(l) - 1].  We don't check! */
 static SCM list_ref(list l, int index)
 {
-  SCM cur, rest = l;
+  SCM cur = SCM_UNSPECIFIED, rest = l;
 
   while (index >= 0) {
     cur = gh_car(rest);
@@ -252,6 +253,13 @@ MAKE_LIST(NO_CONVERSION)
 /**************************************************************************/
 
 /* object properties */
+
+SCM object_is_member(char *type_name, object o)
+{
+  return(gh_call2(gh_lookup("object-member?"),
+		  gh_symbol2scm(type_name),
+		  o));
+}
 
 static SCM object_property_value(object o, char *property_name)
 {

@@ -84,6 +84,8 @@ extern list make_object_list(int num_items, object *items);
 
   /* object properties */
 
+SCM object_is_member(char *type_name, object o);
+
 extern integer integer_object_property(object o, char *property_name);
 extern number number_object_property(object o, char *property_name);
 extern boolean boolean_object_property(object o, char *property_name);
