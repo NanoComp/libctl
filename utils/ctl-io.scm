@@ -33,6 +33,9 @@
 
 ; ***************************************************************************
 
+(define cxx false) ; set to true for C++ output (c.f. gen-ctl-io --cxx)
+(define (ns namespace) (if cxx (string-append namespace "::") ""))
+
 (define (c-identifier s)
   (list->string (map (lambda (c) 
 		       (if (or (eq? c #\-) (eq? c #\space))
@@ -71,8 +74,16 @@
 (define (class-identifier class)
   (symbol->c-identifier (class-type-name class)))
 
-(define (class-enum-name class)
+(define (class-enum-name0 class)
   (string-upcase (class-identifier class)))
+
+(define (class-enum-name class)
+  (string-append (ns (class-identifier (class-parent class)))
+		 (class-enum-name0 class)))
+
+(define (class-self-enum-name class)
+  (string-append (ns (class-identifier class))
+		 (class-enum-name0 class) "_SELF"))
 
 (define (c-class-decl class)
   (for-each (compose declare-type-name property-type-name)
@@ -86,8 +97,8 @@
   (let ((subclasses (find-direct-subclasses class)))
     (if (not (null? subclasses))
 	(begin
-	  (print "enum { " (class-enum-name class) "_SELF" )
-	  (for-each (lambda (sc) (print ", " (class-enum-name sc)))
+	  (print "enum { " (class-enum-name0 class) "_SELF")
+	  (for-each (lambda (sc) (print ", " (class-enum-name0 sc)))
 		    subclasses)
 	  (print " } which_subclass;\n")
 	  (print "union {\n")
@@ -206,14 +217,14 @@
   (string-append (symbol->c-identifier type-name)
 		 "_input"))
 
-(define (class-input-function-decl class)
-  (print "void " 
+(define (class-input-function-decl class ns)
+  (print "void " ns
 		(class-input-function-name (class-type-name class))
 		"(SCM so, "
 		(c-type-string (class-type-name class)) " *o)"))
 
 (define (class-input-function class)
-  (class-input-function-decl class)
+  (class-input-function-decl class (ns "ctlio"))
   (print "\n{\n")
   (for-each
    (lambda (property)
@@ -241,14 +252,14 @@
        (begin
 	 (print "\n")
 	 (print "o->which_subclass = " 
-		       (class-enum-name class) "_SELF;\n"))))
+		       (class-self-enum-name class) ";\n"))))
   (print "}\n\n"))
 
 (define (output-class-input-functions-header)
   (print "/******* class input function prototypes *******/\n\n")
   (for-each
    (lambda (class)
-     (print "extern ") (class-input-function-decl class)
+     (print "extern ") (class-input-function-decl class "")
      (print ";\n"))
    class-list)
   (print "\n"))
@@ -259,7 +270,7 @@
 
 (define (input-vars-function)
   (print "/******* read input variables *******/\n\n")
-  (print "SCM read_input_vars(void)\n")
+  (print "SCM " (ns "ctlio") "read_input_vars(void)\n")
   (print "{\n")
   (print "if (num_read_input_vars++) destroy_input_vars();\n")
   (for-each
@@ -314,14 +325,14 @@
   (string-append (symbol->c-identifier type-name)
 		 "_copy"))
 
-(define (class-copy-function-decl class)
-  (print "void " 
+(define (class-copy-function-decl class ns)
+  (print "void " ns
 		(class-copy-function-name (class-type-name class))
 		"(const " (c-type-string (class-type-name class)) " *o0,"
 		(c-type-string (class-type-name class)) " *o)"))
 
 (define (class-copy-function class)
-  (class-copy-function-decl class)
+  (class-copy-function-decl class (ns "ctlio"))
   (print "\n{\n")
   (for-each
    (lambda (property)
@@ -349,14 +360,14 @@
        (begin
 	 (print "\n")
 	 (print "o->which_subclass = " 
-		       (class-enum-name class) "_SELF;\n"))))
+		       (class-self-enum-name class) ";\n"))))
   (print "}\n\n"))
 
 (define (output-class-copy-functions-header)
   (print "/******* class copy function prototypes *******/\n\n")
   (for-each
    (lambda (class)
-     (print "extern ") (class-copy-function-decl class)
+     (print "extern ") (class-copy-function-decl class "")
      (print ";\n"))
    class-list)
   (print "\n"))
@@ -407,14 +418,14 @@
   (string-append (symbol->c-identifier type-name)
 		 "_equal"))
 
-(define (class-equal-function-decl class)
-  (print "boolean " 
+(define (class-equal-function-decl class ns)
+  (print "boolean " ns
 		(class-equal-function-name (class-type-name class))
 		"(const " (c-type-string (class-type-name class)) " *o0, "
 		"const " (c-type-string (class-type-name class)) " *o)"))
 
 (define (class-equal-function class)
-  (class-equal-function-decl class)
+  (class-equal-function-decl class (ns "ctlio"))
   (print "\n{\n")
   (for-each
    (lambda (property)
@@ -443,7 +454,7 @@
   (print "/******* class equal function prototypes *******/\n\n")
   (for-each
    (lambda (class)
-     (print "extern ") (class-equal-function-decl class)
+     (print "extern ") (class-equal-function-decl class "")
      (print ";\n"))
    class-list)
   (print "\n"))
@@ -496,7 +507,7 @@
 
 (define (output-vars-function)
   (print "/******* write output variables *******/\n\n")
-  (print "SCM write_output_vars(void)\n")
+  (print "SCM " (ns "ctlio") "write_output_vars(void)\n")
   (print "{\n")
   (print "num_write_output_vars++;\n")
   (for-each
@@ -526,8 +537,8 @@
   (string-append (symbol->c-identifier type-name)
 		 "_destroy"))
 
-(define (class-destroy-function-decl class)
-  (print "void " 
+(define (class-destroy-function-decl class ns)
+  (print "void " ns
 		(class-destroy-function-name (class-type-name class))
 		"("
 		(c-type-string (class-type-name class)) " o)"))
@@ -556,7 +567,7 @@
 		 (property-type-name property)))
 
 (define (class-destroy-function class)
-  (class-destroy-function-decl class)
+  (class-destroy-function-decl class (ns "ctlio"))
   (print "\n{\n")
   (for-each
    (lambda (property) (destroy-property "o." property))
@@ -581,7 +592,7 @@
   (print "/******* class destruction function prototypes *******/\n\n")
   (for-each
    (lambda (class)
-     (print "extern ") (class-destroy-function-decl class)
+     (print "extern ") (class-destroy-function-decl class "")
      (print ";\n"))
    class-list)
   (print "\n"))
@@ -592,7 +603,7 @@
 
 (define (destroy-input-vars-function)
   (print "/******* destroy input variables *******/\n\n")
-  (print "SCM destroy_input_vars(void)\n")
+  (print "SCM " (ns "ctlio") "destroy_input_vars(void)\n")
   (print "{\n")
   (for-each
    (lambda (var)
@@ -605,7 +616,7 @@
 
 (define (destroy-output-vars-function)
   (print "/******* destroy output variables *******/\n\n")
-  (print "SCM destroy_output_vars(void)\n")
+  (print "SCM " (ns "ctlio") "destroy_output_vars(void)\n")
   (print "{\n")
   (for-each
    (lambda (var)
@@ -623,11 +634,11 @@
   (if (null? lst) '()
       (cons start-index (list->indices (cdr lst) (+ start-index 1)))))
 
-(define (declare-external-function external-function)
-  (print "SCM " (symbol->c-identifier
-		       (external-function-aux-name
-			(external-function-name external-function)))
-		"(")
+(define (declare-external-function external-function ns)
+  (print "SCM " ns (symbol->c-identifier
+		    (external-function-aux-name
+		     (external-function-name external-function)))
+	 "(")
   (for-each
    (lambda (argnum)
      (if (> argnum 0) (print ", "))
@@ -665,7 +676,7 @@
    (lambda (ef)
      (declare-external-c-function ef)
      (print "extern ")
-     (declare-external-function ef)
+     (declare-external-function ef "")
      (print ";\n\n"))
    external-function-list)
   (print "\nextern void export_external_functions(void);\n")
@@ -676,6 +687,7 @@
    "gh_new_procedure(\""
    (external-function-aux-name (external-function-name external-function))
    "\", "
+   "(SCM (*)(void)) "
    (symbol->c-identifier
     (external-function-aux-name (external-function-name external-function)))
    ", "
@@ -683,7 +695,7 @@
    ", 0, 0);\n"))
 
 (define (output-export-external-functions)
-  (print "void export_external_functions(void)\n")
+  (print "void " (ns "ctlio") "export_external_functions(void)\n")
   (print "{\n")
   (for-each output-external-function-export external-function-list)
   (print "}\n\n"))
@@ -698,7 +710,7 @@
 		 "_to_scm(" c-name-str ");"))
 
 (define (output-external-function external-function)
-  (declare-external-function external-function) (print "\n")
+  (declare-external-function external-function (ns "ctlio")) (print "\n")
   (print "{\n")
 
   (if (not (eq? (external-function-return-type-name external-function)
