@@ -18,6 +18,8 @@
 		       (if (or (eq? c #\-) (eq? c #\space)) #\_ c))
 		     (string->list s))))
 
+(define symbol->c-identifier (compose c-identifier symbol->string))
+
 (define c-type-string (compose c-identifier type-string))
 
 (define declared-type-names '())
@@ -38,7 +40,7 @@
 
 (define (c-var-decl var-name var-type-name)
   (display-many (c-type-string var-type-name) " " 
-		(c-identifier (symbol->string var-name)) ";")
+		(symbol->c-identifier var-name) ";")
   (newline))
 
 ; ***************************************************************************
@@ -48,7 +50,7 @@
     (lambda (c) (eq? (class-parent c) class))))
 
 (define (class-identifier class)
-  (c-identifier (symbol->string (class-type-name class))))
+  (symbol->c-identifier (class-type-name class)))
 
 (define (class-enum-name class)
   (string-upcase (class-identifier class)))
@@ -132,18 +134,18 @@
 		  (list-el-type-name type-name))))))
 
 (define (get-global type-symbol name-str)
-  (string-append "ctl_get_" (c-identifier (symbol->string type-symbol))
+  (string-append "ctl_get_" (symbol->c-identifier type-symbol)
 		 "(\"" name-str "\")" ))
 
 (define (property-getter object-name-str)
   (lambda (type-symbol name-str)
-    (string-append (c-identifier (symbol->string type-symbol))
+    (string-append (symbol->c-identifier type-symbol)
 		   "_object_property(" object-name-str ", "
 		   "\"" name-str "\")" )))
 
 (define (list-getter lo-name-str)
   (lambda (type-symbol name-str)
-    (string-append (c-identifier (symbol->string type-symbol))
+    (string-append (symbol->c-identifier type-symbol)
                    "_list_ref(" lo-name-str ", "
                    name-str ")" )))
 
@@ -176,7 +178,7 @@
   (display "}") (newline))
 
 (define (class-input-function-name type-name)
-  (string-append (c-identifier (symbol->string type-name))
+  (string-append (symbol->c-identifier type-name)
 		 "_input"))
 
 (define (class-input-function-decl class)
@@ -191,7 +193,8 @@
   (for-each
    (lambda (property)
      (input-value (symbol->string (property-name property))
-		  (string-append "o->" (c-identifier (property-name property)))
+		  (string-append "o->" (symbol->c-identifier 
+					(property-name property)))
 		  (property-type-name property)
 		  (property-getter "so")))
    (class-properties class))
@@ -221,7 +224,8 @@
   (display "}") (newline) (newline))
 
 (define (output-class-input-functions-header)
-  (display "/******* class function prototypes *******/") (newline) (newline)
+  (display "/******* class input function prototypes *******/")
+  (newline) (newline)
   (for-each
    (lambda (class)
      (display "extern ") (class-input-function-decl class)
@@ -230,18 +234,19 @@
   (newline))
 
 (define (output-class-input-functions-source)
-  (display "/******* class functions *******/") (newline) (newline)
+  (display "/******* class input functions *******/") (newline) (newline)
   (for-each class-input-function class-list))
 
 (define (input-vars-function)
   (display "/******* read input variables *******/") (newline) (newline)
   (display "SCM read_input_vars(void)") (newline)
   (display "{") (newline)
+  (display "if (num_runs++) destroy_input_vars();") (newline)
   (for-each
    (lambda (var)
      (input-value
       (symbol->string (var-name var))
-      (c-identifier (symbol->string (var-name var)))
+      (symbol->c-identifier (var-name var))
       (var-type-name var)
       get-global))
    (reverse input-var-list))
@@ -272,7 +277,7 @@
   (let ((desc (get-type-descriptor type-name)))
     (cond
      ((eq? (type-descriptor-kind desc) 'simple)
-      (display-many (setter type-name s-var-name-str c-var-name-str) ";")
+      (display-many (setter type-name s-var-name-str c-var-name-str))
       (newline))
      ((eq? (type-descriptor-kind desc) 'object)
       (export-object-value c-var-name-str type-name
@@ -288,8 +293,8 @@
 			    (newline)))))))
 
 (define (set-global type-symbol s-name-str c-name-str)
-  (string-append "ctl_set_" (c-identifier (symbol->string type-symbol))
-                 "(\"" s-name-str "\", " c-name-str ")" ))
+  (string-append "ctl_set_" (symbol->c-identifier type-symbol)
+                 "(\"" s-name-str "\", " c-name-str ");" ))
 
 (define (output-vars-function)
   (display "/******* write output variables *******/") (newline) (newline)
@@ -299,9 +304,120 @@
    (lambda (var)
      (output-value
       (symbol->string (var-name var))
-      (c-identifier (symbol->string (var-name var)))
+      (symbol->c-identifier (var-name var))
       (var-type-name var)
       set-global))
+   (reverse output-var-list))
+  (display "return SCM_UNSPECIFIED;") (newline)
+  (display "}") (newline) (newline))
+
+; ***************************************************************************
+
+(define (destroy-c-var var-str type-name)
+  (let ((desc (get-type-descriptor type-name)))
+    (cond 
+     ((eq? (type-descriptor-kind desc) 'uniform-list)
+      (destroy-list var-str (list-el-type-name type-name)))
+     ((eq? (type-descriptor-kind desc) 'object)
+      (destroy-object var-str type-name)))))
+
+(define (class-destroy-function-name type-name)
+  (string-append (symbol->c-identifier type-name)
+		 "_destroy"))
+
+(define (class-destroy-function-decl class)
+  (display-many "void " 
+		(class-destroy-function-name (class-type-name class))
+		"("
+		(c-type-string (class-type-name class)) " o)"))
+
+(define (destroy-list var-str el-type-name)
+  (let ((index-name (string-append "index" list-temp-suffix))
+	(saved-suffix list-temp-suffix))
+    (set! list-temp-suffix (string-append list-temp-suffix "_t"))
+    (display "{") (newline)
+       (display-many "int " index-name ";") (newline)
+       (display-many "for (" index-name " = 0; " index-name " <= "
+		     var-str ".num_items; " index-name "++) {")
+       (newline)
+       (destroy-c-var (string-append var-str ".items[" index-name "]")
+		    el-type-name)
+       (display "}") (newline)
+    (display "}") (newline)
+    (display-many "free(" var-str ".items);") (newline)
+    (set! list-temp-suffix saved-suffix)))
+
+(define (destroy-object var-str type-name)
+  (display-many (class-destroy-function-name type-name) "(" var-str ");")
+  (newline))
+
+(define (destroy-property prefix-str property)
+  (destroy-c-var (string-append prefix-str (symbol->c-identifier
+					  (property-name property)))
+		 (property-type-name property)))
+
+(define (class-destroy-function class)
+  (class-destroy-function-decl class) (newline)
+  (display "{") (newline)
+  (for-each
+   (lambda (property) (destroy-property "o." property))
+   (class-properties class))
+  (let ((subclasses (find-direct-subclasses class)))
+    (for-each
+     (lambda (sc)
+       (display-many "if (o.which_subclass == " (class-enum-name sc) ") {")
+       (newline)
+       (destroy-object (string-append "*o.subclass." 
+				      (class-identifier sc) "_data")
+		       (class-type-name sc))
+       (display-many "free(o.subclass." (class-identifier sc) "_data);")
+       (newline)
+       (display "}") (newline)
+       (display "else "))
+     subclasses)
+   (if (not (null? subclasses))
+       (begin
+	 (display "{ }")
+	 (newline))))
+  (display "}") (newline) (newline))
+
+(define (output-class-destruction-functions-header)
+  (display "/******* class destruction function prototypes *******/")
+  (newline) (newline)
+  (for-each
+   (lambda (class)
+     (display "extern ") (class-destroy-function-decl class)
+     (display ";") (newline))
+   class-list)
+  (newline))
+
+(define (output-class-destruction-functions-source)
+  (display "/******* class destruction functions *******/") (newline) (newline)
+  (for-each class-destroy-function class-list))
+
+(define (destroy-input-vars-function)
+  (display "/******* destroy input variables *******/") (newline) (newline)
+  (display "SCM destroy_input_vars(void)") (newline)
+  (display "{") (newline)
+  (for-each
+   (lambda (var)
+     (destroy-c-var
+      (symbol->c-identifier (var-name var))
+      (var-type-name var)))
+   (reverse input-var-list))
+  (display "return SCM_UNSPECIFIED;") (newline)
+  (display "}") (newline) (newline))
+
+(define (destroy-output-vars-function)
+  (display "/******* destroy output variables *******/") (newline) (newline)
+  (display "SCM destroy_output_vars(void)") (newline)
+  (display "{") (newline)
+  (for-each
+   (lambda (var)
+     (if (not (member var input-var-list))
+	 (destroy-c-var
+	  (symbol->c-identifier (var-name var))
+	  (var-type-name var))))
    (reverse output-var-list))
   (display "return SCM_UNSPECIFIED;") (newline)
   (display "}") (newline) (newline))
@@ -311,12 +427,23 @@
 (define (output-header)
   (display-c-class-decls)
   (declare-vars-header)
+  (display "extern int num_runs;") (newline)
+  (newline)
   (display "extern SCM read_input_vars(void);") (newline)
-  (display "extern SCM write_output_vars(void);") (newline))
+  (display "extern SCM write_output_vars(void);") (newline)
+  (display "extern SCM destroy_input_vars(void);") (newline)
+  (display "extern SCM destroy_output_vars(void);") (newline))
 
 (define (output-source)
   (declare-vars-source)
+  (display "int num_runs = 0; /* number of calls to read_input_vars */")
+  (newline) (newline)
   (output-class-input-functions-header)
+  (output-class-destruction-functions-header)
   (output-class-input-functions-source)
+  (output-class-destruction-functions-source)
   (input-vars-function)
-  (output-vars-function))
+  (output-vars-function)
+  (destroy-input-vars-function)
+  (destroy-output-vars-function))
+
