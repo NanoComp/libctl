@@ -183,10 +183,37 @@ matrix3x3 matrix3x3_transpose(matrix3x3 m)
      return mt;
 }
 
+number matrix3x3_determinant(matrix3x3 m)
+{
+     return(m.c0.x*m.c1.y*m.c2.z - m.c2.x*m.c1.y*m.c0.z +
+	    m.c1.x*m.c2.y*m.c0.z + m.c0.y*m.c1.z*m.c2.x -
+	    m.c1.x*m.c0.y*m.c2.z - m.c2.y*m.c1.z*m.c0.x);
+}
+
 matrix3x3 matrix3x3_inverse(matrix3x3 m)
 {
-  return scm2matrix3x3(gh_call1(gh_lookup("matrix3x3-inverse"),
-				matrix3x32scm(m)));
+     matrix3x3 minv;
+     number detinv = matrix3x3_determinant(m);
+
+     if (detinv == 0.0) {
+	  fprintf(stderr, "error: singular matrix in matrix3x3_inverse!\n");
+	  exit(EXIT_FAILURE);
+     }
+     detinv = 1.0/detinv;
+
+     minv.c0.x = detinv * (m.c1.y * m.c2.z - m.c2.y * m.c1.z);
+     minv.c1.y = detinv * (m.c0.x * m.c2.z - m.c2.x * m.c0.z);
+     minv.c2.z = detinv * (m.c1.y * m.c0.x - m.c0.y * m.c1.x);
+     
+     minv.c0.z = detinv * (m.c0.y * m.c1.z - m.c1.y * m.c0.z);
+     minv.c0.y = -detinv * (m.c0.y * m.c2.z - m.c2.y * m.c0.z);
+     minv.c1.z = -detinv * (m.c0.x * m.c1.z - m.c1.x * m.c0.z);
+     
+     minv.c2.x = detinv * (m.c1.x * m.c2.y - m.c1.y * m.c2.x);
+     minv.c1.x = -detinv * (m.c1.x * m.c2.z - m.c1.z * m.c2.x);
+     minv.c2.y = -detinv * (m.c0.x * m.c2.y - m.c0.y * m.c2.x);
+
+     return minv;
 }
 
 /**************************************************************************/
