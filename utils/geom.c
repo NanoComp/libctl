@@ -917,6 +917,8 @@ geom_box_tree restrict_geom_box_tree(geom_box_tree t, const geom_box *b)
 	       free(tr0);
 	  }
      }
+
+     return tr;
 }
 
 /**************************************************************************/
