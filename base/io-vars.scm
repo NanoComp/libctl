@@ -25,8 +25,7 @@
 (define params-set-list '())
 (defmacro-public define-param (name value)
   `(if (not (defined? (quote ,name)))
-       (define ,name ,value)
-       (set! params-set-list (cons ,name params-set-list))))
+       (define ,name ,value)))
 
 (defmacro-public set-param! (name value)
   `(if (not (memq (quote ,name) params-set-list))

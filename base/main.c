@@ -168,6 +168,22 @@ void main_entry(int argc, char *argv[])
       eq = strchr(definestr,'=');
       *eq = ' ';
       gh_eval_str(definestr);
+      { /* add the name of the defined variable to params-set-list */
+	   char *remember_define;
+	   strcpy(definestr,argv[i]);
+	   eq = strchr(definestr,'=');
+	   *eq = 0;
+	   remember_define = (char*) malloc(sizeof(char) * (strlen("(set! params-set-list (cons (quote x) params-set-list))") + strlen(definestr)));
+	   if (!remember_define) {
+		fprintf(stderr, __FILE__ ": out of memory!\n");
+		exit(EXIT_FAILURE);
+	   }
+	   strcpy(remember_define, "(set! params-set-list (cons (quote ");
+	   strcat(remember_define, definestr);
+	   strcat(remember_define, ") params-set-list))");
+	   gh_eval_str(remember_define);
+	   free(remember_define);
+      }
       free(definestr);
       argv[i][0] = 0;
     }
