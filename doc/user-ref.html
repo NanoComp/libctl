@@ -256,6 +256,10 @@ if <code><i>list</i></code> contains numbers, then <code>(fold-left +
 0 <i>list</i>)</code> returns the sum of the elements of
 <code><i>list</i></code>.
 
+<p><dt><code>(fold-right <i>op init list</i>)</code>
+<dd>As <code>fold-left</code>, but associate from the right.  For
+example, <code>(op a (op b (op c (op d init))))</code>.
+
 </dl>
 
 <hr>
