@@ -27,6 +27,7 @@ libs: libs-recursive
 dist:
 	cvs export -D now -d $(distdir) $(package)
 	cp config.guess config.sub $(distdir)
+	cp install-sh $(distdir)
 	pushd $(distdir) && autoconf && popd
 	rm -f $(distdir).tar.gz
 	GZIP="--best" tar chozf $(distdir).tar.gz $(distdir)
