@@ -20,8 +20,8 @@
 #
 # Steven G. Johnson can be contacted at stevenj@alum.mit.edu.
 
-set libctl_dir = `dirname $0`/..
-set output_dir = `dirname $1`
+set libctl_dir = "`dirname $0`/.."
+set output_dir = "`dirname $1`"
 
 rm -f $output_dir/ctl-io.c $output_dir/ctl-io.h
 
