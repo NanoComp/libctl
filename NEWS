@@ -13,7 +13,7 @@ libctl 2.2
 
   * Fixed incomplete support for generic SCM type.
 
-  * Fixed to work with Guile 1.5.x (thanks to Mike Watts for the bug report).
+  * Fixed to work with Guile 1.5+ (thanks to Mike Watts for the bug report).
 
 libctl 2.1 (3/21/2002)
 
