@@ -393,7 +393,7 @@
 
 (define (derivative-df d) (car d))
 (define (derivative-df-err d) (cadr d))
-(define (derivative-df2 d) (caddr d))
-(define (derivative-df2-err d) (cadddr d))
+(define (derivative-d2f d) (caddr d))
+(define (derivative-d2f-err d) (cadddr d))
 
 ; ****************************************************************
