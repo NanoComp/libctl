@@ -1,0 +1,194 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML><HEAD>
+<TITLE>User Reference</TITLE>
+<LINK rel="Bookmark" title="libctl Manual" href="index.html">
+<LINK rel="Bookmark" title="Ab Initio Physics Home Page"
+      href="http://ab-initio.it.edu">
+<LINK rel="Contents" href="index.html">
+<LINK rel="Copyright" href="license.html">
+<LINK rel="Start" href="index.html">
+<LINK rel="Previous" href="advanced-user.html">
+<LINK rel="Next" href="developer.html">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+
+Go to the <a href="developer.html">next</a>, <a
+href="advanced-user.html">previous</a>, or <a href="index.html">main</a>
+section.
+<hr>
+
+<h1>User Reference</h1>
+
+In this section, we list all of the special functions provided for
+users by libctl.  We do <i>not<i> attempt to document standard Scheme
+functions, with a couple of exceptions below, since there are plenty
+of good Scheme references <a href="guile-links.html">elsewhere</a>.
+
+<p>Of course, the most important function is:
+
+<dl>
+<dt><code>(help)</code>
+<dd>Outputs a listing of all the available classes, their properties,
+default values, and types.  Also lists the input and output variables.
+</dl>
+
+<p>Remember, Guile lets you enter expressions and see their values
+interactively.  This is the best way to learn how to use anything that
+confuses you--just try it and see how it works!
+
+<h2>Basic Scheme functions</h2>
+
+<dl>
+
+<dt><code>(set! <i>variable value</i>)</code>
+<dd>Change the value of <code><i>variable</i></code> to <code><i>value</i></code>.
+
+<dt><code>(define <i>variable value</i>)</code>
+<dd>Define new <code><i>variable</i></code> with initial <code><i>value</i></code>.
+
+<dt><code>(list <i>[ element1 element2 ... ]</i>)</code>
+<dd>Returns a list consisting of zero or more elements.
+
+<dt><code>(append <i>[ list1 list2 ... ]</i>)</code>
+<dd>Concatenates zero or more lists into a single list.
+
+<dt><code>(<i>function [ arg1 arg2 ... ]</i>)
+<dd>This is how you call a Scheme <code><i>function</i></code> in general.
+
+<dt><code>(define (<i>function [ arg1 arg2 ... ]</i>) <i>body</i>)</code>
+<dd>Define a new <code><i>function</i></code> with zero or more
+arguments that returns the result of given <code><i>body</i></code>
+when it is invoked.
+
+</dl>
+
+<h2>3-vector functions</h2>
+
+<dl>
+
+<dt><code>(vector3 <i>x [y z]</i></code>)
+<dd>Create a new 3-vector with the given components.  If the <code><i>y</i></code> or <code><i>z</i></code> value is omitted, it is set to zero.
+
+<dt><code>(vector3+ <i>v1 v2</i>)</code>
+<dt><code>(vector3- <i>v1 v2</i>)</code>
+<dt><code>(vector3-cross <i>v1 v2</i>)</code>
+<dd>Return the sum, difference, or cross product of the two vectors.
+
+<dt><code>(vector3* <i>a b</i>)</code>
+<dd>If <code><i>a</i></code> and <code><i>b</i></code> are both
+vectors, returns their dot product.  If one of them is a number and
+the other is a vector, then scales the vector by the number.
+
+<dt><code>(vector3-norm <i>v</i>)</code>
+<dd>Returns the length of the given vector.
+
+<dt><code>(unit-vector3 <i>x [y z]</i></code>)
+<dt><code>(unit-vector3 <i>v</i>)</code>
+<dd>Given a vector or, alternatively, one or more components, returns a
+unit vector in that direction.
+
+</dl>
+
+<h2>3x3 matrix functions</h2>
+
+<dl>
+
+<dt><code>(matrix3x3 <i>c1 c2 c3</i>)</code>
+<dd>Creates a 3x3 matrix with the given 3-vectors as its columns.
+
+<dt><code>(matrix3x3-transpose <i>m</i>)</code>
+<dt><code>(matrix3x3-determinant <i>m</i>)</code>
+<dt><code>(matrix3x3-inverse <i>m</i>)</code>
+<dd>Return the transpose, determinant, or inverse of the given matrix.
+
+<dt><code>(matrix3x3+ <i>m1 m2</i>)</code>
+<dt><code>(matrix3x3- <i>m1 m2</i>)</code>
+<dt><code>(matrix3x3* <i>m1 m2</i>)</code>
+<dd>Return the sum, difference, or product of the given matrices.
+
+<dt><code>(matrix3x3* <i>v m</i>)</code>
+<dt><code>(matrix3x3* <i>m v</i>)</code>
+<dd>Returns the (3-vector) product of the matrix <code><i>m</i></code>
+by the vector <code><i>v</i></code>, with the vector multiplied on the
+left or the right respectively.
+
+<dt><code>(matrix3x3* <i>s m</i>)</code>
+<dt><code>(matrix3x3* <i>m s</i>)</code>
+<dd>Scales the matrix <code><i>m</i></code> by the number
+<code><i>s</i></code>.
+
+</dl>
+
+<h2>Creating objects (members of classes)</h2>
+
+<dl>
+
+<dt><code>(make <i>class [ properties ... ]</i>)</code>
+<dd>Make an object of the given <code><i>class</i></code>.  Each
+property is of the form <code>(<i>property-name
+property-value</i>)</code>.  A property need not be specified if it
+has a default value.
+
+</dl>
+
+<h2>Miscellaneous utilities</h2>
+
+<dl>
+
+<dt><code>(interpolate <i>n list</i>)</code>
+<dd>Given a <code><i>list</i></code> of numbers or 3-vectors, linearly
+interpolates between them to add <code><i>n</i></code> new
+evenly-spaced values between each pair of consecutive values in the
+original list.
+
+<dt><code>(minimize <i>function tolerance</i>)</code>
+<dd>Given a <code><i>function</i></code> of one (number) argument,
+finds its minimum within the specified fractional
+<code><i>tolerance</i></code>.  If the return value of
+<code>minimize</code> is assigned to a variable <code>result</code>,
+then <code>(min-arg result)</code> and <code>(min-val result)</code>
+give the argument and value of the function at its minimum.  If you
+can, you should use one of the variant forms of <code>minimize</code>,
+described below.
+
+<dt><code>(minimize <i>function tolerance guess</i>)</code>
+<dd>The same as above, but you supply an initial
+<code><i>guess</i></code> for where the minimum is located.
+
+<dt><code>(minimize <i>function tolerance min-arg max-arg</i>)</code>
+<dd>The same as above, but you supply the minimum and maximum function
+argument values within which to search for the minimum.  This is the
+most preferred form of <code>minimize</code>, and is faster and more
+robust than the other two variants.
+
+<dt><code>(minimize-multiple <i>function tolerance arg1 .. argN</i>)</code>
+<dd>Minimize a <code><i>function</i></code> of N variables within the
+specified fractional <code><i>tolerance</i></code>.
+<code><i>arg1</i></code> .. <code><i>argN</i></code> are an initial
+guess for the function arguments.  Returns both the arguments and
+value of the function at its minimum.  A list of the arguments at the
+minimum are retrieved via <code>min-arg</code>, and the value via
+<code>min-val</code>.
+
+<dt><code>maximize</code>, <code>maximize-multiple</code>
+<dd>These are the same as the <code><i>minimize</i></code> functions
+except that they maximizes the function instead of minimizing it.  The
+functions <code>max-arg</code> and <code>max-val</code> are provided
+instead of <code>min-arg</code> and <code>min-val</code>.
+
+<dt><code>(find-root <i>function tolerance arg-min arg-max</i>)</code>
+<dd>Find a root of the given <code><i>function</i></code> to within
+the specified fractional <code><i>tolerance</i></code>.
+<code>arg-min</code> and <code>max-arg</code> <b>bracket</b> the
+desired root; the function must have opposite signs at these two
+points!
+
+</dl>
+
+<hr>
+Go to the <a href="developer.html">next</a>, <a
+href="advanced-user.html">previous</a>, or <a href="index.html">main</a>
+section.
+
+</BODY>
+</HTML>
