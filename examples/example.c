@@ -166,3 +166,11 @@ vector3_list list_func_test(number x, integer_list s, vector3 v)
 	  vout.items[i] = vector3_scale(s.items[i] * x, v);
      return vout;
 }
+
+/* return func(arg), where func is a Scheme function returning a number. */
+number function_func(function func, number arg)
+{
+     return 
+	  ctl_convert_number_to_c(
+	       gh_call1(func, ctl_convert_number_to_scm(arg)));
+}

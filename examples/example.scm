@@ -51,3 +51,6 @@
 
 (define-external-function list-func-test false false
   (make-list-type 'vector3) 'number (make-list-type 'integer) 'vector3)
+
+(define-external-function function-func false false 'number
+  'function 'number)
