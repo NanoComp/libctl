@@ -101,6 +101,16 @@ the other is a vector, then scales the vector by the number.
 <dd>Given a vector or, alternatively, one or more components, returns a
 unit vector in that direction.
 
+<p><dt><code>(vector3-close? <i>v1 v2 tolerance</i>)</code>
+<dt>Returns whether or not the corresponding components of the two
+vectors are within <code><i>tolerance</i></code> of each other.
+
+<p><dt><code>(vector3= <i>v1 v2</i>)</code>
+<dt>Returns whether or not the two vectors are numerically equal.
+Beware of using this function after operations that may have some
+error due to the finite precision of floating-point numbers; use
+<code>vector3-close?</code> instead.
+
 </dl>
 
 <h2>3x3 matrix functions</h2>

@@ -58,6 +58,12 @@
 	       (apply vector3 args))))
     (vector3-scale (/ (vector3-norm v)) v)))
 
+(define (vector3-close? v1 v2 tolerance)
+  (and (<= (abs (- (vector-ref v1 0) (vector-ref v2 0))) tolerance)
+       (<= (abs (- (vector-ref v1 1) (vector-ref v2 1))) tolerance)
+       (<= (abs (- (vector-ref v1 2) (vector-ref v2 2))) tolerance)))
+(define (vector3= v1 v2) (vector3-close? v1 v2 0.0))
+
 ; Define polymorphic binary operators (work on both vectors and numbers):
 
 (define (binary+ x y)
