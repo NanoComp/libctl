@@ -368,10 +368,15 @@
 		 0)))
     (do-derivative f x dx tol)))
 
+(define derivative-df car)
+(define derivative-df-err cadr)
+(define derivative-d2f caddr)
+(define derivative-d2f-err cadddr)
+
 (define (derivative f x . dx-and-tol)
   (do-derivative-wrap f x dx-and-tol))
 (define (deriv f x . dx-and-tol)
-  (car (do-derivative-wrap f x dx-and-tol)))
+  (derivative-df (do-derivative-wrap f x dx-and-tol)))
 
 ; Compute both the first and second derivatives at the same time
 ; (using minimal extra function evaluations).
@@ -390,10 +395,5 @@
   (append
    (do-derivative-wrap f-memo x dx-and-tol)
    (do-derivative-wrap f-deriv x dx-and-tol)))
-
-(define (derivative-df d) (car d))
-(define (derivative-df-err d) (cadr d))
-(define (derivative-d2f d) (caddr d))
-(define (derivative-d2f-err d) (cadddr d))
 
 ; ****************************************************************
