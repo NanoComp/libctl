@@ -1,3 +1,7 @@
+2002-08-17  Steven G. Johnson  <stevenj@ab-initio>
+
+	* doc/guile-links.html: added glug
+
 2002-08-16  Steven G. Johnson  <stevenj@ab-initio>
 
 	* base/ctl.c, base/ctl.h.in, base/extern-funcs.scm, configure.ac,
