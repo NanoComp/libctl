@@ -164,6 +164,11 @@ vector3 vector3_cross(vector3 v1,vector3 v2)
   return vnew;
 }
 
+int vector3_equal(vector3 v1, vector3 v2)
+{
+     return (v1.x == v2.x && v1.y == v2.y && v1.z == v2.z);
+}
+
 vector3 matrix3x3_vector3_mult(matrix3x3 m, vector3 v)
 {
   vector3 vnew;
@@ -242,6 +247,13 @@ matrix3x3 matrix3x3_inverse(matrix3x3 m)
      return minv;
 }
 
+int matrix3x3_equal(matrix3x3 m1, matrix3x3 m2)
+{
+     return (vector3_equal(m1.c0, m2.c0)
+	     && vector3_equal(m1.c1, m2.c1)
+	     && vector3_equal(m1.c2, m2.c2));
+}
+
 /**************************************************************************/
 
 /* complex number utilities */
@@ -256,6 +268,11 @@ cnumber make_cnumber(number r, number i)
 cnumber cnumber_conj(cnumber c)
 {
      return make_cnumber(c.re, -c.im);
+}
+
+int cnumber_equal(cnumber c1, cnumber c2)
+{
+     return (c1.re == c2.re && c1.im == c2.im);
 }
 
 vector3 cvector3_re(cvector3 cv)
@@ -279,6 +296,12 @@ cvector3 make_cvector3(vector3 vr, vector3 vi)
      cv.y = make_cnumber(vr.y, vi.y);
      cv.z = make_cnumber(vr.z, vi.z);
      return cv;
+}
+
+int cvector3_equal(cvector3 v1, cvector3 v2)
+{
+     return (vector3_equal(cvector3_re(v1), cvector3_re(v2)) &&
+	     vector3_equal(cvector3_im(v1), cvector3_im(v2)));
 }
 
 matrix3x3 cmatrix3x3_re(cmatrix3x3 cm)
@@ -319,6 +342,12 @@ cmatrix3x3 make_hermitian_cmatrix3x3(number m00, number m11, number m22,
      cm.c2.x = m02; cm.c0.z = cnumber_conj(m02);
      cm.c2.y = m12; cm.c1.z = cnumber_conj(m12);
      return cm;
+}
+
+int cmatrix3x3_equal(cmatrix3x3 m1, cmatrix3x3 m2)
+{
+     return (matrix3x3_equal(cmatrix3x3_re(m1), cmatrix3x3_re(m2)) &&
+	     matrix3x3_equal(cmatrix3x3_im(m1), cmatrix3x3_im(m2)));
 }
 
 /**************************************************************************/

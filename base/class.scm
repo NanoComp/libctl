@@ -121,6 +121,12 @@
    ((list-type-name? type-name) (make-list-type-descriptor type-name))
    (else (error "unknown type" type-name))))
 
+(define (primitive-type? type-name)
+  (or (eq? type-name 'number)
+      (eq? type-name 'integer)
+      (eq? type-name 'function)
+      (eq? type-name 'SCM)))
+
 (define (type-string type-name)
   (let ((desc (get-type-descriptor type-name)))
     (cond

@@ -275,6 +275,185 @@
 
 ; ***************************************************************************
 
+(define (copy-value c0-var-name-str c-var-name-str type-name)
+  (let ((desc (get-type-descriptor type-name)))
+    (cond
+     ((eq? (type-descriptor-kind desc) 'simple)
+      (print c-var-name-str " = " c0-var-name-str ";\n"))
+     ((eq? (type-descriptor-kind desc) 'object)
+      (print (class-copy-function-name type-name) "(&"
+	     c0-var-name-str
+	     ", &" c-var-name-str ");\n"))
+     ((eq? (type-descriptor-kind desc) 'uniform-list)
+      (copy-list c0-var-name-str c-var-name-str
+		 (list-el-type-name type-name))))))
+
+(define (copy-list c0-var-name-str c-var-name-str type-name)
+  (print "{\n")
+  (let ((index-name-str (string-append "i" list-temp-suffix))
+	(saved-list-temp-suffix list-temp-suffix))
+    (set! list-temp-suffix (string-append list-temp-suffix "_t"))
+    (print "int " index-name-str ";\n")
+    (print c-var-name-str ".num_items = "
+	   c0-var-name-str ".num_items;\n")
+    (print c-var-name-str ".items = (" 
+		  (c-type-string type-name)
+		  "*) malloc(sizeof("
+		  (c-type-string type-name) ") * "
+		  c-var-name-str ".num_items);\n")
+    (print "for (" index-name-str " = 0; " index-name-str " < "
+		  c-var-name-str ".num_items; " index-name-str "++) {\n")
+    (copy-value (string-append c0-var-name-str ".items[" index-name-str "]")
+		(string-append c-var-name-str ".items[" index-name-str "]")
+		type-name)
+    (print "}\n")
+    (set! list-temp-suffix saved-list-temp-suffix))
+  (print "}\n"))
+
+(define (class-copy-function-name type-name)
+  (string-append (symbol->c-identifier type-name)
+		 "_copy"))
+
+(define (class-copy-function-decl class)
+  (print "void " 
+		(class-copy-function-name (class-type-name class))
+		"(const " (c-type-string (class-type-name class)) " *o0,"
+		(c-type-string (class-type-name class)) " *o)"))
+
+(define (class-copy-function class)
+  (class-copy-function-decl class)
+  (print "\n{\n")
+  (for-each
+   (lambda (property)
+     (copy-value (string-append "o0->" (symbol->c-identifier 
+					(property-name property)))
+		 (string-append "o->" (symbol->c-identifier 
+				       (property-name property)))
+		 (property-type-name property)))
+   (class-properties class))
+  (let ((subclasses (find-direct-subclasses class)))
+    (for-each
+     (lambda (sc)
+       (print "if (o0->which_subclass == " (class-enum-name sc) ") {\n")
+       (print "o->which_subclass = " (class-enum-name sc) ";\n")
+       (print "o->subclass." (class-identifier sc)
+		     "_data = (" (class-identifier sc)
+		     "*) malloc(sizeof("
+		     (class-identifier sc) "));\n")
+       (print (class-copy-function-name (class-type-name sc)) 
+	      "(o0->subclass." (class-identifier sc) 
+	      "_data, o->subclass." (class-identifier sc) "_data);\n"
+	      "}\nelse "))
+     subclasses)
+   (if (not (null? subclasses))
+       (begin
+	 (print "\n")
+	 (print "o->which_subclass = " 
+		       (class-enum-name class) "_SELF;\n"))))
+  (print "}\n\n"))
+
+(define (output-class-copy-functions-header)
+  (print "/******* class copy function prototypes *******/\n\n")
+  (for-each
+   (lambda (class)
+     (print "extern ") (class-copy-function-decl class)
+     (print ";\n"))
+   class-list)
+  (print "\n"))
+
+(define (output-class-copy-functions-source)
+  (print "/******* class copy functions *******/\n\n")
+  (for-each class-copy-function class-list))
+
+; ***************************************************************************
+
+(define (equal-value c0-var-name-str c-var-name-str type-name)
+  (let ((desc (get-type-descriptor type-name)))
+    (cond
+     ((primitive-type? type-name)
+      (print "if (" c-var-name-str " != " c0-var-name-str ") return 0;\n"))
+     ((eq? type-name 'string)
+      (print "if (strcmp(" c-var-name-str ", " c0-var-name-str
+	     ")) return 0;\n"))
+     ((eq? (type-descriptor-kind desc) 'simple)
+      (print "if (!" type-name "_equal("
+	     c-var-name-str ", " c0-var-name-str ")) return 0;\n"))
+     ((eq? (type-descriptor-kind desc) 'object)
+      (print "if (!" (class-equal-function-name type-name) "(&"
+	     c0-var-name-str
+	     ", &" c-var-name-str ")) return 0;\n"))
+     ((eq? (type-descriptor-kind desc) 'uniform-list)
+      (equal-list c0-var-name-str c-var-name-str
+		 (list-el-type-name type-name))))))
+
+(define (equal-list c0-var-name-str c-var-name-str type-name)
+  (print "{\n")
+  (let ((index-name-str (string-append "i" list-temp-suffix))
+	(saved-list-temp-suffix list-temp-suffix))
+    (set! list-temp-suffix (string-append list-temp-suffix "_t"))
+    (print "int " index-name-str ";\n")
+    (print "if (" c-var-name-str ".num_items != "
+	   c0-var-name-str ".num_items) return 0;\n")
+    (print "for (" index-name-str " = 0; " index-name-str " < "
+	   c-var-name-str ".num_items; " index-name-str "++) {\n")
+    (equal-value (string-append c0-var-name-str ".items[" index-name-str "]")
+		 (string-append c-var-name-str ".items[" index-name-str "]")
+		 type-name)
+    (print "}\n")
+    (set! list-temp-suffix saved-list-temp-suffix))
+  (print "}\n"))
+
+(define (class-equal-function-name type-name)
+  (string-append (symbol->c-identifier type-name)
+		 "_equal"))
+
+(define (class-equal-function-decl class)
+  (print "boolean " 
+		(class-equal-function-name (class-type-name class))
+		"(const " (c-type-string (class-type-name class)) " *o0, "
+		"const " (c-type-string (class-type-name class)) " *o)"))
+
+(define (class-equal-function class)
+  (class-equal-function-decl class)
+  (print "\n{\n")
+  (for-each
+   (lambda (property)
+     (equal-value (string-append "o0->" (symbol->c-identifier 
+					(property-name property)))
+		 (string-append "o->" (symbol->c-identifier 
+				       (property-name property)))
+		 (property-type-name property)))
+   (class-properties class))
+  (let ((subclasses (find-direct-subclasses class)))
+    (if (not (null? subclasses))
+	(print "if (o0->which_subclass != o->which_subclass) return 0;\n"))
+    (for-each
+     (lambda (sc)
+       (print "if (o0->which_subclass == " (class-enum-name sc) ") {\n")
+       (print "if (!" (class-equal-function-name (class-type-name sc)) 
+	      "(o0->subclass." (class-identifier sc) 
+	      "_data, o->subclass." (class-identifier sc) "_data)) return 0;\n"
+	      "}\nelse "))
+     subclasses)
+    (print ";\n"))
+  (print "return 1;\n")
+  (print "}\n\n"))
+
+(define (output-class-equal-functions-header)
+  (print "/******* class equal function prototypes *******/\n\n")
+  (for-each
+   (lambda (class)
+     (print "extern ") (class-equal-function-decl class)
+     (print ";\n"))
+   class-list)
+  (print "\n"))
+
+(define (output-class-equal-functions-source)
+  (print "/******* class equal functions *******/\n\n")
+  (for-each class-equal-function class-list))
+
+; ***************************************************************************
+
 (define (export-object-value c-var-name-str type-name exporter)
   (error "object output variables are not yet supported. "
 	 type-name c-var-name-str))
@@ -603,6 +782,8 @@
   (print "extern SCM destroy_output_vars(void);\n\n")
   (output-external-functions-header)
   (output-class-input-functions-header)
+  (output-class-copy-functions-header)
+  (output-class-equal-functions-header)
   (output-class-destruction-functions-header)
 )
 
@@ -612,6 +793,8 @@
    "int num_read_input_vars = 0; /* # calls to read_input_vars */\n"
    "int num_write_output_vars = 0; /* # calls to read_input_vars */\n\n")
   (output-class-input-functions-source)
+  (output-class-copy-functions-source)
+  (output-class-equal-functions-source)
   (output-class-destruction-functions-source)
   (input-vars-function)
   (output-vars-function)
