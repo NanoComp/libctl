@@ -360,7 +360,7 @@ SCM matrix3x32scm(matrix3x3 m)
 
 cnumber scm2cnumber(SCM sx)
 {
-     if (scm_real_p(sx))
+     if (scm_real_p(sx) && !(SCM_NIMP(sx) && SCM_INEXP(sx) && SCM_CPLXP(sx)))
 	  return make_cnumber(gh_scm2double(sx), 0.0);
      else
 	  return make_cnumber(SCM_REALPART(sx), SCM_IMAG(sx));
