@@ -130,7 +130,7 @@ void main_entry(int argc, char *argv[])
       strcpy(definestr,"(define ");
       strcat(definestr,argv[i]);
       strcat(definestr,")");
-      *eq = strchr(definestr,'=');
+      eq = strchr(definestr,'=');
       *eq = ' ';
       gh_eval_str(definestr);
       free(definestr);
