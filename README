@@ -1,16 +1,17 @@
-Steven G. Johnson
-[started 4/23/98]
+This is libctl, a Guile-based library for supporting flexible control
+files in scientific simulations.  libctl is copyright (c) 1998 by
+Steven G. Johnson.
 
-This is libctl, a parser and interpreter library for the ctl
-control-file language.
+Documentation can be found in the doc/ directory, and an example
+program in the examples/ directory.  The main source code for libctl
+is in the src/ and utils/ directories.
 
-We use GUILE, GNU's Ubiquitous Intelligent Language for Extension, a
-library implementation of the Scheme language plus various convenient
-facilities. Guile is designed so that you can link it into an
-application or utility to make it extensible.  You can find out more
-about Guile at:
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Library General Public
+License as published by the Free Software Foundation; either
+version 2 of the License, or (at your option) any later version.
 
-	Unofficial Guile Home Page: http://www.red-bean.com/guile/
-	GNU Project Guile Page: http://www.gnu.org/software/guile/guile.html
-
-To get started, you might want to look at examples/README.
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Library General Public License for more details.
