@@ -112,6 +112,21 @@
 		     shift-vector min-multiple max-multiple go))
 		  go-list)))
 
+(define (geometric-objects-lattice-duplicates go-list)
+  (let ((b1 (object-property-value geometry-lattice 'basis1))
+	(b2 (object-property-value geometry-lattice 'basis2))
+	(b3 (object-property-value geometry-lattice 'basis3))
+	(n1 (vector-ref (object-property-value geometry-lattice 'size) 0))
+	(n2 (vector-ref (object-property-value geometry-lattice 'size) 1))
+	(n3 (vector-ref (object-property-value geometry-lattice 'size) 2)))
+    (geometric-objects-duplicates
+     b1 (- (floor (/ (- n1 1) 2))) (ceiling (/ (- n1 1) 2))
+     (geometric-objects-duplicates
+      b2 (- (floor (/ (- n2 1) 2))) (ceiling (/ (- n2 1) 2))
+      (geometric-objects-duplicates
+       b3 (- (floor (/ (- n3 1) 2))) (ceiling (/ (- n3 1) 2))
+       go-list)))))
+
 ; ****************************************************************
 
 (define-input-var dimensions 3 'integer)
