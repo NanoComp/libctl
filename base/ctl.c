@@ -95,6 +95,7 @@ char *ctl_fix_path(const char *path)
      }
      newpath = (char *) malloc(sizeof(char) * (strlen(path) + 1));
      strcpy(newpath, path);
+     return newpath;
 }
 
 /**************************************************************************/
