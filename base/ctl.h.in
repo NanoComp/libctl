@@ -155,9 +155,9 @@ extern boolean ctl_get_boolean(char *identifier);
 extern char* ctl_get_string(char *identifier);
 extern vector3 ctl_get_vector3(char *identifier);
 extern matrix3x3 ctl_get_matrix3x3(char *identifier);
-extern list ctl_get_list(identifier);
-extern object ctl_get_object(identifier);
-extern function ctl_get_function(identifier);
+extern list ctl_get_list(char *identifier);
+extern object ctl_get_object(char *identifier);
+extern function ctl_get_function(char *identifier);
 
 extern void ctl_set_integer(char *identifier, integer value);
 extern void ctl_set_number(char *identifier, number value);
