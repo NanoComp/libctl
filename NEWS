@@ -1,4 +1,4 @@
-libctl 1.5
+libctl 1.5 (11/15/2001)
 
   * geometry-lattice now has a separate basis-size property, so that you
     can specify the basis vectors as being something other than unit vectors.
