@@ -92,29 +92,31 @@ boolean point_in_objectp(vector3 p, geometric_object o)
 material_type material_of_point(vector3 p)
 {
   int index, i, j, k;
-  vector3 shift = { 0, 0, 0 };
 
   for (index = 0; index < geometry.num_items; ++index) {
     if (ensure_periodicity)
       switch (dimensions) {
       case 1:
 	for (i = -1; i <= 1; ++i) {
-	  shift = vector3_scale(i * geometry_lattice.size.x,
+	  vector3 shift1;
+	  shift1 = vector3_scale(i * geometry_lattice.size.x,
 				geometry_lattice.basis1);
-	  if (point_in_objectp(vector3_plus(p,shift),
+	  if (point_in_objectp(vector3_plus(p,shift1),
 			       geometry.items[index]))
 	    return(geometry.items[index].material);
 	}
 	break;
       case 2:
 	for (i = -1; i <= 1; ++i) {
-	  shift = vector3_scale(i * geometry_lattice.size.x,
+	  vector3 shift1;
+	  shift1 = vector3_scale(i * geometry_lattice.size.x,
 				geometry_lattice.basis1);
 	  for (j = -1; j <= 1; ++j) {
-	    shift = vector3_plus(shift,
+	    vector3 shift2;
+	    shift2 = vector3_plus(shift1,
 				 vector3_scale(j * geometry_lattice.size.y,
 					       geometry_lattice.basis2));
-	    if (point_in_objectp(vector3_plus(p,shift),
+	    if (point_in_objectp(vector3_plus(p,shift2),
 				 geometry.items[index]))
 	      return(geometry.items[index].material);
 	  }
@@ -122,19 +124,22 @@ material_type material_of_point(vector3 p)
 	break;
       case 3:
 	for (i = -1; i <= 1; ++i) {
-	  shift = vector3_scale(i * geometry_lattice.size.x,
+	  vector3 shift1;
+	  shift1 = vector3_scale(i * geometry_lattice.size.x,
 				geometry_lattice.basis1);
 	  for (j = -1; j <= 1; ++j) {
-	    shift = vector3_plus(shift,
+	    vector3 shift2;
+	    shift2 = vector3_plus(shift1,
 				 vector3_scale(j * geometry_lattice.size.y,
 					       geometry_lattice.basis2));
 					       
 	    for (k = -1; k <= 1; ++k) {
-	      shift = vector3_plus(shift,
+	      vector3 shift3;
+	      shift3 = vector3_plus(shift2,
 				   vector3_scale(k * geometry_lattice.size.z,
 						 geometry_lattice.basis3));
 						 
-	      if (point_in_objectp(vector3_plus(p,shift),
+	      if (point_in_objectp(vector3_plus(p,shift3),
 				   geometry.items[index]))
 		return(geometry.items[index].material);
 	    }
