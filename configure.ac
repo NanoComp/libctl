@@ -3,10 +3,22 @@ AC_INIT
 AC_CONFIG_SRCDIR([base/ctl.c])
 AC_CONFIG_HEADER([base/ctl.h base/f77_func.h])
 
+###########################################################################
+
 LIBCTL_VERSION=2.1.1
 AC_DEFINE_UNQUOTED(LIBCTL_VERSION, "$LIBCTL_VERSION",
 	   	   [Define to version string for libctl.])
 AC_SUBST(LIBCTL_VERSION)
+
+LIBCTL_MAJOR_VERSION=`echo $LIBCTL_VERSION |cut -d. -f1`
+LIBCTL_MINOR_VERSION=`echo $LIBCTL_VERSION |cut -d. -f2`
+LIBCTL_BUGFIX_VERSION=`echo $LIBCTL_VERSION |cut -d. -f3`
+test "x$LIBCTL_BUGFIX_VERSION" = x && LIBCTL_BUGFIX_VERSION=0
+AC_DEFINE_UNQUOTED(LIBCTL_MAJOR_VERSION, $LIBCTL_MAJOR_VERSION)
+AC_DEFINE_UNQUOTED(LIBCTL_MINOR_VERSION, $LIBCTL_MINOR_VERSION)
+AC_DEFINE_UNQUOTED(LIBCTL_BUGFIX_VERSION, $LIBCTL_BUGFIX_VERSION)
+
+###########################################################################
 
 # Checks for programs.
 AC_PROG_CC

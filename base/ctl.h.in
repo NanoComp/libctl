@@ -35,6 +35,9 @@ extern "C" {
 
 /* set to version string */
 #undef LIBCTL_VERSION
+#undef LIBCTL_MAJOR_VERSION
+#undef LIBCTL_MINOR_VERSION
+#undef LIBCTL_BUGFIX_VERSION
 
 /* Define if you have gh_load */
 #undef HAVE_GH_LOAD
