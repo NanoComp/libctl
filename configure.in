@@ -82,6 +82,12 @@ AC_TRY_LINK([#include <guile/gh.h>
 ], gh_length(0);, AC_DEFINE(HAVE_GH_LENGTH), ok=no)
 AC_MSG_RESULT($ok)
 
+AC_MSG_CHECKING([for scm_flush_all_ports])
+ok=yes
+AC_TRY_LINK([#include <guile/gh.h>
+], scm_flush_all_ports();, AC_DEFINE(HAVE_SCM_FLUSH_ALL_PORTS), ok=no)
+AC_MSG_RESULT($ok)
+
 AC_MSG_CHECKING([whether gh_lookup works properly])
 ok=yes
 AC_TRY_RUN([

@@ -48,6 +48,9 @@ extern "C" {
 /* Define if you have gh_length */
 #undef HAVE_GH_LENGTH
 
+/* define if you have scm_flush_all_ports() */
+#undef HAVE_SCM_FLUSH_ALL_PORTS
+
 /* Define if gh_lookup is not broken */
 #undef GH_LOOKUP_OK
 

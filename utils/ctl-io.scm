@@ -537,6 +537,8 @@
    (list->indices (external-function-arg-type-names external-function) 0))
   (newline)
 
+  (display "#ifdef HAVE_SCM_FLUSH_ALL_PORTS\nscm_flush_all_ports();\n#endif\n")
+
   (if (not (eq? (external-function-return-type-name external-function)
                 no-return-value))
       (display "return_val_c = "))
@@ -549,6 +551,8 @@
      (display-many "arg_c_" argnum))
    (list->indices (external-function-arg-type-names external-function) 0))
   (display-many ");\n\n")
+
+  (display "fflush(stdout); fflush(stderr);\n")
 
   (for-each
    (lambda (arg-type-name argnum)

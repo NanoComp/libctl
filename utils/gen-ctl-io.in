@@ -55,6 +55,7 @@ cat > $output_dir/ctl-io.c <<EOF
 /* generated from the file: $1 */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <ctl-io.h>
 
 EOF
