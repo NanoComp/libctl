@@ -47,6 +47,9 @@
    (matrix3x3-row m 1)
    (matrix3x3-row m 2)))
 
+(define (matrix3x3-conj m) (vector-map vector3-conj m))
+(define (matrix3x3-adjoint m) (matrix3x3-conj (matrix3x3-transpose m)))
+
 (define (matrix3x3+ m1 m2)
   (vector-map vector3+ m1 m2))
 (define (matrix3x3- m1 m2)

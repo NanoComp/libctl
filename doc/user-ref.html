@@ -74,11 +74,36 @@ on the command-line, include <code><i>name</i>=<i>value</i></code> on
 the command-line when the program is executed.  In all other respects,
 <code><i>name</i></code> is an ordinary Scheme variable.
 
-<dt><code>(set-param! <i>name</i> <i>new-default-value</i>)</code>
+<p><dt><code>(set-param! <i>name</i> <i>new-default-value</i>)</code>
 <dd>Like <code>set!</code>, but does nothing if
 <code><i>name</i></code> was set on the command line.
 
 </dl>
+
+<h2>Complex numbers</h2>
+
+<p>Scheme includes full support for complex numbers and arithmetic;
+all of the ordinary operations (<code>+</code>, <code>*</code>,
+<code>sqrt</code>, etcetera) just work.  For the same reason, you can
+freely use complex numbers in libctl's vector and matrix functions,
+below.
+
+<p>To specify a complex number <i>a</i>+<i>b</i>i, you simply use the
+syntax <code><i>a</i>+<i>b</i>i</code> if <i>a</i> and <i>b</i> are
+constants, and <code>(make-rectangular <i>a</i> <i>b</i>)</code>
+otherwise.  (You can also specify numbers in "polar" format
+a*e<sup><small>ib</small></sup> by the syntax
+<code><i>a</i>@<i>b</i></code> or <code>(make-polar <i>a</i>
+<i>b</i>)</code>.)
+
+<p>There are a few special functions provided by Scheme to manipulate
+complex numbers.  <code>(real-part <i>z</i>)</code> and
+<code>(imag-part <i>z</i>)</code> return the real and imaginary parts
+of <code><i>z</i></code>, respectively.  <code>(abs <i>z</i>)</code>
+or <code>(magnitude <i>z</i>)</code> returns the absolute value, and
+<code>(angle <i>z</i>)</code> returns the phase angle.  libctl also
+provides a <code>(conj <i>z</i>)</code> function, below, to return the
+complex conjugate.
 
 <h2>3-vector functions</h2>
 
@@ -109,7 +134,7 @@ the other is a vector, then scales the vector by the number.
 <dd>Returns the cross product of <code><i>v1</i></code> and <code><i>v2</i></code>.
 
 <p><dt><code>(vector3-cdot <i>v1 v2</i>)</code>
-<dd>Returns the conjugated dot product <code>(vector3-dot (conj <i>v1</i>) <i>v2</i>)</code>.
+<dd>Returns the conjugated dot product: <i>v1</i>* dot <i>v2</i>.
 
 <p><dt><code>(vector3-norm <i>v</i>)</code>
 <dd>Returns the length <code>(sqrt (vector3-cdot v v))</code> of the
@@ -148,9 +173,11 @@ between degrees and radians.
 <dd>Creates a 3x3 matrix with the given 3-vectors as its columns.
 
 <p><dt><code>(matrix3x3-transpose <i>m</i>)</code>
+<dt><code>(matrix3x3-adjoint <i>m</i>)</code>
 <dt><code>(matrix3x3-determinant <i>m</i>)</code>
 <dt><code>(matrix3x3-inverse <i>m</i>)</code>
-<dd>Return the transpose, determinant, or inverse of the given matrix.
+<dd>Return the transpose, adjoint (conjugate transpose), determinant,
+or inverse of the given matrix.
 
 <p><dt><code>(matrix3x3+ <i>m1 m2</i>)</code>
 <dt><code>(matrix3x3- <i>m1 m2</i>)</code>
