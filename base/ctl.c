@@ -1,12 +1,36 @@
 #include "ctl.h"
 
+/**************************************************************************/
+
+/* Functions missing from Guile 1.2: */
+
 #ifndef HAVE_GUILE_1_3
+
 /* Guile 1.2 is missing gh_bool2scm for some reason; redefine: */
 #define gh_bool2scm bool2scm
 SCM bool2scm(int b) { return (b ? SCM_BOOL_T : SCM_BOOL_F); }
 
 #define gh_length gh_list_length
 #define gh_vector_ref gh_vref
+
+/* Guile 1.2 doesn't have the gh_list_ref function.  Sigh. */
+/* Note: index must be in [0,list_length(l) - 1].  We don't check! */
+static SCM list_ref(list l, int index)
+{
+  SCM cur = SCM_UNSPECIFIED, rest = l;
+
+  while (index >= 0) {
+    cur = gh_car(rest);
+    rest = gh_cdr(rest);
+    --index;
+  }
+  return cur;
+}
+
+#else /* Guile 1.3 */
+
+#define list_ref(l,index) gh_list_ref(l,gh_int2scm(index))
+
 #endif
 
 /**************************************************************************/
@@ -165,20 +189,6 @@ void ctl_set_object(char *identifier, object value)
 int list_length(list l)
 {
   return(gh_length(l));
-}
-
-/* Guile 1.2 doesn't have the gh_list_ref function.  Sigh. */
-/* Note: index must be in [0,list_length(l) - 1].  We don't check! */
-static SCM list_ref(list l, int index)
-{
-  SCM cur = SCM_UNSPECIFIED, rest = l;
-
-  while (index >= 0) {
-    cur = gh_car(rest);
-    rest = gh_cdr(rest);
-    --index;
-  }
-  return cur;
 }
 
 integer integer_list_ref(list l, int index)

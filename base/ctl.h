@@ -27,8 +27,10 @@ typedef struct {
 
   /* vector3 utilities: */
 
-#define vector3_dot(v1,v2) (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z)
-#define vector3_norm(v) sqrt(vector3_dot(v,v))
+#include <math.h>
+
+#define vector3_dot(v1,v2) ((v1).x*(v2).x + (v1).y*(v2).y + (v1).z*(v2).z)
+#define vector3_norm(v) sqrt(vector3_dot((v),(v)))
 
 extern vector3 vector3_scale(number s, vector3 v);
 extern vector3 vector3_cross(vector3 v1,vector3 v2);
