@@ -26,8 +26,12 @@
 
 #ifdef CXX_CTL_IO
 #define MATERIAL_TYPE ctlio::material_type
+#define GEOMETRIC_OBJECT ctlio::geometric_object
+#define GEOMETRIC_OBJECT_LIST ctlio::geometric_object_list
 #else
 #define MATERIAL_TYPE material_type
+#define GEOMETRIC_OBJECT geometric_object
+#define GEOMETRIC_OBJECT_LIST geometric_object_list
 #endif
 
 #ifdef __cplusplus
@@ -36,20 +40,20 @@ extern "C" {
 
 /**************************************************************************/
 
-extern void geom_fix_object(geometric_object o);
+extern void geom_fix_object(GEOMETRIC_OBJECT o);
 extern void geom_fix_objects(void);
-extern void geom_fix_objects0(geometric_object_list geometry);
-extern boolean point_in_objectp(vector3 p, geometric_object o);
-extern boolean point_in_periodic_objectp(vector3 p, geometric_object o);
-extern boolean point_in_fixed_objectp(vector3 p, geometric_object o);
-extern boolean point_in_periodic_fixed_objectp(vector3 p, geometric_object o);
+extern void geom_fix_objects0(GEOMETRIC_OBJECT_LIST geometry);
+extern boolean point_in_objectp(vector3 p, GEOMETRIC_OBJECT o);
+extern boolean point_in_periodic_objectp(vector3 p, GEOMETRIC_OBJECT o);
+extern boolean point_in_fixed_objectp(vector3 p, GEOMETRIC_OBJECT o);
+extern boolean point_in_periodic_fixed_objectp(vector3 p, GEOMETRIC_OBJECT o);
 extern MATERIAL_TYPE material_of_point_inobject(vector3 p, boolean *inobject);
 extern MATERIAL_TYPE material_of_point_inobject0(
-     geometric_object_list geometry, vector3 p, boolean *inobject);
+     GEOMETRIC_OBJECT_LIST geometry, vector3 p, boolean *inobject);
 extern MATERIAL_TYPE material_of_point(vector3 p);
-extern MATERIAL_TYPE material_of_point0(geometric_object_list geometry,
+extern MATERIAL_TYPE material_of_point0(GEOMETRIC_OBJECT_LIST geometry,
 					vector3 p);
-extern void display_geometric_object_info(int indentby, geometric_object o);
+extern void display_GEOMETRIC_OBJECT_info(int indentby, GEOMETRIC_OBJECT o);
 extern matrix3x3 square_basis(matrix3x3 lattice_basis, vector3 size);
 
 typedef struct {
@@ -58,7 +62,7 @@ typedef struct {
 
 typedef struct {
      geom_box box;
-     geometric_object *o;
+     GEOMETRIC_OBJECT *o;
      vector3 shiftby;
 } geom_box_object;
 
@@ -71,11 +75,11 @@ typedef struct geom_box_tree_struct {
 
 extern void destroy_geom_box_tree(geom_box_tree t);
 extern geom_box_tree create_geom_box_tree(void);
-extern geom_box_tree create_geom_box_tree0(geometric_object_list geometry);
+extern geom_box_tree create_geom_box_tree0(GEOMETRIC_OBJECT_LIST geometry);
 extern MATERIAL_TYPE material_of_point_in_tree_inobject(vector3 p, geom_box_tree t, boolean *inobject);
-extern MATERIAL_TYPE material_of_point_in_tree_inobject0(geometric_object_list geometry, vector3 p, geom_box_tree t, boolean *inobject);
+extern MATERIAL_TYPE material_of_point_in_tree_inobject0(GEOMETRIC_OBJECT_LIST geometry, vector3 p, geom_box_tree t, boolean *inobject);
 extern MATERIAL_TYPE material_of_point_in_tree(vector3 p, geom_box_tree t);
-extern MATERIAL_TYPE material_of_point_in_tree0(geometric_object_list geometry, vector3 p, geom_box_tree t);
+extern MATERIAL_TYPE material_of_point_in_tree0(GEOMETRIC_OBJECT_LIST geometry, vector3 p, geom_box_tree t);
 extern void display_geom_box_tree(int indentby, geom_box_tree t);
 extern void geom_box_tree_stats(geom_box_tree t, int *depth, int *nobjects);
 

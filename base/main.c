@@ -138,7 +138,7 @@ void main_entry(int argc, char *argv[])
   gh_new_procedure ("write-output-vars", write_output_vars, 0, 0, 0);
 
   /* Export the subplex minimization routine: */
-  gh_new_procedure ("subplex", subplex_scm, 7, 0, 0);
+  gh_new_procedure ("subplex", (SCM (*)(void)) subplex_scm, 7, 0, 0);
 
 #ifdef HAVE_CTL_EXPORT_HOOK
   ctl_export_hook();
