@@ -155,3 +155,68 @@
 
 (define-external-function square-basis false false
   'matrix3x3 'matrix3x3 'vector3)
+
+; ****************************************************************
+; Cartesian conversion and rotation for lattice and reciprocal coords:
+
+; The following conversion routines work for vector3 and matrix3x3 arguments:
+
+(define (lattice->cartesian x)
+  (if (vector3? x)
+      (matrix3x3*
+       (object-property-value geometry-lattice 'basis) x)
+      (matrix3x3* 
+       (matrix3x3* 
+	(object-property-value geometry-lattice 'basis) x)
+       (matrix3x3-inverse (object-property-value geometry-lattice 'basis)))))
+
+(define (cartesian->lattice x)
+  (if (vector3? x)
+      (matrix3x3*
+       (matrix3x3-inverse (object-property-value geometry-lattice 'basis)) x)
+      (matrix3x3* 
+       (matrix3x3*
+	(matrix3x3-inverse (object-property-value geometry-lattice 'basis)) x)
+       (object-property-value geometry-lattice 'basis))))
+
+(define (reciprocal->cartesian x)
+  (let ((s (object-property-value geometry-lattice 'size)))
+    (let ((Rst
+	   (matrix3x3-transpose
+	    (matrix3x3* (object-property-value geometry-lattice 'basis)
+			(matrix3x3 (vector3 (vector3-x s) 0 0)
+				   (vector3 0 (vector3-y s) 0)
+				   (vector3 0 0 (vector3-z s)))))))
+      (if (vector3? x)
+	  (vector3-scale 6.2831853071795864769252867665590057683943388
+			 (matrix3x3* (matrix3x3-inverse Rst) x))
+	  (matrix3x3* (matrix3x3* (matrix3x3-inverse Rst) x) Rst)))))
+
+(define (cartesian->reciprocal x)
+  (let ((s (object-property-value geometry-lattice 'size)))
+    (let ((Rst
+	   (matrix3x3-transpose
+	    (matrix3x3* (object-property-value geometry-lattice 'basis)
+			(matrix3x3 (vector3 (vector3-x s) 0 0)
+				   (vector3 0 (vector3-y s) 0)
+				   (vector3 0 0 (vector3-z s)))))))
+      (if (vector3? x)
+	  (vector3-scale (/ 6.2831853071795864769252867665590057683943388)
+			 (matrix3x3* Rst x))
+	  (matrix3x3* (matrix3x3* Rst x) (matrix3x3-inverse Rst))))))
+
+; rotate vectors in lattice/reciprocal coords (note that the axis
+; is also given in the corresponding basis):
+
+(define (rotate-lattice-vector3 axis theta v)
+  (cartesian->lattice
+   (rotate-vector3 (lattice->cartesian axis) theta
+		   (lattice->cartesian v))))
+
+(define (rotate-reciprocal-vector3 axis theta v)
+  (cartesian->reciprocal
+   (rotate-vector3 (reciprocal->cartesian axis) theta
+		   (reciprocal->cartesian v))))
+
+; ****************************************************************
+
