@@ -22,15 +22,15 @@ install: libs install-recursive
 
 libs: libs-recursive
 
-clean: clean-recursive
-	rm -f core
-
 dist:
 	cvs export -D now -d $(distdir) $(package)
 	pushd $(distdir) && autoconf && popd
 	rm -f $(distdir).tar.gz
 	GZIP="--best" tar chozf $(distdir).tar.gz $(distdir)
 	rm -rf $(distdir)
+
+clean: clean-recursive
+	rm -f core
 
 distclean: clean
 	@list='$(SUBDIRS)'; for subdir in $$list; do \
