@@ -19,6 +19,14 @@
 ; Steven G. Johnson can be contacted at stevenj@alum.mit.edu.
 
 ; ****************************************************************
+; define-param: defining local variables that can be set easily
+; from the command-line (or assume a default value if not set).
+
+(defmacro-public define-param (name value)
+  `(if (not (defined? (quote ,name)))
+       (define ,name ,value)))
+
+; ****************************************************************
 ; Input/Output variables.
 
 (define input-var-list '())

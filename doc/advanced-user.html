@@ -49,6 +49,30 @@ anything else you might otherwise do in a ctl file. It is possible
 that your program supports other calls than just <code>(run)</code>,
 in which case you could control it on an even more detailed leve.
 
+<h2>Command-line Parameters</h2>
+
+It is often useful to be able to set parameters of your ctl file from
+the command-line when you run the program.  For example, you might
+want to vary the radius of some object with each run.  To do this,
+you would define a parameter <code>R</code> in your ctl file:
+
+<pre>
+(define-param R 0.2)
+</pre>
+
+<p>You would then use <code>R</code> instead of a numeric value
+whenever you wanted this radius.  If nothing is specified on the
+command-line, <code>R</code> will take on a default value of
+<code>0.2</code>.  However, you can change the value of <code>R</code>
+on a particular run by specifying <code>R=<i>value</i></code> on the
+command-line.  For instance, to set <code>R</code> to 0.3, you would use:
+
+<pre>
+<i>program</i> <i>ctl-file</i> R=0.3
+</pre>
+
+<p>You can have as many command-line parameters as you want.
+
 <h2>Programmatic Parameter Setting</h2>
 
 A simple use of the programmatic features of Scheme is to give you

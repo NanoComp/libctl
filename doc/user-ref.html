@@ -62,6 +62,20 @@ when it is invoked.
 
 </dl>
 
+<h2>Command-line parameters</h2>
+
+<dl>
+
+<dt><code>(define-param <i>name</i> <i>default-value</i>)</code>
+<dd>Define a variable <code><i>name</i></code> whose value can be set
+from the command line, and which assumes a value
+<code><i>default-value</i></code> if it is not set.  To set the value
+on the command-line, include <code><i>name</i>=<i>value</i></code> on
+the command-line when the program is executed.  In all other respects,
+<code><i>name</i></code> is an ordinary Scheme variable.
+
+</dl>
+
 <h2>3-vector functions</h2>
 
 <dl>

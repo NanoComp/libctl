@@ -38,12 +38,16 @@
 (define M-point (vector3 0.5 0.5))
 (set! k-points (interpolate 4 (list Gamma-point X-point M-point Gamma-point)))
 
+; Define a parameter, R, that can be set from the command-line (e.g.
+; by "R=0.3", and which assumes a default value of 0.1 if not set:
+(define-param R 0.1)  ; (used as the radius of the sphere, below)
+
 ; Set the geometry:
 (set! geometry
       (list
        (make cylinder (material air) (center 2 0)
 	(radius 0.2) (height 0.5) (axis 3 4))
-       (make sphere (material GaAs) (center 0.1 -0.1) (radius 0.1))
+       (make sphere (material GaAs) (center 0.1 -0.1) (radius R))
        (make block (material AlOx) (center 1 2) (size 3.2 2.3))
        (make block (material air) (center 1 2) (size 3.2 2.3) (e2 1 1))))
 

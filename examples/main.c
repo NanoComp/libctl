@@ -29,6 +29,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <guile/gh.h>
 
 #include <ctl-io.h>
@@ -68,14 +69,30 @@ void main_entry(int argc, char *argv[])
   ctl_include(SPEC_SCM);
 #endif
 
+  /* define any variables specified on the command line */
+  for (i = 1; i < argc; ++i) {
+    char *eq = strchr(argv[i],'=');
+    if (eq) {
+      char *definestr = malloc(strlen("(define ") + strlen(argv[i]) + 2);
+      *eq = ' ';
+      strcpy(definestr,"(define ");
+      strcat(definestr,argv[i]);
+      strcat(definestr,")");
+      gh_eval_str(definestr);
+      free(definestr);
+      argv[i][0] = 0;
+    }
+  }
+
   /* load any scheme files specified on the command-line: */
   for (i = 1; i < argc; ++i)
-    ctl_include(argv[i]);
+    if (argv[i][0])
+      ctl_include(argv[i]);
 
   /* if read-input-vars was never called, drop into interactive mode: */
   /* (the num_read_input_vars count is kept by ctl-io in read_input_vars) */
   if (num_read_input_vars == 0)
-    gh_repl(argc, argv);
+    gh_repl(0, argv); /* pass 0 for argc since we have already handled args */
 }
 
 int main (int argc, char *argv[])
