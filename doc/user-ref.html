@@ -299,16 +299,18 @@ points!
 
 <p><dt><code>(derivative <i>function x [dx tolerance]</i>)</code>
 <dt><code>(deriv <i>function x [dx tolerance]</i>)</code>
+<dt><code>(deriv <i>function x [dx tolerance]</i>)</code>
 <dt><code>(derivative2 <i>function x [dx tolerance]</i>)</code>
+<dt><code>(deriv2 <i>function x [dx tolerance]</i>)</code>
 
 <dd>Compute the numerical derivative of the given
-<code><i>function</i></code> at <code><i>x</i></code> to within the
-specified fractional <code><i>tolerance</i></code> (defaulting to the
-maximum achievable tolerance), using Ridder's method of polynomial
-extrapolation.  <code><i>dx</i></code> should be a <i>maximum</i>
-displacement in <code><i>x</i></code> for derivative evaluation; the
-<code><i>function</i></code> should change by a significant amount
-(much larger than the numerical precision) over
+<code><i>function</i></code> at <code><i>x</i></code> to within <em>at
+best</em> the specified fractional <code><i>tolerance</i></code>
+(defaulting to the maximum achievable tolerance), using Ridder's
+method of polynomial extrapolation.  <code><i>dx</i></code> should be
+a <i>maximum</i> displacement in <code><i>x</i></code> for derivative
+evaluation; the <code><i>function</i></code> should change by a
+significant amount (much larger than the numerical precision) over
 <code><i>dx</i></code>.  <code><i>dx</i></code> defaults to 1% of
 <code><i>x</i></code> or <code>0.01</code>, whichever is larger.
 
@@ -318,14 +320,33 @@ and <code>(derivative-df-err result)</code> give the derivative of the
 function and an estimate of the numerical error in the derivative,
 respectively.
 
-<p>The <code>deriv</code> function is identical to
-<code>derivative</code> except that it returns the derivative value
-directly (no need to call <code>derivative-df</code>).  The
-<code>derivative2</code> function computes both the first and second
-derivatives, using minimal extra function evaluations; the second
-derivative and its error are then obtained by <code>(derivative-d2f
-result)</code> and <code>(derivative-d2f-err result)</code>.
+<p>The <code>derivative2</code> function computes both the first and
+second derivatives, using minimal extra function evaluations; the
+second derivative and its error are then obtained by
+<code>(derivative-d2f result)</code> and <code>(derivative-d2f-err
+result)</code>.
 
+<p><code>deriv</code> and <code>deriv2</code> are identical to
+<code>derivative</code> and <code>derivative2</code>, except that they
+directly return the value of the first and second derivatives,
+respectively (no need to call <code>derivative-df</code> or
+<code>derivative-d2f</code>).  (They don't provide the error estimate,
+however, or the ability to compute first and second derivatives
+simulataneously.)
+
+<p><dt><code>(integrate <i>f a b tolerance</i>)</code>
+<dd>Return the definite integral of the function <code><i>f</i></code> from
+<code><i>a</i></code> to <code><i>b</i></code>, to within the specified
+fractional <code><i>tolerance</i></code>, using an adaptive
+trapezoidal rule.
+
+<p>This function can compute multi-dimensional integrals, in which
+case <code><i>f</i></code> is a function of <i>N</i> variables and
+<code><i>a</i></code> and <code><i>b</i></code> are either lists or
+vectors of length <i>N</i>, giving the (constant) integration bounds
+in each dimension.  (Non-constant integration bounds,
+i.e. non-rectilinear integration domains, can be handled by an
+appropriate mapping of the function <code><i>f</i></code>.)
 
 <p><dt><code>(fold-left <i>op init list</i>)</code>
 <dd>Combine the elements of <code><i>list</i></code> using the binary
