@@ -155,6 +155,22 @@ interpolates between them to add <code><i>n</i></code> new
 evenly-spaced values between each pair of consecutive values in the
 original list.
 
+<dt><code>(display-many <i>expressions...</i>)</code>
+<dd>Calls the Scheme <code>display</code> function on each of its
+arguments from left to right (printing them to standard output).  Note
+that, like <code>display</code>, it does <em>not</em> append a
+newline to the end of the outputs; you have to do this yourself by
+including the <code>"\n"</code> string at the end of the expression
+list.
+
+<dt><code>(begin-time <i>message-string statements...</i>)</code>
+<dd>Like the Scheme <code>(begin ...)</code> construct, this executes
+the given sequence of statements one by one.  In addition, however, it
+measures the elapsed time for the statements and outputs it as
+<code><i>message-string</i></code>, followed by the time, followed by
+a newline.  The return value of <code>begin-time</code> is the elapsed
+time in seconds.
+
 <p><dt><code>(minimize <i>function tolerance</i>)</code>
 <dd>Given a <code><i>function</i></code> of one (number) argument,
 finds its minimum within the specified fractional
