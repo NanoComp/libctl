@@ -529,3 +529,8 @@ object object_object_property(object o, char *property_name)
 {
   return(object_property_value(o,property_name));
 }
+
+function function_object_property(object o, char *property_name)
+{
+  return(object_property_value(o,property_name));
+}

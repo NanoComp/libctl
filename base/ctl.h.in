@@ -210,6 +210,7 @@ extern vector3 vector3_object_property(object o, char *property_name);
 extern matrix3x3 matrix3x3_object_property(object o, char *property_name);
 extern list list_object_property(object o, char *property_name);
 extern object object_object_property(object o, char *property_name);
+extern object function_object_property(object o, char *property_name);
 
 /**************************************************************************/
 
