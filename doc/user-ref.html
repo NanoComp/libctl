@@ -111,6 +111,14 @@ Beware of using this function after operations that may have some
 error due to the finite precision of floating-point numbers; use
 <code>vector3-close?</code> instead.
 
+<p><dt><code>(rotate-vector3 <i>axis theta v</i>)</code>
+<dt>Returns the vector <code><i>v</i></code> rotated by an angle
+<code><i>theta</i></code> (in radians) in the right-hand direction
+around the <code><i>axis</i></code> vector (whose length is ignored).
+You may find the functions <code>(deg->rad <i>theta-deg</i>)</code>
+and <code>(rad->deg <i>theta-rad</i>)</code> useful to convert angles
+between degrees and radians.
+
 </dl>
 
 <h2>3x3 matrix functions</h2>
@@ -140,6 +148,12 @@ left or the right respectively.
 <dt><code>(matrix3x3* <i>m s</i>)</code>
 <dd>Scales the matrix <code><i>m</i></code> by the number
 <code><i>s</i></code>.
+
+<p><dt><code>(rotation-matrix3x3 <i>axis theta</i>)</code>
+<dd>Like <code>rotate-vector3</code>, except returns the (unitary)
+rotation matrix that performs the given rotation.  i.e.,
+<code>(matrix3x3* (rotation-matrix3x3 axis theta) v)</code> produces
+the same result as <code>(rotate-vector3 axis theta v)</code>.
 
 </dl>
 
