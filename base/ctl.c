@@ -167,6 +167,22 @@ matrix3x3 matrix3x3_mult(matrix3x3 m1, matrix3x3 m2)
   return m;
 }
 
+matrix3x3 matrix3x3_transpose(matrix3x3 m)
+{
+     matrix3x3 mt;
+    
+     mt.c0.x = m.c0.x;
+     mt.c1.x = m.c0.y;
+     mt.c2.x = m.c0.z;
+     mt.c0.y = m.c1.x;
+     mt.c1.y = m.c1.y;
+     mt.c2.y = m.c1.z;
+     mt.c0.z = m.c2.x;
+     mt.c1.z = m.c2.y;
+     mt.c2.z = m.c2.z;
+     return mt;
+}
+
 matrix3x3 matrix3x3_inverse(matrix3x3 m)
 {
   return scm2matrix3x3(gh_call1(gh_lookup("matrix3x3-inverse"),

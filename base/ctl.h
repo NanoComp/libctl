@@ -77,6 +77,7 @@ extern vector3 vector3_minus(vector3 v1,vector3 v2);
 
 extern vector3 matrix3x3_vector3_mult(matrix3x3 m, vector3 v);
 extern matrix3x3 matrix3x3_mult(matrix3x3 m1, matrix3x3 m2);
+extern matrix3x3 matrix3x3_transpose(matrix3x3 m);
 extern matrix3x3 matrix3x3_inverse(matrix3x3 m);
 
 /**************************************************************************/
