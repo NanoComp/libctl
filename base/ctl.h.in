@@ -24,11 +24,32 @@
 
 #include <guile/gh.h>
 
-#include <ctl-config.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif                          /* __cplusplus */
+
+/**************************************************************************/
+/* Configuration options (guessed by configure).
+   We have to put them here, rather than in a private config.h file,
+   because they need to be known by user ctl-io.c and main.c files. */
+
+/* Define if you have gh_load */
+#undef HAVE_GH_LOAD
+
+/* Define if you have gh_bool2scm */
+#undef HAVE_GH_BOOL2SCM
+
+/* Define if you have gh_vector_ref */
+#undef HAVE_GH_VECTOR_REF
+
+/* Define if you have gh_list_ref */
+#undef HAVE_GH_LIST_REF
+
+/* Define if you have gh_length */
+#undef HAVE_GH_LENGTH
+
+/* Define if gh_lookup is not broken */
+#undef GH_LOOKUP_OK
 
 /**************************************************************************/
 

@@ -1,39 +1,74 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(src/ctl.c)
-AC_CONFIG_HEADER(src/ctl-config.h)
+AC_INIT(base/ctl.c)
+AC_CONFIG_HEADER(base/ctl.h)
 
 dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_MAKE_SET
+AC_PROG_INSTALL
+AC_PROG_RANLIB
 
 AC_CANONICAL_HOST
 
-AC_CHECK_LIB(m, sqrt)
-AC_CHECK_LIB(readline, readline)
-AC_CHECK_LIB(dl, dlopen)
-AC_CHECK_LIB(guile, gh_eval_str)
-
 dnl Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS(guile/gh.h)
 
-dnl Checks for library functions.
+dnl Find Guile library, flags, etcetera:
+
+AC_CHECK_PROG(HAVE_GUILE_CONFIG, guile-config, yes, no)
+if test "$HAVE_GUILE_CONFIG" = "yes"; then
+	INCLUDES="$INCLUDES `guile-config compile`"
+	LIBS="$LIBS `guile-config link`"
+else
+	AC_CHECK_LIB(m, sqrt)
+	AC_CHECK_LIB(readline, readline)
+	AC_CHECK_LIB(dl, dlopen)
+	AC_CHECK_LIB(guile, gh_eval_str)
+fi
+AC_SUBST(INCLUDES)
 
 dnl Checks for Guile 1.3 functions.
 
+AC_MSG_CHECKING([for gh_load])
+ok=yes
 AC_TRY_LINK([#include <guile/gh.h>
-], gh_load(0);, AC_DEFINE(HAVE_GH_LOAD))
+], gh_load(0);, AC_DEFINE(HAVE_GH_LOAD), ok=no)
+AC_MSG_RESULT($ok)
 
+AC_MSG_CHECKING([for gh_bool2scm])
+ok=yes
 AC_TRY_LINK([#include <guile/gh.h>
-], gh_bool2scm(0);, AC_DEFINE(HAVE_GH_BOOL2SCM))
+], gh_bool2scm(0);, AC_DEFINE(HAVE_GH_BOOL2SCM), ok=no)
+AC_MSG_RESULT($ok)
 
+AC_MSG_CHECKING([for gh_vector_ref])
+ok=yes
 AC_TRY_LINK([#include <guile/gh.h>
-], gh_vector_ref(0,0);, AC_DEFINE(HAVE_GH_VECTOR_REF))
+], gh_vector_ref(0,0);, AC_DEFINE(HAVE_GH_VECTOR_REF), ok=no)
+AC_MSG_RESULT($ok)
 
+AC_MSG_CHECKING([for gh_list_ref])
+ok=yes
 AC_TRY_LINK([#include <guile/gh.h>
-], gh_list_ref(0,0);, AC_DEFINE(HAVE_GH_LIST_REF))
+], gh_list_ref(0,0);, AC_DEFINE(HAVE_GH_LIST_REF), ok=no)
+AC_MSG_RESULT($ok)
 
+AC_MSG_CHECKING([for gh_length])
+ok=yes
 AC_TRY_LINK([#include <guile/gh.h>
-], gh_length(0);, AC_DEFINE(HAVE_GH_LENGTH))
+], gh_length(0);, AC_DEFINE(HAVE_GH_LENGTH), ok=no)
+AC_MSG_RESULT($ok)
 
-AC_OUTPUT(examples/Makefile)
+# Add libctl and libgeom -I/-L/-l flags to INCLUDES/LDFLAGS/LIBS,
+# so that examples/Makefile.in can be used as-is for other programs:
+INCLUDES="$INCLUDES -I `pwd`/$srcdir/base -I `pwd`/$srcdir/utils"
+LDFLAGS="$LDFLAGS -L `pwd`/$srcdir/base"
+LIBS="-lctl $LIBS"
+
+LIBCTL_DIR="`pwd`/$srcdir"
+AC_SUBST(LIBCTL_DIR)
+
+GEN_CTL_IO="`pwd`/$srcdir/utils/gen-ctl-io"
+AC_SUBST(GEN_CTL_IO)
+
+AC_OUTPUT(Makefile base/Makefile utils/Makefile examples/Makefile utils/gen-ctl-io)

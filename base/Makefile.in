@@ -1,0 +1,44 @@
+# Variables substituted by the autoconf configure script:
+
+CC = @CC@
+CFLAGS = @CFLAGS@
+INCLUDES = @INCLUDES@ -I.
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+RANLIB = @RANLIB@
+@SET_MAKE@
+INSTALL = @INSTALL@
+prefix = @prefix@
+
+AR = ar
+
+all: libs
+
+SCMFILES = class.scm help.scm io-vars.scm utils.scm ctl.scm include.scm \
+           math-utils.scm vector3.scm extern-funcs.scm interaction.scm \
+           matrix3x3.scm
+OBJECTS = ctl.o
+LIBNAME = libctl.a
+
+libs: $(LIBNAME)
+
+libctl.a: $(OBJECTS)
+	rm -f $@
+	$(AR) r $@ $(OBJECTS)
+	$(RANLIB) $@
+
+install:
+	$(INSTALL) -d $(prefix)/lib
+	$(INSTALL) -m 0644 -s $(LIBNAME) $(prefix)/lib
+	$(INSTALL) -d $(prefix)/include
+	$(INSTALL) -m 0644 ctl.h $(prefix)/include
+	$(INSTALL) -d $(prefix)/share/libctl/base
+	list='$(SCMFILES)'; for scmfile in $$list; do \
+		$(INSTALL) -m 0644 $$scmfile $(prefix)/share/libctl/base \
+	done
+
+.c.o:
+	$(CC) -c $(INCLUDES) $(CFLAGS) $< -o $@
+
+clean: 
+	rm -f $(OBJECTS) core $(LIBNAME)

@@ -14,7 +14,7 @@
 
 ; use the solid geometry classes, variables, etcetera in libgeom:
 ; (one specifications file can include another specifications file)
-(include "../utils/libgeom/geom.scm")
+(include "../utils/geom.scm")
 
 ; ****************************************************************
 

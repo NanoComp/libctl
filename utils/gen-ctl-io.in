@@ -1,4 +1,4 @@
-#!/bin/csh
+#!/bin/sh
 
 # libctl: flexible Guile-based control files for scientific software 
 # Copyright (C) 1998 Steven G. Johnson
@@ -20,8 +20,17 @@
 #
 # Steven G. Johnson can be contacted at stevenj@alum.mit.edu.
 
-set libctl_dir = "`dirname $0`/.."
-set output_dir = "`dirname $1`"
+output_dir="`dirname $1`"
+
+if test "$#" = "2"; then
+    libctl_dir="`dirname $2`"
+else
+    libctl_dir="@prefix@/share/libctl"
+fi
+if test ! -r $libctl_dir/utils/ctl-io.scm; then
+    echo "couldn't find $libctl_dir/utils/ctl-io.scm"
+    exit 1
+fi
 
 rm -f $output_dir/ctl-io.c $output_dir/ctl-io.h
 
@@ -50,11 +59,11 @@ cat > $output_dir/ctl-io.c <<EOF
 
 EOF
 
-guile -l $libctl_dir/src/include.scm \
-      -c "(include "'"'"$libctl_dir/src/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (include "'"'"$1"'"'") (output-header)" >> $output_dir/ctl-io.h
+guile -l $libctl_dir/base/include.scm \
+      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (include "'"'"$1"'"'") (output-header)" >> $output_dir/ctl-io.h
 
-guile -l $libctl_dir/src/include.scm \
-      -c "(include "'"'"$libctl_dir/src/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (include "'"'"$1"'"'") (output-source)" >> $output_dir/ctl-io.c
+guile -l $libctl_dir/base/include.scm \
+      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (include "'"'"$1"'"'") (output-source)" >> $output_dir/ctl-io.c
 
 cat >> $output_dir/ctl-io.h <<EOF
 

@@ -1,0 +1,33 @@
+# Variables substituted by the autoconf configure script:
+
+CC = @CC@
+CFLAGS = @CFLAGS@
+INCLUDES = @INCLUDES@ -I../base -I.
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+RANLIB = @RANLIB@
+@SET_MAKE@
+INSTALL = @INSTALL@
+prefix = @prefix@
+
+AR = ar
+
+all: libs
+
+libs:
+	chmod u+x gen-ctl-io
+
+install:
+	$(INSTALL) -d $(prefix)/include
+	$(INSTALL) -m 0644 ctlgeom.h $(prefix)/include
+	$(INSTALL) -d $(prefix)/share/libctl/utils
+	$(INSTALL) -m 0644 geom.c $(prefix)/share/libctl/utils
+	$(INSTALL) -m 0644 geom.scm $(prefix)/share/libctl/utils
+	$(INSTALL) -m 0644 ctl-io.scm $(prefix)/share/libctl/utils
+	$(INSTALL) -d $(prefix)/bin
+	$(INSTALL) -m 0755 gen-ctl-io $(prefix)/bin
+
+.c.o:
+	$(CC) -c $(INCLUDES) $(CFLAGS) $< -o $@
+
+clean: 
