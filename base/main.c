@@ -124,9 +124,6 @@ void main_entry(int argc, char *argv[])
      These are defined in the specifications file, from which the
      export_external_functions routine is automatically generated. */
   export_external_functions();
-#ifdef HAVE_CTL_HOOKS
-  ctl_export_hook();
-#endif
 
   /* Also export the read_input_vars and write_output_vars routines
      that are automatically generated from the specifications file: */
@@ -135,6 +132,10 @@ void main_entry(int argc, char *argv[])
 
   /* Export the subplex minimization routine: */
   gh_new_procedure ("subplex", subplex_scm, 7, 0, 0);
+
+#ifdef HAVE_CTL_HOOKS
+  ctl_export_hook();
+#endif
 
   /* load include.scm if it was given at compile time */
 #ifdef INCLUDE_SCM
