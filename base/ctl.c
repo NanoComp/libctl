@@ -337,7 +337,7 @@ cmatrix3x3 make_hermitian_cmatrix3x3(number m00, number m11, number m22,
      cmatrix3x3 cm;
      cm.c0.x = make_cnumber(m00, 0);
      cm.c1.y = make_cnumber(m11, 0);
-     cm.c2.y = make_cnumber(m22, 0);
+     cm.c2.z = make_cnumber(m22, 0);
      cm.c1.x = m01; cm.c0.y = cnumber_conj(m01);
      cm.c2.x = m02; cm.c0.z = cnumber_conj(m02);
      cm.c2.y = m12; cm.c1.z = cnumber_conj(m12);
