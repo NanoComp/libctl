@@ -1,7 +1,11 @@
-This is libgeom, a collection of utility code for manipulating geometric
-objects, for use with libctl.
+This directory contains utilities for use with libctl.
 
-It contains:
+First, there are ctl-io.scm and gen-ctl-io.scm, which are used to
+generate C glue code (ctl-io.h and ctl-io.c) from a specifications
+file for translating input/output variables to/from C.
+
+Second, there is libgeom a collection of utility code for manipulating
+geometric objects, for use with libctl.  libgeom contains:
 
 * geom.scm: specifications file containing classes and utilities
   for dealing with three-dimensional geometric objects (spheres,
