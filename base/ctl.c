@@ -292,16 +292,6 @@ matrix3x3 ctl_get_matrix3x3(char *identifier)
   return(scm2matrix3x3(gh_lookup(identifier)));
 }
 
-list ctl_get_list(char *identifier)
-{
-  return(gh_lookup(identifier));
-}
-
-object ctl_get_object(char *identifier)
-{
-  return(gh_lookup(identifier));
-}
-
 /**** Setters ****/
 
 /* UGLY hack alert!  There doesn't seem to be any clean way of setting
@@ -384,6 +374,11 @@ void ctl_set_list(char *identifier, list value)
 }
 
 void ctl_set_object(char *identifier, object value)
+{
+  set_value(identifier, value);
+}
+
+void ctl_set_function(char *identifier, function value)
 {
   set_value(identifier, value);
 }

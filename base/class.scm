@@ -108,6 +108,8 @@
    ((eq? type-name 'integer) (make-simple-type-descriptor 'integer integer?))
    ((eq? type-name 'boolean) (make-simple-type-descriptor 'boolean boolean?))
    ((eq? type-name 'string) (make-simple-type-descriptor 'string string?))
+   ((eq? type-name 'function)
+    (make-simple-type-descriptor 'function procedure?))
    ((eq? type-name 'vector3) (make-simple-type-descriptor 'vector3 vector3?))
    ((eq? type-name 'matrix3x3)
     (make-simple-type-descriptor 'matrix3x3 matrix3x3?))
