@@ -60,11 +60,6 @@
 ; op, with initial element init, associating from the right or from
 ; the left.  These two are equivalent if op is associative.
 
-(define (fold-right op init list)
-  (if (null? list)
-      init
-      (op (car list) (fold-right op init (cdr list)))))
-
 (define (fold-left op init list)
   (if (null? list)
       init
