@@ -7,6 +7,9 @@ libctl 2.2
   * Numerical derivative routines now allow numerical differentation
     of vector-valued function.  Added deriv2 convenience routine.
 
+  * Added find-root-deriv functions for faster root-finding of
+    functions for which the derivative is also available.
+
   * Added missing (cvector3 ...) constructor, and fixed corresponding
     constructor for cvector3 object properties; thanks to Doug Allan for
     the bug report.

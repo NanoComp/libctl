@@ -297,6 +297,15 @@ the specified fractional <code><i>tolerance</i></code>.
 desired root; the function must have opposite signs at these two
 points!
 
+<p><dt><code>(find-root-deriv <i>function tolerance arg-min arg-max [arg-guess]</i>)</code>
+<dd>As <code>find-root</code>, but <code><i>function</i></code> should
+return a <code>cons</code> pair of (<i>function-value
+. function-derivative</i>); the derivative information is exploited to
+achieve faster convergence via Newton's method, compared to
+<code>find-root</code>.  The optional argument
+<code><i>arg-guess</i></code> should be an initial guess for the root
+location.
+
 <p><dt><code>(derivative <i>function x [dx tolerance]</i>)</code>
 <dt><code>(deriv <i>function x [dx tolerance]</i>)</code>
 <dt><code>(deriv <i>function x [dx tolerance]</i>)</code>
