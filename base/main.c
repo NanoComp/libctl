@@ -149,7 +149,12 @@ void main_entry(int argc, char *argv[])
   for (; i < argc; ++i) {
     if (strchr(argv[i],'=')) {
       char *eq;
-      char *definestr = malloc(strlen("(define ") + strlen(argv[i]) + 2);
+      char *definestr = (char*) malloc(sizeof(char) * (strlen("(define ") + 
+						       strlen(argv[i]) + 2));
+      if (!definestr) {
+	   fprintf(stderr, __FILE__ ": out of memory!\n");
+	   exit(EXIT_FAILURE);
+      }
       strcpy(definestr,"(define ");
       strcat(definestr,argv[i]);
       strcat(definestr,")");
