@@ -460,6 +460,7 @@
 ; Integrate the 1d function (f x) from x=a..b to within the specified
 ; fractional tolerance.
 (define (integrate-1d f a b tol)
+  (define (pow2 n) (if (<= n 0) 1 (* 2 (pow2 (- n 1))))) ; 2^n
   (define (trap0 n sum)
     (binary*
      0.5
