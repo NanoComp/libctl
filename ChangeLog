@@ -1,3 +1,47 @@
+2000-05-02  Steven G. Johnson  <stevenj@alum.mit.edu>
+
+	* /home/a/stevenj/Repository/libctl/utils/geom.c: allow negative
+	radiii in cylinders (for cones).
+
+2000-05-01  Steven G. Johnson  <stevenj@alum.mit.edu>
+
+	* /home/a/stevenj/Repository/libctl/utils/geom.c: bug fix in
+	displaying cone data
+
+	* /home/a/stevenj/Repository/libctl/NEWS: updated
+
+	* /home/a/stevenj/Repository/libctl/utils/geom.c,
+	/home/a/stevenj/Repository/libctl/utils/geom.scm: added cone
+	object type
+
+2000-04-06  Steven G. Johnson  <stevenj@alum.mit.edu>
+
+	* /home/a/stevenj/Repository/libctl/base/matrix3x3.scm: bug fix in
+	matrix3x3-inverse.  Yikes!
+
+2000-03-16  Steven G. Johnson  <stevenj@alum.mit.edu>
+
+	* /home/a/stevenj/Repository/libctl/doc/user-ref.html: documented
+	rotation functions
+
+	* /home/a/stevenj/Repository/libctl/NEWS: fixed typos
+
+	* /home/a/stevenj/Repository/libctl/ChangeLog,
+	/home/a/stevenj/Repository/libctl/NEWS,
+	/home/a/stevenj/Repository/libctl/configure.in: bumped version
+
+	* /home/a/stevenj/Repository/libctl/utils/ctl-io.scm: declare
+	prototype for external functions in ctl-io.h, to make sure
+	programmer doesn't accidentally declare a mismatching prototype.
+
+	* /home/a/stevenj/Repository/libctl/examples/example.c,
+	/home/a/stevenj/Repository/libctl/examples/example.scm,
+	/home/a/stevenj/Repository/libctl/utils/ctl-io.scm: Added support
+	for list parameters and return values for external functions.
+	(List parameters were nominally supported before, but there was a
+	bug where the corresponding list type was not guaranteed to be
+	correctly declared.)
+
 Thu Mar 16 19:49:00 2000  Steven G. Johnson  <stevenj@alum.mit.edu>
 
 	* utils/ctl-io.scm: declare prototype for external functions in
