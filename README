@@ -2,6 +2,10 @@ This is libctl, a Guile-based library for supporting flexible control
 files in scientific simulations.  libctl is copyright (c) 1998 by
 Steven G. Johnson.
 
+Before using libctl, you should first run the configure script:
+
+./configure
+
 Documentation can be found in the doc/ directory, and an example
 program in the examples/ directory.  The main source code for libctl
 is in the src/ and utils/ directories.
