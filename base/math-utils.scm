@@ -385,14 +385,7 @@
 ; Compute both the first and second derivatives at the same time
 ; (using minimal extra function evaluations).
 (define (derivative2 f x . dx-and-tol)
-  (define f-memo-tab '())
-  (define (f-memo y)
-    (let ((tab-val (assoc y f-memo-tab)))
-      (if tab-val
-	  (cdr tab-val)
-	  (let ((fy (f y)))
-	    (set! f-memo-tab (cons (cons y fy) f-memo-tab))
-	    fy))))
+  (define f-memo (memoize f))
   (define (f-deriv y)
     (binary* (binary- (f-memo y) (f-memo x)) (/ 2 (- y x))))
   (append
@@ -401,5 +394,47 @@
 
 (define (deriv2 f x . dx-and-tol)
   (derivative-d2f (apply derivative2 (cons f (cons x dx-and-tol)))))
+
+; ****************************************************************
+
+(define (integrate-1d f a b tol)
+  (define (trap0 n sum)
+    (binary*
+     0.5
+     (binary+
+      sum
+      (if (<= n 1)
+	  (binary* (- b a) (binary+ (f a) (f b)))
+	  (let ((steps (pow2 (- n 2))))
+	    (let ((dx (/ (- b a) steps)))
+	      (binary* 
+	       dx
+	       (do ((cur-sum 0) (i 0 (+ i 1)) (x (+ a dx) (+ x dx)))
+		   ((>= i steps) cur-sum)
+		 (set! cur-sum (binary+ cur-sum (f x)))))))))))
+  (define (trap n sum)
+    (let ((newsum (trap0 n sum)))
+      (if (and (> n 5)
+	       (or (> n 20) 
+		   (binary= newsum sum)
+		    (< (unary-abs (binary- newsum sum))
+		       (* tol (unary-abs newsum)))))
+	  newsum
+	  (trap (+ n 1) newsum))))
+  (trap 1 0.0))
+	  
+(define (integrate f a b tol)
+  (define (int f a b)
+    (if (null? a)
+	(f)
+	(integrate-1d
+	 (lambda (x) (int (lambda (. y) (apply f (cons x y))) (cdr a) (cdr b)))
+	 (car a) (car b) tol)))
+  (cond
+   ((and (vector? a) (vector? b))
+    (integrate f (vector->list a) (vector->list b) tol))
+   ((and (number? a) (number? b))
+    (integrate f (list a) (list b) tol))
+   (else (int f a b))))
 
 ; ****************************************************************
