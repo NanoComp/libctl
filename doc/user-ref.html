@@ -162,7 +162,7 @@ the same result as <code>(rotate-vector3 axis theta v)</code>.
 
 </dl>
 
-<h2>Creating objects (members of classes)</h2>
+<h2>Objects (members of classes)</h2>
 
 <dl>
 
@@ -171,6 +171,13 @@ the same result as <code>(rotate-vector3 axis theta v)</code>.
 property is of the form <code>(<i>property-name
 property-value</i>)</code>.  A property need not be specified if it
 has a default value, and properties may be given in any order.
+
+<p><dt><code>(object-property-value <i>object property-name</i>)</code>
+<dd>Return the value of the property whose name (symbol) is
+<code><i>property-name</i></code> in <code><i>object</i></code>.  For
+example, <code>(object-property-value a-circle-object 'radius)</code>.
+(Returns <code>false</code> if <code><i>property-name</i></code> is
+not a property of <code><i>object</i></code>.)
 
 </dl>
 
