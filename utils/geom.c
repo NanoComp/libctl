@@ -957,3 +957,19 @@ void geom_box_tree_stats(geom_box_tree t, int *depth, int *nobjects)
 }
 
 /**************************************************************************/
+
+vector3 get_grid_size(void)
+{
+     return ctl_convert_vector3_to_c(gh_call0(gh_lookup("get-grid-size")));
+}
+
+void get_grid_size_n(int *nx, int *ny, int *nz)
+{
+     vector3 grid_size;
+     grid_size = get_grid_size();
+     *nx = grid_size.x;
+     *ny = grid_size.y;
+     *nz = grid_size.z;
+}
+
+/**************************************************************************/

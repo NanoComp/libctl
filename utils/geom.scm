@@ -172,6 +172,23 @@
   'matrix3x3 'matrix3x3 'vector3)
 
 ; ****************************************************************
+; Functions and variables for determining the grid size
+
+(define no-size 1e-20) ; for when a particular lattice dimension has no size
+(define-param resolution 10)   ; the resolution (may be a vector3)
+(define-param grid-size false) ; force grid size, if set
+
+(define (get-grid-size)
+  (if grid-size
+      grid-size
+      (let ((res (if (vector3? resolution)
+		     resolution
+		     (vector3 resolution resolution resolution))))
+	(vector-map
+	 (lambda (x) (inexact->exact (max (ceiling x) 1)))
+	 (vector-map * res (object-property-value geometry-lattice 'size))))))
+
+; ****************************************************************
 ; Cartesian conversion and rotation for lattice and reciprocal coords:
 
 ; The following conversion routines work for vector3 and matrix3x3 arguments:
