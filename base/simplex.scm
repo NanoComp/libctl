@@ -114,9 +114,9 @@
 (define (simplex-iterate f s tol)
   (let ((s-h (simplex-high s))
         (s-l (simplex-low s)))
-    (if (<= (abs (- (simplex-point-val s-h) (simplex-point-val s-l)))
-	    (* 0.5 tol (+ tol (abs (simplex-point-val s-h)) 
-			  (abs (simplex-point-val s-l)))))
+    (if (<= (magnitude (- (simplex-point-val s-h) (simplex-point-val s-l)))
+	    (* 0.5 tol (+ tol (magnitude (simplex-point-val s-h)) 
+			  (magnitude (simplex-point-val s-l)))))
 	s-l
 	(begin
 	  (print "extremization: best so far is " s-l "\n")
@@ -125,7 +125,7 @@
 (define (simplex-shift-x x i)
   (let ((xv (list->vector x)))
     (let ((xv-i (vector-ref xv i)))
-      (if (< (abs xv-i) 1e-6)
+      (if (< (magnitude xv-i) 1e-6)
 	  (vector-set! xv i 0.1)
 	  (vector-set! xv i (* 0.9 xv-i)))
       (vector->list xv))))

@@ -72,16 +72,16 @@
   (define (midpoint a b) (* 0.5 (+ a b)))
 
   (define (quadratic-min-denom x a b fx fa fb)
-    (abs (* 2.0 (- (* (- x a) (- fx fb)) (* (- x b) (- fx fa))))))
+    (magnitude (* 2.0 (- (* (- x a) (- fx fb)) (* (- x b) (- fx fa))))))
   (define (quadratic-min-num x a b fx fa fb)
     (let ((den (* 2.0 (- (* (- x a) (- fx fb)) (* (- x b) (- fx fa)))))
 	  (num (- (* (- x a) (- x a) (- fx fb))
 		  (* (- x b) (- x b) (- fx fa)))))
       (if (> den 0) (- num) num)))
 
-  (define (tol-scale x) (* tol (+ (abs x) 1e-6)))
+  (define (tol-scale x) (* tol (+ (magnitude x) 1e-6)))
   (define (converged? x a b)
-    (<= (abs (- x (midpoint a b))) (- (* 2 (tol-scale x)) (* 0.5 (- b a)))))
+    (<= (magnitude (- x (midpoint a b))) (- (* 2 (tol-scale x)) (* 0.5 (- b a)))))
   
   (define golden-ratio (* 0.5 (- 3 (sqrt 5))))
   (define (golden-interpolate x a b)
@@ -91,7 +91,7 @@
 
   (define (brent-minimize x a b v w fx fv fw prev-step prev-prev-step)
     (define (guess-step proposed-step)
-      (let ((step (if (> (abs proposed-step) (tol-scale x))
+      (let ((step (if (> (magnitude proposed-step) (tol-scale x))
 		      proposed-step
 		      (* (tol-scale x) (sign proposed-step)))))
 	(let ((u (+ x step)))
@@ -113,10 +113,10 @@
 	      
     (if (converged? x a b)
 	(cons x fx)
-	(if (> (abs prev-prev-step) (tol-scale x))
+	(if (> (magnitude prev-prev-step) (tol-scale x))
 	    (let ((p (quadratic-min-num x v w fx fv fw))
 		  (q (quadratic-min-denom x v w fx fv fw)))
-	      (if (or (>= (abs p) (abs (* 0.5 q prev-prev-step)))
+	      (if (or (>= (magnitude p) (magnitude (* 0.5 q prev-prev-step)))
 		      (< p (* q (- a x))) (> p (* q (- b x))))
 		  (guess-step (golden-interpolate x a b))
 		  (guess-step (/ p q))))
@@ -299,8 +299,8 @@
 	    (list x1 x2 f1 f2)
 	    (list x2 x1 f2 f1))))
 
-  (define (converged? a b x) (< (min (abs (- x a)) (abs (- x b))) 
-				(* tol (abs x))))
+  (define (converged? a b x) (< (min (magnitude (- x a)) (magnitude (- x b))) 
+				(* tol (magnitude x))))
   
   ; find the root by Ridder's method:
   (define (ridder a b fa fb)
@@ -346,15 +346,15 @@
 	  (deriv (/ dx (sqrt fac0)) (car a) err0 a fac0)
 	  (let* ((errs
 		  (map max
-		       (map abs (map - (cdr a) (reverse (cdr (reverse a)))))
-		       (map abs (map - (cdr a) prev-a))))
+		       (map magnitude (map - (cdr a) (reverse (cdr (reverse a)))))
+		       (map magnitude (map - (cdr a) prev-a))))
 		 (errmin (apply min errs))
 		 (err (min errmin err0))
 		 (df (if (> err err0)
 			 df0
 			 (cdr (assoc errmin (map cons errs (cdr a)))))))
 	    (if (or (< err (* tol df)) 
-		    (> (abs (- (car (reverse a)) (car (reverse prev-a))))
+		    (> (magnitude (- (car (reverse a)) (car (reverse prev-a))))
 		       (* 2 err)))
 		(list df err)
 		(deriv (/ dx (sqrt fac0)) df err a fac0))))))
@@ -364,7 +364,7 @@
 (define (do-derivative-wrap f x dx-and-tol)
   (let ((dx (if (> (length dx-and-tol) 0)
 		(car dx-and-tol)
-		(max (abs (* x 0.01)) 0.01)))
+		(max (magnitude (* x 0.01)) 0.01)))
 	(tol (if (> (length dx-and-tol) 1)
 		 (cadr dx-and-tol)
 		 0)))
