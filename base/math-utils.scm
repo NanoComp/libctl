@@ -329,6 +329,8 @@
 ; so that dx and tol can be optional arguments.
 (define (do-derivative f x dx tol)
 
+  ; Using Neville's algorithm, compute successively higher-order
+  ; extrapolations of the derivative (the "Neville tableau"):
   (define (deriv-a a0 prev-a fac fac0)
     (if (null? prev-a)
 	(list a0)
