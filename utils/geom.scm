@@ -101,13 +101,14 @@
     (modify-object go (center (vector3+ c shift-vector)))))
 
 (define (geometric-object-duplicates shift-vector min-multiple max-multiple go)
-  (if (<= min-multiple max-multiple)
-      (cons (shift-geometric-object
-	     go (vector3-scale min-multiple shift-vector))
-	    (geometric-object-duplicates shift-vector
-					 (+ min-multiple 1) max-multiple
-					 go))
-      '()))
+  (define (g-o-d min-multiple L)
+    (if (<= min-multiple max-multiple)
+	(g-o-d (+ min-multiple 1)
+	       (cons (shift-geometric-object
+		      go (vector3-scale min-multiple shift-vector))
+		     L))
+	L))
+  (g-o-d min-multiple '()))
 
 (define (geometric-objects-duplicates shift-vector min-multiple max-multiple
 				      go-list)
