@@ -789,7 +789,7 @@ geom_box_tree create_geom_box_tree(void)
 
      t->objects = (geom_box_object *) malloc(t->nobjects *
 					     sizeof(geom_box_object));
-     CHECK(t->objects, "out of memory");
+     CHECK(t->objects || t->nobjects == 0, "out of memory");
 	  
      for (i = geometry.num_items - 1, index = 0; i >= 0; --i) {
 	  vector3 shiftby = {0,0,0};
