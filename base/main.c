@@ -211,6 +211,7 @@ void main_entry(int argc, char *argv[])
        gh_repl(argc - i, argv + i); /* skip already-handled args */
 
  done:
+  ;
 #ifdef HAVE_CTL_HOOKS
   /* Note that the stop hook will never be called if we are in
      interactive mode, because gh_repl calls exit().  Oh well. */

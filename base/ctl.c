@@ -19,6 +19,8 @@
  * Steven G. Johnson can be contacted at stevenj@alum.mit.edu.
  */
 
+#include <stdlib.h>
+#include <stdio.h>
 #include <math.h>
 
 #include "ctl.h"
