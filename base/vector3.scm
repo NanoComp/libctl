@@ -58,7 +58,7 @@
 	      (* (vector-ref v1 0) (vector-ref v2 2)))
 	   (- (* (vector-ref v1 0) (vector-ref v2 1))
 	      (* (vector-ref v1 1) (vector-ref v2 0)))))
-(define (vector3-norm v) (sqrt (vector3-cdot v v)))
+(define (vector3-norm v) (sqrt (magnitude (vector3-cdot v v))))
 
 (define (unit-vector3 . args)
   (let ((v (if (and (= (length args) 1) (vector3? (car args)))
@@ -72,7 +72,7 @@
        (<= (magnitude (- (vector-ref v1 2) (vector-ref v2 2))) tolerance)))
 (define (vector3= v1 v2) (vector3-close? v1 v2 0.0))
 
-; Define polymorphic binary operators (work on both vectors and numbers):
+; Define polymorphic operators (work on both vectors and numbers):
 
 (define (binary+ x y)
   (if (and (vector3? x) (vector3? y)) (vector3+ x y) (+ x y)))
@@ -82,6 +82,8 @@
   (if (or (vector3? x) (vector3? y)) (vector3* x y) (* x y)))
 (define (binary/ x y)
   (if (and (vector3? x) (number? y)) (vector3-scale (/ y) x) (/ x y)))
+
+(define (unary-abs x) (if (vector3? x) (vector3-norm x) (magnitude x)))
 
 ; ****************************************************************
 

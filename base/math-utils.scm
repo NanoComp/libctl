@@ -336,25 +336,27 @@
   (define (deriv-a a0 prev-a fac fac0)
     (if (null? prev-a)
 	(list a0)
-	(cons a0 (deriv-a (/ (- (* a0 fac) (car prev-a)) (- fac 1))
+	(cons a0 (deriv-a (binary/
+			   (binary- (binary* a0 fac) (car prev-a)) 
+			   (- fac 1))
 			  (cdr prev-a) (* fac fac0) fac0))))
   
   (define (deriv dx df0 err0 prev-a fac0)
-    (let ((a (deriv-a (/ (- (f (+ x dx)) (f (- x dx))) (* 2 dx))
+    (let ((a (deriv-a (binary/ (binary- (f (+ x dx)) (f (- x dx))) (* 2 dx))
 		      prev-a fac0 fac0)))
       (if (null? prev-a)
 	  (deriv (/ dx (sqrt fac0)) (car a) err0 a fac0)
 	  (let* ((errs
 		  (map max
-		       (map magnitude (map - (cdr a) (reverse (cdr (reverse a)))))
-		       (map magnitude (map - (cdr a) prev-a))))
+		       (map unary-abs (map binary- (cdr a) (reverse (cdr (reverse a)))))
+		       (map unary-abs (map binary- (cdr a) prev-a))))
 		 (errmin (apply min errs))
 		 (err (min errmin err0))
 		 (df (if (> err err0)
 			 df0
 			 (cdr (assoc errmin (map cons errs (cdr a)))))))
-	    (if (or (< err (* tol df)) 
-		    (> (magnitude (- (car (reverse a)) (car (reverse prev-a))))
+	    (if (or (< err (* tol (unary-abs df)) )
+		    (> (unary-abs (binary- (car (reverse a)) (car (reverse prev-a))))
 		       (* 2 err)))
 		(list df err)
 		(deriv (/ dx (sqrt fac0)) df err a fac0))))))
@@ -392,10 +394,12 @@
 	    (set! f-memo-tab (cons (cons y fy) f-memo-tab))
 	    fy))))
   (define (f-deriv y)
-    (* 2 (/ (- (f-memo y) (f-memo x))
-	    (- y x))))
+    (binary* (binary- (f-memo y) (f-memo x)) (/ 2 (- y x))))
   (append
    (do-derivative-wrap f-memo x dx-and-tol)
    (do-derivative-wrap f-deriv x dx-and-tol)))
+
+(define (deriv2 f x . dx-and-tol)
+  (derivative-d2f (apply derivative2 (cons f (cons x dx-and-tol)))))
 
 ; ****************************************************************
