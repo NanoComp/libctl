@@ -94,7 +94,7 @@
    (matrix3x3
     (vector3
      (- (* (matrix3x3-ref m 1 1) (matrix3x3-ref m 2 2))
-	(* (matrix3x3-ref m 1 2) (matrix3x3-ref m 2 2)))
+	(* (matrix3x3-ref m 1 2) (matrix3x3-ref m 2 1)))
      (- (* (matrix3x3-ref m 1 2) (matrix3x3-ref m 2 0))
 	(* (matrix3x3-ref m 1 0) (matrix3x3-ref m 2 2)))
      (- (* (matrix3x3-ref m 1 0) (matrix3x3-ref m 2 1))
