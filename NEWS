@@ -1,3 +1,13 @@
+libctl 1.1.1 (1/28/2000)
+
+  * Use CPPFLAGS environment variable instead of the less-standard
+    INCLUDES to pass -I flags to the configure script (for header files
+    in non-standard locations).
+
+  * Compilation fixes.  We need to set SHELL in the Makefile for make on
+    some systems.  Also added rule to insure ctl-io.h is created before
+    main.c is compiled.  Thanks to Christoph Becher for the bug reports.
+
 libctl 1.1 (1/2/2000)
 
   * geom: radius and height of objects is now permitted to be zero.
