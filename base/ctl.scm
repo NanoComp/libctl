@@ -74,14 +74,13 @@
 (define (indent indentby)
   (display (make-string indentby #\space)))
 
-(define (displaymany indentby . items)
-  (indent indentby)
+(define (displaymany . items)
   (for-each (lambda (item) (display item)) items))
 
 ; ****************************************************************
-; 3vector and associated operators.  (a type to represent 3-vectors)
+; vector3 and associated operators.  (a type to represent 3-vectors)
 
-(define (3vector . args)
+(define (vector3 . args)
   (if (= (length args) 0)
       (vector 0 0 0)
       (if (= (length args) 1)
@@ -89,28 +88,28 @@
 	  (if (= (length args) 2)
 	      (vector (first args) (second args) 0)
 	      (vector (first args) (second args) (third args))))))
-(define (3vector? v)
+(define (vector3? v)
   (and (vector v)
        (= (vector-length v) 3)
        (vector-for-all? v number?)))
-(define (3vector+ v1 v2) (vector-combine + v1 v2))
-(define (3vector- v1 v2) (vector-combine - v1 v2))
-(define (3vector-dot v1 v2) (vector-fold-right + 0 (vector-combine * v1 v2)))
-(define (3vector-scale s v) (vector-map (lambda (x) (* s x)) v))
-(define (3vector* a b)
+(define (vector3+ v1 v2) (vector-combine + v1 v2))
+(define (vector3- v1 v2) (vector-combine - v1 v2))
+(define (vector3-dot v1 v2) (vector-fold-right + 0 (vector-combine * v1 v2)))
+(define (vector3-scale s v) (vector-map (lambda (x) (* s x)) v))
+(define (vector3* a b)
   (if (number? a)
-      (3vector-scale a b)
+      (vector3-scale a b)
       (if (number? b)
-	  (3vector-scale b a)
-	  (3vector-dot a b))))
-(define (3vector-cross v1 v2)
-  (3vector (- (* (vector-ref v1 1) (vector-ref v2 2))
+	  (vector3-scale b a)
+	  (vector3-dot a b))))
+(define (vector3-cross v1 v2)
+  (vector3 (- (* (vector-ref v1 1) (vector-ref v2 2))
 	      (* (vector-ref v1 2) (vector-ref v2 1)))
 	   (- (* (vector-ref v1 2) (vector-ref v2 0))
 	      (* (vector-ref v1 0) (vector-ref v2 2)))
 	   (- (* (vector-ref v1 0) (vector-ref v2 1))
 	      (* (vector-ref v1 1) (vector-ref v2 0)))))
-(define (3vector-norm v) (sqrt (3vector-dot v v)))
+(define (vector3-norm v) (sqrt (vector3-dot v v)))
 
 ; ****************************************************************
 ; Class constructors.
@@ -171,7 +170,7 @@
    ((eq? type-name 'symbol) symbol?)
    ((eq? type-name 'list) list?)
    ((eq? type-name 'boolean) boolean?)
-   ((eq? type-name '3vector) 3vector?)
+   ((eq? type-name 'vector3) vector3?)
    ((symbol? type-name) (object-memberp type-name))
    ((and (pair? type-name) (eq? (car type-name) 'list))
     (let ((listtype_p (type-predicate (cdr type-name))))
@@ -222,17 +221,17 @@
       null-object))
 
 (define (display-class indentby class)
-  (displaymany indentby "Class " (class-type-name class) ": ")
+  (indent indentby)
+  (displaymany "Class " (class-type-name class) ": ")
   (newline)
   (if (class-parent class)
       (display-class (+ indentby 4) (class-parent class)))
   (map (lambda (property)
-	 (displaymany (+ indentby 2)
-		      (property-type-name property) " "
+	 (indent (+ indentby 2))
+	 (displaymany (property-type-name property) " "
 		      (property-name property))
 	 (if (property-has-default? property)
-	     (displaymany 0
-			  " = " (property-default-value property)))
+	     (displaymany " = " (property-default-value property)))
 	 (newline))
        (class-properties class))
   (display ""))
@@ -245,11 +244,10 @@
 (define (property-value-constructor name)
   (lambda (x) (make-property-value name x)))
 
-(define (3vector-property-value-constructor name)
-  (lambda x (make-property-value name (apply 3vector x))))
+(define (vector3-property-value-constructor name)
+  (lambda x (make-property-value name (apply vector3 x))))
 
 (define (list-property-value-constructor name)
   (lambda x (make-property-value name x)))
 
 ; ****************************************************************
-

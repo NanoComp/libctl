@@ -8,12 +8,12 @@
   (make-class 'geometric-object no-parent
 	      (make-property 'material 'material-type
 			     no-default no-constraints)
-	      (make-property 'center '3vector no-default no-constraints)))
+	      (make-property 'center 'vector3 no-default no-constraints)))
 
 (define cylinder
   (make-class 'cylinder geometric-object
-	      (make-property 'axis '3vector
-			     (make-default (3vector 0 0 1)) no-constraints)
+	      (make-property 'axis 'vector3
+			     (make-default (vector3 0 0 1)) no-constraints)
 	       (make-property 'radius 'number no-default (list positive?))
 	       (make-property 'height 'number no-default (list positive?))))
 	       
@@ -21,11 +21,11 @@
 (define conductivity (property-value-constructor 'conductivity))
 
 (define material (property-value-constructor 'material))
-(define center (3vector-property-value-constructor 'center))
+(define center (vector3-property-value-constructor 'center))
 
 (define radius (property-value-constructor 'radius))
 (define height (property-value-constructor 'height))
-(define axis (3vector-property-value-constructor 'axis))
+(define axis (vector3-property-value-constructor 'axis))
 
 ; ****************************************************************
 
