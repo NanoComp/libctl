@@ -48,11 +48,8 @@
 			       (object-property-values object))))
 (define null-object (make-object '() '()))
 
-(define (make-default default-value)
-  (cons true default-value))
-(define no-default (cons false '()))
-(define (has-default? default) (car default))
-(define (default-value default) (cdr default))
+(define no-default '(no-default))
+(define (has-default? default) (not (eq? default no-default)))
 
 (define (make-derived derive-func)
   (cons true derive-func))
@@ -71,8 +68,7 @@
 (define (property-derived property) (fifth property))
 (define (property-has-default? property)
   (has-default? (property-default property)))
-(define (property-default-value property)
-  (default-value (property-default property)))
+(define (property-default-value property) (property-default property))
 (define (property-derived? property)
   (derived? (property-derived property)))
 (define (derive-property property object)
@@ -229,7 +225,7 @@
       (make-property-value-pair (car value-pair)
 				(post-process-func (cdr value-pair))))))
 
-(defmacro-public define-property (name type-name default . constraints)
+(defmacro-public define-property (name default type-name . constraints)
   `(begin
      (define ,name
        (type-property-value-constructor ,type-name (quote ,name)))
@@ -237,7 +233,7 @@
 		    not-derived ,@constraints)))
 
 (defmacro-public define-post-processed-property
-  (name type-name post-process-func default . constraints)
+  (name default type-name post-process-func . constraints)
   `(begin
      (define ,name (post-processing-constructor
 		    ,post-process-func

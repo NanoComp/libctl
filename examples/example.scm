@@ -9,8 +9,8 @@
 ; Lesser General Public License for more details. 
 
 (define-class material-type no-parent
-  (define-property epsilon 'number no-default positive?)
-  (define-property conductivity 'number (make-default 0.0)))
+  (define-property epsilon no-default 'number positive?)
+  (define-property conductivity 0.0 'number))
 
 ; use the solid geometry classes, variables, etcetera in libgeom:
 ; (one specifications file can include another specifications file)

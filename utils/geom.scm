@@ -24,31 +24,27 @@
     (define-class material-type no-parent)) ; define dummy class
 
 (define-class geometric-object no-parent
-  (define-property material 'material-type no-default)
-  (define-property center 'vector3 no-default))
+  (define-property material no-default 'material-type)
+  (define-property center no-default 'vector3))
 
 (define (non-negative? x) (not (negative? x)))
 
 (define-class cylinder geometric-object
-  (define-post-processed-property axis 'vector3 unit-vector3
-    (make-default (vector3 0 0 1)))
-  (define-property radius 'number no-default non-negative?)
-  (define-property height 'number no-default non-negative?))
+  (define-post-processed-property axis (vector3 0 0 1) 'vector3 unit-vector3)
+  (define-property radius no-default 'number non-negative?)
+  (define-property height no-default 'number non-negative?))
 
 (define-class cone cylinder
-  (define-property radius2 'number (make-default 0)))
+  (define-property radius2 0 'number))
 	       
 (define-class sphere geometric-object
-  (define-property radius 'number no-default non-negative?))
+  (define-property radius no-default 'number non-negative?))
 	       
 (define-class block geometric-object
-  (define-post-processed-property e1 'vector3 unit-vector3 
-    (make-default (vector3 1 0 0)))
-  (define-post-processed-property e2 'vector3 unit-vector3 
-    (make-default (vector3 0 1 0)))
-  (define-post-processed-property e3 'vector3 unit-vector3 
-    (make-default (vector3 0 0 1)))
-  (define-property size 'vector3 no-default)
+  (define-post-processed-property e1 (vector3 1 0 0) 'vector3 unit-vector3)
+  (define-post-processed-property e2 (vector3 0 1 0) 'vector3 unit-vector3)
+  (define-post-processed-property e3 (vector3 0 0 1) 'vector3 unit-vector3)
+  (define-property size no-default 'vector3)
   (define-derived-property projection-matrix 'matrix3x3
     (lambda (object)
       (matrix3x3-inverse
@@ -66,15 +62,12 @@
 ; ****************************************************************
 
 (define-class lattice no-parent
-  (define-post-processed-property basis1 'vector3 unit-vector3 
-    (make-default (vector3 1 0 0)))
-  (define-post-processed-property basis2 'vector3 unit-vector3 
-    (make-default (vector3 0 1 0)))
-  (define-post-processed-property basis3 'vector3 unit-vector3 
-    (make-default (vector3 0 0 1)))
+  (define-post-processed-property basis1 (vector3 1 0 0) 'vector3 unit-vector3)
+  (define-post-processed-property basis2 (vector3 0 1 0) 'vector3 unit-vector3)
+  (define-post-processed-property basis3 (vector3 0 0 1) 'vector3 unit-vector3)
 
-  (define-property size 'vector3 (make-default (vector3 1 1 1)))
-  (define-property basis-size 'vector3 (make-default (vector3 1 1 1)))
+  (define-property size (vector3 1 1 1) 'vector3)
+  (define-property basis-size (vector3 1 1 1) 'vector3)
 
   (define-derived-property b1 'vector3
     (lambda (object)

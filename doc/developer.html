@@ -151,7 +151,7 @@ the following definitions, which give the name, type, default value,
 and (optional) constraints for a property:
 
 <pre>
-(define-property <i>name type default-value [ constraints... ]</i>)
+(define-property <i>name default-value type [ constraints... ]</i>)
 </pre>
 
 <p><code><i>name</i></code> is the name of the property.  It is okay
@@ -165,29 +165,27 @@ are the same as for <code>define-input-var</code>, described earlier.
 <p>If <code><i>default-value</i></code> is <code>no-default</code>,
 then the property has no default value and users are required to
 specify it.  To give a property a default value,
-<code><i>default-value</i></code> should be of the form
-<code>(make-default <i>value</i>)</code>, where
-<code><i>value</i></code> is the default value.
+<code><i>default-value</i></code> should simply be that default value.
 
 <p>For example, this is how we might define classes for materials and
 dielectric objects in an electromagnetic simulation:
 
 <pre>
 (define-class material-type no-parent
-  (define-property epsilon 'number no-default positive?)
-  (define-property conductivity 'number (make-default 0.0)))
+  (define-property epsilon no-default 'number positive?)
+  (define-property conductivity 0.0 'number))
 
 (define-class geometric-object no-parent
-  (define-property material 'material-type no-default)
-  (define-property center 'vector3 no-default))
+  (define-property material no-default 'material-type)
+  (define-property center no-default 'vector3))
 
 (define-class cylinder geometric-object
-  (define-property axis 'vector3 (make-default (vector3 0 0 1)))
-  (define-property radius 'number no-default positive?)
-  (define-property height 'number no-default positive?))
+  (define-property axis (vector3 0 0 1) 'vector3)
+  (define-property radius no-default 'number positive?)
+  (define-property height no-default 'number positive?))
 
 (define-class sphere geometric-object
-  (define-property radius 'number no-default positive?))
+  (define-property radius no-default 'number positive?))
 </pre>
 
 <h3>Derived properties</h3>
@@ -216,8 +214,8 @@ vector.)  The syntax for defining such a property is the same as
 <code>define-property</code> except that it has one extra argument:
 
 <pre>
-(define-post-processed-property <i>name type process-func
-                                default-value [ constraints... ]</i>)
+(define-post-processed-property <i>name default-value type
+                                process-func [ constraints... ]</i>)
 </pre>
 
 <p><code><i>process-func</i></code> is a function that takes one
@@ -238,16 +236,13 @@ routines, freeing us from the necessity of constantly recomputing it.
 
 <pre>
 (define-class block geometric-object
-  (define-property size 'vector3 no-default)
+  (define-property size no-default 'vector3)
 
   ; the basis vectors, which are forced to be unit-vectors
   ; by the unit-vector3 post-processing function:
-  (define-post-processed-property e1 'vector3 unit-vector3
-    (make-default (vector3 1 0 0)))
-  (define-post-processed-property e2 'vector3 unit-vector3
-    (make-default (vector3 0 1 0)))
-  (define-post-processed-property e3 'vector3 unit-vector3
-    (make-default (vector3 0 0 1)))
+  (define-post-processed-property e1 (vector3 1 0 0) 'vector3 unit-vector3)
+  (define-post-processed-property e2 (vector3 0 1 0) 'vector3 unit-vector3)
+  (define-post-processed-property e3 (vector3 0 0 1) 'vector3 unit-vector3)
 
   ; the projection matrix, which is computed from the basis vectors
   (define-derived-property projection-matrix 'matrix3x3
