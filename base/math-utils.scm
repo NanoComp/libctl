@@ -419,14 +419,14 @@
 
   (deriv dx 0 1e30 '() 2))
       
-(define (do-derivative-wrap f x dx-and-tol)
+(define (do-derivative-wrap do-deriv f x dx-and-tol)
   (let ((dx (if (> (length dx-and-tol) 0)
 		(car dx-and-tol)
 		(max (magnitude (* x 0.01)) 0.01)))
 	(tol (if (> (length dx-and-tol) 1)
 		 (cadr dx-and-tol)
 		 0)))
-    (do-derivative f x dx tol)))
+    (do-deriv f x dx tol)))
 
 (define derivative-df car)
 (define derivative-df-err cadr)
@@ -434,9 +434,9 @@
 (define derivative-d2f-err cadddr)
 
 (define (derivative f x . dx-and-tol)
-  (do-derivative-wrap f x dx-and-tol))
+  (do-derivative-wrap do-derivative f x dx-and-tol))
 (define (deriv f x . dx-and-tol)
-  (derivative-df (do-derivative-wrap f x dx-and-tol)))
+  (derivative-df (do-derivative-wrap do-derivative f x dx-and-tol)))
 
 ; Compute both the first and second derivatives at the same time
 ; (using minimal extra function evaluations).
@@ -445,11 +445,65 @@
   (define (f-deriv y)
     (binary* (binary- (f-memo y) (f-memo x)) (/ 2 (- y x))))
   (append
-   (do-derivative-wrap f-memo x dx-and-tol)
-   (do-derivative-wrap f-deriv x dx-and-tol)))
+   (do-derivative-wrap do-derivative f-memo x dx-and-tol)
+   (do-derivative-wrap do-derivative f-deriv x dx-and-tol)))
 
 (define (deriv2 f x . dx-and-tol)
   (derivative-d2f (apply derivative2 (cons f (cons x dx-and-tol)))))
+
+
+; Below, we have variants of the above routine which only compute the
+; *one-sided* derivative df/dx for dx > 0.  (Adapted from Ridder's
+; algorithm by SGJ.  Note that these are generally less accurate
+; than the ordinary two-sided derivative, above.)
+
+(define (do-derivative+ f x dx tol)
+
+  ; Using Neville's algorithm, compute successively higher-order
+  ; extrapolations of the derivative (the "Neville tableau"):
+  (define (deriv-a a0 prev-a fac fac0)
+    (if (null? prev-a)
+	(list a0)
+	(cons a0 (deriv-a (binary/
+			   (binary- (binary* a0 fac) (car prev-a)) 
+			   (- fac 1))
+			  (cdr prev-a) (* fac fac0) (sqrt fac0)))))
+  (define fx (f x))
+  
+  (define (deriv dx df0 err0 prev-a fac0)
+    (let ((a (deriv-a (binary/ (binary- (f (+ x dx)) fx) dx)
+		      prev-a fac0 fac0)))
+      (if (null? prev-a)
+	  (deriv (/ dx (sqrt fac0)) (car a) err0 a fac0)
+	  (let* ((errs
+		  (map max
+		       (map unary-abs (map binary- (cdr a) (reverse (cdr (reverse a)))))
+		       (map unary-abs (map binary- (cdr a) prev-a))))
+		 (errmin (apply min errs))
+		 (err (min errmin err0))
+		 (df (if (> err err0)
+			 df0
+			 (cdr (assoc errmin (map cons errs (cdr a)))))))
+	    (if (or (< err (* tol (unary-abs df)) )
+		    (> (unary-abs (binary- (car (reverse a)) (car (reverse prev-a))))
+		       (* 2 err)))
+		(list df err)
+		(deriv (/ dx (sqrt fac0)) df err a fac0))))))
+
+  (deriv dx 0 1e30 '() 2))
+      
+(define (derivative+ f x . dx-and-tol)
+  (do-derivative-wrap do-derivative+ f x dx-and-tol))
+(define (deriv+ f x . dx-and-tol)
+  (derivative-df (do-derivative-wrap do-derivative+ f x dx-and-tol)))
+
+; as do-derivative+, but taking derivative from left
+(define (do-derivative- f x dx tol)
+  (do-derivative+ f x (- dx) tol))
+(define (derivative- f x . dx-and-tol)
+  (do-derivative-wrap do-derivative- f x dx-and-tol))
+(define (deriv- f x . dx-and-tol)
+  (derivative-df (do-derivative-wrap do-derivative- f x dx-and-tol)))
 
 ; ****************************************************************
 
