@@ -261,12 +261,48 @@ object ctl_get_object(char *identifier)
 
 /**** Setters ****/
 
-/* This is ugly, but there is no gh_set routine and set! can't
-   be called normally because it is really a macro. */
+/* UGLY hack alert!  There doesn't seem to be any clean way of setting
+   Scheme variables from C in Guile (e.g. no gh_* interface).
+
+   One option is to use scm_symbol_set_x (symbol-set! in Scheme), but
+   I'm not sure how to get this to work in Guile 1.3 because of the
+   %&*@^-ing module system (I need to pass some module for the first
+   parameter, but I don't know what to pass).
+
+   Instead, I hacked together the following my_symbol_set_x routine,
+   using the functions scm_symbol_value0 and scm_symbol_set_x from the
+   Guile 1.3 sources. (scm_symbol_value0 has the virtue of looking in
+   the correct module somehow; I also used this function to replace
+   gh_lookup, which broke in Guile 1.3 as well...sigh.)
+
+   Note that I can't call "set!" because it is really a macro. 
+
+   All the ugliness is confined to the set_value() routine, though.  */
+
+#define USE_MY_SYMBOL_SET_X 1   /* use the hack */
+
+#ifdef USE_MY_SYMBOL_SET_X
+static SCM my_symbol_set_x(char *name, SCM v)
+{
+     /* code swiped from scm_symbol_value0 and scm_symbol_set_x */
+     SCM symbol = scm_intern_obarray_soft(name, strlen (name), scm_symhash, 0);
+     SCM vcell = scm_sym2vcell (SCM_CAR (symbol),
+                                SCM_CDR (scm_top_level_lookup_closure_var),
+                                SCM_BOOL_F);
+     if (SCM_FALSEP (vcell))
+          return SCM_UNDEFINED;
+     SCM_SETCDR (vcell, v);
+     return SCM_UNSPECIFIED;
+}
+#endif
+
 static void set_value(char *identifier, SCM value)
 {
-  gh_call3(gh_lookup("symbol-set!"), SCM_BOOL_F,
-	   gh_symbol2scm(identifier), value);
+#if defined(USE_SCM_SYMBOL_SET_X)   /* worked in Guile 1.1, 1.2 */
+     scm_symbol_set_x(SCM_BOOL_F, gh_symbol2scm(identifier), value);
+#elif defined(USE_MY_SYMBOL_SET_X)
+     my_symbol_set_x(identifier, value);
+#endif
 }
 
 void ctl_set_integer(char *identifier, integer value)

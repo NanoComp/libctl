@@ -53,8 +53,12 @@ typedef struct {
 
 /**************************************************************************/
 
+#ifndef GH_LOOKUP_OK
+#  define gh_lookup scm_symbol_value0
+#endif
+
 #ifndef HAVE_GH_LOAD
-#define gh_load gh_eval_file 
+#  define gh_load gh_eval_file 
 #endif
 
 extern void ctl_include(char *filename);
