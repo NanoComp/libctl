@@ -62,7 +62,10 @@
 
 (define include-dir "")
 
+(define include-files '()) ; a list of included files, most recent first
+
 (define (include pathname)
+  (set! include-files (cons pathname include-files))
   (let ((save-include-dir include-dir)
 	(pathpair (split-pathname pathname)))
     (if (pathname-absolute? (car pathpair))
@@ -72,7 +75,8 @@
 	(begin
 	  (set! include-dir (string-append include-dir (car pathpair)))
 	  (load (string-append include-dir (cdr pathpair)))))
-    (set! include-dir save-include-dir)))
+    (set! include-dir save-include-dir))
+  (set! include-files (cdr include-files)))
 
 (define (fix-path pathname)
   (if (pathname-absolute? pathname)
