@@ -215,7 +215,9 @@
        (object-property-value geometry-lattice 'basis))))
 
 (define (reciprocal->cartesian x)
-  (let ((s (object-property-value geometry-lattice 'size)))
+  (let ((s (vector-map
+	    (lambda (x) (if (= x no-size) 1 x))
+	    (object-property-value geometry-lattice 'size))))
     (let ((Rst
 	   (matrix3x3-transpose
 	    (matrix3x3* (object-property-value geometry-lattice 'basis)
@@ -227,7 +229,9 @@
 	  (matrix3x3* (matrix3x3* (matrix3x3-inverse Rst) x) Rst)))))
 
 (define (cartesian->reciprocal x)
-  (let ((s (object-property-value geometry-lattice 'size)))
+  (let ((s (vector-map
+	    (lambda (x) (if (= x no-size) 1 x))
+	    (object-property-value geometry-lattice 'size))))
     (let ((Rst
 	   (matrix3x3-transpose
 	    (matrix3x3* (object-property-value geometry-lattice 'basis)
