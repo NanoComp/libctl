@@ -1,3 +1,7 @@
+libctl 1.4.1 (7/4/2001)
+
+  * Support function lists.
+
 libctl 1.4 (2/23/2001)
 
   * Renamed "display-many" function to more felicitous "print"

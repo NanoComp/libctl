@@ -1,4 +1,19 @@
-2001-02-22  Steven G. Johnson  <stevenj@alum.mit.edu>
+2001-07-05  Steven G. Johnson  <stevenj@ab-initio>
+
+	* configure.ac: fixed parentheses mismatch, improved quoting
+
+	* ChangeLog, NEWS: updated
+
+	* base/ctl.c, base/ctl.h.in: support function lists
+
+	* configure.ac, configure.in: use autoconf 2.50
+
+2001-02-23  Steven G. Johnson  <stevenj@ab-initio>
+
+	* ChangeLog, NEWS, configure.in:
+	bumped version, in preparation for release
+
+2001-02-22  Steven G. Johnson  <stevenj@ab-initio>
 
 	* configure.in: fixed cppflags order
 
