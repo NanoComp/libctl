@@ -187,6 +187,9 @@
 	(vector-map
 	 (lambda (x) (inexact->exact (max (ceiling x) 1)))
 	 (vector-map * res (object-property-value geometry-lattice 'size))))))
+(define (get-grid-size-prod)
+  (let ((s (get-grid-size)))
+    (* (vector3-x s) (vector3-y s) (vector3-z s))))
 
 ; ****************************************************************
 ; Cartesian conversion and rotation for lattice and reciprocal coords:
