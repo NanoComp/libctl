@@ -484,9 +484,10 @@
   (display "/******* external-functions *******/\n\n")
   (for-each
    (lambda (ef)
+     (declare-external-c-function ef)
      (display "extern ")
      (declare-external-function ef)
-     (display ";\n"))
+     (display ";\n\n"))
    external-function-list)
   (display "\nextern void export_external_functions(void);\n"))
 
@@ -517,7 +518,6 @@
 		 "_to_scm(" c-name-str ");"))
 
 (define (output-external-function external-function)
-  (declare-external-c-function external-function) (newline)
   (declare-external-function external-function) (newline)
   (display "{\n")
 
