@@ -63,6 +63,8 @@ void geom_fix_object(geometric_object o)
 	      o.subclass.block_data->projection_matrix = matrix3x3_inverse(m);
 	      break;
 	 }
+	 case GEOMETRIC_OBJECT_SELF: case SPHERE:
+	      break; /* these objects are fine */
      }
 }
 
@@ -817,7 +819,7 @@ static geom_box_object *find_box_object(vector3 p, geom_box_tree t)
 /* shift p to be within the unit cell of the lattice (centered on the
    origin); p is required to be no more than one lattice constant
    away from the unit cell in any direction. */
-static shift_to_unit_cell(vector3 *p)
+static void shift_to_unit_cell(vector3 *p)
 {
      if (p->x >= 0.5 * geometry_lattice.size.x)
 	  p->x -= geometry_lattice.size.x;
