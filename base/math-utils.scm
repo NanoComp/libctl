@@ -349,7 +349,7 @@
 		 (df (if (> err err0)
 			 df0
 			 (cdr (assoc errmin (map cons errs (cdr a)))))))
-	    (if (or (< err tol) 
+	    (if (or (< err (* tol df)) 
 		    (> (abs (- (car (reverse a)) (car (reverse prev-a))))
 		       (* 2 err)))
 		(list df err)
