@@ -49,6 +49,10 @@ cat > $output_dir/ctl-io.h <<EOF
 #ifndef CTL_IO_H
 #define CTL_IO_H
 
+#ifdef SWIG
+%{
+#endif
+
 #include <guile/gh.h>
 #include <ctl.h>
 
@@ -75,7 +79,7 @@ cat > $output_dir/${code} <<EOF
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <ctl-io.h>
+#include "ctl-io.h"
 
 #ifdef CXX_CTL_IO
 using namespace ctlio;
@@ -88,12 +92,12 @@ ok=yes
 (guile -l $libctl_dir/base/include.scm \
       -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (set"'!'" cxx $cxx) (include "'"'"$1"'"'") (output-header)" >> $output_dir/ctl-io.h) || ok=no
 
-if test ok = no; then rm -f ctl-io.[ch]; exit 1; fi
+if test ok = no; then rm -f ctl-io.h $code; exit 1; fi
 
 (guile -l $libctl_dir/base/include.scm \
       -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (set"'!'" cxx $cxx) (include "'"'"$1"'"'") (output-source)" >> $output_dir/${code}) || ok=no
 
-if test ok = no; then rm -f ctl-io.[ch]; exit 1; fi
+if test ok = no; then rm -f ctl-io.h $code; exit 1; fi
 
 echo >> $output_dir/ctl-io.h
 
@@ -111,12 +115,15 @@ fi
 
 cat >> $output_dir/ctl-io.h <<EOF
 
+#ifdef SWIG
+%}
+#endif
+
 #endif                          /* CTL_IO_H */
 
 EOF
-
 @INDENT@ $output_dir/${code} > /dev/null 2>&1
-@INDENT@ $output_dir/ctl-io.h > /dev/null 2>&1
+# @INDENT@ $output_dir/ctl-io.h > /dev/null 2>&1
 rm -f $output_dir/${code}~ $output_dir/ctl-io.h~
 rm -f $output_dir/${code}.BAK $output_dir/ctl-io.h.BAK
 

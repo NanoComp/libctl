@@ -87,6 +87,10 @@
   (and (pair? type-name) (eq? (car type-name) 'list)))
 (define (list-el-type-name type-name) (cdr type-name))
 
+(define exported-type-list '())
+(define (export-type type-name)
+  (set! exported-type-list (cons type-name exported-type-list)))
+
 (define (make-type-descriptor kind name name-str predicate)
   (list kind name name-str predicate))
 (define type-descriptor-kind first)

@@ -37,6 +37,9 @@
 
 (define-output-var gaps (make-list-type 'number))
 
+(export-type (make-list-type 'number))
+(export-type (make-list-type (make-list-type 'number)))
+
 ; ****************************************************************
 
 (define-external-function run-program true true

@@ -47,6 +47,7 @@
 (define c-type-string (compose c-identifier type-string))
 
 (define declared-type-names '())
+(define declared-types '())
 (define (declare-type-name type-name)
   (if (and (list-type-name? type-name)
 	   (not (member (c-type-string type-name) declared-type-names)))
@@ -58,8 +59,12 @@
 	(print (c-type-string (list-el-type-name type-name))
 		      " *items;\n")
 	(print "} " (c-type-string type-name) ";\n\n")
+	(set! declared-types (cons type-name declared-types))
 	(set! declared-type-names (cons (c-type-string type-name)
 					declared-type-names)))))
+
+(define (declared-list-types)
+  (list-transform-positive declared-types list-type-name?))
 
 (define (c-var-decl' var-name var-type-name ns)
   (print (c-type-string var-type-name) " " ns
@@ -134,6 +139,7 @@
 
 (define (declare-var-types)
   (let ((var-types (append
+		    exported-type-list
 		    (map var-type-name 
 			 (append (reverse input-var-list) 
 				 (reverse output-var-list)))
@@ -786,6 +792,29 @@
 
 ; ***************************************************************************
 
+(define (swig-type-header type-name)
+  (print "%typemap(guile,in) " (c-type-string type-name) " {\n")
+  (input-value "$input" "$1" type-name get-c-local)
+  (print "}\n")
+  (if (and (not (eq? 'object (type-descriptor-kind 
+			      (get-type-descriptor type-name))))
+	   (or (not (list-type-name? type-name))
+	       (eq? 'simple (type-descriptor-kind 
+			     (get-type-descriptor 
+			      (list-el-type-name type-name))))))
+      (begin
+	(print "%typemap(guile,out) " (c-type-string type-name) " {\n")
+	(output-value "$result" "$1" type-name set-c-local)
+	(print "}\n")))
+  (print "\n")
+)
+
+(define (output-swig-header)
+  (for-each swig-type-header
+	    (append (declared-list-types) (map class-type-name class-list))))
+
+; ***************************************************************************
+
 (define (output-header)
   (display-c-class-decls)
   (declare-vars-header)
@@ -800,6 +829,10 @@
   (output-class-copy-functions-header)
   (output-class-equal-functions-header)
   (output-class-destruction-functions-header)
+  (print "/******* SWIG type-conversion mappings *******/\n\n")
+  (print "\n#ifdef SWIG\n%}\n\n")
+  (output-swig-header)
+  (print "%{\n#endif\n")
 )
 
 (define (output-source)
