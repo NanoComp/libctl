@@ -2209,7 +2209,7 @@ SCM subplex_scm(SCM f_scm, SCM x_scm,
 {
      number *x,  tol, *scale, fx;
      integer i, n, maxnfe, nfe, errflag, scale_len;
-     SCM retvals[2];
+     SCM retval;
 
      n = list_length(x_scm);
      tol = fabs(gh_scm2double(tol_scm));
@@ -2256,11 +2256,10 @@ SCM subplex_scm(SCM f_scm, SCM x_scm,
 	      break;
      }
 
-     retvals[0] = gh_double2scm(fx);
-     retvals[1] = make_number_list(n, x);
+     retval = gh_cons(make_number_list(n, x), gh_double2scm(fx));
 
      free(scale);
      free(x);
 
-     return make_object_list(2, retvals);
+     return retval;
 }
