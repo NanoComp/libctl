@@ -77,6 +77,9 @@
 
 (define (sqr x) (* x x))
 
+; complex conjugate of x:
+(define (conj x) (make-rectangular (real-part x) (- (imag-part x))))
+
 ; combine 2 alists.  returns a list containing all of the associations
 ; in a1 and any associations in a2 that are not in a1
 (define (combine-alists a1 a2)

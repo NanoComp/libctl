@@ -30,6 +30,8 @@
   (and (vector? m)
        (= (vector-length m) 3)
        (vector-for-all? m vector3?)))
+(define (real-matrix3x3? m)
+  (and (matrix3x3? m) (vector-for-all? m real-vector3?)))
 (define (matrix3x3-col m col)
   (vector-ref m col))
 (define (matrix3x3-ref m row col)

@@ -102,8 +102,18 @@ the command-line when the program is executed.  In all other respects,
 vectors, returns their dot product.  If one of them is a number and
 the other is a vector, then scales the vector by the number.
 
+<p><dt><code>(vector3-dot <i>v1 v2</i>)</code>
+<dd>Returns the dot product of <code><i>v1</i></code> and <code><i>v2</i></code>.
+
+<p><dt><code>(vector3-cross <i>v1 v2</i>)</code>
+<dd>Returns the cross product of <code><i>v1</i></code> and <code><i>v2</i></code>.
+
+<p><dt><code>(vector3-cdot <i>v1 v2</i>)</code>
+<dd>Returns the conjugated dot product <code>(vector3-dot (conj <i>v1</i>) <i>v2</i>)</code>.
+
 <p><dt><code>(vector3-norm <i>v</i>)</code>
-<dd>Returns the length of the given vector.
+<dd>Returns the length <code>(sqrt (vector3-cdot v v))</code> of the
+given vector.
 
 <p><dt><code>(unit-vector3 <i>x [y z]</i></code>)
 <dt><code>(unit-vector3 <i>v</i>)</code>
@@ -188,6 +198,10 @@ not a property of <code><i>object</i></code>.)
 <h2>Miscellaneous utilities</h2>
 
 <dl>
+
+<dt><code>(conj <i>x</i>)</code>
+<dd>Return the complex conjugate of a number <code><i>x</i></code>
+(for some reason, Scheme doesn't provide such a function).
 
 <dt><code>(interpolate <i>n list</i>)</code>
 <dd>Given a <code><i>list</i></code> of numbers or 3-vectors, linearly

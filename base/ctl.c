@@ -218,6 +218,32 @@ matrix3x3 matrix3x3_inverse(matrix3x3 m)
 
 /**************************************************************************/
 
+/* complex number utilities */
+
+vector3 cvector3_real_part(cvector3 cv)
+{
+     vector3 v;
+     v.x = cv.x.re; v.y = cv.y.re; v.z = cv.z.re;
+     return v;
+}
+
+vector3 cvector3_imag_part(cvector3 cv)
+{
+     vector3 v;
+     v.x = cv.x.im; v.y = cv.y.im; v.z = cv.z.im;
+     return v;
+}
+
+cvector3 make_cvector3(vector3 vr, vector3 vi)
+{
+     cvector3 cv;
+     cv.x.re = vr.x; cv.y.re = vr.y; cv.z.re = vr.z;
+     cv.x.im = vi.x; cv.y.im = vi.y; cv.z.im = vi.z;
+     return cv;
+}
+
+/**************************************************************************/
+
 /* type conversion */
 
 vector3 scm2vector3(SCM sv)
@@ -256,6 +282,58 @@ SCM matrix3x32scm(matrix3x3 m)
 		  vector32scm(m.c2)));
 }
 
+cnumber scm2cnumber(SCM sx)
+{
+     cnumber x;
+     x.re = SCM_REALPART(sx);
+     x.im = SCM_CPLXP(sx) ? SCM_IMAG(sx) : 0.0;
+     return x;
+}
+
+SCM cnumber2scm(cnumber x)
+{
+     if (x.im == 0.0)
+	  return gh_double2scm(x.re);
+     else
+	  return scm_makdbl(x.re, x.im);
+}
+
+cvector3 scm2cvector3(SCM sv)
+{
+     cvector3 v;
+
+     v.x = scm2cnumber(gh_vector_ref(sv,gh_int2scm(0)));
+     v.y = scm2cnumber(gh_vector_ref(sv,gh_int2scm(1)));
+     v.z = scm2cnumber(gh_vector_ref(sv,gh_int2scm(2)));
+     return v;
+}
+
+cmatrix3x3 scm2cmatrix3x3(SCM sm)
+{
+     cmatrix3x3 m;
+
+     m.c0 = scm2cvector3(gh_vector_ref(sm,gh_int2scm(0)));
+     m.c1 = scm2cvector3(gh_vector_ref(sm,gh_int2scm(1)));
+     m.c2 = scm2cvector3(gh_vector_ref(sm,gh_int2scm(2)));
+     return m;
+}
+
+SCM cvector32scm(cvector3 v)
+{
+     return(gh_call3(gh_lookup("vector3"),
+		     cnumber2scm(v.x),
+		     cnumber2scm(v.y),
+		     cnumber2scm(v.z)));
+}
+
+SCM cmatrix3x32scm(cmatrix3x3 m)
+{
+     return(gh_call3(gh_lookup("matrix3x3"),
+		     cvector32scm(m.c0),
+		     cvector32scm(m.c1),
+		     cvector32scm(m.c2)));
+}
+
 /**************************************************************************/
 
 /* variable get/set functions */
@@ -270,6 +348,11 @@ integer ctl_get_integer(char *identifier)
 number ctl_get_number(char *identifier)
 {
   return(gh_scm2double(gh_lookup(identifier)));
+}
+
+cnumber ctl_get_cnumber(char *identifier)
+{
+  return(scm2cnumber(gh_lookup(identifier)));
 }
 
 boolean ctl_get_boolean(char *identifier)
@@ -290,6 +373,16 @@ vector3 ctl_get_vector3(char *identifier)
 matrix3x3 ctl_get_matrix3x3(char *identifier)
 {
   return(scm2matrix3x3(gh_lookup(identifier)));
+}
+
+cvector3 ctl_get_cvector3(char *identifier)
+{
+  return(scm2cvector3(gh_lookup(identifier)));
+}
+
+cmatrix3x3 ctl_get_cmatrix3x3(char *identifier)
+{
+  return(scm2cmatrix3x3(gh_lookup(identifier)));
 }
 
 list ctl_get_list(char *identifier)
@@ -363,6 +456,11 @@ void ctl_set_number(char *identifier, number value)
   set_value(identifier, gh_double2scm(value));
 }
 
+void ctl_set_cnumber(char *identifier, cnumber value)
+{
+  set_value(identifier, cnumber2scm(value));
+}
+
 void ctl_set_boolean(char *identifier, boolean value)
 {
   set_value(identifier, gh_bool2scm(value));
@@ -381,6 +479,16 @@ void ctl_set_vector3(char *identifier, vector3 value)
 void ctl_set_matrix3x3(char *identifier, matrix3x3 value)
 {
   set_value(identifier, matrix3x32scm(value));
+}
+
+void ctl_set_cvector3(char *identifier, cvector3 value)
+{
+  set_value(identifier, cvector32scm(value));
+}
+
+void ctl_set_cmatrix3x3(char *identifier, cmatrix3x3 value)
+{
+  set_value(identifier, cmatrix3x32scm(value));
 }
 
 void ctl_set_list(char *identifier, list value)
@@ -417,6 +525,11 @@ number number_list_ref(list l, int index)
   return(gh_scm2double(list_ref(l,index)));
 }
 
+cnumber cnumber_list_ref(list l, int index)
+{
+  return(scm2cnumber(list_ref(l,index)));
+}
+
 boolean boolean_list_ref(list l, int index)
 {
   return(SCM_BOOL_F != list_ref(l,index));
@@ -435,6 +548,16 @@ vector3 vector3_list_ref(list l, int index)
 matrix3x3 matrix3x3_list_ref(list l, int index)
 {
   return(scm2matrix3x3(list_ref(l,index)));
+}
+
+cvector3 cvector3_list_ref(list l, int index)
+{
+  return(scm2cvector3(list_ref(l,index)));
+}
+
+cmatrix3x3 cmatrix3x3_list_ref(list l, int index)
+{
+  return(scm2cmatrix3x3(list_ref(l,index)));
 }
 
 list list_list_ref(list l, int index)
@@ -471,6 +594,9 @@ MAKE_LIST(gh_int2scm)
 list make_number_list(int num_items, number *items)
 MAKE_LIST(gh_double2scm)
 
+list make_cnumber_list(int num_items, cnumber *items)
+MAKE_LIST(cnumber2scm)
+
 list make_boolean_list(int num_items, boolean *items)
 MAKE_LIST(gh_bool2scm)
 
@@ -482,6 +608,12 @@ MAKE_LIST(vector32scm)
 
 list make_matrix3x3_list(int num_items, matrix3x3 *items)
 MAKE_LIST(matrix3x32scm)
+
+list make_cvector3_list(int num_items, cvector3 *items)
+MAKE_LIST(cvector32scm)
+
+list make_cmatrix3x3_list(int num_items, cmatrix3x3 *items)
+MAKE_LIST(cmatrix3x32scm)
 
 #define NO_CONVERSION  
 
@@ -523,6 +655,11 @@ number number_object_property(object o, char *property_name)
   return(gh_scm2double(object_property_value(o,property_name)));
 }
 
+cnumber cnumber_object_property(object o, char *property_name)
+{
+  return(scm2cnumber(object_property_value(o,property_name)));
+}
+
 boolean boolean_object_property(object o, char *property_name)
 {
   return(SCM_BOOL_F != object_property_value(o,property_name));
@@ -541,6 +678,16 @@ vector3 vector3_object_property(object o, char *property_name)
 matrix3x3 matrix3x3_object_property(object o, char *property_name)
 {
   return(scm2matrix3x3(object_property_value(o,property_name)));
+}
+
+cvector3 cvector3_object_property(object o, char *property_name)
+{
+  return(scm2cvector3(object_property_value(o,property_name)));
+}
+
+cmatrix3x3 cmatrix3x3_object_property(object o, char *property_name)
+{
+  return(scm2cmatrix3x3(object_property_value(o,property_name)));
 }
 
 list list_object_property(object o, char *property_name)
