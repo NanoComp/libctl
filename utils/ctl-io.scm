@@ -489,7 +489,8 @@
      (declare-external-function ef)
      (display ";\n\n"))
    external-function-list)
-  (display "\nextern void export_external_functions(void);\n"))
+  (display "\nextern void export_external_functions(void);\n")
+  (newline))
 
 (define (output-external-function-export external-function)
   (display-many
@@ -600,15 +601,16 @@
   (display "extern SCM write_output_vars(void);\n")
   (display "extern SCM destroy_input_vars(void);\n")
   (display "extern SCM destroy_output_vars(void);\n\n")
-  (output-external-functions-header) (newline))
+  (output-external-functions-header)
+  (output-class-input-functions-header)
+  (output-class-destruction-functions-header)
+)
 
 (define (output-source)
   (declare-vars-source)
   (display-many
    "int num_read_input_vars = 0; /* # calls to read_input_vars */\n"
    "int num_write_output_vars = 0; /* # calls to read_input_vars */\n\n")
-  (output-class-input-functions-header)
-  (output-class-destruction-functions-header)
   (output-class-input-functions-source)
   (output-class-destruction-functions-source)
   (input-vars-function)
