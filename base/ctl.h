@@ -90,7 +90,7 @@ extern SCM matrix3x32scm(matrix3x3 m);
 
 #define ctl_convert_number_to_c(x) gh_scm2double(x)
 #define ctl_convert_integer_to_c(x) gh_scm2int(x)
-#define ctl_convert_string_to_c(x) gh_scm2newstr(x)
+#define ctl_convert_string_to_c(x) gh_scm2newstr(x, 0)
 #define ctl_convert_boolean_to_c(x) gh_scm2bool(x)
 #define ctl_convert_vector3_to_c(x) scm2vector3(x)
 #define ctl_convert_matrix3x3_to_c(x) scm2matrix3x3(x)
