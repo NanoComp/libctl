@@ -397,6 +397,17 @@
 
 ; ****************************************************************
 
+; Some simple integration routines using an adaptive trapezoidal rule
+; (see e.g. Numerical Recipes, Sec. 4.2).  It might be nice to have
+; Gaussian quadratures and what-not, but on the other hand the
+; functions we are integrating may well be the result of a computation
+; on a finite grid (somehow interpolated), and so will not be smooth.
+; Also, implementing thse simple algorithms in Scheme lets us use our
+; polymorphic arithmetic functions so that we can easily integrate
+; real, complex, and vector-valued functions.
+
+; Integrate the 1d function (f x) from x=a..b to within the specified
+; fractional tolerance.
 (define (integrate-1d f a b tol)
   (define (trap0 n sum)
     (binary*
@@ -423,6 +434,9 @@
 	  (trap (+ n 1) newsum))))
   (trap 1 0.0))
 	  
+; Integrate the multi-dimensional function f from a..b, within the
+; specified tolerance.  a and b are either numbers (for 1d integrals),
+; or vectors/lists of the same length giving the bounds in each dimension.
 (define (integrate f a b tol)
   (define (int f a b)
     (if (null? a)
