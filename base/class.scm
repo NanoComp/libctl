@@ -105,6 +105,8 @@
    ((eq? type-name 'integer) (make-simple-type-descriptor 'integer integer?))
    ((eq? type-name 'boolean) (make-simple-type-descriptor 'boolean boolean?))
    ((eq? type-name 'string) (make-simple-type-descriptor 'string string?))
+   ((eq? type-name 'SCM)
+    (make-simple-type-descriptor 'SCM (lambda (x) true)))
    ((eq? type-name 'function)
     (make-simple-type-descriptor 'function procedure?))
    ((eq? type-name 'vector3) 
