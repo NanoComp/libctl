@@ -267,7 +267,7 @@ material_type material_of_point_inobject0(geometric_object_list geometry,
 
 material_type material_of_point_inobject(vector3 p, boolean *inobject)
 {
-     material_of_point_inobject0(geometry, p, inobject);
+     return material_of_point_inobject0(geometry, p, inobject);
 }
 
 material_type material_of_point0(geometric_object_list geometry, vector3 p)
