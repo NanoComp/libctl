@@ -36,6 +36,7 @@ install:
 	list='$(SCMFILES)'; for scmfile in $$list; do \
 		$(INSTALL) -m 0644 $$scmfile $(prefix)/share/libctl/base; \
 	done
+	$(INSTALL) -m 0644 main.c $(prefix)/share/libctl/base
 
 .c.o:
 	$(CC) -c $(INCLUDES) $(CFLAGS) $< -o $@
