@@ -57,19 +57,11 @@
 
 (define (vector-for-all? v pred) (for-all? (vector->list v) pred))
 
-(define (combine op list1 list2)
-  (if (or (null? list1) (null? list2))
-      '()
-      (cons (op (car list1) (car list2))
-	    (combine op (cdr list1) (cdr list2)))))
-
-(define (vector-combine op v1 v2)
-  (list->vector (combine op (vector->list v1) (vector->list v2))))
-
 (define (vector-fold-right op init v)
   (fold-right op init (vector->list v)))
 
-(define (vector-map func v) (list->vector (map func (vector->list v))))
+(define (vector-map func . v)
+  (list->vector (apply map (cons func (map vector->list v)))))
 
 (define (indent indentby)
   (display (make-string indentby #\space)))
@@ -92,9 +84,9 @@
   (and (vector v)
        (= (vector-length v) 3)
        (vector-for-all? v number?)))
-(define (vector3+ v1 v2) (vector-combine + v1 v2))
-(define (vector3- v1 v2) (vector-combine - v1 v2))
-(define (vector3-dot v1 v2) (vector-fold-right + 0 (vector-combine * v1 v2)))
+(define (vector3+ v1 v2) (vector-map + v1 v2))
+(define (vector3- v1 v2) (vector-map - v1 v2))
+(define (vector3-dot v1 v2) (vector-fold-right + 0 (vector-map * v1 v2)))
 (define (vector3-scale s v) (vector-map (lambda (x) (* s x)) v))
 (define (vector3* a b)
   (if (number? a)
