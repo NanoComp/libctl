@@ -389,7 +389,8 @@ to support them in your program.
 <p>First, you need to generate C code to import/export the
 input/output variables from/to Guile.  This is done automatically by
 the <code>gen-ctl-io</code> script in the <code>utils/</code>
-directory:
+directory (installed into a <code>bin</code> directory by <code>make
+install</code>):
 
 <pre>
 gen-ctl-io <i>specifications-file</code>
@@ -401,22 +402,27 @@ global variables and data structures for the input/output variables
 and classes, and the latter contains code to exchange this data with
 Guile.
 
-<p>Second, you should copy the <code>main.c</code> file from the
-<code>examples/</code> directory.  This file defines a main program
-that starts up Guile, declares the routines that you are exporting,
-and loads control files from the command line.  You should not need to
-modify this file.
+<p>Second, you should use the <code>main.c</code> file from the
+<code>base/</code> directory; if you use the example
+<code>Makefile</code> (see below), this is done automatically for you.
+This file defines a main program that starts up Guile, declares the
+routines that you are exporting, and loads control files from the
+command line.  You should not need to modify this file, but you should
+define preprocessor symbols telling it where libctl and your
+specification file are (again, this is done for you automatically by
+the example <code>Makefile</code>).
+
+<p>For maximum convenience, if you are wisely using GNU autoconf, you
+should also copy the <code>Makefile.in</code> from
+<code>examples/</code>; you can use the <code>Makefile</code>
+otherwise.  At the top of this file, there are places to specify your
+object files, specification file, and other information.  The
+<code>Makefile</code> will then generate the <code>ctl-io</code> files
+and do everything else needed to compile your program.
 
 <p>You then merely need to write the functions that you are exporting
 (see above for how to export functions).  This will usually include,
 at least, a <code>run</code> function (see above).
-
-<p>For maximum convenience, you should also copy the
-<code>Makefile</code> from <code>examples/</code>.  At the top of this
-file, there are places to specify the location of libctl, your object
-files and specification file, and your C compiler and flags. The
-Makefile will then generate the <code>ctl-io</code> files and do
-everything else needed to compile your program.
 
 <p>Have fun!
 

@@ -2,17 +2,22 @@ This is libctl, a Guile-based library for supporting flexible control
 files in scientific simulations.  libctl is copyright (c) 1998 by
 Steven G. Johnson.
 
-Before using libctl, you should first run the configure script:
+To install libctl, one normally only needs to do:
 
 ./configure
+make
+make install
+
+Files are installed under /usr/local by default, but this can be
+changed by passing --prefix=<dir> to configure.
 
 Documentation can be found in the doc/ directory, and an example
 program in the examples/ directory.  The main source code for libctl
-is in the src/ and utils/ directories.
+is in the base/ and utils/ directories.
 
-In utils/libgeom, you can find specification files and functions
-for dealing with structures consisting of solid geometric objects
-in some lattice basis.  The example program uses this code.
+In utils/geom.*, you can find specification files and functions for
+dealing with structures consisting of solid geometric objects in some
+lattice basis.  The example program uses this code.
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
