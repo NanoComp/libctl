@@ -19,6 +19,8 @@
  * Steven G. Johnson can be contacted at stevenj@alum.mit.edu.
  */
 
+#include <math.h>
+
 #include "ctl.h"
 
 /**************************************************************************/
@@ -55,7 +57,33 @@ static SCM list_ref(list l, int index)
 
 /**************************************************************************/
 
+/* Scheme file loading (don't use gh_load directly because subsequent
+   loads won't use the correct path name).  Uses our "include" function
+   from include.scm, or defaults to gh_load if this function isn't
+   defined. */
+
+void ctl_include(char *filename)
+{
+  SCM include_proc = gh_lookup("include");
+  if (include_proc == SCM_UNDEFINED)
+    gh_load(filename);
+  else
+    gh_call1(include_proc, gh_str02scm(filename));
+}
+
+/**************************************************************************/
+
 /* vector3 and matrix3x3 utilities: */
+
+number vector3_dot(vector3 v1,vector3 v2)
+{
+  return (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z);
+}
+
+number vector3_norm(vector3 v)
+{
+  return (sqrt(vector3_dot(v,v)));
+}
 
 vector3 vector3_scale(number s, vector3 v)
 {
@@ -65,6 +93,15 @@ vector3 vector3_scale(number s, vector3 v)
   vnew.y = s * v.y;
   vnew.z = s * v.z;
   return vnew;
+}
+
+vector3 unit_vector3(vector3 v)
+{
+  number norm = vector3_norm(v);
+  if (norm < 1.0e-15)
+    return v;
+  else
+    return vector3_scale(1.0/norm, v);
 }
 
 vector3 vector3_plus(vector3 v1,vector3 v2)
@@ -105,6 +142,31 @@ vector3 matrix3x3_vector3_mult(matrix3x3 m, vector3 v)
   vnew.y = m.c0.y * v.x + m.c1.y * v.y + m.c2.y * v.z;
   vnew.z = m.c0.z * v.x + m.c1.z * v.y + m.c2.z * v.z;
   return vnew;
+}
+
+matrix3x3 matrix3x3_mult(matrix3x3 m1, matrix3x3 m2)
+{
+  matrix3x3 m;
+
+  m.c0.x = m1.c0.x * m2.c0.x + m1.c1.x * m2.c0.y + m1.c2.x * m2.c0.z;
+  m.c0.y = m1.c0.y * m2.c0.x + m1.c1.y * m2.c0.y + m1.c2.y * m2.c0.z;
+  m.c0.z = m1.c0.z * m2.c0.x + m1.c1.z * m2.c0.y + m1.c2.z * m2.c0.z;
+
+  m.c1.x = m1.c0.x * m2.c1.x + m1.c1.x * m2.c1.y + m1.c2.x * m2.c1.z;
+  m.c1.y = m1.c0.y * m2.c1.x + m1.c1.y * m2.c1.y + m1.c2.y * m2.c1.z;
+  m.c1.z = m1.c0.z * m2.c1.x + m1.c1.z * m2.c1.y + m1.c2.z * m2.c1.z;
+
+  m.c2.x = m1.c0.x * m2.c2.x + m1.c1.x * m2.c2.y + m1.c2.x * m2.c2.z;
+  m.c2.y = m1.c0.y * m2.c2.x + m1.c1.y * m2.c2.y + m1.c2.y * m2.c2.z;
+  m.c2.z = m1.c0.z * m2.c2.x + m1.c1.z * m2.c2.y + m1.c2.z * m2.c2.z;
+
+  return m;
+}
+
+matrix3x3 matrix3x3_inverse(matrix3x3 m)
+{
+  return scm2matrix3x3(gh_call1(gh_lookup("matrix3x3-inverse"),
+				matrix3x32scm(m)));
 }
 
 /**************************************************************************/

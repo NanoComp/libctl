@@ -31,11 +31,7 @@
 #include <stdlib.h>
 #include <guile/gh.h>
 
-#include "ctl-io.h"
-
-#ifndef HAVE_GUILE_1_3
-#define gh_load gh_eval_file
-#endif
+#include <ctl-io.h>
 
 /**************************************************************************/
 
@@ -57,19 +53,24 @@ void main_entry(int argc, char *argv[])
   gh_new_procedure ("read-input-vars", read_input_vars, 0, 0, 0);
   gh_new_procedure ("write-output-vars", write_output_vars, 0, 0, 0);
 
+  /* load include.scm if it was given at compile time */
+#ifdef CTL_SCM
+  ctl_include(INCLUDE_SCM);
+#endif
+
   /* load ctl.scm if it was given at compile time */
 #ifdef CTL_SCM
-  gh_load(CTL_SCM);
+  ctl_include(CTL_SCM);
 #endif
 
   /* load the specification file if it was given at compile time */
 #ifdef SPEC_SCM
-  gh_load(SPEC_SCM);
+  ctl_include(SPEC_SCM);
 #endif
 
   /* load any scheme files specified on the command-line: */
   for (i = 1; i < argc; ++i)
-    gh_load(argv[i]);
+    ctl_include(argv[i]);
 
   /* if read-input-vars was never called, drop into interactive mode: */
   /* (the num_read_input_vars count is kept by ctl-io in read_input_vars) */

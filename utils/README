@@ -1,0 +1,20 @@
+This is libgeom, a collection of utility code for manipulating geometric
+objects, for use with libctl.
+
+It contains:
+
+* geom.scm: specifications file containing classes and utilities
+  for dealing with three-dimensional geometric objects (spheres,
+  cylinders, etcetera).  This should be included in the specifications
+  file for anything using libgeom (with (include "<path>/geom.scm")).
+
+  Each geometric object derives from the class geometric-object, and
+  has a material property whose type is the class material-type.  Users
+  should provide their own material-type class (if none is provided,
+  a dummy class is used).
+
+* geom.c, geom.h: C routines (callable from Guile) for performing
+  various operations on a geometry, such as finding out what object
+  a given point is inside.  Note that most of these routines
+  use the global input variables defined in geom.scm--they must
+  be called only when these variables have been imported to C.

@@ -51,19 +51,27 @@ typedef struct {
 
 /**************************************************************************/
 
+#ifndef HAVE_GUILE_1_3
+#define gh_load gh_eval_file 
+#endif
+
+extern void ctl_include(char *filename);
+
+/**************************************************************************/
+
   /* vector3 and matrix3x3 utilities: */
 
-#include <math.h>
-
-#define vector3_dot(v1,v2) ((v1).x*(v2).x + (v1).y*(v2).y + (v1).z*(v2).z)
-#define vector3_norm(v) sqrt(vector3_dot((v),(v)))
-
+extern number vector3_dot(vector3 v1,vector3 v2);
+extern number vector3_norm(vector3 v);
 extern vector3 vector3_scale(number s, vector3 v);
+extern vector3 unit_vector3(vector3 v);
 extern vector3 vector3_cross(vector3 v1,vector3 v2);
 extern vector3 vector3_plus(vector3 v1,vector3 v2);
 extern vector3 vector3_minus(vector3 v1,vector3 v2);
 
 extern vector3 matrix3x3_vector3_mult(matrix3x3 m, vector3 v);
+extern matrix3x3 matrix3x3_mult(matrix3x3 m1, matrix3x3 m2);
+extern matrix3x3 matrix3x3_inverse(matrix3x3 m);
 
 /**************************************************************************/
 

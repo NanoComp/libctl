@@ -12,35 +12,10 @@
   (define-property epsilon 'number no-default positive?)
   (define-property conductivity 'number (make-default 0.0)))
 
-(define-class geometric-object no-parent
-  (define-property material 'material-type no-default)
-  (define-property center 'vector3 no-default))
+; use the solid geometry classes, variables, etcetera in libgeom:
+; (one specifications file can include another specifications file)
+(include "../utils/libgeom/geom.scm")
 
-(define-class cylinder geometric-object
-  (define-post-processed-property axis 'vector3 unit-vector3
-    (make-default (vector3 0 0 1)))
-  (define-property radius 'number no-default positive?)
-  (define-property height 'number no-default positive?))
-	       
-(define-class sphere geometric-object
-  (define-property radius 'number no-default positive?))
-	       
-(define-class block geometric-object
-  (define-post-processed-property e1 'vector3 unit-vector3 
-    (make-default (vector3 1 0 0)))
-  (define-post-processed-property e2 'vector3 unit-vector3 
-    (make-default (vector3 0 1 0)))
-  (define-post-processed-property e3 'vector3 unit-vector3 
-    (make-default (vector3 0 0 1)))
-  (define-property size 'vector3 no-default)
-  (define-derived-property projection-matrix 'matrix3x3
-    (lambda (object)
-      (matrix3x3-inverse
-       (matrix3x3
-	(object-property-value object 'e1)
-	(object-property-value object 'e2)
-	(object-property-value object 'e3))))))
-	       
 ; ****************************************************************
 
 ; Add some predefined variables, for convenience:
@@ -50,36 +25,9 @@
 
 (define infinity 1.0e20) ; big number for infinite dimensions of objects
 
-; ****************************************************************
-
-; Define some utility functions:
-
-(define (shift-geometric-object go shift-vector)
-  (let ((c (object-property-value go 'center)))
-    (modify-object go (center (vector3+ c shift-vector)))))
-
-(define (geometric-object-duplicates shift-vector min-multiple max-multiple go)
-  (if (<= min-multiple max-multiple)
-      (cons (shift-geometric-object
-	     go (vector3-scale min-multiple shift-vector))
-	    (geometric-object-duplicates shift-vector
-					 (+ min-multiple 1) max-multiple
-					 go))
-      '()))
-
-(define (geometric-objects-duplicates shift-vector min-multiple max-multiple
-				      go-list)
-  (fold-right append '()
-	     (map (lambda (go)
-		    (geometric-object-duplicates
-		     shift-vector min-multiple max-multiple go))
-		  go-list)))
+(set! default-material air)
 
 ; ****************************************************************
-
-(define-input-var dimensions 3 'integer positive?)
-
-(define-input-var geometry '() (make-list-type 'geometric-object))
 
 (define-input-var k-points '() (make-list-type 'vector3))
 

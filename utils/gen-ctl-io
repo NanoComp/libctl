@@ -46,15 +46,15 @@ cat > $output_dir/ctl-io.c <<EOF
 /* generated from the file: $1 */
 
 #include <stdlib.h>
-#include "$output_dir/ctl-io.h"
+#include <ctl-io.h>
 
 EOF
 
-guile -l $libctl_dir/src/ctl.scm -l $libctl_dir/utils/ctl-io.scm -l $1 \
-      -c "(output-header)" >> $output_dir/ctl-io.h
+guile -l $libctl_dir/src/include.scm \
+      -c "(include "'"'"$libctl_dir/src/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (include "'"'"$1"'"'") (output-header)" >> $output_dir/ctl-io.h
 
-guile -l $libctl_dir/src/ctl.scm -l $libctl_dir/utils/ctl-io.scm -l $1 \
-      -c "(output-source)" >> $output_dir/ctl-io.c
+guile -l $libctl_dir/src/include.scm \
+      -c "(include "'"'"$libctl_dir/src/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (include "'"'"$1"'"'") (output-source)" >> $output_dir/ctl-io.c
 
 cat >> $output_dir/ctl-io.h <<EOF
 

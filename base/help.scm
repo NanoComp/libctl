@@ -20,17 +20,38 @@
 
 ; ****************************************************************
 
-; Include other files that we need.  Note that the include.scm
-; file must already have been loaded, since we need the include
-; function it defines!
+(define (display-class indentby class)
+  (indent indentby)
+  (display-many "Class " (class-type-name class) ": ")
+  (newline)
+  (if (class-parent class)
+      (display-class (+ indentby 4) (class-parent class)))
+  (for-each
+   (lambda (property)
+     (if (not (property-derived? property))
+	 (begin 
+	   (indent (+ indentby 4))
+	   (display-many (type-string (property-type-name property)) " "
+			 (property-name property))
+	   (if (property-has-default? property)
+	       (display-many " = " (property-default-value property)))
+	   (newline))))
+   (class-properties class)))
+			  
+(define (class-help class) (display-class 0 class))
 
-(include "utils.scm")
-(include "vector3.scm")
-(include "matrix3x3.scm")
-(include "class.scm")
-(include "io-vars.scm")
-(include "extern-funcs.scm")
-(include "help.scm")
-(include "math-utils.scm")
+(define (variable-help var)
+  (display-many (type-string (var-type-name var)) " "
+		(var-name var) " = " (var-value var))
+  (newline))
+
+(define (help)
+  (for-each class-help class-list)
+  (newline)
+  (display "Input variables: ") (newline)
+  (for-each variable-help input-var-list)
+  (newline)
+  (display "Output variables: ") (newline)
+  (for-each variable-help output-var-list))
 
 ; ****************************************************************

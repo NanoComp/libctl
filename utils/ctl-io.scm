@@ -35,7 +35,8 @@
 
 (define (c-identifier s)
   (list->string (map (lambda (c) 
-		       (if (or (eq? c #\-) (eq? c #\space)) #\_ c))
+		       (if (or (eq? c #\-) (eq? c #\space))
+			   #\_ (if (eq? c #\?) #\p c)))
 		     (string->list s))))
 
 (define symbol->c-identifier (compose c-identifier symbol->string))
@@ -87,7 +88,7 @@
   (let ((subclasses (find-direct-subclasses class)))
     (if (not (null? subclasses))
 	(begin
-	  (display-many "enum { " (class-enum-name class))
+	  (display-many "enum { " (class-enum-name class) "_SELF" )
 	  (for-each (lambda (sc) (display-many ", " (class-enum-name sc)))
 		    subclasses)
 	  (display " } which_subclass;") (newline)
@@ -242,7 +243,7 @@
    (if (not (null? subclasses))
        (begin
 	 (newline)
-	 (display-many "o->which_subclass = " (class-enum-name class) ";")
+	 (display-many "o->which_subclass = " (class-enum-name class) "_SELF;")
 	 (newline))))
   (display "}") (newline) (newline))
 
@@ -609,7 +610,7 @@
   (display "extern SCM read_input_vars(void);") (newline)
   (display "extern SCM write_output_vars(void);") (newline)
   (display "extern SCM destroy_input_vars(void);") (newline)
-  (display "extern SCM destroy_output_vars(void);") (newline)
+  (display "extern SCM destroy_output_vars(void);") (newline) (newline)
   (output-external-functions-header) (newline))
 
 (define (output-source)

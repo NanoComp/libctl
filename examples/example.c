@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #include <guile/gh.h>
 
-#include "ctl-io.h"
+#include <ctl-io.h>
 
 /**************************************************************************/
 
@@ -73,7 +73,7 @@ static void display_object_info(geometric_object obj)
 	   obj.subclass.block_data->projection_matrix.c1.z,
 	   obj.subclass.block_data->projection_matrix.c2.z);
     break;
-  case GEOMETRIC_OBJECT:
+  case GEOMETRIC_OBJECT_SELF:
     printf("          generic geometric object\n");
     break;
   default:

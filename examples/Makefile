@@ -11,12 +11,16 @@
 #
 # Steven G. Johnson can be contacted at stevenj@alum.mit.edu.
 
+##############################################################################
+
 SPECIFICATION_FILE = photonic-crystal.scm
 PROGRAM_NAME = example
 LIBCTL_DIR = ..
 
-MY_OBJECTS = main.o example.o
+MY_OBJECTS = main.o example.o ../utils/libgeom/geom.o
 MY_HEADERS = 
+MY_INCLUDE_FLAGS = -I../utils/libgeom/
+MY_DEFINE_FLAGS = 
 
 ##############################################################################
 
@@ -25,6 +29,7 @@ CFLAGS = -g -Wall
 
 ##############################################################################
 
+LIBCTL_SCM_INCLUDE_SRC = $(LIBCTL_DIR)/src/include.scm
 LIBCTL_SCM_SRC = $(LIBCTL_DIR)/src/ctl.scm
 LIBCTL_C_SRC = $(LIBCTL_DIR)/src/ctl.c
 LIBCTL_OBJ = $(LIBCTL_C_SRC:.c=.o)
@@ -33,10 +38,13 @@ LIBCTL_HEADERS = $(LIBCTL_C_SRC:.c=.h)
 CTL_IO_GEN_SRC = $(LIBCTL_DIR)/utils/ctl-io.scm
 CTL_IO_GEN = $(LIBCTL_DIR)/utils/gen-ctl-io
 
-INCLUDE_FLAGS = -I$(LIBCTL_DIR)/src
+INCLUDE_FLAGS = -I$(LIBCTL_DIR)/src -I`dirname $(SPECIFICATION_FILE)` \
+	        $(MY_INCLUDE_FLAGS)
 
 DEFINE_FLAGS = -DCTL_SCM='"'$(PWD)/$(LIBCTL_SCM_SRC)'"' \
-               -DSPEC_SCM='"'$(PWD)/$(SPECIFICATION_FILE)'"'
+               -DINCLUDE_SCM='"'$(PWD)/$(LIBCTL_SCM_INCLUDE_SRC)'"' \
+               -DSPEC_SCM='"'$(PWD)/$(SPECIFICATION_FILE)'"' \
+	       $(MY_DEFINE_FLAGS)
 
 OBJECTS = $(MY_OBJECTS) $(LIBCTL_OBJ) ctl-io.o
 HEADERS = $(MY_HEADERS) $(LIBCTL_HEADERS) ctl-io.h
@@ -46,11 +54,11 @@ HEADERS = $(MY_HEADERS) $(LIBCTL_HEADERS) ctl-io.h
 all: $(PROGRAM_NAME)
 
 ctl-io.c: $(SPECIFICATION_FILE) \
-          $(LIBCTL_SCM_SRC) $(CTL_IO_GEN_SRC) $(CTL_IO_GEN)
+          $(CTL_IO_GEN_SRC) $(CTL_IO_GEN)
 	$(CTL_IO_GEN) $(SPECIFICATION_FILE)
 
 ctl-io.h: $(SPECIFICATION_FILE) \
-          $(LIBCTL_SCM_SRC) $(CTL_IO_GEN_SRC) $(CTL_IO_GEN)
+          $(CTL_IO_GEN_SRC) $(CTL_IO_GEN)
 	$(CTL_IO_GEN) $(SPECIFICATION_FILE)
 
 $(PROGRAM_NAME): $(HEADERS) $(OBJECTS) 
