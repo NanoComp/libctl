@@ -25,18 +25,16 @@
 (define false #f)
 
 (define (list-transform-positive l pred)
-  (if (null? l)
-      l
-      (if (pred (car l))
-	  (cons (car l) (list-transform-positive (cdr l) pred))
-	  (list-transform-positive (cdr l) pred))))
+  (define (tp Lrest Lpos)
+    (if (null? Lrest)
+	Lpos
+	(if (pred (car Lrest))
+	    (tp (cdr Lrest) (cons (car Lrest) Lpos))
+	    (tp (cdr Lrest) Lpos))))
+  (reverse (tp l '())))
 
 (define (list-transform-negative l pred)
-  (if (null? l)
-      l
-      (if (not (pred (car l)))
-	  (cons (car l) (list-transform-negative (cdr l) pred))
-	  (list-transform-negative (cdr l) pred))))
+  (list-transform-positive l (lambda (x) (not (pred x)))))
 
 (define (alist-copy al)
   (if (null? al) '()
