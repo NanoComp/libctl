@@ -37,6 +37,7 @@ extern "C" {
 typedef int integer;
 typedef double number;
 typedef short boolean;
+typedef char *string;
 typedef SCM list;
 typedef SCM object;
 
