@@ -53,6 +53,8 @@ boolean point_in_objectp(vector3 p, geometric_object o)
 	number radius = o.subclass.cylinder_data->radius;
 	return(radius > 0.0 && vector3_dot(r,rm) - proj*proj <= radius*radius);
       }
+      else
+	return 0;
     }
   case BLOCK:
     {
