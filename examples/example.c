@@ -85,7 +85,7 @@ static void display_object_info(geometric_object obj)
    is called, the input variables are already assigned.   After
    it is called, the values assigned to the output variables are
    automatically exported to scheme. */
-void run(void)
+void run_program(void)
 {
   int i;
 

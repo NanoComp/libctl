@@ -34,4 +34,6 @@
 (include "math-utils.scm")
 (include "interaction.scm")
 
+(define interactive #t)
+
 ; ****************************************************************

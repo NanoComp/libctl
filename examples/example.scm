@@ -39,8 +39,12 @@
 
 ; ****************************************************************
 
-(define-external-function run true true
+(define-external-function run-program true true
   no-return-value)
+
+(define (run)
+  (set! interactive #f)  ; don't be interactive if we call (run)
+  (run-program))
 
 (define-external-function energy-in-object false false
   'number 'geometric-object)

@@ -43,6 +43,7 @@
 void main_entry(int argc, char *argv[])
 {
   int i;
+  SCM interactive;
 
   /* Notify Guile of functions that we are making callable from Scheme.
      These are defined in the specifications file, from which the
@@ -89,9 +90,12 @@ void main_entry(int argc, char *argv[])
     if (argv[i][0])
       ctl_include(argv[i]);
 
-  /* if read-input-vars was never called, drop into interactive mode: */
-  /* (the num_read_input_vars count is kept by ctl-io in read_input_vars) */
-  if (num_read_input_vars == 0)
+  /* Check if we should run an interactive prompt.  We do this if
+     either the Scheme variable "interactive" is true, or if it is not
+     defined. */
+
+  interactive = gh_lookup("interactive");
+  if (interactive != SCM_BOOL_F)
     gh_repl(0, argv); /* pass 0 for argc since we have already handled args */
 }
 
