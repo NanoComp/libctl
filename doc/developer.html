@@ -182,6 +182,75 @@ dielectric objects in an electromagnetic simulation:
   (define-property radius 'number no-default positive?))
 </pre>
 
+<h3>Derived properties</h3>
+
+Sometimes, it is convenient to store other properties with an object
+that are not input by the user, but which instead are computed based
+on the other user inputs.  A mechanism is provided for this called
+"derived" properties, which are created by:
+
+<pre>
+(define-derived-property <i>name type derive-func</i>)
+</pre>
+
+<p>Here, <code><i>derive-func</i></code> is a function that takes an
+object of the class the property is in, and returns the value of the
+property.  (See below for an example.) derive-func is called after all
+of the non-derived properties of the object have been assigned their
+values.
+
+<h3>Post-processd properties</h3>
+
+It is often useful to store a function of the user input into a
+property, instead of just storing the input itself.  (For example, you
+might want to scale an input vector so that it is stored as a unit
+vector.)  The syntax for defining such a property is the same as
+<code>define-property</code> except that it has one extra argument:
+
+<pre>
+(define-post-processed-property <i>name type process-func
+                                default-value [ constraints... ]</i>)
+</pre>
+
+<p><code><i>process-func</i></code> is a function that takes one
+argument and returns a value, both of the same type as the property.
+Any user-specified value for the property is passed to
+<code><i>process-func</i></code>, and the result is assigned to the
+property.
+
+<p>Here is an example that defines a new type of geometric object, a
+<code>block</code>.  Blocks have a <code>size</code> property that
+specifies their dimensions along three unit vectors, which are also
+properties (with default values of the coordinate axes).  When
+computing whether a point falls within a block, it is necessary to
+know the projection matrix, which is the inverse of the matrix whose
+columns are the basis vectors.  We make this projection matrix a
+derived property, computed via the libctl-provided matrix routines,
+freeing us from the necessity of constantly recomputing it.
+
+<pre>
+(define-class block geometric-object
+  (define-property size 'vector3 no-default)
+
+  ; the basis vectors, which are forced to be unit-vectors
+  ; by the unit-vector3 post-processing function:
+  (define-post-processed-property e1 'vector3 unit-vector3
+    (make-default (vector3 1 0 0)))
+  (define-post-processed-property e2 'vector3 unit-vector3
+    (make-default (vector3 0 1 0)))
+  (define-post-processed-property e3 'vector3 unit-vector3
+    (make-default (vector3 0 0 1)))
+
+  ; the projection matrix, which is computed from the basis vectors
+  (define-derived-property projection-matrix 'matrix3x3
+    (lambda (object)
+      (matrix3x3-inverse
+       (matrix3x3
+        (object-property-value object 'e1)
+        (object-property-value object 'e2)
+        (object-property-value object 'e3))))))
+</pre>
+
 <h2>Exporting your subroutines</h2>
 
 In order for the ctl script to do anything, one of your C routines
