@@ -3,6 +3,14 @@ libctl 1.5
   * geometry-lattice now has a separate basis-size property, so that you
     can specify the basis vectors as being something other than unit vectors.
 
+  * More functions are tail-recursive, helping to prevent stack overflows;
+    thanks to Robert Sheldon for the bug report.
+
+  * New fold-left and fold-right functions, documented in the manual.
+
+  * The configure script now checks that guile is in the $PATH.  Thanks to
+    Bing Li and Giridhar Malalahalli for their bug reports.
+
 libctl 1.4.1 (7/4/2001)
 
   * Support function lists.

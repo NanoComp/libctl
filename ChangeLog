@@ -1,4 +1,40 @@
+2001-10-11  Steven G. Johnson  <stevenj@ab-initio>
+
+	* NEWS: updated
+
+	* utils/geom.scm: slight cleanup
+
+	* NEWS, base/class.scm, utils/geom.c, utils/geom.scm: added
+	basis-size property to geometry-lattice
+
+2001-10-04  Steven G. Johnson  <stevenj@ab-initio>
+
+	* configure.ac: bumped version
+
+2001-07-19  Steven G. Johnson  <stevenj@ab-initio>
+
+	* utils/geom.scm: make geometric-object-duplicates tail-recursive
+
+2001-07-18  Steven G. Johnson  <stevenj@ab-initio>
+
+	* base/utils.scm: added sqr function
+
+	* base/utils.scm: whoops, got rid of old fold-right
+
+	* base/utils.scm: fold-right is now tail-recursive (by calling
+	fold-left)
+
+	* base/utils.scm, base/vector3.scm, doc/user-ref.html,
+	utils/ctl-io.scm, utils/geom.scm: added, used, and documented
+	tail-recursive fold-left
+
+2001-07-10  Steven G. Johnson  <stevenj@ab-initio>
+
+	* configure.ac: make sure guile program is in PATH
+
 2001-07-05  Steven G. Johnson  <stevenj@ab-initio>
+
+	* ChangeLog: updated
 
 	* configure.ac: fixed parentheses mismatch, improved quoting
 
