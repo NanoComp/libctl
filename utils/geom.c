@@ -109,7 +109,7 @@ void geom_fix_objects(void)
    point_in_fixed_objectp additionally requires that geom_fix_object
    has been called on o (if the lattice basis is non-orthogonal).  */
 
-boolean point_in_objectp(vector3 p, geometric_object o)
+boolean CTLIO point_in_objectp(vector3 p, geometric_object o)
 {
      geom_fix_object(o);
      return point_in_fixed_objectp(p, o);
@@ -231,7 +231,7 @@ boolean point_in_fixed_objectp(vector3 p, geometric_object o)
 /* Like point_in_objectp, but also checks the object shifted
    by the lattice vectors: */
 
-boolean point_in_periodic_objectp(vector3 p, geometric_object o)
+boolean CTLIO point_in_periodic_objectp(vector3 p, geometric_object o)
 {
      geom_fix_object(o);
      return point_in_periodic_fixed_objectp(p, o);
@@ -382,7 +382,7 @@ void CTLIO display_geometric_object_info(int indentby, geometric_object o)
    the square basis matrix will yield the coordinates of a point
    in the rectangular volume, given in the lattice basis. */
 
-matrix3x3 square_basis(matrix3x3 basis, vector3 size)
+matrix3x3 CTLIO square_basis(matrix3x3 basis, vector3 size)
 {
   matrix3x3 square;
 

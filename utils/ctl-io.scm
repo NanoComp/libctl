@@ -61,9 +61,12 @@
 	(set! declared-type-names (cons (c-type-string type-name)
 					declared-type-names)))))
 
-(define (c-var-decl var-name var-type-name)
-  (print (c-type-string var-type-name) " " 
+(define (c-var-decl' var-name var-type-name ns)
+  (print (c-type-string var-type-name) " " ns
 		(symbol->c-identifier var-name) ";\n"))
+
+(define (c-var-decl var-name var-type-name ns)
+  (c-var-decl var-name var-type-name))
 
 ; ***************************************************************************
 
@@ -117,7 +120,7 @@
 ; ***************************************************************************
 
 (define (declare-var var)
-  (c-var-decl (var-name var) (var-type-name var)))
+  (c-var-decl' (var-name var) (var-type-name var) (ns "ctlio")))
 (define (declare-extern-var var)
   (print "extern ")
   (c-var-decl (var-name var) (var-type-name var)))
@@ -802,8 +805,8 @@
 (define (output-source)
   (declare-vars-source)
   (print
-   "int num_read_input_vars = 0; /* # calls to read_input_vars */\n"
-   "int num_write_output_vars = 0; /* # calls to read_input_vars */\n\n")
+   "int " (ns "ctlio") "num_read_input_vars = 0; /* # calls to read_input_vars */\n"
+   "int " (ns "ctlio") "num_write_output_vars = 0; /* # calls to read_input_vars */\n\n")
   (output-class-input-functions-source)
   (output-class-copy-functions-source)
   (output-class-equal-functions-source)
