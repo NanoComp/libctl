@@ -122,12 +122,16 @@
 		     shift-vector min-multiple max-multiple go))
 		  go-list)))
 
-(define (geometric-objects-lattice-duplicates go-list . usize)
+(define (lattice-duplicates lat go-list . usize)
+  (define (lat->lattice v)
+    (cartesian->lattice (matrix3x3* (object-property-value lat 'basis) v)))
   (let ((u1 (if (>= (length usize) 1) (list-ref usize 0) 1))
 	(u2 (if (>= (length usize) 2) (list-ref usize 1) 1))
 	(u3 (if (>= (length usize) 3) (list-ref usize 2) 1))
-	(s (object-property-value geometry-lattice 'size)))
-    (let ((b1 (vector3 u1 0 0)) (b2 (vector3 0 u2 0)) (b3 (vector3 0 0 u3))
+	(s (object-property-value lat 'size)))
+    (let ((b1 (lat->lattice (vector3 u1 0 0))) 
+	  (b2 (lat->lattice (vector3 0 u2 0)))
+	  (b3 (lat->lattice (vector3 0 0 u3)))
 	  (n1 (ceiling (/ (vector3-x s) u1)))
 	  (n2 (ceiling (/ (vector3-y s) u2)))
 	  (n3 (ceiling (/ (vector3-z s) u3))))
@@ -138,6 +142,10 @@
 	(geometric-objects-duplicates
 	 b3 (- (floor (/ (- n3 1) 2))) (ceiling (/ (- n3 1) 2))
 	 go-list))))))
+
+(define (geometric-objects-lattice-duplicates go-list . usize)
+  (apply lattice-duplicates (cons geometry-lattice
+				  (cons go-list usize))))
 
 ; ****************************************************************
 
