@@ -48,9 +48,9 @@
 (define (check-arg-types name args . arg-type-names)
   (if (not (= (length args) (length arg-type-names)))
       (begin
-	(display-many "Expecting " (length arg-type-names) " arguments for "
+	(print "Expecting " (length arg-type-names) " arguments for "
 		      name)
-	(newline)
+	(print "\n")
 	(error "Wrong number of arguments for function" name))
       (for-each
        (lambda (arg arg-type-name)

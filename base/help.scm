@@ -22,8 +22,8 @@
 
 (define (display-class indentby class)
   (indent indentby)
-  (display-many "Class " (class-type-name class) ": ")
-  (newline)
+  (print "Class " (class-type-name class) ": ")
+  (print "\n")
   (if (class-parent class)
       (display-class (+ indentby 4) (class-parent class)))
   (for-each
@@ -31,27 +31,27 @@
      (if (not (property-derived? property))
 	 (begin 
 	   (indent (+ indentby 4))
-	   (display-many (type-string (property-type-name property)) " "
+	   (print (type-string (property-type-name property)) " "
 			 (property-name property))
 	   (if (property-has-default? property)
-	       (display-many " = " (property-default-value property)))
-	   (newline))))
+	       (print " = " (property-default-value property)))
+	   (print "\n"))))
    (class-properties class)))
 			  
 (define (class-help class) (display-class 0 class))
 
 (define (variable-help var)
-  (display-many (type-string (var-type-name var)) " "
+  (print (type-string (var-type-name var)) " "
 		(var-name var) " = " (var-value var))
-  (newline))
+  (print "\n"))
 
 (define (help)
   (for-each class-help class-list)
-  (newline)
-  (display "Input variables: ") (newline)
+  (print "\n")
+  (print "Input variables: ") (print "\n")
   (for-each variable-help input-var-list)
-  (newline)
-  (display "Output variables: ") (newline)
+  (print "\n")
+  (print "Output variables: ") (print "\n")
   (for-each variable-help output-var-list))
 
 ; ****************************************************************

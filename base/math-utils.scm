@@ -188,7 +188,7 @@
        (let ((val (apply f args)))
 	 (if (or (null? best-args) (< val best-val))
 	     (begin
-	       (display-many "extremization: best so far is " 
+	       (print "extremization: best so far is " 
 			     val " at " args "\n")
 	       (set! best-val val)
 	       (set! best-args args)))

@@ -119,7 +119,7 @@
 			  (abs (simplex-point-val s-l)))))
 	s-l
 	(begin
-	  (display-many "extremization: best so far is " s-l "\n")
+	  (print "extremization: best so far is " s-l "\n")
 	  (simplex-iterate f (simplex-iter f s) tol)))))
 
 (define (simplex-shift-x x i)

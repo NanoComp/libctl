@@ -1,3 +1,7 @@
+  * Renamed "display-many" function to more felicitous "print"
+    and added "print-ok?" global variable that allows you
+    to disable program output.
+
   * Added support for passing 'function types back and forth
     (just a SCM object pointing to a Scheme function).
 

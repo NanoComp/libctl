@@ -86,10 +86,14 @@
   (list->vector (apply map (cons func (map vector->list v)))))
 
 (define (indent indentby)
-  (display (make-string indentby #\space)))
+  (print (make-string indentby #\space)))
 
-(define (display-many . items)
-  (for-each (lambda (item) (display item)) items))
+(define print-ok? true) ; so that the user can disable output
+
+(define (print . items)
+  (if print-ok? (for-each (lambda (item) (display item)) items)))
+
+(define display-many print) ; backwards compatibility with earlier libctl
 
 (define (make-initialized-list size init-func)
   (define (aux i)
@@ -146,13 +150,19 @@
 ; Display the message followed by the time t in minutes and seconds,
 ; returning t in seconds.
 (define (display-time message t)
-  (let ((minutes (quotient t 60)) (seconds (remainder t 60)))
-    (display message)
+  (let ((hours (quotient t 3600))
+	(minutes (remainder (quotient t 60) 60))
+	(seconds (remainder t 60)))
+    (print message)
+    (if (> hours 1)
+	(print hours " hours, ")
+	(if (> hours 0)
+	    (print hours " hour, ")))
     (if (> minutes 1)
-	(display-many minutes " minutes, ")
+	(print minutes " minutes, ")
 	(if (> minutes 0)
-	    (display-many minutes " minute, ")))
-    (display-many seconds " seconds.\n"))
+	    (print minutes " minute, ")))
+    (print seconds " seconds.\n"))
   t)
 
 ; (begin-time message ...statements...) works just like (begin
