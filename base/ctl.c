@@ -28,7 +28,6 @@
 #ifndef HAVE_GUILE_1_3
 
 /* Guile 1.2 is missing gh_bool2scm for some reason; redefine: */
-#define gh_bool2scm bool2scm
 SCM bool2scm(int b) { return (b ? SCM_BOOL_T : SCM_BOOL_F); }
 
 #define gh_length gh_list_length
@@ -110,6 +109,46 @@ vector3 matrix3x3_vector3_mult(matrix3x3 m, vector3 v)
 
 /**************************************************************************/
 
+/* type conversion */
+
+vector3 scm2vector3(SCM sv)
+{
+  vector3 v;
+
+  v.x = gh_scm2double(gh_vector_ref(sv,gh_int2scm(0)));
+  v.y = gh_scm2double(gh_vector_ref(sv,gh_int2scm(1)));
+  v.z = gh_scm2double(gh_vector_ref(sv,gh_int2scm(2)));
+  return v;
+}
+
+matrix3x3 scm2matrix3x3(SCM sm)
+{
+  matrix3x3 m;
+
+  m.c0 = scm2vector3(gh_vector_ref(sm,gh_int2scm(0)));
+  m.c1 = scm2vector3(gh_vector_ref(sm,gh_int2scm(1)));
+  m.c2 = scm2vector3(gh_vector_ref(sm,gh_int2scm(2)));
+  return m;
+}
+
+SCM vector32scm(vector3 v)
+{
+  return(gh_call3(gh_lookup("vector3"),
+		  gh_double2scm(v.x),
+		  gh_double2scm(v.y),
+		  gh_double2scm(v.z)));
+}
+
+SCM matrix3x32scm(matrix3x3 m)
+{
+  return(gh_call3(gh_lookup("matrix3x3"),
+		  vector32scm(m.c0),
+		  vector32scm(m.c1),
+		  vector32scm(m.c2)));
+}
+
+/**************************************************************************/
+
 /* variable get/set functions */
 
 /**** Getters ****/
@@ -134,29 +173,9 @@ char* ctl_get_string(char *identifier)
   return(gh_scm2newstr(gh_lookup(identifier), NULL));
 }
 
-static vector3 scm2vector3(SCM sv)
-{
-  vector3 v;
-
-  v.x = gh_scm2double(gh_vector_ref(sv,gh_int2scm(0)));
-  v.y = gh_scm2double(gh_vector_ref(sv,gh_int2scm(1)));
-  v.z = gh_scm2double(gh_vector_ref(sv,gh_int2scm(2)));
-  return v;
-}
-
 vector3 ctl_get_vector3(char *identifier)
 {
   return(scm2vector3(gh_lookup(identifier)));
-}
-
-static matrix3x3 scm2matrix3x3(SCM sm)
-{
-  matrix3x3 m;
-
-  m.c0 = scm2vector3(gh_vector_ref(sm,gh_int2scm(0)));
-  m.c1 = scm2vector3(gh_vector_ref(sm,gh_int2scm(1)));
-  m.c2 = scm2vector3(gh_vector_ref(sm,gh_int2scm(2)));
-  return m;
 }
 
 matrix3x3 ctl_get_matrix3x3(char *identifier)
@@ -204,25 +223,9 @@ void ctl_set_string(char *identifier, char *value)
   set_value(identifier, gh_str02scm(value));
 }
 
-static SCM vector32scm(vector3 v)
-{
-  return(gh_call3(gh_lookup("vector3"),
-		  gh_double2scm(v.x),
-		  gh_double2scm(v.y),
-		  gh_double2scm(v.z)));
-}
-
 void ctl_set_vector3(char *identifier, vector3 value)
 {
   set_value(identifier, vector32scm(value));
-}
-
-static SCM matrix3x32scm(matrix3x3 m)
-{
-  return(gh_call3(gh_lookup("matrix3x3"),
-		  vector32scm(m.c0),
-		  vector32scm(m.c1),
-		  vector32scm(m.c2)));
 }
 
 void ctl_set_matrix3x3(char *identifier, matrix3x3 value)

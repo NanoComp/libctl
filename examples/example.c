@@ -21,8 +21,9 @@
 
 /**************************************************************************/
 
-/* Example program, called by run_program in main.c, which reads the
-   input variables and writes some data into the output variables. */
+/* Example routines, callable from Guile as defined in the
+   photonic-crystal.scm specifications file. Read in the input
+   variables and writes some data into the output variables. */
 
 /**************************************************************************/
 
@@ -34,7 +35,57 @@
 
 /**************************************************************************/
 
-void example_do_stuff(void)
+/* function to display a little information about a geometric object to
+   prove that we've read it in correctly. */
+static void display_object_info(geometric_object obj)
+{
+  printf("     center = (%g,%g,%g), epsilon = %g\n",
+	 obj.center.x, obj.center.y,
+	 obj.center.z, obj.material.epsilon);
+  
+  switch (obj.which_subclass) {
+  case CYLINDER:
+    printf("          cylinder with height %g, axis (%g, %g, %g)\n",
+	   obj.subclass.cylinder_data->height,
+	   obj.subclass.cylinder_data->axis.x,
+	   obj.subclass.cylinder_data->axis.y,
+	   obj.subclass.cylinder_data->axis.z);
+    break;
+  case SPHERE:
+    printf("          sphere with radius %g\n",
+	   obj.subclass.sphere_data->radius);
+    break;
+  case BLOCK:
+    printf("          block with size (%g,%g,%g)\n",
+	   obj.subclass.block_data->size.x,
+	   obj.subclass.block_data->size.y,
+	   obj.subclass.block_data->size.z);
+    printf("          projection matrix: %10.6f%10.6f%10.6f\n"
+	   "                             %10.6f%10.6f%10.6f\n"
+	   "                             %10.6f%10.6f%10.6f\n",
+	   obj.subclass.block_data->projection_matrix.c0.x,
+	   obj.subclass.block_data->projection_matrix.c1.x,
+	   obj.subclass.block_data->projection_matrix.c2.x,
+	   obj.subclass.block_data->projection_matrix.c0.y,
+	   obj.subclass.block_data->projection_matrix.c1.y,
+	   obj.subclass.block_data->projection_matrix.c2.y,
+	   obj.subclass.block_data->projection_matrix.c0.z,
+	   obj.subclass.block_data->projection_matrix.c1.z,
+	   obj.subclass.block_data->projection_matrix.c2.z);
+    break;
+  case GEOMETRIC_OBJECT:
+    printf("          generic geometric object\n");
+    break;
+  default:
+    printf("          UNKNOWN OBJECT TYPE!\n");
+  }
+}
+
+/* run function.  This function is callable from Scheme.  When it
+   is called, the input variables are already assigned.   After
+   it is called, the values assigned to the output variables are
+   automatically exported to scheme. */
+void run(void)
 {
   int i;
 
@@ -49,48 +100,8 @@ void example_do_stuff(void)
 	   k_points.items[i].x, k_points.items[i].y, k_points.items[i].z);
   
   printf("\nsome geometry info:\n");
-  for (i = 0; i < geometry.num_items; ++i) {
-    printf("     center = (%g,%g,%g), epsilon = %g\n",
-	   geometry.items[i].center.x, geometry.items[i].center.y,
-	   geometry.items[i].center.z, geometry.items[i].material.epsilon);
-
-    switch (geometry.items[i].which_subclass) {
-    case CYLINDER:
-      printf("          cylinder with height %g, axis (%g, %g, %g)\n",
-	     geometry.items[i].subclass.cylinder_data->height,
-	     geometry.items[i].subclass.cylinder_data->axis.x,
-	     geometry.items[i].subclass.cylinder_data->axis.y,
-	     geometry.items[i].subclass.cylinder_data->axis.z);
-      break;
-    case SPHERE:
-      printf("          sphere with radius %g\n",
-	     geometry.items[i].subclass.sphere_data->radius);
-      break;
-    case BLOCK:
-      printf("          block with size (%g,%g,%g)\n",
-	     geometry.items[i].subclass.block_data->size.x,
-	     geometry.items[i].subclass.block_data->size.y,
-	     geometry.items[i].subclass.block_data->size.z);
-      printf("          projection matrix: %10.6f%10.6f%10.6f\n"
-	     "                             %10.6f%10.6f%10.6f\n"
-	     "                             %10.6f%10.6f%10.6f\n",
-	     geometry.items[i].subclass.block_data->projection_matrix.c0.x,
-	     geometry.items[i].subclass.block_data->projection_matrix.c1.x,
-	     geometry.items[i].subclass.block_data->projection_matrix.c2.x,
-	     geometry.items[i].subclass.block_data->projection_matrix.c0.y,
-	     geometry.items[i].subclass.block_data->projection_matrix.c1.y,
-	     geometry.items[i].subclass.block_data->projection_matrix.c2.y,
-	     geometry.items[i].subclass.block_data->projection_matrix.c0.z,
-	     geometry.items[i].subclass.block_data->projection_matrix.c1.z,
-	     geometry.items[i].subclass.block_data->projection_matrix.c2.z);
-      break;
-    case GEOMETRIC_OBJECT:
-      printf("          generic geometric object\n");
-      break;
-    default:
-      printf("          UNKNOWN OBJECT TYPE!\n");
-    }
-  }
+  for (i = 0; i < geometry.num_items; ++i)
+    display_object_info(geometry.items[i]);
 
   printf("\nDone writing input.  Sending data to output vars.\n");
 
@@ -98,7 +109,7 @@ void example_do_stuff(void)
      MUST do this.  If we leave any output variables uninitialized,
      the result is undefined. */
 
-  if (num_runs > 1)
+  if (num_write_output_vars > 1)
     destroy_output_vars(); /* we are responsible for calling this */
   
   dummy = vector3_scale(2, dummy);
@@ -107,4 +118,19 @@ void example_do_stuff(void)
   gaps.items = (number *) malloc(gaps.num_items * sizeof(number));
   gaps.items[0] = 3.14159;
   gaps.items[1] = 1.41421;
+}
+
+/* Another function callable from Scheme. This function does not
+   use the input/output variables, but passes information in
+   explicitely through its parameter and out through its return
+   value.
+
+   In a real program, this might return the fraction of the field
+   energy in the given object. */
+number energy_in_object(geometric_object obj)
+{
+  printf("Computing power in object.\n");
+  display_object_info(obj);
+  printf("Returning 0.123456.\n");
+  return 0.123456;
 }

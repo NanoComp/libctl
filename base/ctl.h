@@ -67,6 +67,38 @@ extern vector3 matrix3x3_vector3_mult(matrix3x3 m, vector3 v);
 
 /**************************************************************************/
 
+  /* type conversion */
+
+#ifndef HAVE_GUILE_1_3
+  /* Guile 1.2 is missing gh_bool2scm for some reason; redefine: */
+#define gh_bool2scm bool2scm
+#endif
+
+extern vector3 scm2vector3(SCM sv);
+extern SCM vector32scm(vector3 v);
+extern matrix3x3 scm2matrix3x3(SCM sm);
+extern SCM matrix3x32scm(matrix3x3 m);
+
+#define ctl_convert_number_to_scm(x) gh_double2scm(x)
+#define ctl_convert_integer_to_scm(x) gh_int2scm(x)
+#define ctl_convert_string_to_scm(x) gh_str02scm(x)
+#define ctl_convert_boolean_to_scm(x) gh_bool2scm(x)
+#define ctl_convert_vector3_to_scm(x) vector32scm(x)
+#define ctl_convert_matrix3x3_to_scm(x) matrix3x32scm(x)
+#define ctl_convert_object_to_scm(x) (x)
+#define ctl_convert_list_to_scm(x) (x)
+
+#define ctl_convert_number_to_c(x) gh_scm2double(x)
+#define ctl_convert_integer_to_c(x) gh_scm2int(x)
+#define ctl_convert_string_to_c(x) gh_scm2newstr(x)
+#define ctl_convert_boolean_to_c(x) gh_scm2bool(x)
+#define ctl_convert_vector3_to_c(x) scm2vector3(x)
+#define ctl_convert_matrix3x3_to_c(x) scm2matrix3x3(x)
+#define ctl_convert_object_to_c(x) (x)
+#define ctl_convert_list_to_c(x) (x)
+
+/**************************************************************************/
+
   /* variable get/set functions */
 
 extern integer ctl_get_integer(char *identifier);

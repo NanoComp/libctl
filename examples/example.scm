@@ -88,3 +88,11 @@
 (define-output-var mean-dielectric 'number)
 
 (define-output-var gaps (make-list-type 'number))
+
+; ****************************************************************
+
+(define-external-function run true true
+  no-return-value)
+
+(define-external-function energy-in-object false false
+  'number 'geometric-object)

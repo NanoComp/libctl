@@ -264,7 +264,7 @@
   (display "/******* read input variables *******/") (newline) (newline)
   (display "SCM read_input_vars(void)") (newline)
   (display "{") (newline)
-  (display "if (num_runs++) destroy_input_vars();") (newline)
+  (display "if (num_read_input_vars++) destroy_input_vars();") (newline)
   (for-each
    (lambda (var)
      (input-value
@@ -323,6 +323,7 @@
   (display "/******* write output variables *******/") (newline) (newline)
   (display "SCM write_output_vars(void)") (newline)
   (display "{") (newline)
+  (display "num_write_output_vars++;") (newline)
   (for-each
    (lambda (var)
      (output-value
@@ -339,6 +340,8 @@
 (define (destroy-c-var var-str type-name)
   (let ((desc (get-type-descriptor type-name)))
     (cond 
+     ((eq? type-name 'string)
+      (display-many "free(" var-str ");") (newline))
      ((eq? (type-descriptor-kind desc) 'uniform-list)
       (destroy-list var-str (list-el-type-name type-name)))
      ((eq? (type-descriptor-kind desc) 'object)
@@ -447,19 +450,172 @@
 
 ; ***************************************************************************
 
+(define (list->indices lst start-index)
+  (if (null? lst) '()
+      (cons start-index (list->indices (cdr lst) (+ start-index 1)))))
+
+(define (declare-external-function external-function)
+  (display-many "SCM " (symbol->c-identifier
+		       (external-function-aux-name
+			(external-function-name external-function)))
+		"(")
+  (for-each
+   (lambda (argnum)
+     (if (> argnum 0) (display ", "))
+     (display-many "SCM arg_scm_" argnum))
+   (list->indices (external-function-arg-type-names external-function) 0))
+  (if (= (length (external-function-arg-type-names external-function)) 0)
+      (display "void"))
+  (display ")"))
+
+(define (declare-external-c-function external-function)
+  (display-many
+   "extern "
+   (if (not (eq? (external-function-return-type-name external-function)
+		 no-return-value))
+       (c-type-string (external-function-return-type-name external-function))
+       "void")
+   " "
+   (symbol->c-identifier (external-function-name external-function))
+   "(")
+
+  (for-each
+   (lambda (arg-type-name argnum)
+     (if (> argnum 0) (display ", "))
+     (display-many (c-type-string arg-type-name)))
+   (external-function-arg-type-names external-function)
+   (list->indices (external-function-arg-type-names external-function) 0))
+
+  (if (= (length (external-function-arg-type-names external-function)) 0)
+      (display "void"))
+  (display ");") (newline))
+
+(define (output-external-functions-header)
+  (display "/******* external-functions *******/") (newline) (newline)
+  (for-each
+   (lambda (ef)
+     (display "extern ")
+     (declare-external-function ef)
+     (display ";")
+     (newline))
+   external-function-list)
+  (newline)
+  (display "extern void export_external_functions(void);") (newline))
+
+(define (output-external-function-export external-function)
+  (display-many
+   "gh_new_procedure(\""
+   (external-function-aux-name (external-function-name external-function))
+   "\", "
+   (symbol->c-identifier
+    (external-function-aux-name (external-function-name external-function)))
+   ", "
+   (length (external-function-arg-type-names external-function))
+   ", 0, 0);")
+  (newline))
+
+(define (output-export-external-functions)
+  (display "void export_external_functions(void)") (newline)
+  (display "{") (newline)
+  (for-each output-external-function-export external-function-list)
+  (display "}") (newline) (newline))
+
+(define (get-c-local type-symbol name-str)
+  (string-append "ctl_convert_" (symbol->c-identifier type-symbol)
+		 "_to_c(" name-str ")"))
+
+(define (set-c-local type-symbol s-name-str c-name-str)
+  (string-append s-name-str " = ctl_convert_"
+		 (symbol->c-identifier type-symbol)
+		 "_to_scm(" c-name-str ");"))
+
+(define (output-external-function external-function)
+  (declare-external-c-function external-function) (newline)
+  (declare-external-function external-function) (newline)
+  (display "{") (newline)
+
+  (if (not (eq? (external-function-return-type-name external-function)
+		no-return-value))
+      (begin
+	(display "SCM return_val_scm;") (newline)
+	(c-var-decl 'return-val-c (external-function-return-type-name
+				   external-function))))
+
+  (for-each
+   (lambda (arg-type-name argnum)
+     (display-many (c-type-string arg-type-name) " arg_c_" argnum ";")
+     (newline))
+   (external-function-arg-type-names external-function)
+   (list->indices (external-function-arg-type-names external-function) 0))
+  (newline)
+  
+  (for-each
+   (lambda (arg-type-name argnum)
+     (input-value (string-append "arg_scm_" (number->string argnum))
+		  (string-append "arg_c_" (number->string argnum))
+		  arg-type-name
+		  get-c-local))
+   (external-function-arg-type-names external-function)
+   (list->indices (external-function-arg-type-names external-function) 0))
+  (newline)
+
+  (if (not (eq? (external-function-return-type-name external-function)
+                no-return-value))
+      (display "return_val_c = "))
+  (display-many
+   (symbol->c-identifier (external-function-name external-function))
+   "(")
+  (for-each
+   (lambda (argnum)
+     (if (> argnum 0) (display ", "))
+     (display-many "arg_c_" argnum))
+   (list->indices (external-function-arg-type-names external-function) 0))
+  (display-many ");") (newline)
+  (newline)
+
+  (for-each
+   (lambda (arg-type-name argnum)
+     (destroy-c-var
+      (string-append "arg_c_" (number->string argnum)) arg-type-name))
+   (external-function-arg-type-names external-function)
+   (list->indices (external-function-arg-type-names external-function) 0))
+  (newline)
+
+  (if (not (eq? (external-function-return-type-name external-function)
+		no-return-value))
+      (begin
+	(output-value
+	 "return_val_scm" "return_val_c"
+	 (external-function-return-type-name external-function)
+	 set-c-local)
+	(display-many "return return_val_scm;") (newline))
+      (begin (display "return SCM_UNSPECIFIED;") (newline)))
+
+  (display "}") (newline) (newline))
+
+(define (output-external-functions-source)
+  (display "/******* external-functions *******/") (newline) (newline)
+  (for-each output-external-function external-function-list)
+  (output-export-external-functions))
+
+; ***************************************************************************
+
 (define (output-header)
   (display-c-class-decls)
   (declare-vars-header)
-  (display "extern int num_runs;") (newline)
+  (display "extern int num_read_input_vars;") (newline)
+  (display "extern int num_write_output_vars;") (newline)
   (newline)
   (display "extern SCM read_input_vars(void);") (newline)
   (display "extern SCM write_output_vars(void);") (newline)
   (display "extern SCM destroy_input_vars(void);") (newline)
-  (display "extern SCM destroy_output_vars(void);") (newline))
+  (display "extern SCM destroy_output_vars(void);") (newline)
+  (output-external-functions-header) (newline))
 
 (define (output-source)
   (declare-vars-source)
-  (display "int num_runs = 0; /* number of calls to read_input_vars */")
+  (display "int num_read_input_vars = 0; /* # calls to read_input_vars */")
+  (display "int num_write_output_vars = 0; /* # calls to read_input_vars */")
   (newline) (newline)
   (output-class-input-functions-header)
   (output-class-destruction-functions-header)
@@ -468,5 +624,6 @@
   (input-vars-function)
   (output-vars-function)
   (destroy-input-vars-function)
-  (destroy-output-vars-function))
+  (destroy-output-vars-function)
+  (output-external-functions-source))
 

@@ -476,6 +476,60 @@
 			   true)))))
 
 ; ****************************************************************
+; Defining external functions.
+
+(define (make-external-function name read-inputs? write-outputs?
+				return-type-name arg-type-names)
+  (list name read-inputs? write-outputs? return-type-name arg-type-names))
+(define external-function-name first)
+(define external-function-read-inputs? second)
+(define external-function-write-outputs? third)
+(define external-function-return-type-name fourth)
+(define external-function-arg-type-names fifth)
+
+(define no-return-value 'none)
+
+(define external-function-list '())
+(define (external-function! name read-inputs? write-outputs?
+			    return-type-name . arg-type-names)
+  (set! external-function-list
+	(cons (make-external-function name read-inputs? write-outputs?
+				      return-type-name arg-type-names)
+	      external-function-list)))
+
+(define (external-function-aux-name name)
+  (symbol-append name '-aux))
+(define (external-function-aux name)
+  (eval (external-function-aux-name name)))
+  
+(define (check-arg-types name args . arg-type-names)
+  (if (not (= (length args) (length arg-type-names)))
+      (begin
+	(display-many "Expecting " (length arg-type-names) " arguments for "
+		      name)
+	(newline)
+	(error "Wrong number of arguments for function" name))
+      (for-each
+       (lambda (arg arg-type-name)
+	 (if (not (check-type arg-type-name arg))
+	     (error "wrong type for argument" 'type arg-type-name 'in name)))
+       args arg-type-names)))
+
+(defmacro-public define-external-function
+  (name read-inputs? write-outputs? return-type-name . arg-type-names)
+  `(begin
+     (define ,name
+       (lambda args
+	 (check-arg-types (quote ,name) args ,@arg-type-names)
+	 (if ,read-inputs? (read-input-vars))
+	 (let ((return-value
+		(apply (external-function-aux (quote ,name)) args)))
+	   (if ,write-outputs? (write-output-vars))
+	      return-value)))
+     (external-function! (quote ,name) ,read-inputs? ,write-outputs?
+			 ,return-type-name ,@arg-type-names)))
+
+; ****************************************************************
 ; Defining property values.
 
 (define (property-value-constructor name)
@@ -582,9 +636,3 @@
      (cdr nums))))) ; nums w/o first value
 
 ; ****************************************************************
-
-(define (run)
-  (check-vars input-var-list)
-  (read-input-vars)
-  (run-program)
-  (write-output-vars))

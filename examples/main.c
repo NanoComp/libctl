@@ -14,15 +14,15 @@
 
 /**************************************************************************/
 
-/* Sample main program for a simulation that uses libctl.
+/* main program for a simulation that uses libctl.
 
-   To use this in your own program, modify run_program to call a
-   routine that runs your simulation.  You can also modify
-   declare_functions to make more functions callable from Guile.
+   You should not need to modify this file.
 
    The resulting program will run any Scheme files that are passed
-   as parameters on the command line.  The first parameter passed
-   should be ctl.scm.
+   as parameters on the command line.  It will automatically load
+   ctl.scm and the specification file if the CTL_SCM and SPEC_SCM
+   preprocessor symbols are defined to the corresponding filenames
+   (e.g. see the accompanying Makefile).
 */
 
 /**************************************************************************/
@@ -39,54 +39,23 @@
 
 /**************************************************************************/
 
-/* declare this function (in example.c) since I don't feel like
-   creating a header file just to declare the example function. */
-extern void example_do_stuff(void);
-
-/* Run your program (i.e. run a simulation).  This may be called
-   multiple times by the control script!
-
-   Return true (SCM_BOOL_T) if successful, and
-   false (SCM_BOOL_F) if an error is encountered.
-
-   (To keep main.c clean, I recommend putting the bulk of your simulation
-   in a routine in some other file, and just calling that from here.)
-
-   You should NOT call (run-program) directly from a control script.
-   Instead, call (run), which will also read/write the input/output vars.
-*/
-SCM run_program(void)
-{
-  example_do_stuff();
-
-  return SCM_BOOL_T; /* return true if successful */
-}
-
-/* Declare any functions that you want to be callable from a contrl script.
-   By default, only run_program and the functions to read and write
-   the input and output vars are declared.
-
-   By convention, we convert underscores to hyphens in identifiers.
-
-   (See gh_new_procedure in the Guile reference for more information.) */
-void declare_functions(void)
-{
-  gh_new_procedure("run-program", run_program,0,0,0);
-  gh_new_procedure("read-input-vars", read_input_vars,0,0,0);
-  gh_new_procedure("write-output-vars", write_output_vars,0,0,0);
-}
-
-/**************************************************************************/
-
 /* Main program.  Start up Guile, declare functions, load any
    scripts passed on the command-line, and drop into interactive
-   mode if run-program was never called. */
+   mode if read-input-vars was never called. */
 
 void main_entry(int argc, char *argv[])
 {
   int i;
 
-  declare_functions();
+  /* Notify Guile of functions that we are making callable from Scheme.
+     These are defined in the specifications file, from which the
+     export_external_functions routine is automatically generated. */
+  export_external_functions();
+
+  /* Also export the read_input_vars and write_output_vars routines
+     that are automatically generated from the specifications file: */
+  gh_new_procedure ("read-input-vars", read_input_vars, 0, 0, 0);
+  gh_new_procedure ("write-output-vars", write_output_vars, 0, 0, 0);
 
   /* load ctl.scm if it was given at compile time */
 #ifdef CTL_SCM
@@ -102,9 +71,9 @@ void main_entry(int argc, char *argv[])
   for (i = 1; i < argc; ++i)
     gh_load(argv[i]);
 
-  /* if run was never called, drop into interactive mode: */
-  /* (the num_runs count is kept by ctl-io in read_input_vars) */
-  if (num_runs == 0)
+  /* if read-input-vars was never called, drop into interactive mode: */
+  /* (the num_read_input_vars count is kept by ctl-io in read_input_vars) */
+  if (num_read_input_vars == 0)
     gh_repl(argc, argv);
 }
 
