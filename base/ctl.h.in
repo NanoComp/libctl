@@ -39,23 +39,19 @@ extern "C" {
 #undef LIBCTL_MINOR_VERSION
 #undef LIBCTL_BUGFIX_VERSION
 
-/* Define if you have gh_load */
+/* Define if you have the following functions */
 #undef HAVE_GH_LOAD
-
-/* Define if you have gh_bool2scm */
 #undef HAVE_GH_BOOL2SCM
-
-/* Define if you have gh_vector_ref */
 #undef HAVE_GH_VECTOR_REF
-
-/* Define if you have gh_list_ref */
 #undef HAVE_GH_LIST_REF
-
-/* Define if you have gh_length */
 #undef HAVE_GH_LENGTH
-
-/* define if you have scm_flush_all_ports() */
 #undef HAVE_SCM_FLUSH_ALL_PORTS
+#undef HAVE_SCM_MAKE_COMPLEX
+#undef HAVE_SCM_VARIABLE_SET_X
+#undef HAVE_SCM_C_LOOKUP
+
+/* Define if you have the HAVE_SCM_COMPLEXP macro. */
+#undef HAVE_SCM_COMPLEXP
 
 /* Define if gh_lookup is not broken */
 #undef GH_LOOKUP_OK

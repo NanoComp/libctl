@@ -21,6 +21,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 
 #include "ctl.h"
@@ -362,18 +363,29 @@ SCM matrix3x32scm(matrix3x3 m)
 
 cnumber scm2cnumber(SCM sx)
 {
+#ifdef HAVE_SCM_COMPLEXP
+     if (scm_real_p(sx) && !(SCM_COMPLEXP(sx)))
+	  return make_cnumber(gh_scm2double(sx), 0.0);
+     else
+	  return make_cnumber(SCM_COMPLEX_REAL(sx), SCM_COMPLEX_IMAG(sx));
+#else
      if (scm_real_p(sx) && !(SCM_NIMP(sx) && SCM_INEXP(sx) && SCM_CPLXP(sx)))
 	  return make_cnumber(gh_scm2double(sx), 0.0);
      else
 	  return make_cnumber(SCM_REALPART(sx), SCM_IMAG(sx));
+#endif
 }
 
 SCM cnumber2scm(cnumber x)
 {
+#ifdef HAVE_SCM_MAKE_COMPLEX
+     return scm_make_complex(x.re, x.im); /* Guile 1.5 */
+#else
      if (x.im == 0.0)
 	  return gh_double2scm(x.re);
      else
 	  return scm_makdbl(x.re, x.im);
+#endif
 }
 
 cvector3 scm2cvector3(SCM sv)
@@ -501,9 +513,15 @@ SCM ctl_get_SCM(char *identifier)
 
    Note that I can't call "set!" because it is really a macro. 
 
-   All the ugliness is confined to the set_value() routine, though.  */
+   All the ugliness is confined to the set_value() routine, though.  
 
-#define USE_MY_SYMBOL_SET_X 1   /* use the hack */
+   Update: in Guile 1.5, we can call scm_variable_set_x (equivalent
+   to variable-set!) to set values of variables, which are looked up
+   via scm_c_lookup (which doesn't exist in Guile 1.3.x). */
+
+#if !(defined(HAVE_SCM_VARIABLE_SET_X) && defined(HAVE_SCM_C_LOOKUP))
+#  define USE_MY_SYMBOL_SET_X 1   /* use the hack */
+#endif
 
 #ifdef USE_MY_SYMBOL_SET_X
 static SCM my_symbol_set_x(char *name, SCM v)
@@ -524,6 +542,8 @@ static void set_value(char *identifier, SCM value)
 {
 #if defined(USE_SCM_SYMBOL_SET_X)   /* worked in Guile 1.1, 1.2 */
      scm_symbol_set_x(SCM_BOOL_F, gh_symbol2scm(identifier), value);
+#elif defined(HAVE_SCM_VARIABLE_SET_X) && defined(HAVE_SCM_C_LOOKUP)
+     scm_variable_set_x(scm_c_lookup(identifier), value);
 #elif defined(USE_MY_SYMBOL_SET_X)
      my_symbol_set_x(identifier, value);
 #endif

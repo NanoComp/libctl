@@ -42,8 +42,6 @@
 
 (define (external-function-aux-name name)
   (symbol-append name '-aux))
-(define (external-function-aux name)
-  (eval (external-function-aux-name name)))
   
 (define (check-arg-types name args . arg-type-names)
   (if (not (= (length args) (length arg-type-names)))
@@ -66,7 +64,7 @@
 	 (check-arg-types (quote ,name) args ,@arg-type-names)
 	 (if ,read-inputs? (read-input-vars))
 	 (let ((return-value
-		(apply (external-function-aux (quote ,name)) args)))
+		(apply ,(external-function-aux-name name) args)))
 	   (if ,write-outputs? (write-output-vars))
 	      return-value)))
      (external-function! (quote ,name) ,read-inputs? ,write-outputs?

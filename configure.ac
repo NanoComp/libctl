@@ -14,9 +14,9 @@ LIBCTL_MAJOR_VERSION=`echo $LIBCTL_VERSION |cut -d. -f1`
 LIBCTL_MINOR_VERSION=`echo $LIBCTL_VERSION |cut -d. -f2`
 LIBCTL_BUGFIX_VERSION=`echo $LIBCTL_VERSION |cut -d. -f3`
 test "x$LIBCTL_BUGFIX_VERSION" = x && LIBCTL_BUGFIX_VERSION=0
-AC_DEFINE_UNQUOTED(LIBCTL_MAJOR_VERSION, $LIBCTL_MAJOR_VERSION)
-AC_DEFINE_UNQUOTED(LIBCTL_MINOR_VERSION, $LIBCTL_MINOR_VERSION)
-AC_DEFINE_UNQUOTED(LIBCTL_BUGFIX_VERSION, $LIBCTL_BUGFIX_VERSION)
+AC_DEFINE_UNQUOTED(LIBCTL_MAJOR_VERSION, $LIBCTL_MAJOR_VERSION, [major v.])
+AC_DEFINE_UNQUOTED(LIBCTL_MINOR_VERSION, $LIBCTL_MINOR_VERSION, [minor v.])
+AC_DEFINE_UNQUOTED(LIBCTL_BUGFIX_VERSION, $LIBCTL_BUGFIX_VERSION, [bugfix v.])
 
 ###########################################################################
 
@@ -107,6 +107,14 @@ AC_MSG_CHECKING([for scm_flush_all_ports])
 ok=yes
 AC_TRY_LINK([#include <guile/gh.h>
 ], [scm_flush_all_ports();], [AC_DEFINE(HAVE_SCM_FLUSH_ALL_PORTS, 1, [Define if we have scm_flush_all_ports])], ok=no)
+AC_MSG_RESULT($ok)
+
+AC_CHECK_FUNCS(scm_make_complex scm_variable_set_x scm_c_lookup)
+
+AC_MSG_CHECKING([for SCM_COMPLEXP])
+ok=yes
+AC_TRY_LINK([#include <guile/gh.h>
+], [SCM x; SCM_COMPLEXP(x);], [AC_DEFINE(HAVE_SCM_COMPLEXP, 1, [Define if we have SCM_COMPLEXP])], ok=no)
 AC_MSG_RESULT($ok)
 
 AC_MSG_CHECKING([whether gh_lookup works properly])
