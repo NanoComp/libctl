@@ -107,6 +107,9 @@ static int ctl_stop_hook_called = 0;
 
 extern void ctl_start_hook(int *argc, char **argv[]);
 extern void ctl_stop_hook(void);
+#endif
+
+#ifdef HAVE_CTL_EXPORT_HOOK
 extern void ctl_export_hook(void);
 #endif
 
@@ -133,7 +136,7 @@ void main_entry(int argc, char *argv[])
   /* Export the subplex minimization routine: */
   gh_new_procedure ("subplex", subplex_scm, 7, 0, 0);
 
-#ifdef HAVE_CTL_HOOKS
+#ifdef HAVE_CTL_EXPORT_HOOK
   ctl_export_hook();
 #endif
 
