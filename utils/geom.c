@@ -877,6 +877,33 @@ geom_box_tree create_geom_box_tree0(geometric_object_list geometry)
      return t;
 }
 
+/* create a new tree from t, pruning all nodes that don't intersect b */
+geom_box_tree restrict_geom_box_tree(geom_box_tree t, const geom_box *b)
+{
+     geom_box_tree tr;
+     int i, j;
+
+     if (!t || !geom_boxes_intersect(&t->b, b))
+	  return NULL;
+
+     tr = new_geom_box_tree();
+
+     for (i = 0, j = 0; i < t->nobjects; ++i)
+	  if (geom_boxes_intersect(&t->objects[i].box, b))
+	       ++j;
+     tr->nobjects = j;
+     tr->objects = (geom_box_object *) malloc(tr->nobjects *
+					      sizeof(geom_box_object));
+     CHECK(tr->objects || tr->nobjects == 0, "out of memory");
+
+     for (i = 0, j = 0; i < t->nobjects; ++i)
+	  if (geom_boxes_intersect(&t->objects[i].box, b))
+	       tr->objects[j++] = t->objects[i];
+
+     tr->t1 = restrict_geom_box_tree(t->t1, b);
+     tr->t2 = restrict_geom_box_tree(t->t2, b);
+}
+
 /**************************************************************************/
 
 /* recursively search the tree for the given point. */

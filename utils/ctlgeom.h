@@ -76,6 +76,7 @@ typedef struct geom_box_tree_struct {
 extern void destroy_geom_box_tree(geom_box_tree t);
 extern geom_box_tree create_geom_box_tree(void);
 extern geom_box_tree create_geom_box_tree0(GEOMETRIC_OBJECT_LIST geometry);
+extern geom_box_tree restrict_geom_box_tree(geom_box_tree, const geom_box *);
 extern MATERIAL_TYPE material_of_point_in_tree_inobject(vector3 p, geom_box_tree t, boolean *inobject);
 extern MATERIAL_TYPE material_of_point_in_tree_inobject0(GEOMETRIC_OBJECT_LIST geometry, vector3 p, geom_box_tree t, boolean *inobject);
 extern MATERIAL_TYPE material_of_point_in_tree(vector3 p, geom_box_tree t);
