@@ -191,7 +191,7 @@
 (define (check-constraints constraints value)
   (for-all? constraints (lambda (c) (c value))))
 
-(define (make-list-type-name el-type-name)
+(define (make-list-type el-type-name)
   (cons 'list el-type-name))
 (define (list-type-name? type-name)
   (and (pair? type-name) (eq? (car type-name) 'list)))

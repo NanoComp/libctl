@@ -68,12 +68,12 @@
 
 (define-input-var dimensions 3 'integer positive?)
 
-(define-input-var geometry '() (make-list-type-name 'geometric-object))
+(define-input-var geometry '() (make-list-type 'geometric-object))
 
-(define-input-var k-points '() (make-list-type-name 'vector3))
+(define-input-var k-points '() (make-list-type 'vector3))
 
 (define-input-output-var dummy (vector3 3.7 2.3 1.9) 'vector3)
 
 (define-output-var mean-dielectric 'number)
 
-(define-output-var gaps (make-list-type-name 'number))
+(define-output-var gaps (make-list-type 'number))
