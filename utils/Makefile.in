@@ -2,7 +2,7 @@
 
 CC = @CC@
 CFLAGS = @CFLAGS@
-INCLUDES = @INCLUDES@ -I../base -I.
+CPPFLAGS = @CPPFLAGS@ -I../base -I.
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 RANLIB = @RANLIB@
@@ -30,6 +30,6 @@ install:
 	$(INSTALL) -m 0644 gen-ctl-io.1 $(prefix)/man/man1
 
 .c.o:
-	$(CC) -c $(INCLUDES) $(CFLAGS) $< -o $@
+	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 
 clean: 

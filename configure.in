@@ -35,7 +35,7 @@ AC_HEADER_STDC
 
 AC_CHECK_PROG(HAVE_GUILE_CONFIG, guile-config, yes, no)
 if test "$HAVE_GUILE_CONFIG" = "yes"; then
-	INCLUDES="$INCLUDES `guile-config compile`"
+	CPPFLAGS="$CPPFLAGS `guile-config compile`"
 	LIBS="$LIBS `guile-config link`"
 else
 	AC_CHECK_LIB(m, sqrt)
@@ -43,7 +43,6 @@ else
 	AC_CHECK_LIB(dl, dlopen)
 	AC_CHECK_LIB(guile, gh_eval_str)
 fi
-AC_SUBST(INCLUDES)
 
 AC_MSG_CHECKING([if linking to guile works])
 AC_TRY_LINK_FUNC(gh_enter, AC_MSG_RESULT(yes), [
@@ -54,10 +53,6 @@ AC_MSG_ERROR(Guile could not be found)
 ###########################################################################
 
 # Checks for Guile features:
-
-# be sure to use Guile includes in CFLAGS (temporarily):
-save_CFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS $INCLUDES"
 
 AC_MSG_CHECKING([for gh_load])
 ok=yes
@@ -114,13 +109,11 @@ int main (int argc, char *argv[])
 ], AC_DEFINE(GH_LOOKUP_OK), ok=no, ok=no)
 AC_MSG_RESULT($ok)
 
-CFLAGS="$save_CFLAGS"
-
 ###########################################################################
 
-# Add libctl and libgeom -I/-L/-l flags to INCLUDES/LDFLAGS/LIBS,
+# Add libctl and libgeom -I/-L/-l flags to CPPFLAGS/LDFLAGS/LIBS,
 # so that examples/Makefile.in can be used as-is for other programs:
-INCLUDES="$INCLUDES -I`pwd`/$srcdir/base -I`pwd`/$srcdir/utils"
+CPPFLAGS="$CPPFLAGS -I`pwd`/$srcdir/base -I`pwd`/$srcdir/utils"
 LDFLAGS="$LDFLAGS -L`pwd`/$srcdir/base"
 LIBS="-lctl $LIBS"
 

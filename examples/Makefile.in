@@ -31,7 +31,7 @@ HEADERS =            # any extra header files you are dependent on
 
 MY_LIBS    =         # extra libs you need go here
 MY_LDFLAGS =         # extra -L flags go here
-MY_INCLUDES =        # extra -I include flags go here
+MY_CPPFLAGS =        # extra -I include flags go here
 MY_DEFS =            # extra -D define flags go here
 
 # The following variables should be detected and set by autoconf:
@@ -48,7 +48,7 @@ GEN_CTL_IO = @GEN_CTL_IO@
 
 CC = @CC@
 CFLAGS = @CFLAGS@
-INCLUDES = @INCLUDES@ -I. $(MY_INCLUDES)
+CPPFLAGS = @CPPFLAGS@ -I. $(MY_CPPFLAGS)
 DEFS = @DEFS@ $(CTL_DEFS) $(MY_DEFS)
 
 ##############################################################################
@@ -107,7 +107,7 @@ geom.c: $(LIBCTL_DIR)/utils/geom.c
 	cp -f $(LIBCTL_DIR)/utils/geom.c $@
 
 .c.o: $(HEADERS) ctl-io.h
-	$(CC) -c $(DEFS) $(INCLUDES) $(CFLAGS) $< -o $@
+	$(CC) -c $(DEFS) $(CPPFLAGS) $(CFLAGS) $< -o $@
 
 # 'make install' target.  This is supplied here so that you can easily
 # copy this Makefile into your own program, but it should not be
