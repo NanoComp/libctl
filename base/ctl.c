@@ -220,14 +220,26 @@ matrix3x3 matrix3x3_inverse(matrix3x3 m)
 
 /* complex number utilities */
 
-vector3 cvector3_real_part(cvector3 cv)
+cnumber make_cnumber(number r, number i)
+{
+     cnumber c;
+     c.re = r; c.im = i;
+     return c;
+}
+
+cnumber cnumber_conj(cnumber c)
+{
+     return make_cnumber(c.re, -c.im);
+}
+
+vector3 cvector3_re(cvector3 cv)
 {
      vector3 v;
      v.x = cv.x.re; v.y = cv.y.re; v.z = cv.z.re;
      return v;
 }
 
-vector3 cvector3_imag_part(cvector3 cv)
+vector3 cvector3_im(cvector3 cv)
 {
      vector3 v;
      v.x = cv.x.im; v.y = cv.y.im; v.z = cv.z.im;
@@ -237,9 +249,50 @@ vector3 cvector3_imag_part(cvector3 cv)
 cvector3 make_cvector3(vector3 vr, vector3 vi)
 {
      cvector3 cv;
-     cv.x.re = vr.x; cv.y.re = vr.y; cv.z.re = vr.z;
-     cv.x.im = vi.x; cv.y.im = vi.y; cv.z.im = vi.z;
+     cv.x = make_cnumber(vr.x, vi.x);
+     cv.y = make_cnumber(vr.y, vi.y);
+     cv.z = make_cnumber(vr.z, vi.z);
      return cv;
+}
+
+matrix3x3 cmatrix3x3_re(cmatrix3x3 cm)
+{
+     matrix3x3 m;
+     m.c0 = cvector3_re(cm.c0);
+     m.c1 = cvector3_re(cm.c1);
+     m.c2 = cvector3_re(cm.c2);
+     return m;
+}
+
+matrix3x3 cmatrix3x3_im(cmatrix3x3 cm)
+{
+     matrix3x3 m;
+     m.c0 = cvector3_im(cm.c0);
+     m.c1 = cvector3_im(cm.c1);
+     m.c2 = cvector3_im(cm.c2);
+     return m;
+}
+
+cmatrix3x3 make_cmatrix3x3(matrix3x3 mr, matrix3x3 mi)
+{
+     cmatrix3x3 cm;
+     cm.c0 = make_cvector3(mr.c0, mi.c0);
+     cm.c1 = make_cvector3(mr.c1, mi.c1);
+     cm.c2 = make_cvector3(mr.c2, mi.c2);
+     return cm;
+}
+
+cmatrix3x3 make_hermitian_cmatrix3x3(number m00, number m11, number m22,
+				     cnumber m01, cnumber m02, cnumber m12)
+{
+     cmatrix3x3 cm;
+     cm.c0.x = make_cnumber(m00, 0);
+     cm.c1.y = make_cnumber(m11, 0);
+     cm.c2.y = make_cnumber(m22, 0);
+     cm.c1.x = m01; cm.c0.y = cnumber_conj(m01);
+     cm.c2.x = m02; cm.c0.z = cnumber_conj(m02);
+     cm.c2.y = m12; cm.c1.z = cnumber_conj(m12);
+     return cm;
 }
 
 /**************************************************************************/
