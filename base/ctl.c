@@ -1,8 +1,13 @@
 #include "ctl.h"
 
+#ifndef HAVE_GUILE_1_3
 /* Guile 1.2 is missing gh_bool2scm for some reason; redefine: */
 #define gh_bool2scm bool2scm
 SCM bool2scm(int b) { return (b ? SCM_BOOL_T : SCM_BOOL_F); }
+
+#define gh_length gh_list_length
+#define gh_vector_ref gh_vref
+#endif
 
 /**************************************************************************/
 
@@ -79,9 +84,9 @@ static vector3 scm2vector3(SCM sv)
 {
   vector3 v;
 
-  v.x = gh_scm2double(gh_vref(sv,gh_int2scm(0)));
-  v.y = gh_scm2double(gh_vref(sv,gh_int2scm(1)));
-  v.z = gh_scm2double(gh_vref(sv,gh_int2scm(2)));
+  v.x = gh_scm2double(gh_vector_ref(sv,gh_int2scm(0)));
+  v.y = gh_scm2double(gh_vector_ref(sv,gh_int2scm(1)));
+  v.z = gh_scm2double(gh_vector_ref(sv,gh_int2scm(2)));
   return v;
 }
 
@@ -159,7 +164,7 @@ void ctl_set_object(char *identifier, object value)
 
 int list_length(list l)
 {
-  return(gh_list_length(l));
+  return(gh_length(l));
 }
 
 /* Guile 1.2 doesn't have the gh_list_ref function.  Sigh. */
