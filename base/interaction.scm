@@ -23,35 +23,29 @@
 ; Utilities to make it easier to interact with the user.
 
 (define (yes/no? question)
-  (print question)
-  (print " (y/n) ")
+  (print question " (y/n) ") (flush-all-ports)
   (let ((input (read-line)))
     (let ((c (if (string-null? input) #f (string-ref input 0))))
       (cond
        ((or (eq? c #\y) (eq? c #\Y)) #t)
        ((or (eq? c #\n) (eq? c #\N)) #f)
-       (else (print "  -- please enter y or n") (print "\n")
+       (else (print "  -- please enter y or n\n")
 	     (yes/no? question))))))
 
 (define (menu-choice . items)
   (define (display-items index items)
     (if (not (null? items))
 	(begin
-	  (print "   ")
-	  (print index)
-	  (print ". ")
-	  (print (car items))
-	  (print "\n")
+	  (print "   " index ". " (car items) "\n")
 	  (display-items (+ index 1) (cdr items)))))
   
   (define (get-choice n)
-    (print "Enter your selection (1..")
-    (print n) (print ") ==> ")
+    (print "Enter your selection (1.." n ") ==> ") (flush-all-ports)
     (let ((input (read-line)))
       (let ((choice (string->positive-integer input)))
 	(if (or (eq? choice #f) (< choice 1) (> choice n))
 	    (begin
-	      (print "  -- invalid selection!") (print "\n")
+	      (print "  -- invalid selection!\n")
 	      (get-choice n))
 	    choice))))
 
