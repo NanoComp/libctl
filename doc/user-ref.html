@@ -74,6 +74,10 @@ on the command-line, include <code><i>name</i>=<i>value</i></code> on
 the command-line when the program is executed.  In all other respects,
 <code><i>name</i></code> is an ordinary Scheme variable.
 
+<dt><code>(set-param! <i>name</i> <i>new-default-value</i>)</code>
+<dd>Like <code>set!</code>, but does nothing if
+<code><i>name</i></code> was set on the command line.
+
 </dl>
 
 <h2>3-vector functions</h2>
