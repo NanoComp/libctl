@@ -1,11 +1,15 @@
 libctl 1.2
 
+  * Added new "cone" geometric object type.
+
   * Added reciprocal->cartesian, cartesian->lattice, lattice->reciprocal,
     etcetera functions to libgeom for converting vectors between bases.
 
   * Added routines rotate-vector3 and rotation-matrix3x3 for rotating vectors.
 
   * Added support for returning lists from external functions.
+
+  * Fixed bug in matrix3x3-inverse function.
 
   * Fixed bug in find-root for converging to negative roots.
 
