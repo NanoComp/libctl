@@ -98,9 +98,8 @@ material_type material_of_point(vector3 p)
       switch (dimensions) {
       case 1:
 	for (i = -1; i <= 1; ++i) {
-	  vector3 shift1;
-	  shift1 = vector3_scale(i * geometry_lattice.size.x,
-				geometry_lattice.basis1);
+	  vector3 shift1 = p;
+	  shift1.x += i * geometry_lattice.size.x;
 	  if (point_in_objectp(vector3_plus(p,shift1),
 			       geometry.items[index]))
 	    return(geometry.items[index].material);
@@ -108,14 +107,11 @@ material_type material_of_point(vector3 p)
 	break;
       case 2:
 	for (i = -1; i <= 1; ++i) {
-	  vector3 shift1;
-	  shift1 = vector3_scale(i * geometry_lattice.size.x,
-				geometry_lattice.basis1);
+	  vector3 shift1 = p;
+	  shift1.x += i * geometry_lattice.size.x;
 	  for (j = -1; j <= 1; ++j) {
-	    vector3 shift2;
-	    shift2 = vector3_plus(shift1,
-				 vector3_scale(j * geometry_lattice.size.y,
-					       geometry_lattice.basis2));
+	    vector3 shift2 = shift1;
+	    shift2.y += j * geometry_lattice.size.y;
 	    if (point_in_objectp(vector3_plus(p,shift2),
 				 geometry.items[index]))
 	      return(geometry.items[index].material);
@@ -124,21 +120,14 @@ material_type material_of_point(vector3 p)
 	break;
       case 3:
 	for (i = -1; i <= 1; ++i) {
-	  vector3 shift1;
-	  shift1 = vector3_scale(i * geometry_lattice.size.x,
-				geometry_lattice.basis1);
+	  vector3 shift1 = p;
+	  shift1.x += i * geometry_lattice.size.x;
 	  for (j = -1; j <= 1; ++j) {
-	    vector3 shift2;
-	    shift2 = vector3_plus(shift1,
-				 vector3_scale(j * geometry_lattice.size.y,
-					       geometry_lattice.basis2));
-					       
+	    vector3 shift2 = shift1;
+	    shift2.y += j * geometry_lattice.size.y;
 	    for (k = -1; k <= 1; ++k) {
-	      vector3 shift3;
-	      shift3 = vector3_plus(shift2,
-				   vector3_scale(k * geometry_lattice.size.z,
-						 geometry_lattice.basis3));
-						 
+	      vector3 shift3 = shift2;
+	      shift2.z += k * geometry_lattice.size.z;
 	      if (point_in_objectp(vector3_plus(p,shift3),
 				   geometry.items[index]))
 		return(geometry.items[index].material);
