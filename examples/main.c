@@ -84,6 +84,16 @@ void main_entry(int argc, char *argv[])
 
   declare_functions();
 
+  /* load ctl.scm if it was given at compile time */
+#ifdef CTL_SCM
+  gh_eval_file(CTL_SCM);
+#endif
+
+  /* load the specification file if it was given at compile time */
+#ifdef SPEC_SCM
+  gh_eval_file(SPEC_SCM);
+#endif
+
   /* load any scheme files specified on the command-line: */
   for (i = 1; i < argc; ++i)
     gh_eval_file(argv[i]);

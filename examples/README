@@ -20,7 +20,7 @@ Makefile: makefile for the example program.  (Also a good starting point
 So, to compile and run everything, you simply type:
 
 make
-example ../src/ctl.scm photonic-crystal.scm run.ctl
+example run.ctl
 
 Since run.ctl does not call (run), this drops you into Guile's
 interactive mode, where you can start typing in Scheme commands.  For
