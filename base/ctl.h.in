@@ -198,6 +198,7 @@ extern cmatrix3x3 ctl_get_cmatrix3x3(char *identifier);
 extern list ctl_get_list(char *identifier);
 extern object ctl_get_object(char *identifier);
 extern function ctl_get_function(char *identifier);
+extern SCM ctl_get_SCM(char *identifier);
 
 extern void ctl_set_integer(char *identifier, integer value);
 extern void ctl_set_number(char *identifier, number value);
@@ -211,6 +212,7 @@ extern void ctl_set_cmatrix3x3(char *identifier, cmatrix3x3 value);
 extern void ctl_set_list(char *identifier, list value);
 extern void ctl_set_object(char *identifier, object value);
 extern void ctl_set_function(char *identifier, function value);
+extern void ctl_set_SCM(char *identifier, SCM value);
 
 /**************************************************************************/
 
@@ -229,6 +231,7 @@ extern cmatrix3x3 cmatrix3x3_list_ref(list l, int index);
 extern list list_list_ref(list l, int index);
 extern object object_list_ref(list l, int index);
 extern function function_list_ref(list l, int index);
+extern SCM SCM_list_ref(list l, int index);
 
 /**************************************************************************/
 
@@ -246,6 +249,7 @@ extern list make_cmatrix3x3_list(int num_items, cmatrix3x3 *items);
 extern list make_list_list(int num_items, list *items);
 extern list make_object_list(int num_items, object *items);
 extern list make_function_list(int num_items, function *items);
+extern list make_SCM_list(int num_items, function *items);
 
 /**************************************************************************/
 
@@ -264,7 +268,8 @@ extern cvector3 cvector3_object_property(object o, char *property_name);
 extern cmatrix3x3 cmatrix3x3_object_property(object o, char *property_name);
 extern list list_object_property(object o, char *property_name);
 extern object object_object_property(object o, char *property_name);
-extern object function_object_property(object o, char *property_name);
+extern function function_object_property(object o, char *property_name);
+extern SCM SCM_object_property(object o, char *property_name);
 
 /**************************************************************************/
 

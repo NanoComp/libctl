@@ -476,6 +476,11 @@ function ctl_get_function(char *identifier)
   return(gh_lookup(identifier));
 }
 
+SCM ctl_get_SCM(char *identifier)
+{
+  return(gh_lookup(identifier));
+}
+
 /**** Setters ****/
 
 /* UGLY hack alert!  There doesn't seem to be any clean way of setting
@@ -582,6 +587,11 @@ void ctl_set_function(char *identifier, function value)
   set_value(identifier, value);
 }
 
+void ctl_set_SCM(char *identifier, SCM value)
+{
+  set_value(identifier, value);
+}
+
 /**************************************************************************/
 
 /* list traversal */
@@ -646,7 +656,12 @@ object object_list_ref(list l, int index)
   return(list_ref(l,index));
 }
 
-object function_list_ref(list l, int index)
+function function_list_ref(list l, int index)
+{
+  return(list_ref(l,index));
+}
+
+SCM SCM_list_ref(list l, int index)
 {
   return(list_ref(l,index));
 }
@@ -700,6 +715,9 @@ list make_object_list(int num_items, object *items)
 MAKE_LIST(NO_CONVERSION)
 
 list make_function_list(int num_items, object *items)
+MAKE_LIST(NO_CONVERSION)
+
+list make_SCM_list(int num_items, object *items)
 MAKE_LIST(NO_CONVERSION)
 
 
@@ -777,6 +795,11 @@ object object_object_property(object o, char *property_name)
 }
 
 function function_object_property(object o, char *property_name)
+{
+  return(object_property_value(o,property_name));
+}
+
+SCM SCM_object_property(object o, char *property_name)
 {
   return(object_property_value(o,property_name));
 }
