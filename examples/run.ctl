@@ -6,7 +6,7 @@
 ; This library is distributed in the hope that it will be useful,
 ; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-; Library General Public License for more details. 
+; Lesser General Public License for more details. 
 
 ; Sample control file (for example.scm specification).
 ; You should edit this file in Scheme mode if you are using emacs:
