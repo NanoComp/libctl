@@ -37,7 +37,7 @@
   (assoc-ref (object-property-values object) property-name))
 (define (object-memberp type-name)
   (lambda (object) (object-member? type-name object)))
-; (I wish Scheme had currying)
+; (I wish Scheme had implicit currying like ML.)
 (define (extend-object object type-name property-values)
   (make-object (cons type-name (object-type-names object))
 	       (combine-alists property-values
