@@ -492,10 +492,31 @@
 
   (deriv dx 0 1e30 '() (sqrt 2)))
       
+; Compute both the first and second derivatives at the same time
+; (using minimal extra function evaluations).
+(define (do-derivative-wrap2+ do-deriv only2? f x dx-and-tol)
+  (define f-memo (memoize f))
+  (define (f-deriv y)
+    (if (= y x) 
+	0.0
+	(binary* (binary+ (f-memo y) 
+			  (binary- (f-memo x)
+				   (binary* 2.0 (f-memo (* 0.5 (+ x y))))))
+		 (/ 4 (- y x)))))
+  (append
+   (if only2? 
+       (list 0 0)
+       (do-derivative-wrap do-deriv f-memo x dx-and-tol))
+   (do-derivative-wrap do-deriv f-deriv x dx-and-tol)))
+
 (define (derivative+ f x . dx-and-tol)
   (do-derivative-wrap do-derivative+ f x dx-and-tol))
 (define (deriv+ f x . dx-and-tol)
   (derivative-df (do-derivative-wrap do-derivative+ f x dx-and-tol)))
+(define (derivative2+ f x . dx-and-tol)
+  (do-derivative-wrap2+ do-derivative+ false f x dx-and-tol))
+(define (deriv2+ f x . dx-and-tol)
+  (derivative-d2f (do-derivative-wrap2+ do-derivative+ true f x dx-and-tol)))
 
 ; as do-derivative+, but taking derivative from left
 (define (do-derivative- f x dx tol)
@@ -504,6 +525,10 @@
   (do-derivative-wrap do-derivative- f x dx-and-tol))
 (define (deriv- f x . dx-and-tol)
   (derivative-df (do-derivative-wrap do-derivative- f x dx-and-tol)))
+(define (derivative2- f x . dx-and-tol)
+  (do-derivative-wrap2+ do-derivative- false f x dx-and-tol))
+(define (deriv2- f x . dx-and-tol)
+  (derivative-d2f (do-derivative-wrap2+ do-derivative- true f x dx-and-tol)))
 
 ; ****************************************************************
 
