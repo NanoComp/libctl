@@ -104,6 +104,10 @@ int handle_args(int argc, char *argv[],
 
 #ifdef HAVE_CTL_HOOKS
 static int ctl_stop_hook_called = 0;
+
+extern void ctl_start_hook(int *argc, char **argv[]);
+extern void ctl_stop_hook(void);
+extern void ctl_export_hook(void);
 #endif
 
 /* Main program.  Start up Guile, declare functions, load any
@@ -120,6 +124,9 @@ void main_entry(int argc, char *argv[])
      These are defined in the specifications file, from which the
      export_external_functions routine is automatically generated. */
   export_external_functions();
+#ifdef HAVE_CTL_HOOKS
+  ctl_export_hook();
+#endif
 
   /* Also export the read_input_vars and write_output_vars routines
      that are automatically generated from the specifications file: */
