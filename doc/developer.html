@@ -220,13 +220,13 @@ property.
 
 <p>Here is an example that defines a new type of geometric object, a
 <code>block</code>.  Blocks have a <code>size</code> property that
-specifies their dimensions along three unit vectors, which are also
-properties (with default values of the coordinate axes).  When
-computing whether a point falls within a block, it is necessary to
-know the projection matrix, which is the inverse of the matrix whose
-columns are the basis vectors.  We make this projection matrix a
-derived property, computed via the libctl-provided matrix routines,
-freeing us from the necessity of constantly recomputing it.
+specifies their dimensions along three unit vectors, which are
+post-processed properties (with default values of the coordinate
+axes).  When computing whether a point falls within a block, it is
+necessary to know the projection matrix, which is the inverse of the
+matrix whose columns are the basis vectors.  We make this projection
+matrix a derived property, computed via the libctl-provided matrix
+routines, freeing us from the necessity of constantly recomputing it.
 
 <pre>
 (define-class block geometric-object
