@@ -72,12 +72,17 @@ void geom_fix_object(geometric_object o)
 
 /* fix all objects in the geometry list as described in
    geom_fix_object, above */
-void geom_fix_objects(void)
+void geom_fix_objects0(geometric_object_list geometry)
 {
      int index;
 
      for (index = 0; index < geometry.num_items; ++index)
 	  geom_fix_object(geometry.items[index]);
+}
+
+void geom_fix_objects(void)
+{
+     geom_fix_objects0(geometry);
 }
 
 /**************************************************************************/
@@ -243,7 +248,8 @@ boolean point_in_periodic_fixed_objectp(vector3 p, geometric_object o)
    material_of_point_inobject is a variant that also returns whether
    or not the point was in any object.  */
 
-material_type material_of_point_inobject(vector3 p, boolean *inobject)
+material_type material_of_point_inobject0(geometric_object_list geometry,
+					  vector3 p, boolean *inobject)
 {
      int index;
      
@@ -259,10 +265,20 @@ material_type material_of_point_inobject(vector3 p, boolean *inobject)
      return default_material;
 }
 
-material_type material_of_point(vector3 p)
+material_type material_of_point_inobject(vector3 p, boolean *inobject)
+{
+     material_of_point_inobject0(geometry, p, inobject);
+}
+
+material_type material_of_point0(geometric_object_list geometry, vector3 p)
 {
      boolean inobject;
-     return material_of_point_inobject(p, &inobject);
+     return material_of_point_inobject0(geometry, p, &inobject);
+}
+
+material_type material_of_point(vector3 p)
+{
+     return material_of_point0(geometry, p);
 }
 
 /**************************************************************************/
@@ -795,6 +811,11 @@ static void divide_geom_box_tree(geom_box_tree t)
 }
 
 geom_box_tree create_geom_box_tree(void)
+{
+     return create_geom_box_tree0(geometry);
+}
+
+geom_box_tree create_geom_box_tree0(geometric_object_list geometry)
 {
      geom_box b;
      geom_box_tree t = new_geom_box_tree();
