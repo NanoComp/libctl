@@ -100,9 +100,7 @@ object ctl_get_object(char *identifier)
 
 static set_value(char *identifier, SCM value)
 {
-  gh_apply(gh_lookup("set!"),
-	   gh_cons(gh_lookup(identifier), 
-		   gh_cons(value, SCM_EOL)));
+  gh_call2(gh_lookup("set!"), gh_lookup(identifier), value);
 }
 
 void ctl_set_integer(char *identifier, integer value)
@@ -230,11 +228,10 @@ MAKE_LIST(gh_str02scm)
 
 SCM vector32scm(vector3 v)
 {
-  return(gh_apply(gh_lookup("vector3"),
-		  gh_cons(gh_double2scm(v.x),
-			  gh_cons(gh_double2scm(v.y),
-				  gh_cons(gh_double2scm(v.z),
-					  SCM_EOL)))));
+  return(gh_call3(gh_lookup("vector3"),
+		  gh_double2scm(v.x),
+		  gh_double2scm(v.y),
+		  gh_double2scm(v.z)));
 }
 
 list make_vector3_list(int num_items, vector3 *items)
@@ -253,10 +250,9 @@ MAKE_LIST()
 
 static SCM object_property_value(object o, char *property_name)
 {
-  return(gh_apply(gh_lookup("object-property-value"),
-		  gh_cons(o, 
-			  gh_cons(gh_symbol2scm(property_name),
-				  SCM_EOL))));
+  return(gh_call2(gh_lookup("object-property-value"),
+		  o, 
+		  gh_symbol2scm(property_name)));
 }
 
 integer integer_object_property(object o, char *property_name)
