@@ -28,14 +28,16 @@ headache to support all of these things.
 <p>In fact, however, using libctl is much easier than writing your
 program for a traditional, fixed-format input file.  You simply
 describe in an abstract specifications file the variables and data
-types that your program expects to exchange with the ctl file.  From
-these specifications, code is automatically generated to export and
-import the information to and from Guile.
+types that your program expects to exchange with the ctl file, and the
+functions by which it is called.  From these specifications, code is
+automatically generated to export and import the information to and
+from Guile.
 
 <p>The specifications file is written in Scheme, and consists of
 definitions for the classes and input/output variables the program
 expects.  It may also contain any predefined functions or variables
-that might be useful in ctl files for the program.
+that might be useful in ctl files for the program, and says which
+functions in your program are callable from the ctl script.
 
 <h2>Defining input variables</h2>
 
@@ -180,7 +182,121 @@ dielectric objects in an electromagnetic simulation:
   (define-property radius 'number no-default positive?))
 </pre>
 
-<h2>Useful things to put in a specifications file</h2>
+<h2>Exporting your subroutines</h2>
+
+In order for the ctl script to do anything, one of your C routines
+will eventually have to be called.
+
+<p>To export a C routine, you write the C routine as you would
+normally, using the data types defined in ctl.h and ctl-io.h (see
+below) for parameters and return value.  All parameters must be passed
+by value (with the exception of strings, which are of type <code>char
+*</code>).
+
+<p>Then, in your specifications file, you must add a declaration of the following form:
+
+<pre>
+(define-external-function <i>name read-inputs? write-outputs?
+                          return-type
+			  [ arg0-type arg1-type ... ]</i>)
+</pre>
+
+<p><code><i>name</i></code> is the name of the function, and is the
+name by which it will be called in a ctl script.  This should be
+identical to the name of the C subroutine, with the exception that
+underscores are turned into hyphens (this is not required, but is the
+convention we adopt everywhere else).
+
+<p>If <code><i>read-inputs?</i></code> is <code>true</code>, then the
+input variables will be automatically imported into C global variables
+before the subroutine is called each time.  If you don't want this to
+happen, this argument should be <code>false</code>.  Similarly,
+<code><i>write-outputs?</i></code> says whether or not the output
+variables will be automaticaly exported from the C globals after the
+subroutine is called.  All of this code, including the declarations of
+the C input/output globals, is generated automatically (see below).
+So, when your function is called, the input variables will already
+contain all of their values, and you need only assign/allocate data to
+the output variables to send data back to Guile.  If
+<code><i>write-outputs?</i></code> is <code>true</code>, the output
+variables <b>must</b> have valid contents when your routine exits.
+
+<p><code><i>return-type</i></code> is the return type of the
+subroutine, or <code>no-return-value</code> if there is no return
+value (i.e. the function is of type <code>void</code>).  The remaining
+arguments are the types of the parameters of the C subroutine.
+
+<p>Usually, your program will export a <code>run</code> subroutine
+that performs the simulation given the input variables, and returns
+data to the ctl script through the output variables.  Such a
+subroutine would be declared in C as:
+
+<pre>
+void run(void);
+</pre>
+
+<p>and in the specifications file by:
+
+<pre>
+(define-external-function run true true no-return-value)
+</pre>
+
+<p>As another example, imagine a subroutine that takes a geometric
+object and returns the fraction of electromagnetic energy in the
+object.  It does not use the input/output global variables, and would
+be declared in C and in the specifications file by:
+
+<pre>
+/* C declaration: */
+number energy_in_object(geometric_object obj);
+
+; Specifications file:
+(define-external-function energy-in-object false false
+                          'number 'geometric-object)
+</pre>
+
+<h3>Data structures and types</h3>
+
+The data structures for holding classes and other variable types are
+defined automatically in the generated file <code>ctl-io.h</code> (see
+below).  They are fairly self-explanatory, but it should be noted that
+they use some data types defined in <code>src/ctl.h</code>, mostly
+mirrors of the corresponding Scheme types.  (e.g. <code>number</code>
+is a synonym for <code>double</code>, and <code>vector3</code> is a
+structure with <code>x</code>, <code>y</code>, and <code>z</code>
+fields.)  (<code>ctl.h</code> also declares several functions for
+manipulating vectors and matrices, e.g. <code>vector3_plus</code>.)
+
+<h3>Allocating and deallocating data</h3>
+
+The input variables are allocated and deallocated automatically, as
+necessary, but you are responsible for allocating and deallocating the
+output data.  As a convenience, the function
+<code>destroy_output_vars()</code> is defined, which deallocates all
+of the output data pointed to by the output variables.  You are
+responsible for calling this when you want to deallocate the output.
+
+<p>Often, after each run, you will simply want to (re)allocate and
+assign the output variables.  To avoid memory leaks, however, you
+should first deallocate the old output variables on runs after the
+first.  To do this, use the following code:
+
+<pre>
+if (num_write_output_vars > 0)
+     destroy_output_vars();
+
+/* ... allocate & assign the output variables ... */
+</pre>
+
+<p>The global variable <code>num_write_output_vars</code> is
+automatically set to the number of times the output variables have
+been written.
+
+<p>Remember, you are <b>required</b> to assign all of the output
+variables to legal values, or the resulting behavior will be
+undefined.
+
+<h2>Other useful things to put in a specifications file</h2>
 
 The specifications file is loaded before any user ctl file, making it
 a good place to put definitions of variables and functions that will
@@ -218,17 +334,13 @@ Guile.
 
 <p>Second, you should copy the <code>main.c</code> file from the
 <code>examples/</code> directory.  This file defines a main program
-that starts up Guile, loads control files from the command line, and
-waits for a <code>(run)</code> command.  When <code>(run)</code> is
-called in the ctl script, the input variables are imported into the C
-program, the <code>run_program</code> function in <code>main.c</code>
-is called, and then the output variables are exported.
+that starts up Guile, declares the routines that you are exporting,
+and loads control files from the command line.  You should not need to
+modify this file.
 
-<p>You merely need to modify <code>run_program</code>, then, to call
-the "main" subroutine of your simulation.  When it is called, all of
-the input variables and data structures are already filled in!  To
-output data, you just assign values to the output variables, and they
-will be automatically exported to Guile.
+<p>You then merely need to write the functions that you are exporting
+(see above for how to export functions).  This will usually include,
+at least, a <code>run</code> function (see above).
 
 <p>For maximum convenience, you should also copy the
 <code>Makefile</code> from <code>examples/</code>.  At the top of this
@@ -236,71 +348,6 @@ file, there are places to specify the location of libctl, your object
 files and specification file, and your C compiler and flags. The
 Makefile will then generate the <code>ctl-io</code> files and do
 everything else needed to compile your program.
-
-<h3>Data structures and types</h3>
-
-The data structures for holding classes and other variable types are
-defined automatically in <code>ctl-io.h</code>.  They are fairly
-self-explanatory, but it should be noted that they use some data types
-defined in <code>src/ctl.h</code>, mostly mirrors of the corresponding
-Scheme types.  (e.g. <code>number</code> is a synonym for
-<code>double</code>, and <code>vector3</code> is a structure with
-<code>x</code>, <code>y</code>, and <code>z</code> fields.)
-(<code>ctl.h</code> also declares several functions for manipulating
-vectors, e.g. <code>vector3_plus</code>.)
-
-<h3>Allocating and deallocating data</h3>
-
-The input variables are allocated and deallocated automatically, as
-necessary, but you are responsible for allocating and deallocating the
-output data.  As a convenience, the function
-<code>destroy_output_vars()</code> is defined, which deallocates all
-of the output data pointed to by the output variables.  You are
-responsible for calling this when you want to deallocate the output.
-
-<p>Typically, after each run, you will want to (re)allocate and assign
-the output variables.  To avoid memory leaks, however, you should
-first deallocate the old output variables on runs after the first.  To
-do this, use the following code:
-
-<pre>
-if (num_runs > 1)  /* on first run, outputs haven't been allocated yet */
-     destroy_output_vars();
-
-/* ... allocate & assign the output variables ... */
-</pre>
-
-<p>The global variable <code>num_runs</code> is automatically set to
-the number of calls to the <code>(run)</code> function (it is
-<code>1</code> during the first call).
-
-<p>Remember, you are <b>required</b> to assign all of the output
-variables to legal values, or the resulting behavior will be
-undefined.
-
-<h3>Advanced possibilities</h3>
-
-Once you become comfortable with Guile and libctl, you should consider
-allowing more entry points into your program.  That is, you should
-enable the user to call other functions in your program besides the
-main <code>run_program</code> subroutine.
-
-<p>For more information on how to do this, consult the Guile
-documentation.  You will need to modify the function
-<code>declare_functions</code> in <code>main.c</code> to notify Guile
-of your subroutines.  Also, you might want to set up a Scheme function
-that exchanges the input and output data before and after your
-subroutine is called.  For example, we already have a
-<code>(run)</code> function that calls <code>run_program</code> as
-follows:
-
-<pre>
-(define (run)
-  (check-vars input-var-list)    ; check the input variables
-  (read-input-vars)              ; import the input variables to C
-  (run-program)                  ; call run_program
-  (write-output-vars))           ; export the output variables from C
-</pre>
 
 <p>Have fun!
 
