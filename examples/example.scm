@@ -17,7 +17,8 @@
   (define-property center 'vector3 no-default))
 
 (define-class cylinder geometric-object
-  (define-property axis 'vector3 (make-default (vector3 0 0 1)))
+  (define-post-processed-property axis 'vector3 unit-vector3
+    (make-default (vector3 0 0 1)))
   (define-property radius 'number no-default positive?)
   (define-property height 'number no-default positive?))
 	       
@@ -25,10 +26,20 @@
   (define-property radius 'number no-default positive?))
 	       
 (define-class block geometric-object
-  (define-property e1 'vector3 (make-default (vector3 1 0 0)))
-  (define-property e2 'vector3 (make-default (vector3 0 1 0)))
-  (define-property e3 'vector3 (make-default (vector3 0 0 1)))
-  (define-property size 'vector3 no-default))
+  (define-post-processed-property e1 'vector3 unit-vector3 
+    (make-default (vector3 1 0 0)))
+  (define-post-processed-property e2 'vector3 unit-vector3 
+    (make-default (vector3 0 1 0)))
+  (define-post-processed-property e3 'vector3 unit-vector3 
+    (make-default (vector3 0 0 1)))
+  (define-property size 'vector3 no-default)
+  (define-derived-property projection-matrix 'matrix3x3
+    (lambda (object)
+      (matrix3x3-inverse
+       (matrix3x3
+	(object-property-value object 'e1)
+	(object-property-value object 'e2)
+	(object-property-value object 'e3))))))
 	       
 ; ****************************************************************
 

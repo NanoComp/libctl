@@ -38,6 +38,13 @@
 	  (cons (car l) (list-transform-positive (cdr l) pred))
 	  (list-transform-positive (cdr l) pred))))
 
+(define (list-transform-negative l pred)
+  (if (null? l)
+      l
+      (if (not (pred (car l)))
+	  (cons (car l) (list-transform-negative (cdr l) pred))
+	  (list-transform-negative (cdr l) pred))))
+
 (define (alist-copy al)
   (if (null? al) '()
       (cons (cons (caar al) (cdar al)) (alist-copy (cdr al)))))
@@ -53,6 +60,7 @@
 (define (second list) (list-ref list 1))
 (define (third list) (list-ref list 2))
 (define (fourth list) (list-ref list 3))
+(define (fifth list) (list-ref list 4))
 
 (define (fold-right op init list)
   (if (null? list)
@@ -129,7 +137,7 @@
 	       (apply vector3 args))))
     (vector3-scale (/ (vector3-norm v)) v)))
 
-; Define polymorphic binary operators (work on any type):
+; Define polymorphic binary operators (work on both vectors and numbers):
 
 (define (binary+ x y)
   (if (and (vector3? x) (vector3? y)) (vector3+ x y) (+ x y)))
@@ -241,7 +249,7 @@
 
 (define class-list '())
 
-(define (make-property-value name value)
+(define (make-property-value-pair name value)
   (cons name value))
 
 (define (make-object type-names property-values)
@@ -271,18 +279,31 @@
 (define (has-default? default) (car default))
 (define (default-value default) (cdr default))
 
-(define (make-property name type-name default . constraints)
-  (list name type-name default constraints))
+(define (make-derived derive-func)
+  (cons true derive-func))
+(define not-derived (cons false '()))
+(define (derived? derived) (car derived))
+(define (derive-func derived) (cdr derived))
+
+(define (make-property name type-name default derived . constraints)
+  (list name type-name default constraints derived))
 
 (define no-constraints '())
 (define (property-name property) (first property))
 (define (property-type-name property) (second property))
 (define (property-default property) (third property))
 (define (property-constraints property) (fourth property))
+(define (property-derived property) (fifth property))
 (define (property-has-default? property)
   (has-default? (property-default property)))
 (define (property-default-value property)
   (default-value (property-default property)))
+(define (property-derived? property)
+  (derived? (property-derived property)))
+(define (derive-property property object)
+  (make-property-value-pair
+   (property-name property)
+   ((derive-func (property-derived property)) object)))
 
 (define (check-constraints constraints value)
   (for-all? constraints (lambda (c) (c value))))
@@ -348,7 +369,7 @@
 		    property-values)))
     (let ((newval (if (pair? val) val
 		      (if (property-has-default? property)
-			  (make-property-value
+			  (make-property-value-pair
 			   (property-name property)
 			   (property-default-value property))
 			  (error "no value for property"
@@ -382,11 +403,20 @@
 
 (define (make class . property-values)
   (if (list? class)
-      (extend-object (apply make (cons (class-parent class) property-values))
-		     (class-type-name class)
+      (let ((o
+	     (extend-object
+	      (apply make (cons (class-parent class) property-values))
+	      (class-type-name class)
+	      (map (lambda (property)
+		     (get-property-value property property-values))
+		   (list-transform-negative
+		     (class-properties class) property-derived?)))))
+	(apply modify-object
+	       (cons o
 		     (map (lambda (property)
-			    (get-property-value property property-values))
-			  (class-properties class)))
+			    (derive-property property o))
+			  (list-transform-positive 
+			      (class-properties class) property-derived?)))))
       null-object))
 
 ; ****************************************************************
@@ -446,30 +476,54 @@
 			   true)))))
 
 ; ****************************************************************
-; Creating property-value constructors.
+; Defining property values.
 
 (define (property-value-constructor name)
-  (lambda (x) (make-property-value name x)))
+  (lambda (x) (make-property-value-pair name x)))
 
 (define (vector3-property-value-constructor name)
-  (lambda x (make-property-value name (if (and (= (length x) 1)
-					       (vector3? (car x)))
-					  (car x)
-					  (apply vector3 x)))))
+  (lambda x (make-property-value-pair name (if (and (= (length x) 1)
+						    (vector3? (car x)))
+					       (car x)
+					       (apply vector3 x)))))
 
 (define (list-property-value-constructor name)
-  (lambda x (make-property-value name x)))
+  (lambda x (make-property-value-pair name x)))
+
+(define (type-property-value-constructor type-name name)
+  (cond
+   ((eq? type-name 'vector3)
+    (vector3-property-value-constructor name))
+   ((list-type-name? type-name)
+    (list-property-value-constructor name))
+   (else (property-value-constructor name))))
+
+(define (post-processing-constructor post-process-func constructor)
+  (lambda x
+    (let ((value-pair (apply constructor x)))
+      (make-property-value-pair (car value-pair)
+				(post-process-func (cdr value-pair))))))
 
 (defmacro-public define-property (name type-name default . constraints)
   `(begin
-     (cond
-      ((eq? ,type-name 'vector3)
-       (define ,name (vector3-property-value-constructor (quote ,name))))
-      ((list-type-name? ,type-name)
-       (define ,name (list-property-value-constructor (quote ,name))))
-      (else
-       (define ,name (property-value-constructor (quote ,name)))))
-     (make-property (quote ,name) ,type-name ,default ,@constraints)))
+     (define ,name
+       (type-property-value-constructor ,type-name (quote ,name)))
+     (make-property (quote ,name) ,type-name ,default
+		    not-derived ,@constraints)))
+
+(defmacro-public define-post-processed-property
+  (name type-name post-process-func default . constraints)
+  `(begin
+     (define ,name (post-processing-constructor
+		    ,post-process-func
+		    (type-property-value-constructor ,type-name
+						     (quote ,name))))
+     (make-property (quote ,name) ,type-name ,default
+		    not-derived ,@constraints)))
+
+(defmacro-public define-derived-property (name type-name derive-func)
+  `(make-property (quote ,name) ,type-name no-default
+		  (make-derived ,derive-func)))
 
 ; ****************************************************************
 

@@ -56,8 +56,11 @@ void example_do_stuff(void)
 
     switch (geometry.items[i].which_subclass) {
     case CYLINDER:
-      printf("          cylinder with height %g\n",
-	     geometry.items[i].subclass.cylinder_data->height);
+      printf("          cylinder with height %g, axis (%g, %g, %g)\n",
+	     geometry.items[i].subclass.cylinder_data->height,
+	     geometry.items[i].subclass.cylinder_data->axis.x,
+	     geometry.items[i].subclass.cylinder_data->axis.y,
+	     geometry.items[i].subclass.cylinder_data->axis.z);
       break;
     case SPHERE:
       printf("          sphere with radius %g\n",
@@ -68,6 +71,18 @@ void example_do_stuff(void)
 	     geometry.items[i].subclass.block_data->size.x,
 	     geometry.items[i].subclass.block_data->size.y,
 	     geometry.items[i].subclass.block_data->size.z);
+      printf("          projection matrix: %10.6f%10.6f%10.6f\n"
+	     "                             %10.6f%10.6f%10.6f\n"
+	     "                             %10.6f%10.6f%10.6f\n",
+	     geometry.items[i].subclass.block_data->projection_matrix.c0.x,
+	     geometry.items[i].subclass.block_data->projection_matrix.c1.x,
+	     geometry.items[i].subclass.block_data->projection_matrix.c2.x,
+	     geometry.items[i].subclass.block_data->projection_matrix.c0.y,
+	     geometry.items[i].subclass.block_data->projection_matrix.c1.y,
+	     geometry.items[i].subclass.block_data->projection_matrix.c2.y,
+	     geometry.items[i].subclass.block_data->projection_matrix.c0.z,
+	     geometry.items[i].subclass.block_data->projection_matrix.c1.z,
+	     geometry.items[i].subclass.block_data->projection_matrix.c2.z);
       break;
     case GEOMETRIC_OBJECT:
       printf("          generic geometric object\n");
