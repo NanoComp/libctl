@@ -14,6 +14,8 @@ libctl 2.2
     constructor for cvector3 object properties; thanks to Doug Allan for
     the bug report.
 
+  * libctl programs now print out command-line parameters when they run.
+
   * Fixed incomplete support for generic SCM type.
 
   * Fixed to work with Guile 1.5+ (thanks to Mike Watts for the bug report).
