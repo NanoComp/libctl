@@ -394,8 +394,8 @@ static void geom_box_add_pt(geom_box *b, vector3 p)
 static int geom_box_contains_point(const geom_box *b, vector3 p)
 {
      return (BETWEEN(p.x, b->low.x, b->high.x) &&
-	     BETWEEN(p.x, b->low.y, b->high.y) &&
-	     BETWEEN(p.x, b->low.z, b->high.z));
+	     BETWEEN(p.y, b->low.y, b->high.y) &&
+	     BETWEEN(p.z, b->low.z, b->high.z));
 }
 
 /* return whether or not the given two boxes intersect */

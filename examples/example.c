@@ -89,6 +89,7 @@ static void display_object_info(geometric_object obj)
 void run_program(void)
 {
   int i, depth, nobjects;
+  vector3 p;
   geom_box_tree t;
 
   /* Just print out some data to prove that we have read the
@@ -111,6 +112,12 @@ void run_program(void)
   geom_box_tree_stats(t, &depth, &nobjects);
   printf("\ntree has depth %d and %d object nodes (vs. %d objects)\n",
 	 depth, nobjects, geometry.num_items);
+
+  p.x = 1; p.y = 0; p.z = 0;
+  printf("Epsilon of (%g, %g) is %g (tree) or %g (non-tree)\n",
+	 p.x, p.y,
+	 material_of_point_in_tree(p, t).epsilon,
+	 material_of_point(p).epsilon);
 
   destroy_geom_box_tree(t);
 
