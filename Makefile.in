@@ -1,0 +1,54 @@
+# Variables substituted by the autoconf configure script:
+
+CC = @CC@
+CFLAGS = @CFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+RANLIB = @RANLIB@
+@SET_MAKE@
+prefix = @prefix@
+
+# Subdirectories to make in:
+
+LIBSUBDIRS = base utils
+SUBDIRS = $(LIBSUBDIRS) examples
+
+all: all-recursive
+
+install: libs install-recursive
+
+libs: libs-recursive
+
+clean: clean-recursive
+	rm -f core
+
+distclean: clean
+	@list='$(SUBDIRS)'; for subdir in $$list; do \
+	  echo "rm -f $$subdir/Makefile"; rm -f $$subdir/Makefile; done
+	rm -f config.cache Makefile config.log config.status
+	rm -f base/ctl.h utils/gen-ctl-io
+	rm -f base/Makefile utils/Makefile examples/Makefile
+
+maintainer-clean: distclean
+	rm -f configure
+
+# Recursive makes in subdirectories:
+# (borrowed from automake)
+
+all-recursive clean-recursive:
+	@set fnord $(MAKEFLAGS); amf=$$2; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+          target=`echo $@ | sed s/-recursive//`; \
+          echo "Making $$target in $$subdir"; \
+          (cd $$subdir && $(MAKE) $$target) \
+           || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
+        done && test -z "$$fail"
+
+libs-recursive install-recursive:
+	@set fnord $(MAKEFLAGS); amf=$$2; \
+	list='$(LIBSUBDIRS)'; for subdir in $$list; do \
+          target=`echo $@ | sed s/-recursive//`; \
+          echo "Making $$target in $$subdir"; \
+          (cd $$subdir && $(MAKE) $$target) \
+           || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
+        done && test -z "$$fail"
