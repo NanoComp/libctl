@@ -61,6 +61,7 @@ extern void destroy_geom_box_tree(geom_box_tree t);
 extern geom_box_tree create_geom_box_tree(void);
 extern material_type material_of_point_in_tree(vector3 p, geom_box_tree t);
 extern void display_geom_box_tree(int indentby, geom_box_tree t);
+extern void geom_box_tree_stats(geom_box_tree t, int *depth, int *nobjects);
 
 /**************************************************************************/
 

@@ -874,3 +874,27 @@ void display_geom_box_tree(int indentby, geom_box_tree t)
 }
 
 /**************************************************************************/
+
+/* Computing tree statistics (depth and number of nodes): */
+
+/* helper function for geom_box_tree_stats */
+static void get_tree_stats(geom_box_tree t, int *depth, int *nobjects)
+{
+     if (t) {
+	  int d1, d2;
+	  
+	  *nobjects += t->nobjects;
+	  d1 = d2 = *depth + 1;
+	  get_tree_stats(t->t1, &d1, nobjects);
+	  get_tree_stats(t->t2, &d2, nobjects);
+	  *depth = MAX(d1, d2);
+     }
+}
+
+void geom_box_tree_stats(geom_box_tree t, int *depth, int *nobjects)
+{
+     *depth = *nobjects = 0;
+     get_tree_stats(t, depth, nobjects);
+}
+
+/**************************************************************************/

@@ -88,7 +88,7 @@ static void display_object_info(geometric_object obj)
    automatically exported to scheme. */
 void run_program(void)
 {
-  int i;
+  int i, depth, nobjects;
   geom_box_tree t;
 
   /* Just print out some data to prove that we have read the
@@ -108,6 +108,10 @@ void run_program(void)
   t = create_geom_box_tree();
   printf("\ngeometry box tree:\n");
   display_geom_box_tree(2, t);
+  geom_box_tree_stats(t, &depth, &nobjects);
+  printf("\ntree has depth %d and %d object nodes (vs. %d objects)\n",
+	 depth, nobjects, geometry.num_items);
+
   destroy_geom_box_tree(t);
 
   printf("\nDone writing input.  Sending data to output vars.\n");
