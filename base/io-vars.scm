@@ -54,7 +54,7 @@
 (defmacro-public define-input-var
   (name init-val var-type-name . var-constraints)
   `(begin
-     (define ,name ,init-val)
+     (define-param ,name ,init-val)
      (input-var! (lambda () ,name) (quote ,name)
 		 ,var-type-name ,@var-constraints)))
 
