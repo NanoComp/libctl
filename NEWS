@@ -5,6 +5,9 @@ libctl 1.1 (1/2/2000)
   * geom: material_of_point_* routines now report whether the point
     is in any object; necessary for use with MPB 0.9.
 
+  * Added man page for gen-ctl-io, based on a contribution by
+    James R. Van Zandt.
+
 libctl 1.0.1 (11/22/1999)
 
   * geom: handle case where ensure-periodicity is false.

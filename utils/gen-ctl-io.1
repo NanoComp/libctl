@@ -1,0 +1,45 @@
+.\" libctl: flexible Guile-based control files for scientific software 
+.\" Copyright (C) 1998, 1999, 2000 Steven G. Johnson
+.\" 
+.\" This library is free software; you can redistribute it and/or
+.\" modify it under the terms of the GNU Lesser General Public
+.\" License as published by the Free Software Foundation; either
+.\" version 2 of the License, or (at your option) any later version.
+.\" 
+.\" This library is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+.\" Lesser General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU Lesser General Public
+.\" License along with this library; if not, write to the
+.\" Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+.\" Boston, MA  02111-1307, USA.
+.\" 
+.\" Steven G. Johnson can be contacted at stevenj@alum.mit.edu.
+.\" 
+.TH GEN-CTL-IO 1 "January 2, 2000" "libctl" "libctl"
+.SH NAME
+gen-ctl-io \- generate C interface code for libctl control files
+.SH SYNOPSIS
+.B gen-ctl-io
+[\fIspec-file\fR]
+.SH DESCRIPTION
+.PP
+." Add any additional description here
+.B gen-ctl-io
+generates C code to import/export the input/output
+variables used in a libctl control file.
+.B gen-ctl-io
+generates two files, \fIctl-io.h\fP and \fIctl-io.c\fP.  These files define global variables, data structures, and functions for the input/output variables, classes, and function interfaces defined in the
+.I spec-file
+argument, automating the interaction between C and Guile.
+
+libctl is a free library to aid in interfacing scientific software
+with the GNU Guile scripting and extension language.  Documentation
+for it may be found online at the libctl home page:
+.I http://ab-initio.mit.edu/libctl
+.SH BUGS
+Send bug reports to S. G. Johnson, stevenj@alum.mit.edu.
+.SH AUTHORS
+Written by Steven G. Johnson.
