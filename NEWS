@@ -1,3 +1,27 @@
+libctl 2.0
+
+  * New set-param! function, analogous to define-param, that allows
+    you to change the value of a parameter in a way that can still be
+    overridden from the command line.
+
+  * In libgeom, allow user to specify the resolution instead of the
+    grid-size.  New no-size support in lattice class to reduce
+    dimensionality, and new (get-grid-size) function.
+
+  * Support for Scheme complex numbers, along with a few new associated
+    functions: conj, vector3-cdot, matrix3x3-adjoint.
+
+  * Documented object-property-value; thanks to Theis Peter Hansen for
+    the suggestion.
+
+  * Get rid of unneeded make-default, and use consistent syntax for
+    define-property and define-post-processed-property, compared to
+    define-input-var.  NOT BACKWARD COMPATIBLE (for developers; users
+    are not affected).  Thanks to Theis Peter Hansen for the suggestion.
+
+  * Call ctl_stop_hook even with --help, --version, etcetera; this
+    makes the behavior nicer e.g. with MPI.
+
 libctl 1.5 (11/15/2001)
 
   * geometry-lattice now has a separate basis-size property, so that you
