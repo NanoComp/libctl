@@ -11,6 +11,9 @@ libctl 2.0
   * Support for Scheme complex numbers, along with a few new associated
     functions: conj, vector3-cdot, matrix3x3-adjoint.
 
+  * New functions to compute numerical derivatives using Ridder's
+    method of polynomial extrapolation.
+
   * Documented object-property-value; thanks to Theis Peter Hansen for
     the suggestion.
 
