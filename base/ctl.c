@@ -292,6 +292,21 @@ matrix3x3 ctl_get_matrix3x3(char *identifier)
   return(scm2matrix3x3(gh_lookup(identifier)));
 }
 
+list ctl_get_list(char *identifier)
+{
+  return(gh_lookup(identifier));
+}
+
+object ctl_get_object(char *identifier)
+{
+  return(gh_lookup(identifier));
+}
+
+function ctl_get_function(char *identifier)
+{
+  return(gh_lookup(identifier));
+}
+
 /**** Setters ****/
 
 /* UGLY hack alert!  There doesn't seem to be any clean way of setting
