@@ -84,6 +84,55 @@ boolean point_in_objectp(vector3 p, geometric_object o)
 
 /**************************************************************************/
 
+/* Like point_in_objectp, but also checks the object shifted
+   by the lattice vectors: */
+boolean point_in_periodic_objectp(vector3 p, geometric_object o)
+{
+     int i, j, k;
+
+     switch (dimensions) {
+	 case 1:
+	      for (i = -1; i <= 1; ++i) {
+		   vector3 shift1 = p;
+		   shift1.x += i * geometry_lattice.size.x;
+		   if (point_in_objectp(shift1, o))
+			return 1;
+	      }
+	      break;
+	 case 2:
+	      for (i = -1; i <= 1; ++i) {
+		   vector3 shift1 = p;
+		   shift1.x += i * geometry_lattice.size.x;
+		   for (j = -1; j <= 1; ++j) {
+			vector3 shift2 = shift1;
+			shift2.y += j * geometry_lattice.size.y;
+			if (point_in_objectp(shift2, o))
+			     return 1;
+		   }
+	      }
+	      break;
+	 case 3:
+	      for (i = -1; i <= 1; ++i) {
+		   vector3 shift1 = p;
+		   shift1.x += i * geometry_lattice.size.x;
+		   for (j = -1; j <= 1; ++j) {
+			vector3 shift2 = shift1;
+			shift2.y += j * geometry_lattice.size.y;
+			for (k = -1; k <= 1; ++k) {
+			     vector3 shift3 = shift2;
+			     shift2.z += k * geometry_lattice.size.z;
+			     if (point_in_objectp(shift3, o))
+				  return 1;
+			}
+		   }
+	      }
+	      break;
+     }
+     return 0;
+}
+
+/**************************************************************************/
+
 /* Return the material type corresponding to the point p (in the lattice
    basis).  Returns default_material if p is not in any object.
 
@@ -93,53 +142,16 @@ boolean point_in_objectp(vector3 p, geometric_object o)
 
 material_type material_of_point(vector3 p)
 {
-  int index, i, j, k;
-
-  /* loop in reverse order so that later items are given precedence: */
-  for (index = geometry.num_items - 1; index >= 0; --index) {
-    if (ensure_periodicity)
-      switch (dimensions) {
-      case 1:
-	for (i = -1; i <= 1; ++i) {
-	  vector3 shift1 = p;
-	  shift1.x += i * geometry_lattice.size.x;
-	  if (point_in_objectp(shift1, geometry.items[index]))
-	    return(geometry.items[index].material);
-	}
-	break;
-      case 2:
-	for (i = -1; i <= 1; ++i) {
-	  vector3 shift1 = p;
-	  shift1.x += i * geometry_lattice.size.x;
-	  for (j = -1; j <= 1; ++j) {
-	    vector3 shift2 = shift1;
-	    shift2.y += j * geometry_lattice.size.y;
-	    if (point_in_objectp(shift2, geometry.items[index]))
-	      return(geometry.items[index].material);
-	  }
-	}
-	break;
-      case 3:
-	for (i = -1; i <= 1; ++i) {
-	  vector3 shift1 = p;
-	  shift1.x += i * geometry_lattice.size.x;
-	  for (j = -1; j <= 1; ++j) {
-	    vector3 shift2 = shift1;
-	    shift2.y += j * geometry_lattice.size.y;
-	    for (k = -1; k <= 1; ++k) {
-	      vector3 shift3 = shift2;
-	      shift2.z += k * geometry_lattice.size.z;
-	      if (point_in_objectp(shift3, geometry.items[index]))
-		return(geometry.items[index].material);
-	    }
-	  }
-	}
-	break;
-      }
-    else if (point_in_objectp(p, geometry.items[index]))
-      return(geometry.items[index].material);
-  }
-  return default_material;
+     int index;
+     
+     /* loop in reverse order so that later items are given precedence: */
+     for (index = geometry.num_items - 1; index >= 0; --index) {
+	  if (ensure_periodicity
+	      && point_in_periodic_objectp(p, geometry.items[index])
+	      || point_in_objectp(p, geometry.items[index]))
+	       return(geometry.items[index].material);
+     }
+     return default_material;
 }
 
 /**************************************************************************/
