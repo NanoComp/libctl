@@ -174,8 +174,6 @@
 		  (sixth bracket)
 		  0 0))))))))
 
-; Multi-dimensional minimization (using Powell's method):
-
 ; (minimize-multiple f tol arg1 arg2 ... argN) :
 ;      Minimize a function f of N arguments, given the fractional tolerance
 ; desired and initial guesses for the arguments.
@@ -184,6 +182,14 @@
 ; (min-val result) : list of function values at the minimum
 
 (define (minimize-multiple f tol . guess-args)
+  (let ((simplex-result (simplex-minimize f guess-args tol)))
+    (cons (simplex-point-x simplex-result)
+	  (simplex-point-val simplex-result))))
+
+; Alternate multi-dimensional minimization (using Powell's method):
+; (not the default since it seems to have convergence problems sometimes)
+
+(define (powell-minimize-multiple f tol . guess-args)
   (define (create-unit-vector i n)
     (let ((v (make-vector n 0)))
       (vector-set! v i 1)
