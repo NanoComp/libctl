@@ -61,10 +61,10 @@ cat > $output_dir/ctl-io.c <<EOF
 EOF
 
 guile -l $libctl_dir/base/include.scm \
-      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (include "'"'"$1"'"'") (output-header)" >> $output_dir/ctl-io.h
+      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (include "'"'"$1"'"'") (output-header)" >> $output_dir/ctl-io.h || exit 1
 
 guile -l $libctl_dir/base/include.scm \
-      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (include "'"'"$1"'"'") (output-source)" >> $output_dir/ctl-io.c
+      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (include "'"'"$1"'"'") (output-source)" >> $output_dir/ctl-io.c || exit 1
 
 cat >> $output_dir/ctl-io.h <<EOF
 
