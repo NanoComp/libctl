@@ -175,8 +175,9 @@
 (define (has-default? default) (car default))
 (define (default-value default) (cdr default))
 
-(define (make-property name type-name default constraints)
+(define (make-property name type-name default . constraints)
   (list name type-name default constraints))
+
 (define no-constraints '())
 (define (property-name property) (first property))
 (define (property-type-name property) (second property))
@@ -274,6 +275,11 @@
 	  (class-member? type-name (class-parent class)))
       false))
 
+(defmacro-public define-class (class-name parent . properties)
+  `(define ,class-name (make-class (quote ,class-name)
+				   ,parent
+				   ,@properties)))
+
 (define no-parent false)
 
 (define (make class . property-values)
@@ -291,37 +297,55 @@
 (define input-var-list '())
 (define output-var-list '())
 
-(define (make-var value var-name var-type-name var-constraints)
-  (list var-name var-type-name var-constraints value))
+(define (make-var value-thunk var-name var-type-name var-constraints)
+  (list var-name var-type-name var-constraints value-thunk))
 (define (var-name var) (first var))
 (define (var-type-name var) (second var))
 (define (var-constraints var) (third var))
-(define (var-value var) (fourth var))
+(define (var-value-thunk var) (fourth var))
+(define (var-value var) ((var-value-thunk var)))
 
-(define (input-var value var-name var-type-name var-constraints)
-  (let ((new-var (make-var value var-name var-type-name var-constraints)))
+(define (input-var! value-thunk var-name var-type-name . var-constraints)
+  (let ((new-var (make-var value-thunk var-name 
+			   var-type-name var-constraints)))
     (set! input-var-list (cons new-var input-var-list))
     new-var))
-(define (output-var value var-name var-type-name)
-  (let ((new-var (make-var value var-name var-type-name no-constraints)))
+(define (output-var! value-thunk var-name var-type-name)
+  (let ((new-var (make-var value-thunk var-name
+			   var-type-name no-constraints)))
     (set! output-var-list (cons new-var output-var-list))
     new-var))
-(define (input-output-var value var-name var-type-name var-constraints)
-  (let ((new-var (make-var value var-name var-type-name var-constraints)))
-    (set! input-var-list (cons new-var input-var-list))
-    (set! output-var-list (cons new-var output-var-list))
-    new-var))
+
+(defmacro-public define-input-var
+  (name init-val var-type-name . var-constraints)
+  `(begin
+     (define ,name ,init-val)
+     (input-var! (lambda () ,name) (quote ,name)
+		 ,var-type-name ,@var-constraints)))
+
+(defmacro-public define-input-output-var
+  (name init-val var-type-name . var-constraints)
+  `(begin
+     (define ,name ,init-val)
+     (input-var! (lambda () ,name) (quote ,name)
+		 ,var-type-name ,@var-constraints)
+     (output-var! (lambda () ,name) (quote ,name) ,var-type-name)))
+
+(defmacro-public define-output-var (name var-type-name)
+  `(begin
+     (define ,name 'no-value)
+     (output-var! (lambda () ,name) (quote ,name) ,var-type-name)))
 
 (define (check-vars var-list)
-  (for-all? (lamba (v) 
+  (for-all? var-list
+	    (lambda (v) 
 		   (if (not (check-type (var-type-name v) (var-value v)))
 		       (error "wrong type for variable" (var-name v) 'type
 			      (var-type-name v))
 		       (if (not (check-constraints 
 				 (var-constraints v) (var-value v)))
 			   (error "failed constraint for" (var-name v))
-			   true)))
-	    var-list))
+			   true)))))
 
 ; ****************************************************************
 ; Creating property-value constructors.
@@ -337,6 +361,17 @@
 
 (define (list-property-value-constructor name)
   (lambda x (make-property-value name x)))
+
+(defmacro-public define-property (name type-name default . constraints)
+  `(begin
+     (cond
+      ((eq? ,type-name 'vector3)
+       (define ,name (vector3-property-value-constructor (quote ,name))))
+      ((list-type-name? ,type-name)
+       (define ,name (list-property-value-constructor (quote ,name))))
+      (else
+       (define ,name (property-value-constructor (quote ,name)))))
+     (make-property (quote ,name) ,type-name ,default ,@constraints)))
 
 ; ****************************************************************
 
@@ -398,5 +433,6 @@
 
 (define (run)
   (read-input-vars)
+  (check-vars input-var-list)
   (run-program)
   (write-output-vars))

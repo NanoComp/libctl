@@ -8,54 +8,28 @@
 ; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 ; Library General Public License for more details. 
 
-(define material-type
-  (make-class 'material-type no-parent
-	      (make-property 'epsilon 'number no-default (list positive?))
-	      (make-property 'conductivity 'number
-			     (make-default 0.0) no-constraints)))
+(define-class material-type no-parent
+  (define-property epsilon 'number no-default positive?)
+  (define-property conductivity 'number (make-default 0.0)))
 
-(define geometric-object
-  (make-class 'geometric-object no-parent
-	      (make-property 'material 'material-type
-			     no-default no-constraints)
-	      (make-property 'center 'vector3 no-default no-constraints)))
+(define-class geometric-object no-parent
+  (define-property material 'material-type no-default)
+  (define-property center 'vector3 no-default))
 
-(define cylinder
-  (make-class 'cylinder geometric-object
-	      (make-property 'axis 'vector3
-			     (make-default (vector3 0 0 1)) no-constraints)
-	       (make-property 'radius 'number no-default (list positive?))
-	       (make-property 'height 'number no-default (list positive?))))
+(define-class cylinder geometric-object
+  (define-property axis 'vector3 (make-default (vector3 0 0 1)))
+  (define-property radius 'number no-default positive?)
+  (define-property height 'number no-default positive?))
 	       
-(define sphere
-  (make-class 'sphere geometric-object
-	      (make-property 'radius 'number no-default (list positive?))))
+(define-class sphere geometric-object
+  (define-property radius 'number no-default positive?))
 	       
-(define block
-  (make-class 'block geometric-object
-	      (make-property 'e1 'vector3 (make-default (vector3 1 0 0))
-			     no-constraints)
-	      (make-property 'e2 'vector3 (make-default (vector3 0 1 0))
-			     no-constraints)
-	      (make-property 'e3 'vector3 (make-default (vector3 0 0 1))
-			     no-constraints)
-	      (make-property 'size 'vector3 no-default no-constraints)))
+(define-class block geometric-object
+  (define-property e1 'vector3 (make-default (vector3 1 0 0)))
+  (define-property e2 'vector3 (make-default (vector3 0 1 0)))
+  (define-property e3 'vector3 (make-default (vector3 0 0 1)))
+  (define-property size 'vector3 no-default))
 	       
-(define epsilon (property-value-constructor 'epsilon))
-(define conductivity (property-value-constructor 'conductivity))
-
-(define material (property-value-constructor 'material))
-(define center (vector3-property-value-constructor 'center))
-
-(define radius (property-value-constructor 'radius))
-(define height (property-value-constructor 'height))
-(define axis (vector3-property-value-constructor 'axis))
-
-(define e1 (vector3-property-value-constructor 'e1))
-(define e2 (vector3-property-value-constructor 'e2))
-(define e3 (vector3-property-value-constructor 'e3))
-(define size (vector3-property-value-constructor 'size))
-
 ; ****************************************************************
 
 ; Add some predefined variables, for convenience:
@@ -92,21 +66,14 @@
 
 ; ****************************************************************
 
-(define dimensions 3)
-(input-var dimensions 'dimensions 'integer (list positive?))
+(define-input-var dimensions 3 'integer positive?)
 
-(define geometry '())
-(input-var
- geometry 'geometry (make-list-type-name 'geometric-object) '())
+(define-input-var geometry '() (make-list-type-name 'geometric-object))
 
-(define k-points '())
-(input-var k-points 'k-points (make-list-type-name 'vector3) '())
+(define-input-var k-points '() (make-list-type-name 'vector3))
 
-(define dummy (vector3 3.7 2.3 1.9))
-(input-output-var dummy 'dummy 'vector3 '())
+(define-input-output-var dummy (vector3 3.7 2.3 1.9) 'vector3)
 
-(define mean-dielectric 0.0)
-(output-var mean-dielectric 'mean-dielectric 'number)
+(define-output-var mean-dielectric 'number)
 
-(define gaps '())
-(output-var gaps 'gaps (make-list-type-name 'number))
+(define-output-var gaps (make-list-type-name 'number))
