@@ -60,11 +60,17 @@ cat > $output_dir/ctl-io.c <<EOF
 
 EOF
 
-guile -l $libctl_dir/base/include.scm \
-      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (include "'"'"$1"'"'") (output-header)" >> $output_dir/ctl-io.h || exit 1
+ok=yes
 
-guile -l $libctl_dir/base/include.scm \
-      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (include "'"'"$1"'"'") (output-source)" >> $output_dir/ctl-io.c || exit 1
+(guile -l $libctl_dir/base/include.scm \
+      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (include "'"'"$1"'"'") (output-header)" >> $output_dir/ctl-io.h) || ok=no
+
+if test ok=no; then rm -f ctl-io.[ch]; exit 1; fi
+
+(guile -l $libctl_dir/base/include.scm \
+      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (include "'"'"$1"'"'") (output-source)" >> $output_dir/ctl-io.c) || ok=no
+
+if test ok=no; then rm -f ctl-io.[ch]; exit 1; fi
 
 cat >> $output_dir/ctl-io.h <<EOF
 
