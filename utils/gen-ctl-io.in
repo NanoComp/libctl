@@ -34,10 +34,10 @@ fi
 
 if test "$#" = "3" && test "x$3" = "x--cxx"; then
     cxx=yes
-    code=ctl-io.c
+    code=ctl-io.cpp
 else
     cxx=no
-    code=ctl-io.cpp
+    code=ctl-io.c
 fi
 
 rm -f $output_dir/${code} $output_dir/ctl-io.h
