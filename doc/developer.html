@@ -32,6 +32,276 @@ types that your program expects to exchange with the ctl file.  From
 these specifications, code is automatically generated to export and
 import the information to and from Guile.
 
+<p>The specifications file is written in Scheme, and consists of
+definitions for the classes and input/output variables the program
+expects.  It may also contain any predefined functions or variables
+that might be useful in ctl files for the program.
+
+<h2>Defining input variables</h2>
+
+To define an input variable (a variable specified by the ctl file and
+input into the program), use the following construction:
+
+<pre>
+(define-input-var <i>name value type [ constraints ... ]</i>)
+</pre>
+
+<p>Here, <code><i>name</i></code> is the name of the variable, and
+<code><i>value</i></code> is its initial value--so far, this is just
+like a normal <code>define</code> statement.  However, input variables
+have constraints on them, the simplest of which is that they have a
+specific type.  The <code><i>type</i></code> parameter can be one of:
+
+<ul>
+
+<li><code>'number</code> - a real number
+
+<li><code>'integer</code> - an integer
+
+<li><code>'vector3</code> - a 3-vector
+
+<li><code>'boolean</code> - a boolean value, <code>true</code> or
+<code>false</code>
+
+<li><code>'string</code> - a string
+
+<li><code>'<i>class</i></code> - an member of <code><i>class</i></code>
+
+<li><code>(make-list-type <i>el-type</i>)</code> - a list of elements
+of type <code><i>el-type</i></code>
+
+</ul>
+
+<p>Note that the quote before a type name is Scheme's way of
+constructing a <b>symbol</b>, which is somewhat similar to a C
+enumerated constant.
+
+<p>The final argument is an optional sequence of constraints.  Each
+constraint is a function that, given a value, returns
+<code>true</code> or <code>false</code> depending on whether that
+value is valid.  For example, if an input variable is required to be
+positive, one of the constraints would be the <code>positive?</code>
+function (predefined by Guile).  More complicated functions can, of
+course, be constructed.
+
+<p>Here are a few examples:
+
+<pre>
+(define-input-var dimensions 3 'integer positive?)
+(define-input-var default-epsilon 1.0 'number positive?)
+(define-input-var geometry '() (make-list-type 'geometric-object))
+(define-input-var k-points '() (make-list-type 'vector3))
+</pre>
+
+<p>Notice that all input variables have initial values, meaning that a
+user need not specify a value in the ctl file if the default value is
+acceptable.  If you want to force the user to explicitly give a value
+to a variable, set the initial value to <code>'no-value</code>.  (This
+way, if the variable is not set by the user, it will fail the
+type-constraint and an error will be flagged.)  Such behavior is
+deprecated, however.
+
+<h2>Defining output variables</h2>
+
+Output variables, which are passed from the simulation to the ctl
+script, are defined in a manner similar to input variables:
+
+<pre>
+(define-output-var <i>name type</i>)
+</pre>
+
+<p>Notice that output variables have no initial value and no
+constraints.  Your C program is responsible for assigning the output
+variables when it is called (as is discussed below).
+
+<p>A variable can be both an input variable and an output variable at
+the same time.  Such input-output variables are defined with the same
+parameters as an input variable:
+
+<pre>
+(define-input-output-var <i>name value type [constraints]</i>)
+</pre>
+
+<h2>Defining classes</h2>
+
+To define a class, one has to supply the parent class and the properties:
+
+<pre>
+(define-class <i>name parent [ properties... ]</i>)
+</pre>
+
+<p><code><i>name</i></code> is the name of the new class and
+<code><i>parent</i></code> is the name of the parent class, or
+<code>no-parent</code> if there is none.
+
+<p>The <code><i>properties</i></code> of the class are zero or more of
+the following definitions, which give the name, type, default value,
+and (optional) constraints for a property:
+
+<pre>
+(define-property <i>name type default-value [ constraints... ]</i>)
+</pre>
+
+<p><code><i>name</i></code> is the name of the property.  It is okay
+for different classes to have properties with the same name (for
+example, both a sphere and a cylinder class might have
+<code>radius</code> properties)--however, it is important that
+properties with the same name have the same type.  The
+<code><i>type</i></code> and optional <code><i>constraints</i></code>
+are the same as for <code>define-input-var</code>, described earlier.
+
+<p>If <code><i>default-value</i></code> is <code>no-default</code>,
+then the property has no default value and users are required to
+specify it.  To give a property a default value,
+<code><i>default-value</i></code> should be of the form
+<code>(make-default <i>value</i>)</code>, where
+<code><i>value</i></code> is the default value.
+
+<p>For example, this is how we might define classes for materials and
+dielectric objects in an electromagnetic simulation:
+
+<pre>
+(define-class material-type no-parent
+  (define-property epsilon 'number no-default positive?)
+  (define-property conductivity 'number (make-default 0.0)))
+
+(define-class geometric-object no-parent
+  (define-property material 'material-type no-default)
+  (define-property center 'vector3 no-default))
+
+(define-class cylinder geometric-object
+  (define-property axis 'vector3 (make-default (vector3 0 0 1)))
+  (define-property radius 'number no-default positive?)
+  (define-property height 'number no-default positive?))
+
+(define-class sphere geometric-object
+  (define-property radius 'number no-default positive?))
+</pre>
+
+<h2>Useful things to put in a specifications file</h2>
+
+The specifications file is loaded before any user ctl file, making it
+a good place to put definitions of variables and functions that will
+be useful for your users.  For example, the electromagnetic simulation
+might define a default material, <code>air</code>:
+
+<pre>
+(define air (make material-type (epsilon 1.0)))
+</pre>
+
+<p>You can also define functions (or do anything else that Scheme
+allows), e.g. a function to duplicate geometric objects on a grid.
+(See the <code>examples/</code> directory of libctl for an example of
+this.)
+
+<h2>Writing your program</h2>
+
+Once the specifications have been written, you have to do very little
+to support them in your program.
+
+<p>First, you need to generate C code to import/export the
+input/output variables from/to Guile.  This is done automatically by
+the <code>gen-ctl-io</code> script in the <code>utils/</code>
+directory:
+
+<pre>
+gen-ctl-io <i>specifications-file</code>
+</pre>
+
+<p>The <code>gen-ctl-io</code> script generates two files,
+<code>ctl-io.h</code> and <code>ctl-io.c</code>.  The former defines
+global variables and data structures for the input/output variables
+and classes, and the latter contains code to exchange this data with
+Guile.
+
+<p>Second, you should copy the <code>main.c</code> file from the
+<code>examples/</code> directory.  This file defines a main program
+that starts up Guile, loads control files from the command line, and
+waits for a <code>(run)</code> command.  When <code>(run)</code> is
+called in the ctl script, the input variables are imported into the C
+program, the <code>run_program</code> function in <code>main.c</code>
+is called, and then the output variables are exported.
+
+<p>You merely need to modify <code>run_program</code>, then, to call
+the "main" subroutine of your simulation.  When it is called, all of
+the input variables and data structures are already filled in!  To
+output data, you just assign values to the output variables, and they
+will be automatically exported to Guile.
+
+<p>For maximum convenience, you should also copy the
+<code>Makefile</code> from <code>examples/</code>.  At the top of this
+file, there are places to specify the location of libctl, your object
+files and specification file, and your C compiler and flags. The
+Makefile will then generate the <code>ctl-io</code> files and do
+everything else needed to compile your program.
+
+<h3>Data structures and types</h3>
+
+The data structures for holding classes and other variable types are
+defined automatically in <code>ctl-io.h</code>.  They are fairly
+self-explanatory, but it should be noted that they use some data types
+defined in <code>src/ctl.h</code>, mostly mirrors of the corresponding
+Scheme types.  (e.g. <code>number</code> is a synonym for
+<code>double</code>, and <code>vector3</code> is a structure with
+<code>x</code>, <code>y</code>, and <code>z</code> fields.)
+(<code>ctl.h</code> also declares several functions for manipulating
+vectors, e.g. <code>vector3_plus</code>.)
+
+<h3>Allocating and deallocating data</h3>
+
+The input variables are allocated and deallocated automatically, as
+necessary, but you are responsible for allocating and deallocating the
+output data.  As a convenience, the function
+<code>destroy_output_vars()</code> is defined, which deallocates all
+of the output data pointed to by the output variables.  You are
+responsible for calling this when you want to deallocate the output.
+
+<p>Typically, after each run, you will want to (re)allocate and assign
+the output variables.  To avoid memory leaks, however, you should
+first deallocate the old output variables on runs after the first.  To
+do this, use the following code:
+
+<pre>
+if (num_runs > 1)  /* on first run, outputs haven't been allocated yet */
+     destroy_output_vars();
+
+/* ... allocate & assign the output variables ... */
+</pre>
+
+<p>The global variable <code>num_runs</code> is automatically set to
+the number of calls to the <code>(run)</code> function (it is
+<code>1</code> during the first call).
+
+<p>Remember, you are <b>required</b> to assign all of the output
+variables to legal values, or the resulting behavior will be
+undefined.
+
+<h3>Advanced possibilities</h3>
+
+Once you become comfortable with Guile and libctl, you should consider
+allowing more entry points into your program.  That is, you should
+enable the user to call other functions in your program besides the
+main <code>run_program</code> subroutine.
+
+<p>For more information on how to do this, consult the Guile
+documentation.  You will need to modify the function
+<code>declare_functions</code> in <code>main.c</code> to notify Guile
+of your subroutines.  Also, you might want to set up a Scheme function
+that exchanges the input and output data before and after your
+subroutine is called.  For example, we already have a
+<code>(run)</code> function that calls <code>run_program</code> as
+follows:
+
+<pre>
+(define (run)
+  (check-vars input-var-list)    ; check the input variables
+  (read-input-vars)              ; import the input variables to C
+  (run-program)                  ; call run_program
+  (write-output-vars))           ; export the output variables from C
+</pre>
+
+<p>Have fun!
+
 <hr>
 Go to the <a href="guile-links.html">next</a>, <a
 href="advanced-user.html">previous</a>, or <a href="index.html">main</a>
