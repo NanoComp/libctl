@@ -35,8 +35,13 @@ SCM run_program(void)
 {
   ++count_runs;
 
-  printf("Run #%d.\nThis routine would normally run a simulation.\n",
+  gh_defer_ints(); /* disable Guile interrupts while we are running */
+
+  printf("Run #%d.\n"
+	 "This routine would normally run a simulation.\n",
 	 count_runs);
+
+  gh_allow_ints(); /* re-enable Guile interrupts */
 
   return SCM_BOOL_T; /* return true if successful */
 }
