@@ -432,7 +432,7 @@
 ; ****************************************************************
 
 (define (run)
-  (read-input-vars)
   (check-vars input-var-list)
+  (read-input-vars)
   (run-program)
   (write-output-vars))
