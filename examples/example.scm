@@ -67,6 +67,31 @@
 
 ; ****************************************************************
 
+; Define some utility functions:
+
+(define (shift-geometric-object go shift-vector)
+  (let ((c (object-property-value go 'center)))
+    (modify-object go (center (vector3+ c shift-vector)))))
+
+(define (geometric-object-duplicates shift-vector min-multiple max-multiple go)
+  (if (<= min-multiple max-multiple)
+      (cons (shift-geometric-object
+	     go (vector3-scale min-multiple shift-vector))
+	    (geometric-object-duplicates shift-vector
+					 (+ min-multiple 1) max-multiple
+					 go))
+      '()))
+
+(define (geometric-objects-duplicates shift-vector min-multiple max-multiple
+				      go-list)
+  (fold-right append '()
+	     (map (lambda (go)
+		    (geometric-object-duplicates
+		     shift-vector min-multiple max-multiple go))
+		  go-list)))
+
+; ****************************************************************
+
 (define dimensions 3)
 (input-var dimensions 'dimensions 'integer (list positive?))
 

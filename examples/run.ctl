@@ -41,9 +41,21 @@
 ; Set the geometry:
 (set! geometry
       (list
-       (make cylinder (material air) (center 0 0) (radius 0.2) (height 0.5))
+       (make cylinder (material air) (center 2 0) (radius 0.2) (height 0.5))
        (make sphere (material GaAs) (center 0.1 -0.1) (radius 0.1))
        (make block (material AlOx) (center 1 2) (size 3.2 2.3))))
+
+; Append a 2d 3x3 lattice of cylinders to the geometry:
+
+(set! geometry
+      (append geometry
+	      (geometric-objects-duplicates
+	       (vector3 1 0) -1 1
+	       (geometric-object-duplicates
+		(vector3 0 1) -1 1
+		(make cylinder (material GaAs) 
+		      (center 0 0) (radius 0.1) (height 1.0))))))
+					    
 
 ; Normally, at the end of the input file, we call (run) to run
 ; the simulation.  Here, though, we comment it out--when we don't
