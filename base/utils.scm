@@ -191,3 +191,18 @@
        (display-time ,message (- (current-time) begin-time-start-t)))))
 
 ; ****************************************************************
+
+; Return a 'memoized' version of the function f, which caches its
+; arguments and return values so as never to compute the same thing twice.
+
+(define (memoize f)
+  (let ((f-memo-tab '()))
+    (lambda (y)
+      (let ((tab-val (assoc y f-memo-tab)))
+	(if tab-val
+	    (cdr tab-val)
+	    (let ((fy (f y)))
+	      (set! f-memo-tab (cons (cons y fy) f-memo-tab))
+	      fy))))))
+
+; ****************************************************************
