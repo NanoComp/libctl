@@ -96,7 +96,7 @@ AC_MSG_RESULT($ok)
 # Add libctl and libgeom -I/-L/-l flags to INCLUDES/LDFLAGS/LIBS,
 # so that examples/Makefile.in can be used as-is for other programs:
 INCLUDES="$INCLUDES -I `pwd`/$srcdir/base -I `pwd`/$srcdir/utils"
-LDFLAGS="$LDFLAGS -L `pwd`/$srcdir/base"
+LDFLAGS="$LDFLAGS -L`pwd`/$srcdir/base"
 LIBS="-lctl $LIBS"
 
 LIBCTL_DIR="`pwd`/$srcdir"
