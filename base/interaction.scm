@@ -1,5 +1,5 @@
 ; libctl: flexible Guile-based control files for scientific software 
-; Copyright (C) 1998, 1999, 2000 Steven G. Johnson
+; Copyright (C) 1998, 1999, 2000, 2001, Steven G. Johnson
 ;
 ; This library is free software; you can redistribute it and/or
 ; modify it under the terms of the GNU Lesser General Public
