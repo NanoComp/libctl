@@ -21,11 +21,13 @@
 ; ****************************************************************
 ; Miscellaneous math utilities
 
-; Return the arithemtic sequence (list): start start+step ... (n values)
+; Return the arithmetic sequence (list): start start+step ... (n values)
 (define (arith-sequence start step n)
-  (if (= n 0)
-      '() 
-      (cons start (arith-sequence (binary+ start step) step (- n 1)))))
+  (define (s x n L) ; tail-recursive helper function
+    (if (= n 0)
+      L
+      (s (binary+ x step) (- n 1) (cons x L))))
+  (reverse (s start n '())))
 
 ; Given a list of numbers, linearly interpolates n values between
 ; each pair of numbers.
