@@ -1,8 +1,8 @@
-dnl Process this file with autoconf to produce a configure script.
+# Process this file with autoconf to produce a configure script.
 AC_INIT(base/ctl.c)
 AC_CONFIG_HEADER(base/ctl.h)
 
-dnl Checks for programs.
+# Checks for programs.
 AC_PROG_CC
 AC_PROG_MAKE_SET
 AC_PROG_INSTALL
@@ -19,12 +19,12 @@ fi
 
 AC_CANONICAL_HOST
 
-dnl Checks for header files.
+# Checks for header files.
 AC_HEADER_STDC
 
 ###########################################################################
 
-dnl Find Guile library, flags, etcetera:
+# Find Guile library, flags, etcetera:
 
 AC_CHECK_PROG(HAVE_GUILE_CONFIG, guile-config, yes, no)
 if test "$HAVE_GUILE_CONFIG" = "yes"; then
@@ -46,7 +46,11 @@ AC_MSG_ERROR(Guile could not be found)
 
 ###########################################################################
 
-dnl Checks for Guile features:
+# Checks for Guile features:
+
+# be sure to use Guile includes in CFLAGS (temporarily):
+save_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS $INCLUDES"
 
 AC_MSG_CHECKING([for gh_load])
 ok=yes
@@ -96,6 +100,8 @@ int main (int argc, char *argv[])
 }
 ], AC_DEFINE(GH_LOOKUP_OK), ok=no, ok=no)
 AC_MSG_RESULT($ok)
+
+CFLAGS="$save_CFLAGS"
 
 ###########################################################################
 
