@@ -60,8 +60,13 @@ int handle_args(int argc, char *argv[],
 	       /* print version string, if defined: */
 	       printf(VERSION_STRING);
 #endif
+#ifdef LIBCTL_VERSION
+	       printf("\nUsing libctl %s", LIBCTL_VERSION);
+#else
+	       printf("\nUsing libctl");
+#endif
 	       guile_vers = gh_scm2newstr(gh_eval_str("(version)"), NULL);
-	       printf("\nUsing libctl and Guile %s.\n", guile_vers);
+	       printf(" and Guile %s.\n", guile_vers);
 	       free(guile_vers);
 	       *continue_run = 0;
 	  }

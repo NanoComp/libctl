@@ -2,6 +2,8 @@
 AC_INIT(base/ctl.c)
 AC_CONFIG_HEADER(base/ctl.h)
 
+AC_DEFINE_UNQUOTED(LIBCTL_VERSION, "1.0b1")
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_MAKE_SET

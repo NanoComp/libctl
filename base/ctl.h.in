@@ -33,6 +33,9 @@ extern "C" {
    We have to put them here, rather than in a private config.h file,
    because they need to be known by user ctl-io.c and main.c files. */
 
+/* set to version string */
+#undef LIBCTL_VERSION
+
 /* Define if you have gh_load */
 #undef HAVE_GH_LOAD
 
