@@ -17,6 +17,20 @@
 	       (make-property 'radius 'number no-default (list positive?))
 	       (make-property 'height 'number no-default (list positive?))))
 	       
+(define sphere
+  (make-class 'sphere geometric-object
+	      (make-property 'radius 'number no-default (list positive?))))
+	       
+(define block
+  (make-class 'block geometric-object
+	      (make-property 'e1 'vector3 (make-default (vector3 1 0 0))
+			     no-constraints)
+	      (make-property 'e2 'vector3 (make-default (vector3 0 1 0))
+			     no-constraints)
+	      (make-property 'e3 'vector3 (make-default (vector3 0 0 1))
+			     no-constraints)
+	      (make-property 'size 'vector3 no-default no-constraints)))
+	       
 (define epsilon (property-value-constructor 'epsilon))
 (define conductivity (property-value-constructor 'conductivity))
 
@@ -26,6 +40,11 @@
 (define radius (property-value-constructor 'radius))
 (define height (property-value-constructor 'height))
 (define axis (vector3-property-value-constructor 'axis))
+
+(define e1 (vector3-property-value-constructor 'e1))
+(define e2 (vector3-property-value-constructor 'e2))
+(define e3 (vector3-property-value-constructor 'e3))
+(define size (vector3-property-value-constructor 'size))
 
 ; ****************************************************************
 
@@ -46,6 +65,9 @@
 
 (define dummy (vector3 3.7 2.3 1.9))
 (input-output-var dummy 'dummy 'vector3 '())
+
+(define mean-dielectric 0.0)
+(output-var mean-dielectric 'mean-dielectric 'number)
 
 (define gaps '())
 (output-var gaps 'gaps (make-list-type-name 'number))

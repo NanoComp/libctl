@@ -1,0 +1,45 @@
+Example program using libctl.  This consists of:
+
+main.c: skeleton main program.  To create a real program using libctl,
+	you will only need to make slight changes to this file.
+
+photonic-crystal.scm: a sample specification file that contains
+	a few parameters similar to what you might give to a
+	photonic crystal program.
+
+example.c: example of a main subroutine (called by main.c) which
+	demonstrates how the input/output variables are automatically
+	read/written.
+
+run.ctl: example control file that creates some data for the program
+	to read.
+
+Makefile: makefile for the example program.  (Also a good starting point
+	for the Makefile of a real program using libctl.)
+
+So, to compile and run everything, you simply type:
+
+make
+example ../src/ctl.scm photonic-crystal.scm run.ctl
+
+Since run.ctl does not call (run), this drops you into Guile's
+interactive mode, where you can start typing in Scheme commands.  For
+example, you can try:
+
+(help)  ; prints help on data structures and variables defined by
+	; the specification file
+
+k-points   ; prints the value of the k-points variable (set by run.ctl)
+
+(run)   ; runs the example program (exports the input variables,
+	; calls run_program in main.c, and imports the output variables).
+
+Type Ctrl-D or (quit) to exit.
+
+Another pair of interesting files to look at, after you have run make,
+are ctl-io.c and ctl-io.h.  These files are automatically generated
+from the specifications file.  They define the data structures
+corresponding to the input/output variables, and handle importing and
+exporting variable values between C and Scheme.
+
+Have fun!

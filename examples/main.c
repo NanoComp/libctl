@@ -17,11 +17,13 @@
 #include <stdlib.h>
 #include <guile/gh.h>
 
-/* Keep a count of the calls to run_program.  If it is never called,
-   then drop into interactive mode. */
-static int count_runs = 0;
+#include "ctl-io.h"
 
 /**************************************************************************/
+
+/* declare this function (in example.c) since I don't feel like
+   creating a header file just to declare the example function. */
+extern void example_do_stuff(void);
 
 /* Run your program (i.e. run a simulation).  This may be called
    multiple times by the control script!
@@ -30,20 +32,21 @@ static int count_runs = 0;
    false (SCM_BOOL_F) if an error is encountered.
 
    (To keep main.c clean, I recommend putting the bulk of your simulation
-   in a routine in some other file, and just calling that from here.) */
+   in a routine in some other file, and just calling that from here.)
+
+   You should NOT call (run-program) directly from a control script.
+   Instead, call (run), which will also read/write the input/output vars.
+*/
 SCM run_program(void)
 {
-  ++count_runs;
-
-  printf("Run #%d.\n"
-	 "This routine would normally run a simulation.\n",
-	 count_runs);
+  example_do_stuff();
 
   return SCM_BOOL_T; /* return true if successful */
 }
 
 /* Declare any functions that you want to be callable from a contrl script.
-   By default, only run_program is declared.
+   By default, only run_program and the functions to read and write
+   the input and output vars are declared.
 
    By convention, we convert underscores to hyphens in identifiers.
 
@@ -51,6 +54,8 @@ SCM run_program(void)
 void declare_functions(void)
 {
   gh_new_procedure("run-program", run_program,0,0,0);
+  gh_new_procedure("read-input-vars", read_input_vars,0,0,0);
+  gh_new_procedure("write-output-vars", write_output_vars,0,0,0);
 }
 
 /**************************************************************************/
@@ -69,8 +74,9 @@ void main_entry(int argc, char *argv[])
   for (i = 1; i < argc; ++i)
     gh_eval_file(argv[i]);
 
-  /* if run-program was never called, drop into interactive mode: */
-  if (count_runs == 0)
+  /* if run was never called, drop into interactive mode: */
+  /* (the num_runs count is kept by ctl-io in read_input_vars) */
+  if (num_runs == 0)
     gh_repl(argc, argv);
 }
 

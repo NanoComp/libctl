@@ -2,13 +2,13 @@ SPECIFICATION_FILE = photonic-crystal.scm
 PROGRAM_NAME = example
 LIBCTL_DIR = ..
 
-MY_OBJECTS = main.o
+MY_OBJECTS = main.o example.o
 MY_HEADERS = 
 
 ##############################################################################
 
 CC = gcc
-CFLAGS = -O3 -Wall
+CFLAGS = -g -Wall
 
 ##############################################################################
 
@@ -23,7 +23,7 @@ CTL_IO_GEN = $(LIBCTL_DIR)/utils/gen-ctl-io
 INCLUDE_FLAGS = -I$(LIBCTL_DIR)/src
 
 OBJECTS = $(MY_OBJECTS) $(LIBCTL_OBJ) ctl-io.o
-HEADERS = $(MY_HEADERS) $(LIBCTL_HEADERS)
+HEADERS = $(MY_HEADERS) $(LIBCTL_HEADERS) ctl-io.h
 
 ##############################################################################
 
@@ -37,7 +37,7 @@ ctl-io.h: $(SPECIFICATION_FILE) \
           $(LIBCTL_SCM_SRC) $(CTL_IO_GEN_SRC) $(CTL_IO_GEN)
 	$(CTL_IO_GEN) $(SPECIFICATION_FILE)
 
-$(PROGRAM_NAME): $(OBJECTS) $(HEADERS)
+$(PROGRAM_NAME): $(HEADERS) $(OBJECTS) 
 	gcc $(OBJECTS) -lguile -lm -o $@
 
 .c.o: $(HEADERS)
