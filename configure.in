@@ -13,6 +13,8 @@ AC_CANONICAL_HOST
 dnl Checks for header files.
 AC_HEADER_STDC
 
+###########################################################################
+
 dnl Find Guile library, flags, etcetera:
 
 AC_CHECK_PROG(HAVE_GUILE_CONFIG, guile-config, yes, no)
@@ -27,7 +29,15 @@ else
 fi
 AC_SUBST(INCLUDES)
 
-dnl Checks for Guile 1.3 functions.
+AC_MSG_CHECKING([if linking to guile works])
+AC_TRY_LINK_FUNC(gh_enter, AC_MSG_RESULT(yes), [
+AC_MSG_RESULT(no)
+AC_MSG_ERROR(Guile could not be found)
+])
+
+###########################################################################
+
+dnl Checks for Guile features:
 
 AC_MSG_CHECKING([for gh_load])
 ok=yes
@@ -58,6 +68,27 @@ ok=yes
 AC_TRY_LINK([#include <guile/gh.h>
 ], gh_length(0);, AC_DEFINE(HAVE_GH_LENGTH), ok=no)
 AC_MSG_RESULT($ok)
+
+AC_MSG_CHECKING([whether gh_lookup works properly])
+ok=yes
+AC_TRY_RUN([
+#include <stdlib.h>
+#include <guile/gh.h>
+void main_entry(int argc, char *argv[])
+{
+     gh_eval_str("(define foo 3.14159)");
+     if (SCM_UNDEFINED == gh_lookup("foo"))
+          exit(EXIT_FAILURE);
+}
+int main (int argc, char *argv[])
+{
+     gh_enter (argc, argv, main_entry);
+     return EXIT_SUCCESS;
+}
+], AC_DEFINE(GH_LOOKUP_OK), ok=no, ok=no)
+AC_MSG_RESULT($ok)
+
+###########################################################################
 
 # Add libctl and libgeom -I/-L/-l flags to INCLUDES/LDFLAGS/LIBS,
 # so that examples/Makefile.in can be used as-is for other programs:
