@@ -79,6 +79,7 @@ extern matrix3x3 matrix3x3_inverse(matrix3x3 m);
 
 #ifndef HAVE_GUILE_1_3
   /* Guile 1.2 is missing gh_bool2scm for some reason; redefine: */
+extern SCM bool2scm(boolean);
 #define gh_bool2scm bool2scm
 #endif
 

@@ -30,7 +30,7 @@
 #ifndef HAVE_GUILE_1_3
 
 /* Guile 1.2 is missing gh_bool2scm for some reason; redefine: */
-SCM bool2scm(int b) { return (b ? SCM_BOOL_T : SCM_BOOL_F); }
+SCM bool2scm(boolean b) { return (b ? SCM_BOOL_T : SCM_BOOL_F); }
 
 #define gh_length gh_list_length
 #define gh_vector_ref gh_vref

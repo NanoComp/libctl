@@ -33,7 +33,7 @@ LIBCTL_SCM_INCLUDE_SRC = $(LIBCTL_DIR)/src/include.scm
 LIBCTL_SCM_SRC = $(LIBCTL_DIR)/src/ctl.scm
 LIBCTL_C_SRC = $(LIBCTL_DIR)/src/ctl.c
 LIBCTL_OBJ = $(LIBCTL_C_SRC:.c=.o)
-LIBCTL_HEADERS = $(LIBCTL_C_SRC:.c=.h)
+LIBCTL_HEADERS = $(LIBCTL_DIR)/src/ctl.h
 
 CTL_IO_GEN_SRC = $(LIBCTL_DIR)/utils/ctl-io.scm
 CTL_IO_GEN = $(LIBCTL_DIR)/utils/gen-ctl-io
@@ -44,6 +44,7 @@ INCLUDE_FLAGS = -I$(LIBCTL_DIR)/src -I`dirname $(SPECIFICATION_FILE)` \
 DEFINE_FLAGS = -DCTL_SCM='"'$(PWD)/$(LIBCTL_SCM_SRC)'"' \
                -DINCLUDE_SCM='"'$(PWD)/$(LIBCTL_SCM_INCLUDE_SRC)'"' \
                -DSPEC_SCM='"'$(PWD)/$(SPECIFICATION_FILE)'"' \
+	       -DHAVE_GUILE_1_2 \
 	       $(MY_DEFINE_FLAGS)
 
 OBJECTS = $(MY_OBJECTS) $(LIBCTL_OBJ) ctl-io.o
