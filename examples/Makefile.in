@@ -19,7 +19,7 @@ LIBCTL_DIR = ..
 
 MY_OBJECTS = example.o \
              $(LIBCTL_DIR)/utils/libgeom/geom.o \
-             $(LIBCTL_DIR)/examples/main.o
+             main.o
 MY_HEADERS = 
 MY_INCLUDE_FLAGS = -I$(LIBCTL_DIR)/utils/libgeom/
 MY_DEFINE_FLAGS = 
@@ -72,11 +72,15 @@ ctl-io.h: $(SPECIFICATION_FILE) \
 $(PROGRAM_NAME): $(HEADERS) $(OBJECTS) 
 	$(CC) $(LDFLAGS) $(CFLAGS) $(OBJECTS) $(LIBS) -o $@
 
+main.c: $(LIBCTL_DIR)/src/main.c
+	cp -f $(LIBCTL_DIR)/src/main.c $@
+
 .c.o: $(HEADERS)
 	$(CC) -c $(DEFINE_FLAGS) $(INCLUDE_FLAGS) $(CFLAGS) $< -o $@
 
 clean:
-	rm -f $(MY_OBJECTS) ctl-io.o ctl-io.c ctl-io.h $(PROGRAM_NAME) core
+	rm -f $(MY_OBJECTS) ctl-io.o ctl-io.c ctl-io.h main.c \
+              $(PROGRAM_NAME) core
 
 realclean: clean
 	rm -f $(LIBCTL_OBJ)
