@@ -205,6 +205,9 @@
 			 (matrix3x3* Rst x))
 	  (matrix3x3* (matrix3x3* Rst x) (matrix3x3-inverse Rst))))))
 
+(define (lattice->reciprocal x) (cartesian->reciprocal (lattice->cartesian x)))
+(define (reciprocal->lattice x) (cartesian->lattice (reciprocal->cartesian x)))
+
 ; rotate vectors in lattice/reciprocal coords (note that the axis
 ; is also given in the corresponding basis):
 
