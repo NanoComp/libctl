@@ -813,7 +813,7 @@
 )
 
 (define (output-swig-header)
-  (print "%{\n#include \"ctl-io.h\"\n}%\n\n")
+  (print "%{\n#include \"ctl-io.h\"\n%}\n\n")
   (print "/******* SWIG type-conversion mappings *******/\n\n")
   (for-each swig-type-header
 	    (append (only-list-types (all-type-names))
