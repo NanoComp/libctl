@@ -726,8 +726,12 @@ static void divide_geom_box_tree(geom_box_tree t)
 	       best = i;
      }
 
-     if (MAX(division_nobjects[best][0], division_nobjects[best][1]) >=
-	 t->nobjects)
+     /* don't do anything if division makes the worst case worse or if
+	it fails to improve the best case: */
+     if (MAX(division_nobjects[best][0], division_nobjects[best][1]) + 1 >
+	 t->nobjects ||
+	 MIN(division_nobjects[best][0], division_nobjects[best][1]) + 1 >=
+         t->nobjects)
 	  return;  /* division didn't help us */
 
      divide_geom_box(&t->b, best, division_point[best], &t->b1, &t->b2);
