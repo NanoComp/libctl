@@ -137,7 +137,9 @@ EOF
 
     if test $ok = no; then rm -f ctl-io.[ih] $code; exit 1; fi
 
-    cat > $output_dir/ctl-io.i <<EOF
+    cat >> $output_dir/ctl-io.i <<EOF
+
+/******* SWIG type-conversion mappings for basic libctl types *******/
 
 %typemap(guile,in) vector3 { $1 = ctl_convert_vector3_to_c($input); }
 %typemap(guile,out) vector3 { $result = ctl_convert_vector3_to_scm($1); }
