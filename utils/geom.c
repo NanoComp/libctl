@@ -489,26 +489,26 @@ static void get_bounding_box(geometric_object o, geom_box *box)
 					  geometry_lattice.basis3);
 	      vector3 e31 = vector3_cross(geometry_lattice.basis3,
 					  geometry_lattice.basis1);
-	      number elen, eproj;
+	      number elen2, eproj;
 	      number r1, r2, r3;
 	      geom_box tmp_box;
 
 	      /* Find bounding box dimensions, in lattice coords,
 		 for the circular ends of the cylinder: */
 
-	      elen = vector3_dot(e23, e23);
+	      elen2 = vector3_dot(e23, e23);
 	      eproj = vector3_dot(e23, axis);
-	      r1 = fabs(radius * sqrt(elen*elen - eproj*eproj) /
+	      r1 = fabs(radius * sqrt(fabs(elen2 - eproj*eproj)) /
 			vector3_dot(e23, geometry_lattice.basis1));
 	      
-	      elen = vector3_dot(e31, e31);
+	      elen2 = vector3_dot(e31, e31);
 	      eproj = vector3_dot(e31, axis);
-	      r2 = fabs(radius * sqrt(elen*elen - eproj*eproj) /
+	      r2 = fabs(radius * sqrt(fabs(elen2 - eproj*eproj)) /
 			vector3_dot(e31, geometry_lattice.basis2));
 
-	      elen = vector3_dot(e12, e12);
+	      elen2 = vector3_dot(e12, e12);
 	      eproj = vector3_dot(e12, axis);
-	      r3 = fabs(radius * sqrt(elen*elen - eproj*eproj) /
+	      r3 = fabs(radius * sqrt(fabs(elen2 - eproj*eproj)) /
 			vector3_dot(e12, geometry_lattice.basis3));
 
 	      /* Get axis in lattice coords: */
