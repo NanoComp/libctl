@@ -43,29 +43,27 @@
 (define-param R 0.1)  ; (used as the radius of the sphere, below)
 
 ; Set the geometry:
+
 (set! geometry
       (list
-       (make cylinder (material air) (center 2 0)
+       (make cylinder (material air) (center 1.5 0)
 	(radius 0.2) (height 0.5) (axis 3 4))
-       (make sphere (material GaAs) (center 0.1 -0.1) (radius R))
-       (make block (material AlOx) (center 1 2) (size 3.2 2.3))
-       (make block (material air) (center 1 2) (size 3.2 2.3) (e2 1 1))))
+       (make sphere (material GaAs) (center 1.1 -1.1) (radius R))
+       (make block (material AlOx) (center -1 0.5) (size 0.2 1.3))
+       (make block (material air) (center -1.5 -1) (size 1.2 0.3) (e2 1 1))))
 
 ; Append a 2d 3x3 lattice of cylinders to the geometry:
 
+(set! geometry-lattice (make lattice (size 5 5 1)))
+
 (set! geometry
       (append geometry
-	      (geometric-objects-duplicates
-	       (vector3 1 0) -1 1
-	       (geometric-object-duplicates
-		(vector3 0 1) -1 1
-		(make cylinder (material GaAs) 
-		      (center 0 0) (radius 0.1) (height 1.0))))))
-					    
+	      (geometric-objects-lattice-duplicates
+	       (list (make cylinder (material GaAs) 
+			   (center 0 0) (radius 0.1) (height 1.0))))))
 
-; Normally, at the end of the input file, we call (run) to run
-; the simulation.  Here, though, we comment it out--when we don't
-; call (run), we are dropped into interactive mode, where we can
-; enter more commands and/or type (run) manually.
+(run)
 
-; (run)
+; The (run) command normally turns interactive mode off; turn it back
+; on so that we are dropped into a Guile command line:
+(set! interactive true)

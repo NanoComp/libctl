@@ -32,6 +32,7 @@
 #include <guile/gh.h>
 
 #include <ctl-io.h>
+#include <ctlgeom.h>
 
 /**************************************************************************/
 
@@ -88,6 +89,7 @@ static void display_object_info(geometric_object obj)
 void run_program(void)
 {
   int i;
+  geom_box_tree t;
 
   /* Just print out some data to prove that we have read the
      input variables: */
@@ -102,6 +104,11 @@ void run_program(void)
   printf("\nsome geometry info:\n");
   for (i = 0; i < geometry.num_items; ++i)
     display_object_info(geometry.items[i]);
+
+  t = create_geom_box_tree();
+  printf("\ngeometry box tree:\n");
+  display_geom_box_tree(2, t);
+  destroy_geom_box_tree(t);
 
   printf("\nDone writing input.  Sending data to output vars.\n");
 

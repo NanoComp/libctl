@@ -30,23 +30,42 @@ extern "C" {
 
 /**************************************************************************/
 
+extern void geom_fix_object(geometric_object o);
+extern void geom_fix_objects(void);
 extern boolean point_in_objectp(vector3 p, geometric_object o);
 extern boolean point_in_periodic_objectp(vector3 p, geometric_object o);
+extern boolean point_in_fixed_objectp(vector3 p, geometric_object o);
+extern boolean point_in_periodic_fixed_objectp(vector3 p, geometric_object o);
 extern material_type material_of_point(vector3 p);
 extern void display_geometric_object_info(int indentby, geometric_object o);
 extern matrix3x3 square_basis(matrix3x3 lattice_basis, vector3 size);
 
-#ifdef MATERIAL_WEIGHT_PROPERTY
-extern void material_weight_moments(vector3 p,
-				    integer nmesh, vector3 mesh_delta,
-				    vector3 *moment,
-				    number *mean, number *inv_mean);
-#endif
+typedef struct {
+     vector3 low, high;
+} geom_box;
+
+typedef struct {
+     geom_box box;
+     geometric_object *o;
+     vector3 shiftby;
+} geom_box_object;
+
+typedef struct geom_box_tree_struct {
+     geom_box b, b1, b2;
+     struct geom_box_tree_struct *t1, *t2;
+     int nobjects;
+     geom_box_object *objects;
+} *geom_box_tree;
+
+extern void destroy_geom_box_tree(geom_box_tree t);
+extern geom_box_tree create_geom_box_tree(void);
+extern material_type material_of_point_in_tree(vector3 p, geom_box_tree t);
+extern void display_geom_box_tree(int indentby, geom_box_tree t);
 
 /**************************************************************************/
 
 #ifdef __cplusplus
-	   }                               /* extern "C" */
+}                               /* extern "C" */
 #endif                          /* __cplusplus */
 
 #endif /* GEOM_H */
