@@ -146,8 +146,8 @@ material_type material_of_point(vector3 p)
      
      /* loop in reverse order so that later items are given precedence: */
      for (index = geometry.num_items - 1; index >= 0; --index) {
-	  if (ensure_periodicity
-	      && point_in_periodic_objectp(p, geometry.items[index])
+	  if ((ensure_periodicity
+	       && point_in_periodic_objectp(p, geometry.items[index]))
 	      || point_in_objectp(p, geometry.items[index]))
 	       return(geometry.items[index].material);
      }
