@@ -22,9 +22,15 @@
 ; define-param: defining local variables that can be set easily
 ; from the command-line (or assume a default value if not set).
 
+(define params-set-list '())
 (defmacro-public define-param (name value)
   `(if (not (defined? (quote ,name)))
-       (define ,name ,value)))
+       (define ,name ,value)
+       (set! params-set-list (cons ,name params-set-list))))
+
+(defmacro-public set-param! (name value)
+  `(if (not (memq (quote ,name) params-set-list))
+       (set! ,name ,value)))
 
 ; ****************************************************************
 ; Input/Output variables.
