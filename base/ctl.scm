@@ -101,7 +101,7 @@
 	      (vector (first args) (second args) 0)
 	      (vector (first args) (second args) (third args))))))
 (define (vector3? v)
-  (and (vector v)
+  (and (vector? v)
        (= (vector-length v) 3)
        (vector-for-all? v number?)))
 (define (vector3+ v1 v2) (vector-map + v1 v2))
@@ -122,6 +122,12 @@
 	   (- (* (vector-ref v1 0) (vector-ref v2 1))
 	      (* (vector-ref v1 1) (vector-ref v2 0)))))
 (define (vector3-norm v) (sqrt (vector3-dot v v)))
+
+(define (unit-vector3 . args)
+  (let ((v (if (and (= (length args) 1) (vector3? (car args)))
+	       (car args)
+	       (apply vector3 args))))
+    (vector3-scale (/ (vector3-norm v)) v)))
 
 ; Define polymorphic binary operators (work on any type):
 
@@ -157,7 +163,7 @@
   (make-object (cons type-name (object-type-names object))
 	       (combine-alists property-values
 			       (object-property-values object))))
-(define (modify-object object property-values)
+(define (modify-object object . property-values)
   (make-object (object-type-names object)
 	       (combine-alists property-values
 			       (object-property-values object))))
@@ -324,7 +330,10 @@
   (lambda (x) (make-property-value name x)))
 
 (define (vector3-property-value-constructor name)
-  (lambda x (make-property-value name (apply vector3 x))))
+  (lambda x (make-property-value name (if (and (= (length x) 1)
+					       (vector3? (car x)))
+					  (car x)
+					  (apply vector3 x)))))
 
 (define (list-property-value-constructor name)
   (lambda x (make-property-value name x)))
