@@ -129,5 +129,8 @@
 ; (define-external-function material-of-point true false
 ;   'material-type 'vector3)
 
+(define-external-function display-geometric-object-info false false
+  no-return-value 'integer 'geometric-object)
+
 (define-external-function square-basis false false
   'matrix3x3 'matrix3x3 'vector3)

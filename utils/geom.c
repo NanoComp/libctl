@@ -156,6 +156,72 @@ material_type material_of_point(vector3 p)
 
 /**************************************************************************/
 
+/* Given a geometric object o, display some information about it,
+   indented by indentby spaces. */
+
+void display_geometric_object_info(int indentby, geometric_object o)
+{
+     printf("%*s", indentby, "");
+     switch (o.which_subclass) {
+	 case CYLINDER:
+	      printf("cylinder");
+	      break;
+	 case SPHERE:
+	      printf("sphere");
+	      break;
+	 case BLOCK:
+	      switch (o.subclass.block_data->which_subclass) {
+		  case ELLIPSOID:
+		       printf("ellipsoid");
+		       break;
+		  case BLOCK_SELF:
+		       printf("block");
+		       break;
+	      }
+	      break;
+	 default:
+	      printf("geometric object");
+              break;
+     }
+     printf(", center = (%g,%g,%g)\n",
+	    o.center.x, o.center.y, o.center.z);
+     switch (o.which_subclass) {
+	 case CYLINDER:
+	      printf("%*s     radius %g, height %g, axis (%g, %g, %g)\n",
+		     indentby, "", o.subclass.cylinder_data->radius,
+                     o.subclass.cylinder_data->height,
+                     o.subclass.cylinder_data->axis.x,
+                     o.subclass.cylinder_data->axis.y,
+                     o.subclass.cylinder_data->axis.z);
+	      break;
+	 case SPHERE:
+              printf("%*s     radius %g\n", indentby, "", 
+		     o.subclass.sphere_data->radius);
+              break;
+	 case BLOCK:
+	      printf("%*s     size (%g,%g,%g)\n", indentby, "",
+		     o.subclass.block_data->size.x,
+                     o.subclass.block_data->size.y,
+                     o.subclass.block_data->size.z);
+	      printf("%*s     axes (%g,%g,%g), (%g,%g,%g), (%g,%g,%g)\n",
+		     indentby, "",
+		     o.subclass.block_data->e1.x,
+                     o.subclass.block_data->e1.y,
+                     o.subclass.block_data->e1.z,
+		     o.subclass.block_data->e2.x,
+                     o.subclass.block_data->e2.y,
+                     o.subclass.block_data->e2.z,
+		     o.subclass.block_data->e3.x,
+                     o.subclass.block_data->e3.y,
+                     o.subclass.block_data->e3.z);
+	      break;
+	 default:
+	      break;
+     }
+}
+
+/**************************************************************************/
+
 /* Given a basis (matrix columns are the basis unit vectors) and the
    size of the lattice (in basis vectors), returns a new "square"
    basis.  This corresponds to a region of the same volume, but made
