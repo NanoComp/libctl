@@ -141,6 +141,102 @@
   (if (and (vector3? x) (number? y)) (vector3-scale (/ y) x) (/ x y)))
 
 ; ****************************************************************
+; matrix3x3 and associated functions (a type to represent 3x3 matrices)
+
+; we represent a matrix3x3 by a vector of 3 columns, each of which
+; is a 3-vector.
+
+(define (matrix3x3 c1 c2 c3)
+  (vector c1 c2 c3))
+(define (matrix3x3? m)
+  (and (vector? m)
+       (= (vector-length m) 3)
+       (vector-for-all? m vector3?)))
+(define (matrix3x3-col m col)
+  (vector-ref m col))
+(define (matrix3x3-ref m row col)
+  (vector-ref (matrix3x3-col m col) row))
+(define (matrix3x3-row m row)
+  (vector3 (matrix3x3-ref m row 0)
+	   (matrix3x3-ref m row 1)
+	   (matrix3x3-ref m row 2)))
+
+(define (matrix3x3-transpose m)
+  (matrix3x3
+   (matrix3x3-row m 0)
+   (matrix3x3-row m 1)
+   (matrix3x3-row m 2)))
+
+(define (matrix3x3+ m1 m2)
+  (vector-map vector3+ m1 m2))
+(define (matrix3x3- m1 m2)
+  (vector-map vector3- m1 m2))
+
+(define (matrix3x3-scale s m)
+  (vector-map (lambda (v) (vector3-scale s v)) m))
+(define (matrix3x3-mv-mult m v)
+  (vector3 (vector3-dot (matrix3x3-row m 0) v)
+	   (vector3-dot (matrix3x3-row m 1) v)
+	   (vector3-dot (matrix3x3-row m 2) v)))
+(define (matrix3x3-vm-mult v m)
+  (vector3 (vector3-dot (matrix3x3-col m 0) v)
+	   (vector3-dot (matrix3x3-col m 1) v)
+	   (vector3-dot (matrix3x3-col m 2) v)))
+(define (matrix3x3-mm-mult m1 m2)
+  (matrix3x3
+   (vector3 (vector3-dot (matrix3x3-row m1 0) (matrix3x3-col m2 0))
+	    (vector3-dot (matrix3x3-row m1 1) (matrix3x3-col m2 0))
+	    (vector3-dot (matrix3x3-row m1 2) (matrix3x3-col m2 0)))
+   (vector3 (vector3-dot (matrix3x3-row m1 0) (matrix3x3-col m2 1))
+	    (vector3-dot (matrix3x3-row m1 1) (matrix3x3-col m2 1))
+	    (vector3-dot (matrix3x3-row m1 2) (matrix3x3-col m2 1)))
+   (vector3 (vector3-dot (matrix3x3-row m1 0) (matrix3x3-col m2 2))
+	    (vector3-dot (matrix3x3-row m1 1) (matrix3x3-col m2 2))
+	    (vector3-dot (matrix3x3-row m1 2) (matrix3x3-col m2 2)))))
+(define (matrix3x3* a b)
+  (cond
+   ((number? a) (matrix3x3-scale a b))
+   ((number? b) (matrix3x3-scale b a))
+   ((vector3? a) (matrix3x3-vm-mult a b))
+   ((vector3? b) (matrix3x3-mv-mult a b))
+   (else (matrix3x3-mm-mult a b))))
+
+(define (matrix3x3-determinant m)
+  (-
+   (+ (* (matrix3x3-ref m 0 0) (matrix3x3-ref m 1 1) (matrix3x3-ref m 2 2))
+      (* (matrix3x3-ref m 0 1) (matrix3x3-ref m 1 2) (matrix3x3-ref m 2 0))
+      (* (matrix3x3-ref m 1 0) (matrix3x3-ref m 2 1) (matrix3x3-ref m 0 2)))
+   (+ (* (matrix3x3-ref m 0 2) (matrix3x3-ref m 1 1) (matrix3x3-ref m 2 0))
+      (* (matrix3x3-ref m 0 1) (matrix3x3-ref m 1 0) (matrix3x3-ref m 2 2))
+      (* (matrix3x3-ref m 1 2) (matrix3x3-ref m 2 1) (matrix3x3-ref m 0 0)))))
+
+(define (matrix3x3-inverse m)
+  (matrix3x3-scale
+   (/ (matrix3x3-determinant m))
+   (matrix3x3
+    (vector3
+     (- (* (matrix3x3-ref m 1 1) (matrix3x3-ref m 2 2))
+	(* (matrix3x3-ref m 1 2) (matrix3x3-ref m 2 2)))
+     (- (* (matrix3x3-ref m 1 2) (matrix3x3-ref m 2 0))
+	(* (matrix3x3-ref m 1 0) (matrix3x3-ref m 2 2)))
+     (- (* (matrix3x3-ref m 1 0) (matrix3x3-ref m 2 1))
+	(* (matrix3x3-ref m 1 1) (matrix3x3-ref m 2 0))))
+    (vector3
+     (- (* (matrix3x3-ref m 2 1) (matrix3x3-ref m 0 2))
+	(* (matrix3x3-ref m 0 1) (matrix3x3-ref m 2 2)))
+     (- (* (matrix3x3-ref m 0 0) (matrix3x3-ref m 2 2))
+	(* (matrix3x3-ref m 0 2) (matrix3x3-ref m 2 0)))
+     (- (* (matrix3x3-ref m 0 1) (matrix3x3-ref m 2 0))
+	(* (matrix3x3-ref m 0 0) (matrix3x3-ref m 2 1))))
+    (vector3
+     (- (* (matrix3x3-ref m 0 1) (matrix3x3-ref m 1 2))
+	(* (matrix3x3-ref m 1 1) (matrix3x3-ref m 0 2)))
+     (- (* (matrix3x3-ref m 1 0) (matrix3x3-ref m 0 2))
+	(* (matrix3x3-ref m 0 0) (matrix3x3-ref m 1 2)))
+     (- (* (matrix3x3-ref m 1 1) (matrix3x3-ref m 0 0))
+	(* (matrix3x3-ref m 1 0) (matrix3x3-ref m 0 1)))))))
+
+; ****************************************************************
 ; Class constructors.
 
 (define class-list '())
@@ -217,6 +313,8 @@
    ((eq? type-name 'boolean) (make-simple-type-descriptor 'boolean boolean?))
    ((eq? type-name 'string) (make-simple-type-descriptor 'string string?))
    ((eq? type-name 'vector3) (make-simple-type-descriptor 'vector3 vector3?))
+   ((eq? type-name 'matrix3x3)
+    (make-simple-type-descriptor 'matrix3x3 matrix3x3?))
    ((eq? type-name 'list) (make-simple-type-descriptor 'list list?))
    ((symbol? type-name) (make-object-type-descriptor type-name))
    ((list-type-name? type-name) (make-list-type-descriptor type-name))

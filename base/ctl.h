@@ -44,9 +44,14 @@ typedef struct {
   number x,y,z;
 } vector3;
 
+  /* similarly for matrix3x3 */
+typedef struct {
+  vector3 c0, c1, c2; /* the columns */
+} matrix3x3;
+
 /**************************************************************************/
 
-  /* vector3 utilities: */
+  /* vector3 and matrix3x3 utilities: */
 
 #include <math.h>
 
@@ -58,6 +63,8 @@ extern vector3 vector3_cross(vector3 v1,vector3 v2);
 extern vector3 vector3_plus(vector3 v1,vector3 v2);
 extern vector3 vector3_minus(vector3 v1,vector3 v2);
 
+extern vector3 matrix3x3_vector3_mult(matrix3x3 m, vector3 v);
+
 /**************************************************************************/
 
   /* variable get/set functions */
@@ -67,6 +74,7 @@ extern number ctl_get_number(char *identifier);
 extern boolean ctl_get_boolean(char *identifier);
 extern char* ctl_get_string(char *identifier);
 extern vector3 ctl_get_vector3(char *identifier);
+extern matrix3x3 ctl_get_matrix3x3(char *identifier);
 extern list ctl_get_list(char *identifier);
 extern object ctl_get_object(char *identifier);
 
@@ -75,6 +83,7 @@ extern void ctl_set_number(char *identifier, number value);
 extern void ctl_set_boolean(char *identifier, boolean value);
 extern void ctl_set_string(char *identifier, char *value);
 extern void ctl_set_vector3(char *identifier, vector3 value);
+extern void ctl_set_matrix3x3(char *identifier, matrix3x3 value);
 extern void ctl_set_list(char *identifier, list value);
 extern void ctl_set_object(char *identifier, object value);
 
@@ -88,6 +97,7 @@ extern number number_list_ref(list l, int index);
 extern boolean boolean_list_ref(list l, int index);
 extern char* string_list_ref(list l, int index);
 extern vector3 vector3_list_ref(list l, int index);
+extern matrix3x3 matrix3x3_list_ref(list l, int index);
 extern list list_list_ref(list l, int index);
 extern object object_list_ref(list l, int index);
 
@@ -100,6 +110,7 @@ extern list make_number_list(int num_items, number *items);
 extern list make_boolean_list(int num_items, boolean *items);
 extern list make_string_list(int num_items, char **items);
 extern list make_vector3_list(int num_items, vector3 *items);
+extern list make_matrix3x3_list(int num_items, matrix3x3 *items);
 extern list make_list_list(int num_items, list *items);
 extern list make_object_list(int num_items, object *items);
 
@@ -114,6 +125,7 @@ extern number number_object_property(object o, char *property_name);
 extern boolean boolean_object_property(object o, char *property_name);
 extern char* string_object_property(object o, char *property_name);
 extern vector3 vector3_object_property(object o, char *property_name);
+extern matrix3x3 matrix3x3_object_property(object o, char *property_name);
 extern list list_object_property(object o, char *property_name);
 extern object object_object_property(object o, char *property_name);
 

@@ -56,7 +56,7 @@ static SCM list_ref(list l, int index)
 
 /**************************************************************************/
 
-/* vector3 utilities: */
+/* vector3 and matrix3x3 utilities: */
 
 vector3 vector3_scale(number s, vector3 v)
 {
@@ -98,6 +98,16 @@ vector3 vector3_cross(vector3 v1,vector3 v2)
   return vnew;
 }
 
+vector3 matrix3x3_vector3_mult(matrix3x3 m, vector3 v)
+{
+  vector3 vnew;
+
+  vnew.x = m.c0.x * v.x + m.c1.x * v.y + m.c2.x * v.z;
+  vnew.y = m.c0.y * v.x + m.c1.y * v.y + m.c2.y * v.z;
+  vnew.z = m.c0.z * v.x + m.c1.z * v.y + m.c2.z * v.z;
+  return vnew;
+}
+
 /**************************************************************************/
 
 /* variable get/set functions */
@@ -124,7 +134,6 @@ char* ctl_get_string(char *identifier)
   return(gh_scm2newstr(gh_lookup(identifier), NULL));
 }
 
-/* This will change to use gh_vector_ref in Guile 1.3: */
 static vector3 scm2vector3(SCM sv)
 {
   vector3 v;
@@ -138,6 +147,21 @@ static vector3 scm2vector3(SCM sv)
 vector3 ctl_get_vector3(char *identifier)
 {
   return(scm2vector3(gh_lookup(identifier)));
+}
+
+static matrix3x3 scm2matrix3x3(SCM sm)
+{
+  matrix3x3 m;
+
+  m.c0 = scm2vector3(gh_vector_ref(sm,gh_int2scm(0)));
+  m.c1 = scm2vector3(gh_vector_ref(sm,gh_int2scm(1)));
+  m.c2 = scm2vector3(gh_vector_ref(sm,gh_int2scm(2)));
+  return m;
+}
+
+matrix3x3 ctl_get_matrix3x3(char *identifier)
+{
+  return(scm2matrix3x3(gh_lookup(identifier)));
 }
 
 list ctl_get_list(char *identifier)
@@ -180,7 +204,7 @@ void ctl_set_string(char *identifier, char *value)
   set_value(identifier, gh_str02scm(value));
 }
 
-SCM vector32scm(vector3 v)
+static SCM vector32scm(vector3 v)
 {
   return(gh_call3(gh_lookup("vector3"),
 		  gh_double2scm(v.x),
@@ -191,6 +215,19 @@ SCM vector32scm(vector3 v)
 void ctl_set_vector3(char *identifier, vector3 value)
 {
   set_value(identifier, vector32scm(value));
+}
+
+static SCM matrix3x32scm(matrix3x3 m)
+{
+  return(gh_call3(gh_lookup("matrix3x3"),
+		  vector32scm(m.c0),
+		  vector32scm(m.c1),
+		  vector32scm(m.c2)));
+}
+
+void ctl_set_matrix3x3(char *identifier, matrix3x3 value)
+{
+  set_value(identifier, matrix3x32scm(value));
 }
 
 void ctl_set_list(char *identifier, list value)
@@ -237,6 +274,11 @@ vector3 vector3_list_ref(list l, int index)
   return(scm2vector3(list_ref(l,index)));
 }
 
+matrix3x3 matrix3x3_list_ref(list l, int index)
+{
+  return(scm2matrix3x3(list_ref(l,index)));
+}
+
 list list_list_ref(list l, int index)
 {
   return(list_ref(l,index));
@@ -274,6 +316,9 @@ MAKE_LIST(gh_str02scm)
 
 list make_vector3_list(int num_items, vector3 *items)
 MAKE_LIST(vector32scm)
+
+list make_matrix3x3_list(int num_items, matrix3x3 *items)
+MAKE_LIST(matrix3x32scm)
 
 #define NO_CONVERSION  
 
@@ -325,6 +370,11 @@ char* string_object_property(object o, char *property_name)
 vector3 vector3_object_property(object o, char *property_name)
 {
   return(scm2vector3(object_property_value(o,property_name)));
+}
+
+matrix3x3 matrix3x3_object_property(object o, char *property_name)
+{
+  return(scm2matrix3x3(object_property_value(o,property_name)));
 }
 
 list list_object_property(object o, char *property_name)
