@@ -208,6 +208,20 @@ extern object object_object_property(object o, char *property_name);
 
 /**************************************************************************/
 
+  /* subplex multi-dimensional minimization routines: */
+
+typedef number (*subplex_func) (integer, number *, void *);
+
+extern number subplex(subplex_func f, number *x, integer n, void *fdata,
+		      number tol, integer maxnfe,	
+		      number *scale,	
+		      integer *nfe, integer *errflag);
+extern SCM subplex_scm(SCM f_scm, SCM x_scm,
+		       SCM tol_scm, SCM maxnfe_scm,
+		       SCM scale_scm);
+
+/**************************************************************************/
+
 #ifdef __cplusplus
 	   }                               /* extern "C" */
 #endif                          /* __cplusplus */
