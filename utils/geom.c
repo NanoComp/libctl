@@ -834,8 +834,10 @@ geom_box_tree create_geom_box_tree0(geometric_object_list geometry)
      geom_box_tree t = new_geom_box_tree();
      int i, index;
 
-     t->b.low = vector3_scale(-0.5, geometry_lattice.size);
-     t->b.high = vector3_scale(0.5, geometry_lattice.size);
+     t->b.low = vector3_plus(geometry_center,
+			     vector3_scale(-0.5, geometry_lattice.size));
+     t->b.high = vector3_plus(geometry_center,
+			      vector3_scale(0.5, geometry_lattice.size));
 
      for (i = geometry.num_items - 1; i >= 0; --i) {
 	  vector3 shiftby = {0,0,0};

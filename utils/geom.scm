@@ -143,6 +143,7 @@
 
 (define-input-var dimensions 3 'integer)
 (define-input-var default-material '() 'material-type)
+(define-input-var geometry-center (vector3 0) 'vector3)
 (define-input-var geometry-lattice (make lattice) 'lattice)
 (define-input-var geometry '() (make-list-type 'geometric-object))
 (define-input-var ensure-periodicity true 'boolean)
