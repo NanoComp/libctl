@@ -275,17 +275,20 @@
   
   ; find the root by Ridder's method:
   (define (ridder a b fa fb)
-    (if (>= (* fa fb) 0)
-	(error "x-min and x-max in find-root must bracket the root!"))
-    (let ((m (midpoint a b)))
-      (let ((fm (f m)))
-	(let ((x (+ m (/ (* (- m a) (sign (- fa fb)) fm)
-			 (sqrt (- (* fm fm) (* fa fb)))))))
-	  (if (converged? a b x)
-	      x
-	      (let ((fx (f x)))
-		(apply ridder (best-bracket a b x m fa fb fx fm))))))))
-
+    (if (or (= fa 0) (= fb 0))
+	(if (= fa 0) a b)
+	(begin
+	  (if (> (* fa fb) 0)
+	      (error "x-min and x-max in find-root must bracket the root!"))
+	  (let ((m (midpoint a b)))
+	    (let ((fm (f m)))
+	      (let ((x (+ m (/ (* (- m a) (sign (- fa fb)) fm)
+			       (sqrt (- (* fm fm) (* fa fb)))))))
+		(if (or (= fm 0) (converged? a b x))
+		    (if (= fm 0) m x)
+		    (let ((fx (f x)))
+		      (apply ridder (best-bracket a b x m fa fb fx fm))))))))))
+	
   (ridder x-min x-max (f x-min) (f x-max)))
 
 ; ****************************************************************
