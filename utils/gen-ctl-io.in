@@ -23,7 +23,7 @@
 output_dir="`dirname $1`"
 
 if test "$#" = "2"; then
-    libctl_dir="`dirname $2`"
+    libctl_dir="$2"
 else
     libctl_dir="@prefix@/share/libctl"
 fi
