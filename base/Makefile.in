@@ -29,7 +29,7 @@ libctl.a: $(OBJECTS)
 
 install:
 	$(INSTALL) -d $(prefix)/lib
-	$(INSTALL) -m 0644 -s $(LIBNAME) $(prefix)/lib
+	$(INSTALL) -m 0644 $(LIBNAME) $(prefix)/lib
 	$(INSTALL) -d $(prefix)/include
 	$(INSTALL) -m 0644 ctl.h $(prefix)/include
 	$(INSTALL) -d $(prefix)/share/libctl/base
