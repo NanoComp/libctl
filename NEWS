@@ -1,4 +1,4 @@
-libctl 2.2
+libctl 2.2 (9/12/2002)
 
   * Added simple trapezoidal-rule adaptive numeric integration routine.
 
