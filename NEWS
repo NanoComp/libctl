@@ -2,8 +2,6 @@ libctl 2.2
 
   * Added simple trapezoidal-rule adaptive numeric integration routine.
 
-  * Added generic 'memoize' function.
-
   * Numerical derivative routines now allow numerical differentation
     of vector-valued function.  Added deriv2 convenience routine.
 
@@ -13,6 +11,8 @@ libctl 2.2
   * Added missing (cvector3 ...) constructor, and fixed corresponding
     constructor for cvector3 object properties; thanks to Doug Allan for
     the bug report.
+
+  * Added generic 'memoize' function.
 
   * libctl programs now print out command-line parameters when they run.
 
