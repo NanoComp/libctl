@@ -112,9 +112,15 @@ AC_MSG_RESULT($ok)
 ###########################################################################
 
 # Add libctl and libgeom -I/-L/-l flags to CPPFLAGS/LDFLAGS/LIBS,
-# so that examples/Makefile.in can be used as-is for other programs:
-CPPFLAGS="$CPPFLAGS -I`pwd`/$srcdir/base -I`pwd`/$srcdir/utils"
-LDFLAGS="$LDFLAGS -L`pwd`/$srcdir/base"
+# so that examples/Makefile.in can be used as-is for other programs.
+# (The flags need to go first so that they'll take precedence over
+# any previously-installed version of libctl.)
+
+CPPFLAGS="-I`pwd`/$srcdir/base -I`pwd`/$srcdir/utils $CPPFLAGS"
+LDFLAGS="-L`pwd`/$srcdir/base $LDFLAGS"
+
+###########################################################################
+
 LIBS="-lctl $LIBS"
 
 LIBCTL_DIR="`pwd`/$srcdir"
