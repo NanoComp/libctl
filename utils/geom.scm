@@ -34,6 +34,9 @@
     (make-default (vector3 0 0 1)))
   (define-property radius 'number no-default non-negative?)
   (define-property height 'number no-default non-negative?))
+
+(define-class cone cylinder
+  (define-property radius2 'number (make-default 0)))
 	       
 (define-class sphere geometric-object
   (define-property radius 'number no-default non-negative?))

@@ -113,8 +113,13 @@ boolean point_in_fixed_objectp(vector3 p, geometric_object o)
     {
       vector3 rm = matrix3x3_vector3_mult(geometry_lattice.metric, r);
       number proj = vector3_dot(o.subclass.cylinder_data->axis, rm);
-      if (fabs(proj) <= 0.5 * o.subclass.cylinder_data->height) {
+      number height = o.subclass.cylinder_data->height;
+      if (fabs(proj) <= 0.5 * height) {
 	number radius = o.subclass.cylinder_data->radius;
+	if (o.subclass.cylinder_data->which_subclass == CONE)
+	     radius += (proj/height + 0.5) *
+		  (o.subclass.cylinder_data->subclass.cone_data->radius2
+		   - radius);
 	return(radius > 0.0 && vector3_dot(r,rm) - proj*proj <= radius*radius);
       }
       else
@@ -269,7 +274,14 @@ void display_geometric_object_info(int indentby, geometric_object o)
      printf("%*s", indentby, "");
      switch (o.which_subclass) {
 	 case CYLINDER:
-	      printf("cylinder");
+	      switch (o.subclass.cylinder_data->which_subclass) {
+		  case CONE:
+		       printf("cone");
+		       break;
+		  case CYLINDER_SELF:
+		       printf("cylinder");
+		       break;
+	      }
 	      break;
 	 case SPHERE:
 	      printf("sphere");
@@ -298,6 +310,9 @@ void display_geometric_object_info(int indentby, geometric_object o)
                      o.subclass.cylinder_data->axis.x,
                      o.subclass.cylinder_data->axis.y,
                      o.subclass.cylinder_data->axis.z);
+	      if (o.subclass.block_data->which_subclass == CONE)
+		   printf("%*s     radius2 %g\n", indentby, "",
+		        o.subclass.cylinder_data->subclass.cone_data->radius2);
 	      break;
 	 case SPHERE:
               printf("%*s     radius %g\n", indentby, "", 
@@ -509,17 +524,17 @@ static void get_bounding_box(geometric_object o, geom_box *box)
 
 	      elen2 = vector3_dot(e23, e23);
 	      eproj = vector3_dot(e23, axis);
-	      r1 = fabs(radius * sqrt(fabs(elen2 - eproj*eproj)) /
+	      r1 = fabs(sqrt(fabs(elen2 - eproj*eproj)) /
 			vector3_dot(e23, geometry_lattice.basis1));
 	      
 	      elen2 = vector3_dot(e31, e31);
 	      eproj = vector3_dot(e31, axis);
-	      r2 = fabs(radius * sqrt(fabs(elen2 - eproj*eproj)) /
+	      r2 = fabs(sqrt(fabs(elen2 - eproj*eproj)) /
 			vector3_dot(e31, geometry_lattice.basis2));
 
 	      elen2 = vector3_dot(e12, e12);
 	      eproj = vector3_dot(e12, axis);
-	      r3 = fabs(radius * sqrt(fabs(elen2 - eproj*eproj)) /
+	      r3 = fabs(sqrt(fabs(elen2 - eproj*eproj)) /
 			vector3_dot(e12, geometry_lattice.basis3));
 
 	      /* Get axis in lattice coords: */
@@ -528,20 +543,24 @@ static void get_bounding_box(geometric_object o, geom_box *box)
 	      tmp_box = *box; /* set tmp_box to center of object */
 	      
 	      /* bounding box for -h*axis cylinder end: */
-	      box->low.x -= h * axis.x + r1;
-	      box->low.y -= h * axis.y + r2;
-	      box->low.z -= h * axis.z + r3;
-	      box->high.x -= h * axis.x - r1;
-	      box->high.y -= h * axis.y - r2;
-	      box->high.z -= h * axis.z - r3;
+	      box->low.x -= h * axis.x + r1*radius;
+	      box->low.y -= h * axis.y + r2*radius;
+	      box->low.z -= h * axis.z + r3*radius;
+	      box->high.x -= h * axis.x - r1*radius;
+	      box->high.y -= h * axis.y - r2*radius;
+	      box->high.z -= h * axis.z - r3*radius;
+
+	      if (o.subclass.cylinder_data->which_subclass == CONE)
+		   radius =
+		   fabs(o.subclass.cylinder_data->subclass.cone_data->radius2);
 
 	      /* bounding box for +h*axis cylinder end: */
-	      tmp_box.low.x += h * axis.x - r1;
-	      tmp_box.low.y += h * axis.y - r2;
-	      tmp_box.low.z += h * axis.z - r3;
-	      tmp_box.high.x += h * axis.x + r1;
-	      tmp_box.high.y += h * axis.y + r2;
-	      tmp_box.high.z += h * axis.z + r3;
+	      tmp_box.low.x += h * axis.x - r1*radius;
+	      tmp_box.low.y += h * axis.y - r2*radius;
+	      tmp_box.low.z += h * axis.z - r3*radius;
+	      tmp_box.high.x += h * axis.x + r1*radius;
+	      tmp_box.high.y += h * axis.y + r2*radius;
+	      tmp_box.high.z += h * axis.z + r3*radius;
 
 	      geom_box_union(box, box, &tmp_box);
 	      break;
