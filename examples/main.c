@@ -55,7 +55,7 @@ void main_entry(int argc, char *argv[])
   gh_new_procedure ("write-output-vars", write_output_vars, 0, 0, 0);
 
   /* load include.scm if it was given at compile time */
-#ifdef CTL_SCM
+#ifdef INCLUDE_SCM
   ctl_include(INCLUDE_SCM);
 #endif
 
