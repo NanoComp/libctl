@@ -65,8 +65,8 @@
   (print (c-type-string var-type-name) " " ns
 		(symbol->c-identifier var-name) ";\n"))
 
-(define (c-var-decl var-name var-type-name ns)
-  (c-var-decl var-name var-type-name))
+(define (c-var-decl var-name var-type-name)
+  (c-var-decl' var-name var-type-name ""))
 
 ; ***************************************************************************
 
