@@ -6,6 +6,10 @@ Documentation can be found in the doc/ directory, and an example
 program in the examples/ directory.  The main source code for libctl
 is in the src/ and utils/ directories.
 
+In utils/libgeom, you can find specification files and functions
+for dealing with structures consisting of solid geometric objects
+in some lattice basis.  The example program uses this code.
+
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
 License as published by the Free Software Foundation; either
