@@ -119,8 +119,16 @@
 			     " is both input and output */\n")))))
 
 (define (declare-var-types)
-  (for-each (compose declare-type-name var-type-name)
-	    (append (reverse input-var-list) (reverse output-var-list))))
+  (let ((var-types (append
+		    (map var-type-name 
+			 (append (reverse input-var-list) 
+				 (reverse output-var-list)))
+		    (map external-function-return-type-name
+			 external-function-list)
+		    (fold-right append '()
+				(map external-function-arg-type-names
+				     external-function-list)))))
+    (for-each declare-type-name var-types)))
 
 (define (declare-vars declarer)
   (display "/******* Input variables *******/\n")
@@ -569,6 +577,8 @@
 	 "return_val_scm" "return_val_c"
 	 (external-function-return-type-name external-function)
 	 set-c-local)
+	(destroy-c-var "return_val_c"
+		       (external-function-return-type-name external-function))
 	(display-many "return return_val_scm;\n"))
       (begin (display "return SCM_UNSPECIFIED;\n")))
 

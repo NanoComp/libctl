@@ -152,3 +152,17 @@ number energy_in_object(geometric_object obj)
   printf("Returning 0.123456.\n");
   return 0.123456;
 }
+
+/* A function to test passing and returning list parameters
+   to/from Scheme: */
+vector3_list list_func_test(number x, integer_list s, vector3 v)
+{
+     vector3_list vout;
+     int i;
+
+     vout.num_items = s.num_items;
+     vout.items = (vector3*) malloc(sizeof(vector3) * vout.num_items);
+     for (i = 0; i < vout.num_items; ++i)
+	  vout.items[i] = vector3_scale(s.items[i] * x, v);
+     return vout;
+}

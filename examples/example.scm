@@ -48,3 +48,6 @@
 
 (define-external-function energy-in-object false false
   'number 'geometric-object)
+
+(define-external-function list-func-test false false
+  (make-list-type 'vector3) 'number (make-list-type 'integer) 'vector3)
