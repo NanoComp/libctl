@@ -594,14 +594,17 @@
   (newline)
   (if (class-parent class)
       (display-class (+ indentby 4) (class-parent class)))
-  (for-each (lambda (property)
-	 (indent (+ indentby 4))
-	 (display-many (type-string (property-type-name property)) " "
-		       (property-name property))
-	 (if (property-has-default? property)
-	     (display-many " = " (property-default-value property)))
-	 (newline))
-       (class-properties class)))
+  (for-each
+   (lambda (property)
+     (if (not (property-derived? property))
+	 (begin 
+	   (indent (+ indentby 4))
+	   (display-many (type-string (property-type-name property)) " "
+			 (property-name property))
+	   (if (property-has-default? property)
+	       (display-many " = " (property-default-value property)))
+	   (newline))))
+   (class-properties class)))
 			  
 (define (class-help class) (display-class 0 class))
 
