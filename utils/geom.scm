@@ -70,11 +70,6 @@
 
   (define-property size 'vector3 (make-default (vector3 1 1 1)))
 
-  (define-post-processed-property grid-size 'vector3
-    (lambda (v) (vector-map (lambda (x) (if (zero? x) 1 x))) v)
-    (make-default (vector3 16 16 16))
-    (lambda (v) (vector-for-all? v (lambda (x) (and (> x 0) (integer? x))))))
-
   (define-derived-property basis 'matrix3x3
     (lambda (object)
       (let ((B (matrix3x3
