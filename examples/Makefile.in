@@ -17,9 +17,11 @@ SPECIFICATION_FILE = photonic-crystal.scm
 PROGRAM_NAME = example
 LIBCTL_DIR = ..
 
-MY_OBJECTS = main.o example.o ../utils/libgeom/geom.o
+MY_OBJECTS = example.o \
+             $(LIBCTL_DIR)/utils/libgeom/geom.o \
+             $(LIBCTL_DIR)/examples/main.o
 MY_HEADERS = 
-MY_INCLUDE_FLAGS = -I../utils/libgeom/
+MY_INCLUDE_FLAGS = -I$(LIBCTL_DIR)/utils/libgeom/
 MY_DEFINE_FLAGS = 
 
 ##############################################################################
@@ -46,9 +48,9 @@ CTL_IO_GEN = $(LIBCTL_DIR)/utils/gen-ctl-io
 INCLUDE_FLAGS = -I$(LIBCTL_DIR)/src -I`dirname $(SPECIFICATION_FILE)` \
 	        $(MY_INCLUDE_FLAGS)
 
-DEFINE_FLAGS = -DCTL_SCM='"'$(PWD)/$(LIBCTL_SCM_SRC)'"' \
-               -DINCLUDE_SCM='"'$(PWD)/$(LIBCTL_SCM_INCLUDE_SRC)'"' \
-               -DSPEC_SCM='"'$(PWD)/$(SPECIFICATION_FILE)'"' \
+DEFINE_FLAGS = -DCTL_SCM='"'`pwd`/$(LIBCTL_SCM_SRC)'"' \
+               -DINCLUDE_SCM='"'`pwd`/$(LIBCTL_SCM_INCLUDE_SRC)'"' \
+               -DSPEC_SCM='"'`pwd`/$(SPECIFICATION_FILE)'"' \
 	       -DHAVE_GUILE_1_2 \
 	       $(MY_DEFINE_FLAGS)
 
