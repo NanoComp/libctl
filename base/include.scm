@@ -74,4 +74,9 @@
 	  (load (string-append include-dir (cdr pathpair)))))
     (set! include-dir save-include-dir)))
 
+(define (fix-path pathname)
+  (if (pathname-absolute? pathname)
+      pathname
+      (string-append include-dir pathname)))
+
 ; ****************************************************************

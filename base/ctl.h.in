@@ -92,6 +92,7 @@ typedef struct { cvector3 c0, c1, c2; /* the columns */ } cmatrix3x3;
 #endif
 
 extern void ctl_include(char *filename);
+extern char *ctl_fix_path(const char *path);
 
 /**************************************************************************/
 

@@ -75,6 +75,28 @@ void ctl_include(char *filename)
     gh_call1(include_proc, gh_str02scm(filename));
 }
 
+/* convert a pathname into one relative to the current include dir */
+char *ctl_fix_path(const char *path)
+{
+     char *newpath;
+     if (path[0] != '/') {
+	  SCM include_dir = gh_lookup("include-dir");
+	  if (include_dir != SCM_UNDEFINED) {
+	       char *dir = gh_scm2newstr(include_dir, NULL);
+	       newpath = (char *) malloc(sizeof(char) * (strlen(dir) + 
+							 strlen(path) + 2));
+	       strcpy(newpath, dir);
+	       free(dir);
+	       if (newpath[0] && newpath[strlen(newpath)-1] != '/')
+		    strcat(newpath, "/");
+	       strcat(newpath, path);
+	       return newpath;
+	  }
+     }
+     newpath = (char *) malloc(sizeof(char) * (strlen(path) + 1));
+     strcpy(newpath, path);
+}
+
 /**************************************************************************/
 
 /* vector3 and matrix3x3 utilities: */
