@@ -159,10 +159,10 @@ void main_entry(int argc, char *argv[])
   }
 
   /* Check if we should run an interactive prompt.  We do this if
-     either the Scheme variable "interactive" is true, or if it is not
+     either the Scheme variable "interactive?" is true, or if it is not
      defined. */
 
-  interactive = gh_lookup("interactive");
+  interactive = gh_lookup("interactive?");
   if (interactive != SCM_BOOL_F)
        gh_repl(argc - i, argv + i); /* skip already-handled args */
 }

@@ -43,7 +43,7 @@
   no-return-value)
 
 (define (run)
-  (set! interactive #f)  ; don't be interactive if we call (run)
+  (set! interactive? #f)  ; don't be interactive if we call (run)
   (run-program))
 
 (define-external-function energy-in-object false false
