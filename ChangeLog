@@ -1,3 +1,13 @@
+2001-02-22  Steven G. Johnson  <stevenj@alum.mit.edu>
+
+	* configure.in: fixed cppflags order
+
+2001-02-20  Steven G. Johnson  <stevenj@alum.mit.edu>
+
+	* base/ctl.h.in, base/main.c, base/math-utils.scm, base/subplex.c,
+	ChangeLog, configure.in, NEWS: added minimize-multiple-expert fmin
+	parameter, after a suggestion from Dale Fried
+
 2001-02-04  Steven G. Johnson  <stevenj@alum.mit.edu>
 
 	* base/ctl.h.in, base/main.c: added hook functions to help us use
