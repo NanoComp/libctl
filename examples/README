@@ -3,7 +3,7 @@ Example program using libctl.  This consists of:
 main.c: skeleton main program.  To create a real program using libctl,
 	you will only need to make slight changes to this file.
 
-photonic-crystal.scm: a sample specification file that contains
+example.scm: a sample specification file that contains
 	a few parameters similar to what you might give to a
 	photonic crystal program.  This uses the geometry
 	classes and utilities in utils/libgeom.

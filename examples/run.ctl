@@ -8,7 +8,7 @@
 ; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 ; Library General Public License for more details. 
 
-; Sample control file (for photonic-crystal.scm specification).
+; Sample control file (for example.scm specification).
 ; You should edit this file in Scheme mode if you are using emacs:
 ; type M-x scheme-mode or modify your .emacs file to automatically
 ; put .ctl files in Scheme mode.

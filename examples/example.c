@@ -21,9 +21,9 @@
 
 /**************************************************************************/
 
-/* Example routines, callable from Guile as defined in the
-   photonic-crystal.scm specifications file. Read in the input
-   variables and writes some data into the output variables. */
+/* Example routines, callable from Guile as defined in the example.scm
+   specifications file. Read in the input variables and writes some
+   data into the output variables. */
 
 /**************************************************************************/
 

@@ -17,7 +17,7 @@
 # being used, of course).  You should only need to change the definitions
 # in this section of the file.
 
-SPECIFICATION_FILE = photonic-crystal.scm
+SPECIFICATION_FILE = example.scm
 PROGRAM_NAME = example
 
 # what is printed out when invoking your program with --version:
