@@ -197,11 +197,11 @@
 
 (define (memoize f)
   (let ((f-memo-tab '()))
-    (lambda (y)
+    (lambda (. y)
       (let ((tab-val (assoc y f-memo-tab)))
 	(if tab-val
 	    (cdr tab-val)
-	    (let ((fy (f y)))
+	    (let ((fy (apply f y)))
 	      (set! f-memo-tab (cons (cons y fy) f-memo-tab))
 	      fy))))))
 
