@@ -24,8 +24,13 @@ MY_DEFINE_FLAGS =
 
 ##############################################################################
 
-CC = gcc
-CFLAGS = -g -Wall
+CC = @CC@
+CFLAGS = @CFLAGS@
+
+##############################################################################
+
+LIBS = @LIBS@
+LDFLAGS = @LDFLAGS@
 
 ##############################################################################
 
@@ -63,7 +68,7 @@ ctl-io.h: $(SPECIFICATION_FILE) \
 	$(CTL_IO_GEN) $(SPECIFICATION_FILE)
 
 $(PROGRAM_NAME): $(HEADERS) $(OBJECTS) 
-	gcc $(OBJECTS) -lguile -lm -o $@
+	gcc $(OBJECTS) $(LIBS) -o $@
 
 .c.o: $(HEADERS)
 	$(CC) -c $(DEFINE_FLAGS) $(INCLUDE_FLAGS) $(CFLAGS) $< -o $@

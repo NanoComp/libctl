@@ -1,0 +1,16 @@
+/* configuration options (guessed by configure) */
+
+/* Define if you have gh_load */
+#undef HAVE_GH_LOAD
+
+/* Define if you have gh_bool2scm */
+#undef HAVE_GH_BOOL2SCM
+
+/* Define if you have gh_vector_ref */
+#undef HAVE_GH_VECTOR_REF
+
+/* Define if you have gh_list_ref */
+#undef HAVE_GH_LIST_REF
+
+/* Define if you have gh_length */
+#undef HAVE_GH_LENGTH

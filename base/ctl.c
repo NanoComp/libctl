@@ -27,14 +27,16 @@
 
 /* Functions missing from Guile 1.2: */
 
-#ifndef HAVE_GUILE_1_3
-
+#ifndef HAVE_GH_BOOL2SCM
 /* Guile 1.2 is missing gh_bool2scm for some reason; redefine: */
 SCM bool2scm(boolean b) { return (b ? SCM_BOOL_T : SCM_BOOL_F); }
+#endif
 
+#ifndef HAVE_GH_LENGTH
 #define gh_length gh_list_length
-#define gh_vector_ref gh_vref
+#endif
 
+#ifndef HAVE_GH_LIST_REF
 /* Guile 1.2 doesn't have the gh_list_ref function.  Sigh. */
 /* Note: index must be in [0,list_length(l) - 1].  We don't check! */
 static SCM list_ref(list l, int index)
@@ -49,10 +51,12 @@ static SCM list_ref(list l, int index)
   return cur;
 }
 
-#else /* Guile 1.3 */
-
+#else /* HAVE_GH_LIST_REF */
 #define list_ref(l,index) gh_list_ref(l,gh_int2scm(index))
+#endif
 
+#ifndef HAVE_GH_VECTOR_REF
+#define gh_vector_ref gh_vref
 #endif
 
 /**************************************************************************/

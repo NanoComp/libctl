@@ -24,6 +24,8 @@
 
 #include <guile/gh.h>
 
+#include <config.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif                          /* __cplusplus */
@@ -51,7 +53,7 @@ typedef struct {
 
 /**************************************************************************/
 
-#ifndef HAVE_GUILE_1_3
+#ifndef HAVE_GH_LOAD
 #define gh_load gh_eval_file 
 #endif
 
@@ -77,7 +79,7 @@ extern matrix3x3 matrix3x3_inverse(matrix3x3 m);
 
   /* type conversion */
 
-#ifndef HAVE_GUILE_1_3
+#ifndef HAVE_GH_BOOL2SCM
   /* Guile 1.2 is missing gh_bool2scm for some reason; redefine: */
 extern SCM bool2scm(boolean);
 #define gh_bool2scm bool2scm
