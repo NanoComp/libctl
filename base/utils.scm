@@ -75,6 +75,8 @@
 
 (define (car-or-x p) (if (pair? p) (car p) p))
 
+(define (sqr x) (* x x))
+
 ; combine 2 alists.  returns a list containing all of the associations
 ; in a1 and any associations in a2 that are not in a1
 (define (combine-alists a1 a2)
