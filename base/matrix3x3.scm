@@ -26,6 +26,7 @@
 
 (define (matrix3x3 c1 c2 c3)
   (vector c1 c2 c3))
+(define cmatrix3x3 matrix3x3)
 (define (matrix3x3? m)
   (and (vector? m)
        (= (vector-length m) 3)

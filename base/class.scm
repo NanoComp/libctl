@@ -215,7 +215,7 @@
 
 (define (type-property-value-constructor type-name name)
   (cond
-   ((eq? type-name 'vector3)
+   ((or (eq? type-name 'vector3)  (eq? type-name 'cvector3))
     (vector3-property-value-constructor name))
    ((list-type-name? type-name)
     (list-property-value-constructor name))

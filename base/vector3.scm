@@ -29,6 +29,7 @@
 	  (if (= (length args) 2)
 	      (vector (first args) (second args) 0)
 	      (vector (first args) (second args) (third args))))))
+(define cvector3 vector3)
 (define (vector3? v)
   (and (vector? v)
        (= (vector-length v) 3)
