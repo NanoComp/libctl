@@ -60,7 +60,7 @@ $(PROGRAM_NAME): $(HEADERS) $(OBJECTS)
 	$(CC) -c $(DEFINE_FLAGS) $(INCLUDE_FLAGS) $(CFLAGS) $< -o $@
 
 clean:
-	rm -f $(MY_OBJECTS) ctl-io.o ctl-io.c ctl-io.h
+	rm -f $(MY_OBJECTS) ctl-io.o ctl-io.c ctl-io.h $(PROGRAM_NAME) core
 
 realclean: clean
-	rm -f $(OBJECTS)
+	rm -f $(LIBCTL_OBJ)
