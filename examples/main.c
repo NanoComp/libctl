@@ -1,3 +1,17 @@
+/* libctl: flexible Guile-based control files for scientific software 
+ * Copyright (C) 1998 Steven G. Johnson
+ *
+ * This file may be used without restriction.  It is in the public
+ * domain, and is NOT restricted by the terms of any GNU license.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Library General Public License for more details.
+ * 
+ * Steven G. Johnson can be contacted at stevenj@alum.mit.edu.
+ */
+
 /**************************************************************************/
 
 /* Sample main program for a simulation that uses libctl.

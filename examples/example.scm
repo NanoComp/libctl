@@ -1,3 +1,13 @@
+; Copyright (C) 1998 Steven G. Johnson
+;
+; This file may be used without restriction.  It is in the public
+; domain, and is NOT restricted by the terms of any GNU license.
+;
+; This library is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; Library General Public License for more details. 
+
 (define material-type
   (make-class 'material-type no-parent
 	      (make-property 'epsilon 'number no-default (list positive?))

@@ -1,3 +1,13 @@
+; Copyright (C) 1998 Steven G. Johnson
+;
+; This file may be used without restriction.  It is in the public
+; domain, and is NOT restricted by the terms of any GNU license.
+;
+; This library is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; Library General Public License for more details. 
+
 ; Sample control file (for photonic-crystal.scm specification).
 ; You should edit this file in Scheme mode if you are using emacs:
 ; type M-x scheme-mode or modify your .emacs file to automatically
