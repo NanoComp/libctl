@@ -48,8 +48,12 @@
 
 ; ****************************************************************
 
+; Add some predefined variables, for convenience:
+
 (define vacuum (make material-type (epsilon 1.0)))
 (define air vacuum)
+
+(define infinity 1.0e20) ; big number for infinite dimensions of objects
 
 ; ****************************************************************
 

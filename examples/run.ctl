@@ -20,10 +20,13 @@
    (vector3 0 0)))
 
 ; Reset the k-point list for fun, in a fancier way:
+; Here, we will use the built-in interpolate function to interpolate
+; points between the corners of the Brillouin zone.
+
 (define Gamma-point (vector3 0 0))
 (define X-point (vector3 0.5 0))
 (define M-point (vector3 0.5 0.5))
-(set! k-points (list Gamma-point X-point M-point Gamma-point))
+(set! k-points (interpolate 4 (list Gamma-point X-point M-point Gamma-point)))
 
 ; Set the geometry:
 (set! geometry

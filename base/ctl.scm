@@ -103,6 +103,17 @@
 	      (* (vector-ref v1 1) (vector-ref v2 0)))))
 (define (vector3-norm v) (sqrt (vector3-dot v v)))
 
+; Define polymorphic binary operators (work on any type):
+
+(define (binary+ x y)
+  (if (and (vector3? x) (vector3? y)) (vector3+ x y) (+ x y)))
+(define (binary- x y)
+  (if (and (vector3? x) (vector3? y)) (vector3- x y) (- x y)))
+(define (binary* x y)
+  (if (or (vector3? x) (vector3? y)) (vector3* x y) (* x y)))
+(define (binary/ x y)
+  (if (and (vector3? x) (number? y)) (vector3-scale (/ y) x) (/ x y)))
+
 ; ****************************************************************
 ; Class constructors.
 
@@ -330,6 +341,29 @@
   (newline)
   (display "Output variables: ") (newline)
   (for-each variable-help output-var-list))
+
+; ****************************************************************
+
+; More utilities.
+
+; Return the arithemtic sequence (list): start start+step ... (n values)
+(define (arith-sequence start step n)
+  (if (= n 0)
+      '() 
+      (cons start (arith-sequence (binary+ start step) step (- n 1)))))
+
+; Given a list of numbers, linearly interpolates n values between
+; each pair of numbers.
+(define (interpolate n nums)
+  (cons 
+   (car nums)
+   (fold-right
+    append '()
+    (map
+     (lambda (x y)
+       (reverse (arith-sequence y (binary/ (binary- x y) (+ n 1)) (+ n 1))))
+     (reverse (cdr (reverse nums))) ; nums w/o last value
+     (cdr nums))))) ; nums w/o first value
 
 ; ****************************************************************
 
