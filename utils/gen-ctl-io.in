@@ -166,8 +166,10 @@ EOF
 
 fi
 
-@INDENT@ $output_dir/${code} > /dev/null 2>&1
-@INDENT@ $output_dir/ctl-io.h > /dev/null 2>&1
+if test $cxx = false; then
+  @INDENT@ $output_dir/${code} > /dev/null 2>&1
+  @INDENT@ $output_dir/ctl-io.h > /dev/null 2>&1
+fi
 rm -f $output_dir/${code}~ $output_dir/ctl-io.h~
 rm -f $output_dir/${code}.BAK $output_dir/ctl-io.h.BAK
 
