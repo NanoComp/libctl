@@ -3,14 +3,13 @@ libctl 1.2
   * Added reciprocal->cartesian, cartesian->lattice, lattice->reciprocal,
     etcetera functions to libgeom for converting vectors between bases.
 
-  * Added routines rotate-vector3, rotation-matrix3x3, etcetera,
-    for rotating vectors (in libgeom).
+  * Added routines rotate-vector3 and rotation-matrix3x3 for rotating vectors.
 
   * Added support for returning lists from external functions.
 
   * Fixed bug in find-root for converging to negative roots.
 
-  * Use Nelder-Meade simplex algorithm for multi-dimensional minimization
+  * Use Nelder-Mead simplex algorithm for multi-dimensional minimization
     (it seems to be more robust than the old routine).
 
 libctl 1.1.1 (1/28/2000)
