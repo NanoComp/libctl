@@ -1,12 +1,12 @@
 Steven G. Johnson
-4/23/98
+[started 4/23/98]
 
 This is libctl, a parser and interpreter library for the ctl
 control-file language.
 
-It uses GUILE, GNU's Ubiquitous Intelligent Language for Extension, is
-a library implementation of the Scheme language plus various
-convenient facilities. It's designed so that you can link it into an
+We use GUILE, GNU's Ubiquitous Intelligent Language for Extension, a
+library implementation of the Scheme language plus various convenient
+facilities. Guile is designed so that you can link it into an
 application or utility to make it extensible.  You can find out more
 about Guile at:
 
