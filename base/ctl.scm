@@ -339,3 +339,9 @@
   (display "Output variables: ") (newline)
   (for-each variable-help output-var-list))
 
+; ****************************************************************
+
+(define (run)
+  (read-input-vars)
+  (run-program)
+  (write-output-vars))

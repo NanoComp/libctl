@@ -163,7 +163,9 @@
     (display-many "int " index-name-str ";") (newline)
     (display-many c-var-name-str ".num_items = list_length(" lo-name-str ");")
     (newline)
-    (display-many c-var-name-str ".items = malloc(sizeof("
+    (display-many c-var-name-str ".items = (" 
+		  (c-type-string type-name)
+		  "*) malloc(sizeof("
 		  (c-type-string type-name) ") * "
 		  c-var-name-str ".num_items);")
     (newline)
@@ -207,11 +209,12 @@
        (display-many "o->which_subclass = " (class-enum-name sc) ";")
        (newline)
        (display-many "o->subclass." (class-identifier sc)
-		     "_data = malloc(sizeof("
+		     "_data = (" (class-identifier sc)
+		     "*) malloc(sizeof("
 		     (class-identifier sc) "));")
        (newline)
        (display-many (class-input-function-name (class-type-name sc)) 
-		     "(so, &o->subclass." (class-identifier sc) "_data);")
+		     "(so, o->subclass." (class-identifier sc) "_data);")
        (newline)
        (display "}") (newline)
        (display "else "))

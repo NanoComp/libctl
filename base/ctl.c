@@ -102,9 +102,12 @@ object ctl_get_object(char *identifier)
 
 /**** Setters ****/
 
+/* This is ugly, but there is no gh_set routine and set! can't
+   be called normally because it is really a macro. */
 static void set_value(char *identifier, SCM value)
 {
-  gh_call2(gh_lookup("set!"), gh_lookup(identifier), value);
+  gh_call3(gh_lookup("symbol-set!"), SCM_BOOL_F,
+	   gh_symbol2scm(identifier), value);
 }
 
 void ctl_set_integer(char *identifier, integer value)
@@ -127,14 +130,17 @@ void ctl_set_string(char *identifier, char *value)
   set_value(identifier, gh_str02scm(value));
 }
 
-/* in Guile 1.3, gh_vset will become gh_vector_set */
+SCM vector32scm(vector3 v)
+{
+  return(gh_call3(gh_lookup("vector3"),
+		  gh_double2scm(v.x),
+		  gh_double2scm(v.y),
+		  gh_double2scm(v.z)));
+}
+
 void ctl_set_vector3(char *identifier, vector3 value)
 {
-  SCM sv = gh_lookup(identifier);
-
-  gh_vset(sv, gh_int2scm(0), gh_double2scm(value.x));
-  gh_vset(sv, gh_int2scm(1), gh_double2scm(value.y));
-  gh_vset(sv, gh_int2scm(2), gh_double2scm(value.z));
+  set_value(identifier, vector32scm(value));
 }
 
 void ctl_set_list(char *identifier, list value)
@@ -164,7 +170,7 @@ static SCM list_ref(list l, int index)
 
   while (index >= 0) {
     cur = gh_car(rest);
-    rest = gh_cdr(l);
+    rest = gh_cdr(rest);
     --index;
   }
   return cur;
@@ -213,7 +219,7 @@ object object_list_ref(list l, int index)
 { \
   int i; \
   list cur_list = SCM_EOL; \
-  for (i = num_items - 1; i >= 0; ++i) \
+  for (i = num_items - 1; i >= 0; --i) \
     cur_list = gh_cons(conv (items[i]), cur_list); \
   return(cur_list); \
 } \
@@ -229,14 +235,6 @@ MAKE_LIST(gh_bool2scm)
 
 list make_string_list(int num_items, char **items)
 MAKE_LIST(gh_str02scm)
-
-SCM vector32scm(vector3 v)
-{
-  return(gh_call3(gh_lookup("vector3"),
-		  gh_double2scm(v.x),
-		  gh_double2scm(v.y),
-		  gh_double2scm(v.z)));
-}
 
 list make_vector3_list(int num_items, vector3 *items)
 MAKE_LIST(vector32scm)
@@ -254,11 +252,11 @@ MAKE_LIST(NO_CONVERSION)
 
 /* object properties */
 
-SCM object_is_member(char *type_name, object o)
+boolean object_is_member(char *type_name, object o)
 {
-  return(gh_call2(gh_lookup("object-member?"),
-		  gh_symbol2scm(type_name),
-		  o));
+  return(SCM_BOOL_F != gh_call2(gh_lookup("object-member?"),
+				gh_symbol2scm(type_name),
+				o));
 }
 
 static SCM object_property_value(object o, char *property_name)

@@ -9,8 +9,15 @@ cat > $output_dir/ctl-io.h <<EOF
 /* THIS FILE WAS AUTOMATICALLY GENERATED.  DO NOT MODIFY! */
 /* generated from the file: $1 */
 
+#ifndef CTL_IO_H
+#define CTL_IO_H
+
 #include <guile/gh.h>
 #include <ctl.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif                          /* __cplusplus */
 
 EOF
 
@@ -28,6 +35,16 @@ guile -l $libctl_dir/src/ctl.scm -l $libctl_dir/utils/ctl-io.scm -l $1 \
 
 guile -l $libctl_dir/src/ctl.scm -l $libctl_dir/utils/ctl-io.scm -l $1 \
       -c "(output-source)" >> $output_dir/ctl-io.c
+
+cat >> $output_dir/ctl-io.h <<EOF
+
+#ifdef __cplusplus
+}                               /* extern "C" */
+#endif                          /* __cplusplus */
+
+#endif                          /* CTL_IO_H */
+
+EOF
 
 indent $output_dir/ctl-io.c
 indent $output_dir/ctl-io.h
