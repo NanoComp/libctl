@@ -27,11 +27,15 @@
 
 #ifdef CXX_CTL_IO
 using namespace ctlio;
+#  define CTLIO ctlio::
 #  define GEOM geometric_object::
 #  define BLK block::
 #  define CYL cylinder::
 #else
+#  define CTLIO 
 #  define GEOM 
+#  define BLK 
+#  define CYL  
 #endif
 
 /**************************************************************************/
@@ -295,7 +299,7 @@ material_type material_of_point(vector3 p)
 /* Given a geometric object o, display some information about it,
    indented by indentby spaces. */
 
-void display_geometric_object_info(int indentby, geometric_object o)
+void CTLIO display_geometric_object_info(int indentby, geometric_object o)
 {
      geom_fix_object(o);
      printf("%*s", indentby, "");
