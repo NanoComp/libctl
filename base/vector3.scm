@@ -75,13 +75,22 @@
 ; Define polymorphic operators (work on both vectors and numbers):
 
 (define (binary+ x y)
-  (if (and (vector3? x) (vector3? y)) (vector3+ x y) (+ x y)))
+  (cond
+   ((and (number? x) (zero? x)) y)
+   ((and (number? y) (zero? y)) x)
+   ((and (vector3? x) (vector3? y)) (vector3+ x y))
+   (else (+ x y))))
 (define (binary- x y)
   (if (and (vector3? x) (vector3? y)) (vector3- x y) (- x y)))
 (define (binary* x y)
   (if (or (vector3? x) (vector3? y)) (vector3* x y) (* x y)))
 (define (binary/ x y)
   (if (and (vector3? x) (number? y)) (vector3-scale (/ y) x) (/ x y)))
+(define (binary= x y)
+  (cond
+   ((and (vector3? x) (vector3? y)) (vector3= x y))
+   ((and (number? x) (number? y)) (= x y))
+   (else false)))
 
 (define (unary-abs x) (if (vector3? x) (vector3-norm x) (magnitude x)))
 
