@@ -181,7 +181,7 @@
 ; (min-arg result) : list of argument values at the minimum
 ; (min-val result) : list of function values at the minimum
 
-(define (minimize-multiple-expert f tol max-iters guess-args arg-scales)
+(define (minimize-multiple-expert f tol max-iters fmin guess-args arg-scales)
   (let ((best-val 1e20) (best-args '()))
     (subplex
      (lambda (args)
@@ -193,10 +193,12 @@
 	       (set! best-val val)
 	       (set! best-args args)))
 	 val))
-     guess-args tol max-iters arg-scales)))
+     guess-args tol max-iters
+     (if fmin fmin 0.0) (if fmin true false)
+     arg-scales)))
 
 (define (minimize-multiple f tol . guess-args)
-  (minimize-multiple-expert f tol 999999999 guess-args '(0.1)))
+  (minimize-multiple-expert f tol 999999999 false guess-args '(0.1)))
 
 ; Yet another alternate multi-dimensional minimization (Simplex algorithm).
 (define (simplex-minimize-multiple f tol . guess-args)

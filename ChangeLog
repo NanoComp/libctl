@@ -1,3 +1,63 @@
+2001-02-04  Steven G. Johnson  <stevenj@alum.mit.edu>
+
+	* base/ctl.h.in, base/main.c: added hook functions to help us use
+	MPI (where we need to call MPI_Init and MPI_Finalize)
+
+	* base/interaction.scm: cleanups, and made sure output is flushed
+
+	* base/extern-funcs.scm, base/help.scm, base/interaction.scm,
+	base/math-utils.scm, base/simplex.scm, base/utils.scm,
+	doc/user-ref.html, NEWS, utils/ctl-io.scm: display-many -> print,
+	added print-ok?
+
+2001-01-21  Steven G. Johnson  <stevenj@alum.mit.edu>
+
+	* base/ctl.h.in: whoops, fixed prototype
+
+	* base/ctl.c, base/ctl.h.in: put ctl_get_list etc. back in because
+	MPB configure script looks for it
+
+	* base/ctl.c, base/ctl.h.in: whoops, fixed 'function support
+
+	* base/class.scm, base/ctl.c, base/ctl.h.in, doc/developer.html,
+	NEWS: add support for 'function type
+
+	* utils/ctl-io.scm: put class input & destruction headers in
+	ctl-io.h so that they can be used elsewhere if desired
+
+	* examples/example.c, examples/example.scm: added function-passing
+	example
+
+	* base/class.scm: slight clarification in comment
+
+2001-01-20  Steven G. Johnson  <stevenj@alum.mit.edu>
+
+	* doc/guile-links.html: another minor change
+
+	* doc/guile-links.html: minor change
+
+	* doc/license.html: spelling correction
+
+	* doc/advanced-user.html: Fixed command-line parameter order
+	(whoops).
+
+2001-01-07  Steven G. Johnson  <stevenj@alum.mit.edu>
+
+	* doc/guile-links.html: updated links
+
+	* base/main.c, base/math-utils.scm, base/matrix3x3.scm,
+	base/simplex.scm, base/utils.scm, base/vector3.scm,
+	doc/license.html, examples/example.c, examples/example.scm,
+	examples/Makefile.in, examples/run.ctl, utils/ctlgeom.h,
+	utils/ctl-io.scm, utils/gen-ctl-io.1, utils/gen-ctl-io.in,
+	utils/geom.c, utils/geom.scm, base/class.scm, base/ctl.c,
+	base/ctl-f77-glue.c, base/ctl.h.in, base/ctl.scm,
+	base/extern-funcs.scm, base/help.scm, base/include.scm,
+	base/interaction.scm, base/io-vars.scm, COPYRIGHT: 2001 copyright
+	year update
+
+	* ChangeLog, configure.in, NEWS: bumped version for new release
+
 2000-11-21  Steven G. Johnson  <stevenj@alum.mit.edu>
 
 	* /home/stevenj/Repository/libctl/doc/user-ref.html: documented

@@ -127,7 +127,7 @@ void main_entry(int argc, char *argv[])
   gh_new_procedure ("write-output-vars", write_output_vars, 0, 0, 0);
 
   /* Export the subplex minimization routine: */
-  gh_new_procedure ("subplex", subplex_scm, 5, 0, 0);
+  gh_new_procedure ("subplex", subplex_scm, 7, 0, 0);
 
   /* load include.scm if it was given at compile time */
 #ifdef INCLUDE_SCM

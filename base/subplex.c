@@ -2169,6 +2169,7 @@ L120:
 */
 number subplex(subplex_func f, number *x, integer n, void *fdata,
 	       number tol, integer maxnfe,
+	       number fmin, boolean use_fmin,
 	       number *scale,
 	       integer *nfe, integer *errflag)
 {
@@ -2182,6 +2183,13 @@ number subplex(subplex_func f, number *x, integer n, void *fdata,
      if (!work || !iwork) {
 	  fprintf(stderr, "subplex: error, out of memory!\n");
 	  exit(EXIT_FAILURE);
+     }
+
+     if (use_fmin) { /* stop when fmin is reached */
+	  subopt_(&n);
+	  usubc_1.nfstop = 1;
+	  usubc_1.fstop = fmin;
+	  mode = 2;
      }
 
      subplx_(f,fdata, &n,
@@ -2205,15 +2213,19 @@ number f_scm_wrapper(integer n, number *x, void *f_scm_p)
 /* Scheme-callable wrapper for subplex() function, above. */
 SCM subplex_scm(SCM f_scm, SCM x_scm,
 		SCM tol_scm, SCM maxnfe_scm,
+		SCM fmin_scm, SCM use_fmin_scm,
 		SCM scale_scm)
 {
-     number *x,  tol, *scale, fx;
+     number *x,  tol, *scale, fx, fmin;
      integer i, n, maxnfe, nfe, errflag, scale_len;
+     boolean use_fmin;
      SCM retval;
 
      n = list_length(x_scm);
      tol = fabs(gh_scm2double(tol_scm));
      maxnfe = gh_scm2int(maxnfe_scm);
+     fmin = gh_scm2double(fmin_scm);
+     use_fmin = gh_scm2bool(use_fmin_scm);
 
      scale_len = list_length(scale_scm);
      if (scale_len != 1 && scale_len != n) {
@@ -2238,6 +2250,7 @@ SCM subplex_scm(SCM f_scm, SCM x_scm,
 
      fx = subplex(f_scm_wrapper, x, n, &f_scm,
 		  tol, maxnfe,
+		  fmin, use_fmin,
 		  scale,
 		  &nfe, &errflag);
 
