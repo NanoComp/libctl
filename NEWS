@@ -1,3 +1,16 @@
+libctl 2.1 (3/21/2002)
+
+  * Bug fix: complex-number input variables were read as garbage
+    if they had imaginary parts; does not affect complex-number outputs.
+
+  * Added generic SCM type for i/o variables and parameters, as a
+    catch-all for other Scheme objects.
+
+  * main.c now has ctl_export_hook (enabled by defining
+    CTL_HAVE_EXPORT_HOOK) with which to define additional Guile symbols.
+
+  * gen-ctl-io: converts "!" in symbols to "B" in C identifiers.
+
 libctl 2.0 (3/10/2002)
 
   * New set-param! function, analogous to define-param, that allows

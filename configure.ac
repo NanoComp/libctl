@@ -3,7 +3,7 @@ AC_INIT
 AC_CONFIG_SRCDIR([base/ctl.c])
 AC_CONFIG_HEADER(base/ctl.h)
 
-LIBCTL_VERSION=2.1beta
+LIBCTL_VERSION=2.1
 AC_DEFINE_UNQUOTED(LIBCTL_VERSION, "$LIBCTL_VERSION",
 	   	   [Define to version string for libctl.])
 AC_SUBST(LIBCTL_VERSION)
