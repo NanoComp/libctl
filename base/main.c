@@ -178,6 +178,7 @@ void main_entry(int argc, char *argv[])
       strcat(definestr,")");
       eq = strchr(definestr,'=');
       *eq = ' ';
+      printf("command-line param: %s\n", argv[i]);
       gh_eval_str(definestr);
       { /* add the name of the defined variable to params-set-list */
 	   char *remember_define;
