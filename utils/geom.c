@@ -95,7 +95,8 @@ material_type material_of_point(vector3 p)
 {
   int index, i, j, k;
 
-  for (index = 0; index < geometry.num_items; ++index) {
+  /* loop in reverse order so that later items are given precedence: */
+  for (index = geometry.num_items - 1; index >= 0; --index) {
     if (ensure_periodicity)
       switch (dimensions) {
       case 1:
