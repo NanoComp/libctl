@@ -36,7 +36,7 @@ extern boolean point_in_objectp(vector3 p, geometric_object o);
 extern boolean point_in_periodic_objectp(vector3 p, geometric_object o);
 extern boolean point_in_fixed_objectp(vector3 p, geometric_object o);
 extern boolean point_in_periodic_fixed_objectp(vector3 p, geometric_object o);
-extern material_type material_of_point(vector3 p, boolean *inobject);
+extern material_type material_of_point_inobject(vector3 p, boolean *inobject);
 extern material_type material_of_point(vector3 p);
 extern void display_geometric_object_info(int indentby, geometric_object o);
 extern matrix3x3 square_basis(matrix3x3 lattice_basis, vector3 size);
