@@ -111,7 +111,7 @@
 
 (define (geometric-objects-duplicates shift-vector min-multiple max-multiple
 				      go-list)
-  (fold-right append '()
+  (fold-left append '()
 	     (map (lambda (go)
 		    (geometric-object-duplicates
 		     shift-vector min-multiple max-multiple go))

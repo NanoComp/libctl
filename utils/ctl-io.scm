@@ -125,7 +125,7 @@
 				 (reverse output-var-list)))
 		    (map external-function-return-type-name
 			 external-function-list)
-		    (fold-right append '()
+		    (fold-left append '()
 				(map external-function-arg-type-names
 				     external-function-list)))))
     (for-each declare-type-name var-types)))

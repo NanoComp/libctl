@@ -39,7 +39,7 @@
 
 (define (vector3+ v1 v2) (vector-map + v1 v2))
 (define (vector3- v1 v2) (vector-map - v1 v2))
-(define (vector3-dot v1 v2) (vector-fold-right + 0 (vector-map * v1 v2)))
+(define (vector3-dot v1 v2) (vector-fold-left + 0 (vector-map * v1 v2)))
 (define (vector3-scale s v) (vector-map (lambda (x) (* s x)) v))
 (define (vector3* a b)
   (if (number? a)

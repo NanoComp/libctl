@@ -245,6 +245,17 @@ the specified fractional <code><i>tolerance</i></code>.
 desired root; the function must have opposite signs at these two
 points!
 
+<p><dt><code>(fold-left <i>op init list</i>)</code>
+<dd>Combine the elements of <code><i>list</i></code> using the binary
+"operator" function <code><i>(op x y)</i></code>, with initial value
+<code><i>init</i></code>, associating from the left of the list.  That
+is, if <code><i>list</i></code> consist of the elements <code>(<i>a b
+c d</i>)</code>, then <code>(fold-left <i>op init list</i>)</code>
+computes <code>(op (op (op (op init a) b) c) d)</code>.  For example,
+if <code><i>list</i></code> contains numbers, then <code>(fold-left +
+0 <i>list</i>)</code> returns the sum of the elements of
+<code><i>list</i></code>.
+
 </dl>
 
 <hr>

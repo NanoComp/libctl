@@ -56,10 +56,20 @@
 (define (fifth list) (list-ref list 4))
 (define (sixth list) (list-ref list 5))
 
+; fold-left and fold-right: combine elements of list using an operator
+; op, with initial element init, associating from the right or from
+; the left.  These two are equivalent if op is associative, but our
+; fold-right is not tail-recursive.
+
 (define (fold-right op init list)
   (if (null? list)
       init
       (op (car list) (fold-right op init (cdr list)))))
+
+(define (fold-left op init list)
+  (if (null? list)
+      init
+      (fold-left op (op init (car list)) (cdr list))))
 
 ; ****************************************************************
 ; Miscellaneous utility functions.
@@ -81,6 +91,9 @@
 
 (define (vector-fold-right op init v)
   (fold-right op init (vector->list v)))
+
+(define (vector-fold-left op init v)
+  (fold-left op init (vector->list v)))
 
 (define (vector-map func . v)
   (list->vector (apply map (cons func (map vector->list v)))))
