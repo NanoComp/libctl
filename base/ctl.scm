@@ -6,7 +6,7 @@
 
 (define (string-suffix? suff s)
   (if (> (string-length suff) (string-length s))
-      #f
+      false
       (string=? suff (substring s (- (string-length s)
 				     (string-length suff))
 				(string-length s)))))
@@ -24,10 +24,10 @@
 
 (define (for-all? l pred)
   (if (null? l)
-      #t
+      true
       (if (pred (car l))
 	  (for-all? (cdr l) pred)
-	  #f)))
+	  false)))
 
 (define (first list) (list-ref list 0))
 (define (second list) (list-ref list 1))
@@ -74,7 +74,7 @@
 (define (indent indentby)
   (display (make-string indentby #\space)))
 
-(define (displaymany . items)
+(define (display-many . items)
   (for-each (lambda (item) (display item)) items))
 
 ; ****************************************************************
@@ -141,8 +141,8 @@
 (define null-object (make-object '() '()))
 
 (define (make-default default-value)
-  (cons #t default-value))
-(define no-default (cons #f '()))
+  (cons true default-value))
+(define no-default (cons false '()))
 (define (has-default? default) (car default))
 (define (default-value default) (cdr default))
 
@@ -163,19 +163,55 @@
 
 (define (make-list-type-name el-type-name)
   (cons 'list el-type-name))
-(define (type-predicate type-name)
+(define (list-type-name? type-name)
+  (and (pair? type-name) (eq? (car type-name) 'list)))
+(define (list-el-type-name type-name) (cdr type-name))
+
+(define (make-type-descriptor kind name name-str predicate)
+  (list kind name name-str predicate))
+(define type-descriptor-kind first)
+(define type-descriptor-name second)
+(define type-descriptor-name-str third)
+(define type-descriptor-predicate fourth)
+(define (make-simple-type-descriptor name predicate)
+  (make-type-descriptor 'simple name (symbol->string name) predicate))
+(define (make-object-type-descriptor name)
+  (make-type-descriptor 'object name (symbol->string name)
+			(object-memberp name)))
+(define (make-list-type-descriptor name)
+  (make-type-descriptor 'uniform-list name "list" list?))
+(define (get-type-descriptor type-name)
   (cond
-   ((eq? type-name 'number) number?)
-   ((eq? type-name 'integer) integer?)
-   ((eq? type-name 'symbol) symbol?)
-   ((eq? type-name 'list) list?)
-   ((eq? type-name 'boolean) boolean?)
-   ((eq? type-name 'vector3) vector3?)
-   ((symbol? type-name) (object-memberp type-name))
-   ((and (pair? type-name) (eq? (car type-name) 'list))
-    (let ((listtype_p (type-predicate (cdr type-name))))
-      (lambda (val) (and (list? val) (for-all? val listtype_p)))))
+   ((eq? type-name 'number) (make-simple-type-descriptor 'number number?))
+   ((eq? type-name 'integer) (make-simple-type-descriptor 'integer integer?))
+   ((eq? type-name 'boolean) (make-simple-type-descriptor 'boolean boolean?))
+   ((eq? type-name 'string) (make-simple-type-descriptor 'string string?))
+   ((eq? type-name 'vector3) (make-simple-type-descriptor 'vector3 vector3?))
+   ((eq? type-name 'list) (make-simple-type-descriptor 'list list?))
+   ((symbol? type-name) (make-object-type-descriptor type-name))
+   ((list-type-name? type-name) (make-list-type-descriptor type-name))
    (else (error "unknown type" type-name))))
+
+(define (type-string type-name)
+  (let ((desc (get-type-descriptor type-name)))
+    (cond
+     ((or (eq? (type-descriptor-kind desc) 'simple)
+	  (eq? (type-descriptor-kind desc) 'object))
+      (type-descriptor-name-str desc))
+     ((eq? (type-descriptor-kind desc) 'uniform-list)
+      (string-append (type-string (list-el-type-name type-name)) " list"))
+     (else (error "unknown type" type-name)))))
+(define (type-predicate type-name)
+  (let ((desc (get-type-descriptor type-name)))
+    (cond
+     ((or (eq? (type-descriptor-kind desc) 'simple)
+	  (eq? (type-descriptor-kind desc) 'object))
+      (type-descriptor-predicate desc))
+     ((eq? (type-descriptor-kind desc) 'uniform-list)
+      (lambda (val)
+	(and ((type-descriptor-predicate desc) val)
+	     (for-all? val (type-predicate (list-el-type-name type-name))))))
+     (else (error "unknown type" type-name)))))
 (define (check-type type-name value)
   ((type-predicate type-name) value))
 
@@ -192,7 +228,7 @@
       (if (check-constraints (property-constraints property) (cdr newval))
 	  (if (check-type (property-type-name property) (cdr newval))
 	      newval
-	      (error "property" (property-name property) "must have type"
+	      (error "wrong type for property" (property-name property) 'type
 		     (property-type-name property)))
 	  (error "invalid value for property" (property-name property))))))
 
@@ -207,9 +243,9 @@
   (if (list? class)
       (or (eq? type-name (class-type-name class))
 	  (class-member? type-name (class-parent class)))
-      #f))
+      false))
 
-(define no-parent #f)
+(define no-parent false)
 
 (define (make class . property-values)
   (if (list? class)
@@ -220,23 +256,43 @@
 			  (class-properties class)))
       null-object))
 
-(define (display-class indentby class)
-  (indent indentby)
-  (displaymany "Class " (class-type-name class) ": ")
-  (newline)
-  (if (class-parent class)
-      (display-class (+ indentby 4) (class-parent class)))
-  (map (lambda (property)
-	 (indent (+ indentby 2))
-	 (displaymany (property-type-name property) " "
-		      (property-name property))
-	 (if (property-has-default? property)
-	     (displaymany " = " (property-default-value property)))
-	 (newline))
-       (class-properties class))
-  (display ""))
-			  
-(define (help class) (display-class 0 class))
+; ****************************************************************
+; Input/Output variables.
+
+(define input-var-list '())
+(define output-var-list '())
+
+(define (make-var value var-name var-type-name var-constraints)
+  (list var-name var-type-name var-constraints value))
+(define (var-name var) (first var))
+(define (var-type-name var) (second var))
+(define (var-constraints var) (third var))
+(define (var-value var) (fourth var))
+
+(define (input-var value var-name var-type-name var-constraints)
+  (let ((new-var (make-var value var-name var-type-name var-constraints)))
+    (set! input-var-list (cons new-var input-var-list))
+    new-var))
+(define (output-var value var-name var-type-name)
+  (let ((new-var (make-var value var-name var-type-name no-constraints)))
+    (set! output-var-list (cons new-var output-var-list))
+    new-var))
+(define (input-output-var value var-name var-type-name var-constraints)
+  (let ((new-var (make-var value var-name var-type-name var-constraints)))
+    (set! input-var-list (cons new-var input-var-list))
+    (set! output-var-list (cons new-var output-var-list))
+    new-var))
+
+(define (check-vars var-list)
+  (for-all? (lamba (v) 
+		   (if (not (check-type (var-type-name v) (var-value v)))
+		       (error "wrong type for variable" (var-name v) 'type
+			      (var-type-name v))
+		       (if (not (check-constraints 
+				 (var-constraints v) (var-value v)))
+			   (error "failed constraint for" (var-name v))
+			   true)))
+	    var-list))
 
 ; ****************************************************************
 ; Creating property-value constructors.
@@ -251,3 +307,35 @@
   (lambda x (make-property-value name x)))
 
 ; ****************************************************************
+
+(define (display-class indentby class)
+  (indent indentby)
+  (display-many "Class " (class-type-name class) ": ")
+  (newline)
+  (if (class-parent class)
+      (display-class (+ indentby 4) (class-parent class)))
+  (for-each (lambda (property)
+	 (indent (+ indentby 4))
+	 (display-many (type-string (property-type-name property)) " "
+		       (property-name property))
+	 (if (property-has-default? property)
+	     (display-many " = " (property-default-value property)))
+	 (newline))
+       (class-properties class)))
+			  
+(define (class-help class) (display-class 0 class))
+
+(define (variable-help var)
+  (display-many (type-string (var-type-name var)) " "
+		(var-name var) " = " (var-value var))
+  (newline))
+
+(define (help)
+  (for-each class-help class-list)
+  (newline)
+  (display "Input variables: ") (newline)
+  (for-each variable-help input-var-list)
+  (newline)
+  (display "Output variables: ") (newline)
+  (for-each variable-help output-var-list))
+

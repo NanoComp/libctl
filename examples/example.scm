@@ -33,3 +33,19 @@
 (define air vacuum)
 
 ; ****************************************************************
+
+(define dimensions 3)
+(input-var dimensions 'dimensions 'integer (list positive?))
+
+(define geometry '())
+(input-var
+ geometry 'geometry (make-list-type-name 'geometric-object) '())
+
+(define k-points '())
+(input-var k-points 'k-points (make-list-type-name 'vector3) '())
+
+(define dummy (vector3 3.7 2.3 1.9))
+(input-output-var dummy 'dummy 'vector3 '())
+
+(define gaps '())
+(output-var gaps 'gaps (make-list-type-name 'number))

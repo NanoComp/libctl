@@ -1,0 +1,34 @@
+#!/bin/csh
+
+set libctl_dir = ..
+
+rm -f ctl-io.c ctl-io.h
+
+cat > ctl-io.h <<EOF
+/* THIS FILE WAS AUTOMATICALLY GENERATED.  DO NOT MODIFY! */
+/* generated from the file: $1 */
+
+#include <guile/gh.h>
+#include <ctl.h>
+
+EOF
+
+cat > ctl-io.c <<EOF
+/* THIS FILE WAS AUTOMATICALLY GENERATED.  DO NOT MODIFY! */
+/* generated from the file: $1 */
+
+#include <stdlib.h>
+#include "ctl-io.h"
+
+EOF
+
+guile -l $libctl_dir/src/ctl.scm -l $libctl_dir/utils/ctl-io.scm -l $1 \
+      -c "(output-header)" >> ctl-io.h
+
+guile -l $libctl_dir/src/ctl.scm -l $libctl_dir/utils/ctl-io.scm -l $1 \
+      -c "(output-source)" >> ctl-io.c
+
+indent ctl-io.c
+indent ctl-io.h
+rm -f ctl-io.c~ ctl-io.h~ ctl-io.c.BAK ctl-io.h.BAK
+

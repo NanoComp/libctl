@@ -70,6 +70,18 @@ extern object object_list_ref(list l, int index);
 
 /**************************************************************************/
 
+  /* list creation */
+
+extern list make_integer_list(int num_items, integer *items);
+extern list make_number_list(int num_items, number *items);
+extern list make_boolean_list(int num_items, boolean *items);
+extern list make_string_list(int num_items, char **items);
+extern list make_vector3_list(int num_items, vector3 *items);
+extern list make_list_list(int num_items, list *items);
+extern list make_object_list(int num_items, object *items);
+
+/**************************************************************************/
+
   /* object properties */
 
 extern integer integer_object_property(object o, char *property_name);

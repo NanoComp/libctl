@@ -205,6 +205,50 @@ object object_list_ref(list l, int index)
 
 /**************************************************************************/
 
+/* list creation */
+
+#define MAKE_LIST(conv) \
+{ \
+  int i; \
+  list cur_list = SCM_EOL; \
+  for (i = num_items - 1; i >= 0; ++i) \
+    cur_list = gh_cons(conv (items[i]), cur_list); \
+  return(cur_list); \
+} \
+
+list make_integer_list(int num_items, integer *items)
+MAKE_LIST(gh_int2scm)
+
+list make_number_list(int num_items, number *items)
+MAKE_LIST(gh_double2scm)
+
+list make_boolean_list(int num_items, boolean *items)
+MAKE_LIST(gh_bool2scm)
+
+list make_string_list(int num_items, char **items)
+MAKE_LIST(gh_str02scm)
+
+SCM vector32scm(vector3 v)
+{
+  return(gh_apply(gh_lookup("vector3"),
+		  gh_cons(gh_double2scm(v.x),
+			  gh_cons(gh_double2scm(v.y),
+				  gh_cons(gh_double2scm(v.z),
+					  SCM_EOL)))));
+}
+
+list make_vector3_list(int num_items, vector3 *items)
+MAKE_LIST(vector32scm)
+
+list make_list_list(int num_items, list *items)
+MAKE_LIST()
+
+list make_object_list(int num_items, object *items)
+MAKE_LIST()
+
+
+/**************************************************************************/
+
 /* object properties */
 
 static SCM object_property_value(object o, char *property_name)
