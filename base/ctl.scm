@@ -74,10 +74,9 @@
 (define (indent indentby)
   (display (make-string indentby #\space)))
 
-(define (displayline indentby . items)
+(define (displaymany indentby . items)
   (indent indentby)
-  (for-each (lambda (item) (display item)) items)
-  (newline))
+  (for-each (lambda (item) (display item)) items))
 
 ; ****************************************************************
 ; 3vector and associated operators.  (a type to represent 3-vectors)
@@ -223,18 +222,20 @@
       null-object))
 
 (define (display-class indentby class)
-  (displayline indentby "Class " (class-type-name class) ": ")
+  (displaymany indentby "Class " (class-type-name class) ": ")
+  (newline)
   (if (class-parent class)
       (display-class (+ indentby 4) (class-parent class)))
   (map (lambda (property)
-	 (displayline (+ indentby 2)
+	 (displaymany (+ indentby 2)
 		      (property-type-name property) " "
 		      (property-name property))
 	 (if (property-has-default? property)
-	     (displayline (+ indentby 6)
-			  " = " (property-default-value property))))
+	     (displaymany 0
+			  " = " (property-default-value property)))
+	 (newline))
        (class-properties class))
-  #t)
+  (display ""))
 			  
 (define (help class) (display-class 0 class))
 
