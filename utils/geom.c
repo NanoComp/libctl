@@ -120,7 +120,7 @@ boolean point_in_fixed_objectp(vector3 p, geometric_object o)
 	     radius += (proj/height + 0.5) *
 		  (o.subclass.cylinder_data->subclass.cone_data->radius2
 		   - radius);
-	return(radius > 0.0 && vector3_dot(r,rm) - proj*proj <= radius*radius);
+	return(radius != 0.0 && vector3_dot(r,rm) - proj*proj <= radius*radius);
       }
       else
 	return 0;
