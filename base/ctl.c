@@ -447,6 +447,11 @@ object object_list_ref(list l, int index)
   return(list_ref(l,index));
 }
 
+object function_list_ref(list l, int index)
+{
+  return(list_ref(l,index));
+}
+
 /**************************************************************************/
 
 /* list creation */
@@ -484,6 +489,9 @@ list make_list_list(int num_items, list *items)
 MAKE_LIST(NO_CONVERSION)
 
 list make_object_list(int num_items, object *items)
+MAKE_LIST(NO_CONVERSION)
+
+list make_function_list(int num_items, object *items)
 MAKE_LIST(NO_CONVERSION)
 
 

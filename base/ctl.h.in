@@ -182,6 +182,7 @@ extern vector3 vector3_list_ref(list l, int index);
 extern matrix3x3 matrix3x3_list_ref(list l, int index);
 extern list list_list_ref(list l, int index);
 extern object object_list_ref(list l, int index);
+extern function function_list_ref(list l, int index);
 
 /**************************************************************************/
 
@@ -195,6 +196,7 @@ extern list make_vector3_list(int num_items, vector3 *items);
 extern list make_matrix3x3_list(int num_items, matrix3x3 *items);
 extern list make_list_list(int num_items, list *items);
 extern list make_object_list(int num_items, object *items);
+extern list make_function_list(int num_items, function *items);
 
 /**************************************************************************/
 
