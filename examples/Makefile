@@ -36,7 +36,7 @@ CTL_IO_GEN = $(LIBCTL_DIR)/utils/gen-ctl-io
 INCLUDE_FLAGS = -I$(LIBCTL_DIR)/src
 
 DEFINE_FLAGS = -DCTL_SCM='"'$(PWD)/$(LIBCTL_SCM_SRC)'"' \
-               -DSPEC_SCM='"'$(PWD)/$(SPECIFICATION_FILE)'"' \
+               -DSPEC_SCM='"'$(PWD)/$(SPECIFICATION_FILE)'"'
 
 OBJECTS = $(MY_OBJECTS) $(LIBCTL_OBJ) ctl-io.o
 HEADERS = $(MY_HEADERS) $(LIBCTL_HEADERS) ctl-io.h
