@@ -12,6 +12,9 @@ AC_PROG_MAKE_SET
 AC_PROG_INSTALL
 AC_PROG_RANLIB
 
+AC_CHECK_PROGS(INDENT, indent gindent, echo)
+AC_SUBST(INDENT)
+
 # check how to transform the name of the installed program:
 AC_ARG_PROGRAM
 

@@ -76,8 +76,8 @@ cat >> $output_dir/ctl-io.h <<EOF
 
 EOF
 
-indent $output_dir/ctl-io.c
-indent $output_dir/ctl-io.h
+@INDENT@ $output_dir/ctl-io.c > /dev/null 2>&1
+@INDENT@ $output_dir/ctl-io.h > /dev/null 2>&1
 rm -f $output_dir/ctl-io.c~ $output_dir/ctl-io.h~
 rm -f $output_dir/ctl-io.c.BAK $output_dir/ctl-io.h.BAK
 
