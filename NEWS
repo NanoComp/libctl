@@ -1,3 +1,8 @@
+  * geom: handle case where ensure-periodicity is false.
+
+  * geom: bug fix in geometric-objects-lattice-duplicates for
+    non-orthogonal lattices; thanks to Karl Koch for the bug report.
+
 libctl 1.0 (11/19/1999)
 
   * Initial public release.
