@@ -22,6 +22,24 @@
 
 output_dir="`dirname $1`"
 
+cxx=false
+swig=false
+
+while test $# -ge 1; do
+    case $1 in
+        --cxx) cxx=true ;;
+        --swig) swig=true ;;
+        *) break;;
+    esac
+    shift
+done
+
+if test $cxx = true; then
+    code=ctl-io.cpp
+else
+    code=ctl-io.c
+fi
+
 if test "$#" = "2"; then
     libctl_dir="$2"
 else
@@ -32,14 +50,6 @@ if test ! -r $libctl_dir/utils/ctl-io.scm; then
     exit 1
 fi
 
-if test "$#" = "3" && test "x$3" = "x--cxx"; then
-    cxx=true
-    code=ctl-io.cpp
-else
-    cxx=false
-    code=ctl-io.c
-fi
-
 rm -f $output_dir/${code} $output_dir/ctl-io.h
 
 cat > $output_dir/ctl-io.h <<EOF
@@ -48,10 +58,6 @@ cat > $output_dir/ctl-io.h <<EOF
 
 #ifndef CTL_IO_H
 #define CTL_IO_H
-
-#ifdef SWIG
-%{
-#endif
 
 #include <guile/gh.h>
 #include <ctl.h>
@@ -92,12 +98,12 @@ ok=yes
 (guile -l $libctl_dir/base/include.scm \
       -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (set"'!'" cxx $cxx) (include "'"'"$1"'"'") (output-header)" >> $output_dir/ctl-io.h) || ok=no
 
-if test ok = no; then rm -f ctl-io.h $code; exit 1; fi
+if test $ok = no; then rm -f ctl-io.h $code; exit 1; fi
 
 (guile -l $libctl_dir/base/include.scm \
       -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (set"'!'" cxx $cxx) (include "'"'"$1"'"'") (output-source)" >> $output_dir/${code}) || ok=no
 
-if test ok = no; then rm -f ctl-io.h $code; exit 1; fi
+if test $ok = no; then rm -f ctl-io.h $code; exit 1; fi
 
 echo >> $output_dir/ctl-io.h
 
@@ -115,15 +121,26 @@ fi
 
 cat >> $output_dir/ctl-io.h <<EOF
 
-#ifdef SWIG
-%}
-#endif
-
 #endif                          /* CTL_IO_H */
 
 EOF
+
+if test $swig = true; then
+    cat > $output_dir/ctl-io.i <<EOF
+/* THIS FILE WAS AUTOMATICALLY GENERATED.  DO NOT MODIFY! */
+/* generated from the file: $1 */
+
+EOF
+
+    (guile -l $libctl_dir/base/include.scm \
+      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (set"'!'" cxx $cxx) (include "'"'"$1"'"'") (output-swig-header)" >> $output_dir/ctl-io.i) || ok=no
+
+    if test $ok = no; then rm -f ctl-io.[ih] $code; exit 1; fi
+
+fi
+
 @INDENT@ $output_dir/${code} > /dev/null 2>&1
-# @INDENT@ $output_dir/ctl-io.h > /dev/null 2>&1
+@INDENT@ $output_dir/ctl-io.h > /dev/null 2>&1
 rm -f $output_dir/${code}~ $output_dir/ctl-io.h~
 rm -f $output_dir/${code}.BAK $output_dir/ctl-io.h.BAK
 

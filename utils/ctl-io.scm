@@ -34,6 +34,8 @@
 ; ***************************************************************************
 
 (define cxx false) ; set to true for C++ output (c.f. gen-ctl-io --cxx)
+(define namespace "ctlio")
+(define (ns0) (ns namespace))
 (define (ns namespace) (if cxx (string-append namespace "::") ""))
 
 (define (c-identifier s)
@@ -47,7 +49,6 @@
 (define c-type-string (compose c-identifier type-string))
 
 (define declared-type-names '())
-(define declared-types '())
 (define (declare-type-name type-name)
   (if (and (list-type-name? type-name)
 	   (not (member (c-type-string type-name) declared-type-names)))
@@ -59,12 +60,11 @@
 	(print (c-type-string (list-el-type-name type-name))
 		      " *items;\n")
 	(print "} " (c-type-string type-name) ";\n\n")
-	(set! declared-types (cons type-name declared-types))
 	(set! declared-type-names (cons (c-type-string type-name)
 					declared-type-names)))))
 
-(define (declared-list-types)
-  (list-transform-positive declared-types list-type-name?))
+(define (only-list-types type-names)
+  (list-transform-positive type-names list-type-name?))
 
 (define (c-var-decl' var-name var-type-name ns)
   (print (c-type-string var-type-name) " " ns
@@ -125,7 +125,7 @@
 ; ***************************************************************************
 
 (define (declare-var var)
-  (c-var-decl' (var-name var) (var-type-name var) (ns "ctlio")))
+  (c-var-decl' (var-name var) (var-type-name var) (ns0)))
 (define (declare-extern-var var)
   (print "extern ")
   (c-var-decl (var-name var) (var-type-name var)))
@@ -137,18 +137,19 @@
 	(begin (print "/* " (var-name var) 
 			     " is both input and output */\n")))))
 
-(define (declare-var-types)
-  (let ((var-types (append
-		    exported-type-list
-		    (map var-type-name 
-			 (append (reverse input-var-list) 
-				 (reverse output-var-list)))
-		    (map external-function-return-type-name
-			 external-function-list)
-		    (fold-left append '()
-				(map external-function-arg-type-names
-				     external-function-list)))))
-    (for-each declare-type-name var-types)))
+(define (all-type-names)
+  (append
+   exported-type-list
+   (map var-type-name 
+	(append (reverse input-var-list) 
+		(reverse output-var-list)))
+   (map external-function-return-type-name
+	external-function-list)
+   (fold-left append '()
+	      (map external-function-arg-type-names
+		   external-function-list))))
+
+(define (declare-var-types) (for-each declare-type-name (all-type-names)))
 
 (define (declare-vars declarer)
   (print "/******* Input variables *******/\n")
@@ -233,7 +234,7 @@
 		(c-type-string (class-type-name class)) " *o)"))
 
 (define (class-input-function class)
-  (class-input-function-decl class (ns "ctlio"))
+  (class-input-function-decl class (ns0))
   (print "\n{\n")
   (for-each
    (lambda (property)
@@ -279,7 +280,7 @@
 
 (define (input-vars-function)
   (print "/******* read input variables *******/\n\n")
-  (print "SCM " (ns "ctlio") "read_input_vars(void)\n")
+  (print "SCM " (ns0) "read_input_vars(void)\n")
   (print "{\n")
   (print "if (num_read_input_vars++) destroy_input_vars();\n")
   (for-each
@@ -341,7 +342,7 @@
 		(c-type-string (class-type-name class)) " *o)"))
 
 (define (class-copy-function class)
-  (class-copy-function-decl class (ns "ctlio"))
+  (class-copy-function-decl class (ns0))
   (print "\n{\n")
   (for-each
    (lambda (property)
@@ -434,7 +435,7 @@
 		"const " (c-type-string (class-type-name class)) " *o)"))
 
 (define (class-equal-function class)
-  (class-equal-function-decl class (ns "ctlio"))
+  (class-equal-function-decl class (ns0))
   (print "\n{\n")
   (for-each
    (lambda (property)
@@ -516,7 +517,7 @@
 
 (define (output-vars-function)
   (print "/******* write output variables *******/\n\n")
-  (print "SCM " (ns "ctlio") "write_output_vars(void)\n")
+  (print "SCM " (ns0) "write_output_vars(void)\n")
   (print "{\n")
   (print "num_write_output_vars++;\n")
   (for-each
@@ -576,7 +577,7 @@
 		 (property-type-name property)))
 
 (define (class-destroy-function class)
-  (class-destroy-function-decl class (ns "ctlio"))
+  (class-destroy-function-decl class (ns0))
   (print "\n{\n")
   (for-each
    (lambda (property) (destroy-property "o." property))
@@ -612,7 +613,7 @@
 
 (define (destroy-input-vars-function)
   (print "/******* destroy input variables *******/\n\n")
-  (print "SCM " (ns "ctlio") "destroy_input_vars(void)\n")
+  (print "SCM " (ns0) "destroy_input_vars(void)\n")
   (print "{\n")
   (for-each
    (lambda (var)
@@ -625,7 +626,7 @@
 
 (define (destroy-output-vars-function)
   (print "/******* destroy output variables *******/\n\n")
-  (print "SCM " (ns "ctlio") "destroy_output_vars(void)\n")
+  (print "SCM " (ns0) "destroy_output_vars(void)\n")
   (print "{\n")
   (for-each
    (lambda (var)
@@ -704,7 +705,7 @@
    ", 0, 0);\n"))
 
 (define (output-export-external-functions)
-  (print "void " (ns "ctlio") "export_external_functions(void)\n")
+  (print "void " (ns0) "export_external_functions(void)\n")
   (print "{\n")
   (for-each output-external-function-export external-function-list)
   (print "}\n\n"))
@@ -719,7 +720,7 @@
 		 "_to_scm(" c-name-str ");"))
 
 (define (output-external-function external-function)
-  (declare-external-function external-function (ns "ctlio")) (print "\n")
+  (declare-external-function external-function (ns0)) (print "\n")
   (print "{\n")
 
   (if (not (eq? (external-function-return-type-name external-function)
@@ -794,6 +795,7 @@
 
 (define (swig-type-header type-name)
   (print "%typemap(guile,in) " (c-type-string type-name) " {\n")
+  (if cxx (print "using namespace " namespace ";\n"))
   (input-value "$input" "$1" type-name get-c-local)
   (print "}\n")
   (if (and (not (eq? 'object (type-descriptor-kind 
@@ -804,14 +806,18 @@
 			      (list-el-type-name type-name))))))
       (begin
 	(print "%typemap(guile,out) " (c-type-string type-name) " {\n")
+	(if cxx (print "using namespace " namespace ";\n"))
 	(output-value "$result" "$1" type-name set-c-local)
 	(print "}\n")))
   (print "\n")
 )
 
 (define (output-swig-header)
+  (print "%{\n#include \"ctl-io.h\"\n}%\n\n")
+  (print "/******* SWIG type-conversion mappings *******/\n\n")
   (for-each swig-type-header
-	    (append (declared-list-types) (map class-type-name class-list))))
+	    (append (only-list-types (all-type-names))
+		    (map class-type-name class-list))))
 
 ; ***************************************************************************
 
@@ -829,17 +835,13 @@
   (output-class-copy-functions-header)
   (output-class-equal-functions-header)
   (output-class-destruction-functions-header)
-  (print "/******* SWIG type-conversion mappings *******/\n\n")
-  (print "\n#ifdef SWIG\n%}\n\n")
-  (output-swig-header)
-  (print "%{\n#endif\n")
 )
 
 (define (output-source)
   (declare-vars-source)
   (print
-   "int " (ns "ctlio") "num_read_input_vars = 0; /* # calls to read_input_vars */\n"
-   "int " (ns "ctlio") "num_write_output_vars = 0; /* # calls to read_input_vars */\n\n")
+   "int " (ns0) "num_read_input_vars = 0; /* # calls to read_input_vars */\n"
+   "int " (ns0) "num_write_output_vars = 0; /* # calls to read_input_vars */\n\n")
   (output-class-input-functions-source)
   (output-class-copy-functions-source)
   (output-class-equal-functions-source)
