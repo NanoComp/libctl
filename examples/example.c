@@ -132,8 +132,8 @@ void run_program(void)
   
   printf("dummy = (%g+%gi, %g+%gi, %g+%gi)\n", dummy.x.re, dummy.x.im,
 	 dummy.y.re, dummy.y.im, dummy.z.re, dummy.z.im);
-  dummy = make_cvector3(vector3_scale(2, cvector3_real_part(dummy)),
-			vector3_scale(3, cvector3_imag_part(dummy)));
+  dummy = make_cvector3(vector3_scale(2, cvector3_re(dummy)),
+			vector3_scale(3, cvector3_im(dummy)));
   mean_dielectric = 1.23456789;
   gaps.num_items = 2;
   gaps.items = (number *) malloc(gaps.num_items * sizeof(number));
