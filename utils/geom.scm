@@ -27,14 +27,16 @@
   (define-property material 'material-type no-default)
   (define-property center 'vector3 no-default))
 
+(define (non-negative? x) (not (negative? x)))
+
 (define-class cylinder geometric-object
   (define-post-processed-property axis 'vector3 unit-vector3
     (make-default (vector3 0 0 1)))
-  (define-property radius 'number no-default positive?)
-  (define-property height 'number no-default positive?))
+  (define-property radius 'number no-default non-negative?)
+  (define-property height 'number no-default non-negative?))
 	       
 (define-class sphere geometric-object
-  (define-property radius 'number no-default positive?))
+  (define-property radius 'number no-default non-negative?))
 	       
 (define-class block geometric-object
   (define-post-processed-property e1 'vector3 unit-vector3 
