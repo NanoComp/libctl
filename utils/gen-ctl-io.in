@@ -32,7 +32,15 @@ if test ! -r $libctl_dir/utils/ctl-io.scm; then
     exit 1
 fi
 
-rm -f $output_dir/ctl-io.c $output_dir/ctl-io.h
+if test "$#" = "3" && test "x$3" = "x--cxx"; then
+    cxx=yes
+    code=ctl-io.c
+else
+    cxx=no
+    code=ctl-io.cpp
+fi
+
+rm -f $output_dir/${code} $output_dir/ctl-io.h
 
 cat > $output_dir/ctl-io.h <<EOF
 /* THIS FILE WAS AUTOMATICALLY GENERATED.  DO NOT MODIFY! */
@@ -44,13 +52,23 @@ cat > $output_dir/ctl-io.h <<EOF
 #include <guile/gh.h>
 #include <ctl.h>
 
+EOF
+
+if test $cxx = yes; then
+    cat >> $output_dir/ctl-io.h <<EOF
+namespace ctlio {
+EOF
+else
+    cat >> $output_dir/ctl-io.h <<EOF
 #ifdef __cplusplus
 extern "C" {
 #endif                          /* __cplusplus */
-
 EOF
+fi
 
-cat > $output_dir/ctl-io.c <<EOF
+echo >> $output_dir/ctl-io.h
+
+cat > $output_dir/${code} <<EOF
 /* THIS FILE WAS AUTOMATICALLY GENERATED.  DO NOT MODIFY! */
 /* generated from the file: $1 */
 
@@ -68,22 +86,32 @@ ok=yes
 if test ok = no; then rm -f ctl-io.[ch]; exit 1; fi
 
 (guile -l $libctl_dir/base/include.scm \
-      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (include "'"'"$1"'"'") (output-source)" >> $output_dir/ctl-io.c) || ok=no
+      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (include "'"'"$1"'"'") (output-source)" >> $output_dir/${code}) || ok=no
 
 if test ok = no; then rm -f ctl-io.[ch]; exit 1; fi
 
-cat >> $output_dir/ctl-io.h <<EOF
+echo >> $output_dir/ctl-io.h
 
+if test $cxx = yes; then
+    cat >> $output_dir/ctl-io.h <<EOF
+} /* namespace */
+EOF
+else
+    cat >> $output_dir/ctl-io.h <<EOF
 #ifdef __cplusplus
 }                               /* extern "C" */
 #endif                          /* __cplusplus */
+EOF
+fi
+
+cat >> $output_dir/ctl-io.h <<EOF
 
 #endif                          /* CTL_IO_H */
 
 EOF
 
-@INDENT@ $output_dir/ctl-io.c > /dev/null 2>&1
+@INDENT@ $output_dir/${code} > /dev/null 2>&1
 @INDENT@ $output_dir/ctl-io.h > /dev/null 2>&1
-rm -f $output_dir/ctl-io.c~ $output_dir/ctl-io.h~
-rm -f $output_dir/ctl-io.c.BAK $output_dir/ctl-io.h.BAK
+rm -f $output_dir/${code}~ $output_dir/ctl-io.h~
+rm -f $output_dir/${code}.BAK $output_dir/ctl-io.h.BAK
 
