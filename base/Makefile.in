@@ -34,7 +34,7 @@ install:
 	$(INSTALL) -m 0644 ctl.h $(prefix)/include
 	$(INSTALL) -d $(prefix)/share/libctl/base
 	list='$(SCMFILES)'; for scmfile in $$list; do \
-		$(INSTALL) -m 0644 $$scmfile $(prefix)/share/libctl/base \
+		$(INSTALL) -m 0644 $$scmfile $(prefix)/share/libctl/base; \
 	done
 
 .c.o:
