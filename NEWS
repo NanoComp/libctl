@@ -1,4 +1,4 @@
-libctl 2.0
+libctl 2.0 (3/10/2002)
 
   * New set-param! function, analogous to define-param, that allows
     you to change the value of a parameter in a way that can still be
