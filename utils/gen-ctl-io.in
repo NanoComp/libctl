@@ -56,6 +56,7 @@ EOF
 
 if test $cxx = yes; then
     cat >> $output_dir/ctl-io.h <<EOF
+#define CXX_CTL_IO 1
 namespace ctlio {
 EOF
 else

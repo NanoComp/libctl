@@ -25,6 +25,10 @@
 
 #include <ctlgeom.h>
 
+#ifdef CXX_CTL_IO
+using namespace ctlio;
+#endif
+
 /**************************************************************************/
 
 /* If v is a vector in the lattice basis, normalize v so that

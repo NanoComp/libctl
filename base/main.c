@@ -32,7 +32,11 @@
 #include <string.h>
 #include <guile/gh.h>
 
-#include <ctl-io.h>
+#include "ctl-io.h"
+
+#ifdef CXX_CTL_IO
+using namespace ctlio;
+#endif
 
 /* define a global "verbose" variable set by the --verbose command-line opt. */
 int verbose = 0;
