@@ -5,7 +5,7 @@ AC_CONFIG_HEADER([base/ctl.h base/f77_func.h])
 
 ###########################################################################
 
-LIBCTL_VERSION=2.1.1
+LIBCTL_VERSION=2.2
 AC_DEFINE_UNQUOTED(LIBCTL_VERSION, "$LIBCTL_VERSION",
 	   	   [Define to version string for libctl.])
 AC_SUBST(LIBCTL_VERSION)
