@@ -32,5 +32,6 @@
 (include "extern-funcs.scm")
 (include "help.scm")
 (include "math-utils.scm")
+(include "interaction.scm")
 
 ; ****************************************************************

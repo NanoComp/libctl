@@ -98,3 +98,45 @@
   (aux 0))
 
 ; ****************************************************************
+
+; Some string utilities:
+
+(define (string-find-next-char-in-list s l)
+  (define (aux index s)
+    (if (string-null? s)
+	#f
+	(if (member (string-ref s 0) l)
+	    index
+	    (aux (+ index 1) (substring s 1 (string-length s))))))
+  (aux 0 s))
+
+(define (string-find-next-char-not-in-list s l)
+  (define (aux index s)
+    (if (string-null? s)
+	#f
+	  (if (not (member (string-ref s 0) l))
+	      index
+	      (aux (+ index 1) (substring s 1 (string-length s))))))
+  (aux 0 s))
+
+(define (string->positive-integer s)
+  (let ((non-blank (string-find-next-char-not-in-list
+		    s '(#\space #\ht #\vt #\nl #\cr))))
+    (let ((s2 (if (eq? non-blank #f)
+		  s (substring s non-blank (string-length s)))))
+      (let ((int-start (string-find-next-char-in-list
+			s2 (string->list "0123456789"))))
+	(if (eq? int-start 0)
+	    (let ((int-end (string-find-next-char-not-in-list
+			    (substring s2 1 (string-length s2))
+			    (string->list "0123456789"))))
+	      (if (eq? int-end #f)
+		  (eval-string s2)
+		  (if (string-find-next-char-not-in-list
+		       (substring s2 (+ 1 int-end) (string-length s2))
+		       '(#\space #\ht #\vt #\nl #\cr))
+		      #f
+		      (eval-string s2))))
+	    #f)))))
+
+; ****************************************************************
