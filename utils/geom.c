@@ -27,6 +27,11 @@
 
 #ifdef CXX_CTL_IO
 using namespace ctlio;
+#  define GEOM geometric_object::
+#  define BLK block::
+#  define CYL cylinder::
+#else
+#  define GEOM 
 #endif
 
 /**************************************************************************/
@@ -54,10 +59,10 @@ static void lattice_normalize(vector3 *v)
 void geom_fix_object(geometric_object o)
 {
      switch(o.which_subclass) {
-	 case CYLINDER:
+	 case GEOM CYLINDER:
 	      lattice_normalize(&o.subclass.cylinder_data->axis);
 	      break;
-	 case BLOCK:
+	 case GEOM BLOCK:
 	 {
 	      matrix3x3 m;
 	      lattice_normalize(&o.subclass.block_data->e1);
@@ -69,7 +74,7 @@ void geom_fix_object(geometric_object o)
 	      o.subclass.block_data->projection_matrix = matrix3x3_inverse(m);
 	      break;
 	 }
-	 case GEOMETRIC_OBJECT_SELF: case SPHERE:
+	 case GEOM GEOMETRIC_OBJECT_SELF: case GEOM SPHERE:
 	      break; /* these objects are fine */
      }
 }
@@ -111,23 +116,23 @@ boolean point_in_fixed_objectp(vector3 p, geometric_object o)
   vector3 r = vector3_minus(p,o.center);
 
   switch (o.which_subclass) {
-  case GEOMETRIC_OBJECT_SELF:
+  case GEOM GEOMETRIC_OBJECT_SELF:
     return 0;
-  case SPHERE:
+  case GEOM SPHERE:
     {
       number radius = o.subclass.sphere_data->radius;
       return(radius > 0.0 &&
 	     vector3_dot(r,matrix3x3_vector3_mult(geometry_lattice.metric, r))
 	     <= radius*radius);
     }
-  case CYLINDER:
+  case GEOM CYLINDER:
     {
       vector3 rm = matrix3x3_vector3_mult(geometry_lattice.metric, r);
       number proj = vector3_dot(o.subclass.cylinder_data->axis, rm);
       number height = o.subclass.cylinder_data->height;
       if (fabs(proj) <= 0.5 * height) {
 	number radius = o.subclass.cylinder_data->radius;
-	if (o.subclass.cylinder_data->which_subclass == CONE)
+	if (o.subclass.cylinder_data->which_subclass == CYL CONE)
 	     radius += (proj/height + 0.5) *
 		  (o.subclass.cylinder_data->subclass.cone_data->radius2
 		   - radius);
@@ -136,19 +141,19 @@ boolean point_in_fixed_objectp(vector3 p, geometric_object o)
       else
 	return 0;
     }
-  case BLOCK:
+  case GEOM BLOCK:
     {
       vector3 proj =
 	matrix3x3_vector3_mult(o.subclass.block_data->projection_matrix, r);
       switch (o.subclass.block_data->which_subclass) {
-      case BLOCK_SELF:
+      case BLK BLOCK_SELF:
 	{
 	  vector3 size = o.subclass.block_data->size;
 	  return(fabs(proj.x) <= 0.5 * size.x &&
 		 fabs(proj.y) <= 0.5 * size.y &&
 		 fabs(proj.z) <= 0.5 * size.z);
 	}
-      case ELLIPSOID:
+      case BLK ELLIPSOID:
 	{
 	  vector3 isa =
 	    o.subclass.block_data->subclass.ellipsoid_data->inverse_semi_axes;
@@ -295,25 +300,25 @@ void display_geometric_object_info(int indentby, geometric_object o)
      geom_fix_object(o);
      printf("%*s", indentby, "");
      switch (o.which_subclass) {
-	 case CYLINDER:
+	 case GEOM CYLINDER:
 	      switch (o.subclass.cylinder_data->which_subclass) {
-		  case CONE:
+		  case CYL CONE:
 		       printf("cone");
 		       break;
-		  case CYLINDER_SELF:
+		  case CYL CYLINDER_SELF:
 		       printf("cylinder");
 		       break;
 	      }
 	      break;
-	 case SPHERE:
+	 case GEOM SPHERE:
 	      printf("sphere");
 	      break;
-	 case BLOCK:
+	 case GEOM BLOCK:
 	      switch (o.subclass.block_data->which_subclass) {
-		  case ELLIPSOID:
+		  case BLK ELLIPSOID:
 		       printf("ellipsoid");
 		       break;
-		  case BLOCK_SELF:
+		  case BLK BLOCK_SELF:
 		       printf("block");
 		       break;
 	      }
@@ -325,22 +330,22 @@ void display_geometric_object_info(int indentby, geometric_object o)
      printf(", center = (%g,%g,%g)\n",
 	    o.center.x, o.center.y, o.center.z);
      switch (o.which_subclass) {
-	 case CYLINDER:
+	 case GEOM CYLINDER:
 	      printf("%*s     radius %g, height %g, axis (%g, %g, %g)\n",
 		     indentby, "", o.subclass.cylinder_data->radius,
                      o.subclass.cylinder_data->height,
                      o.subclass.cylinder_data->axis.x,
                      o.subclass.cylinder_data->axis.y,
                      o.subclass.cylinder_data->axis.z);
-	      if (o.subclass.cylinder_data->which_subclass == CONE)
+	      if (o.subclass.cylinder_data->which_subclass == CYL CONE)
 		   printf("%*s     radius2 %g\n", indentby, "",
 		        o.subclass.cylinder_data->subclass.cone_data->radius2);
 	      break;
-	 case SPHERE:
+	 case GEOM SPHERE:
               printf("%*s     radius %g\n", indentby, "", 
 		     o.subclass.sphere_data->radius);
               break;
-	 case BLOCK:
+	 case GEOM BLOCK:
 	      printf("%*s     size (%g,%g,%g)\n", indentby, "",
 		     o.subclass.block_data->size.x,
                      o.subclass.block_data->size.y,
@@ -493,9 +498,9 @@ static void get_bounding_box(geometric_object o, geom_box *box)
      box->low = box->high = o.center;
 
      switch (o.which_subclass) {
-	 case GEOMETRIC_OBJECT_SELF:
+	 case GEOM GEOMETRIC_OBJECT_SELF:
 	      break;
-	 case SPHERE:
+	 case GEOM SPHERE:
 	 {
 	      /* Find the parallelepiped that the sphere inscribes.
 		 The math comes out surpisingly simple--try it! */
@@ -520,7 +525,7 @@ static void get_bounding_box(geometric_object o, geom_box *box)
 	      box->high.z += r3;
 	      break;
 	 }
-	 case CYLINDER:
+	 case GEOM CYLINDER:
 	 {
 	      /* Find the bounding boxes of the two (circular) ends of
 		 the cylinder, then take the union.  Again, the math
@@ -574,7 +579,7 @@ static void get_bounding_box(geometric_object o, geom_box *box)
 	      box->high.y -= h * axis.y - r2*radius;
 	      box->high.z -= h * axis.z - r3*radius;
 
-	      if (o.subclass.cylinder_data->which_subclass == CONE)
+	      if (o.subclass.cylinder_data->which_subclass == CYL CONE)
 		   radius =
 		   fabs(o.subclass.cylinder_data->subclass.cone_data->radius2);
 
@@ -589,7 +594,7 @@ static void get_bounding_box(geometric_object o, geom_box *box)
 	      geom_box_union(box, box, &tmp_box);
 	      break;
 	 }
-	 case BLOCK:
+	 case GEOM BLOCK:
 	 {
 	      /* blocks are easy: just enlarge the box to be big enough to
 		 contain all 8 corners of the block. */
@@ -994,9 +999,9 @@ void get_grid_size_n(int *nx, int *ny, int *nz)
 {
      vector3 grid_size;
      grid_size = get_grid_size();
-     *nx = grid_size.x;
-     *ny = grid_size.y;
-     *nz = grid_size.z;
+     *nx = (int) grid_size.x;
+     *ny = (int) grid_size.y;
+     *nz = (int) grid_size.z;
 }
 
 /**************************************************************************/
