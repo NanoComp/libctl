@@ -55,13 +55,14 @@ int handle_args(int argc, char *argv[],
 	  if (argv[i][0] != '-')
 	       break;
 	  if (!strcmp(argv[i], "--version") || !strcmp(argv[i], "-V")) {
+	       char *guile_vers;
 #ifdef VERSION_STRING
 	       /* print version string, if defined: */
 	       printf(VERSION_STRING);
 #endif
-	       printf("\nUsing libctl and Guile ");
-	       gh_eval_str("(display (version))");  /* Guile version */
-	       printf(".\n");
+	       guile_vers = gh_scm2newstr(gh_eval_str("(version)"), NULL);
+	       printf("\nUsing libctl and Guile %s.\n", guile_vers);
+	       free(guile_vers);
 	       *continue_run = 0;
 	  }
 	  else if (!strcmp(argv[i], "--verbose") || !strcmp(argv[i], "-v"))
