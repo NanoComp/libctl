@@ -5,7 +5,8 @@ main.c: skeleton main program.  To create a real program using libctl,
 
 photonic-crystal.scm: a sample specification file that contains
 	a few parameters similar to what you might give to a
-	photonic crystal program.
+	photonic crystal program.  This uses the geometry
+	classes and utilities in utils/libgeom.
 
 example.c: example of a main subroutine (called by main.c) which
 	demonstrates how the input/output variables are automatically
