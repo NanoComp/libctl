@@ -364,7 +364,7 @@
     (set! list-temp-suffix (string-append list-temp-suffix "_t"))
     (display "{") (newline)
        (display-many "int " index-name ";") (newline)
-       (display-many "for (" index-name " = 0; " index-name " <= "
+       (display-many "for (" index-name " = 0; " index-name " < "
 		     var-str ".num_items; " index-name "++) {")
        (newline)
        (destroy-c-var (string-append var-str ".items[" index-name "]")
