@@ -319,3 +319,79 @@
   (ridder x-min x-max (f x-min) (f x-max)))
 
 ; ****************************************************************
+
+; Numerical differentiation:
+;   Compute the numerical derivative of a function f at x, using
+; Ridder's method of polynomial extrapolation, described e.g. in
+; Numerical Recipes in C (section 5.7).
+
+; This is the basic routine, but we wrap it in another interface below
+; so that dx and tol can be optional arguments.
+(define (do-derivative f x dx tol)
+
+  (define (deriv-a a0 prev-a fac fac0)
+    (if (null? prev-a)
+	(list a0)
+	(cons a0 (deriv-a (/ (- (* a0 fac) (car prev-a)) (- fac 1))
+			  (cdr prev-a) (* fac fac0) fac0))))
+  
+  (define (deriv dx df0 err0 prev-a fac0)
+    (let ((a (deriv-a (/ (- (f (+ x dx)) (f (- x dx))) (* 2 dx))
+		      prev-a fac0 fac0)))
+      (if (null? prev-a)
+	  (deriv (/ dx (sqrt fac0)) (car a) err0 a fac0)
+	  (let* ((errs
+		  (map max
+		       (map abs (map - (cdr a) (reverse (cdr (reverse a)))))
+		       (map abs (map - (cdr a) prev-a))))
+		 (errmin (apply min errs))
+		 (err (min errmin err0))
+		 (df (if (> err err0)
+			 df0
+			 (cdr (assoc errmin (map cons errs (cdr a)))))))
+	    (if (or (< err tol) 
+		    (> (abs (- (car (reverse a)) (car (reverse prev-a))))
+		       (* 2 err)))
+		(list df err)
+		(deriv (/ dx (sqrt fac0)) df err a fac0))))))
+
+  (deriv dx 0 1e30 '() 2))
+      
+(define (do-derivative-wrap f x dx-and-tol)
+  (let ((dx (if (> (length dx-and-tol) 0)
+		(car dx-and-tol)
+		(max (abs (* x 0.01)) 0.01)))
+	(tol (if (> (length dx-and-tol) 1)
+		 (cadr dx-and-tol)
+		 0)))
+    (do-derivative f x dx tol)))
+
+(define (derivative f x . dx-and-tol)
+  (do-derivative-wrap f x dx-and-tol))
+(define (deriv f x . dx-and-tol)
+  (car (do-derivative-wrap f x dx-and-tol)))
+
+; Compute both the first and second derivatives at the same time
+; (using minimal extra function evaluations).
+(define (derivative2 f x . dx-and-tol)
+  (define f-memo-tab '())
+  (define (f-memo y)
+    (let ((tab-val (assoc y f-memo-tab)))
+      (if tab-val
+	  (cdr tab-val)
+	  (let ((fy (f y)))
+	    (set! f-memo-tab (cons (cons y fy) f-memo-tab))
+	    fy))))
+  (define (f-deriv y)
+    (* 2 (/ (- (f-memo y) (f-memo x))
+	    (- y x))))
+  (append
+   (do-derivative-wrap f-memo x dx-and-tol)
+   (do-derivative-wrap f-deriv x dx-and-tol)))
+
+(define (derivative-df d) (car d))
+(define (derivative-df-err d) (cadr d))
+(define (derivative-df2 d) (caddr d))
+(define (derivative-df2-err d) (cadddr d))
+
+; ****************************************************************
