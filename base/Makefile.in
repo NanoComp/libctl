@@ -18,7 +18,7 @@ all: libs
 
 SCMFILES = class.scm help.scm io-vars.scm utils.scm ctl.scm include.scm \
            math-utils.scm vector3.scm extern-funcs.scm interaction.scm \
-           matrix3x3.scm
+           matrix3x3.scm simplex.scm
 OBJECTS = ctl.o
 LIBNAME = libctl.a
 

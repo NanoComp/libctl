@@ -31,6 +31,7 @@
 (include "io-vars.scm")
 (include "extern-funcs.scm")
 (include "help.scm")
+(include "simplex.scm")
 (include "math-utils.scm")
 (include "interaction.scm")
 
