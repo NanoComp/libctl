@@ -1,3 +1,11 @@
+libctl 1.3 (1/7/2001)
+
+  * Added improved "subplex" multidimensional optimization algorithm
+    (for maximize-multiple and minimize-multiple).
+
+  * Documented vector3-x, vector3-y, vector3-z functions for extracting
+    vector3 components.
+
 libctl 1.2 (7/9/2000)
 
   * Added new "cone" geometric object type.

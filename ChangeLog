@@ -1,3 +1,27 @@
+2000-11-21  Steven G. Johnson  <stevenj@alum.mit.edu>
+
+	* /home/stevenj/Repository/libctl/doc/user-ref.html: documented
+	vector3-{x,y,z}
+
+2000-07-17  Steven G. Johnson  <stevenj@alum.mit.edu>
+
+	* /home/stevenj/Repository/libctl/base/math-utils.scm,
+	/home/stevenj/Repository/libctl/base/subplex.c: use new subplex
+	algorithm in minimize/maximize multiple
+
+2000-07-13  Steven G. Johnson  <stevenj@alum.mit.edu>
+
+	* /home/stevenj/Repository/libctl/base/ctl.h.in,
+	/home/stevenj/Repository/libctl/base/main.c,
+	/home/stevenj/Repository/libctl/base/subplex.c,
+	/home/stevenj/Repository/libctl/base/Makefile.in: added subplex
+	optimization algorithm
+
+2000-07-10  Steven G. Johnson  <stevenj@alum.mit.edu>
+
+	* /home/stevenj/Repository/libctl/NEWS,
+	/home/stevenj/Repository/libctl/ChangeLog: updated
+
 2000-05-02  Steven G. Johnson  <stevenj@alum.mit.edu>
 
 	* /home/a/stevenj/Repository/libctl/utils/geom.c: allow negative
