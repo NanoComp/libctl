@@ -354,6 +354,11 @@
 	    (if (= f 0)
 		x
 		(let ((a' (if (< f 0) x a)) (b' (if (> f 0) x b)))
+		  (if (and (not (= dx (- x-max x-min)))
+			   (negative? (* dx (/ f df)))
+			   (positive? (* (car (f-memo (lazy a')))
+					 (car (f-memo (lazy b'))))))
+		      (error "failed to bracket the root in find-root-deriv"))
 		  (if (and (if (and (number? a) (number? b))
 			       (in-bounds? x f df a b)
 			       (in-bounds? x f df x-min x-max))
