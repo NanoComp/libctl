@@ -49,6 +49,7 @@ extern "C" {
 #undef HAVE_SCM_MAKE_COMPLEX
 #undef HAVE_SCM_VARIABLE_SET_X
 #undef HAVE_SCM_C_LOOKUP
+#undef HAVE_SCM_C_MAKE_VECTOR
 
 /* Define if you have the HAVE_SCM_COMPLEXP macro. */
 #undef HAVE_SCM_COMPLEXP
@@ -94,6 +95,10 @@ extern void ctl_include(char *filename);
 extern char *ctl_fix_path(const char *path);
 
 /**************************************************************************/
+
+#ifndef HAVE_SCM_C_MAKE_VECTOR
+#  define scm_c_make_vector(n,fill) scm_make_vector(SCM_MAKINUM(n), fill)
+#endif
 
   /* vector3 and matrix3x3 utilities: */
 

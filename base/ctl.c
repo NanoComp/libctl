@@ -374,20 +374,29 @@ matrix3x3 scm2matrix3x3(SCM sm)
   return m;
 }
 
+static SCM make_vector3(SCM x, SCM y, SCM z)
+{
+  SCM vscm, *data;
+  vscm = scm_c_make_vector(3, SCM_UNSPECIFIED);
+  data = SCM_VELTS(vscm);
+  data[0] = x;
+  data[1] = y;
+  data[2] = z;
+  return vscm;
+}
+
 SCM vector32scm(vector3 v)
 {
-  return(gh_call3(gh_lookup("vector3"),
-		  gh_double2scm(v.x),
-		  gh_double2scm(v.y),
-		  gh_double2scm(v.z)));
+  return make_vector3(gh_double2scm(v.x),
+		      gh_double2scm(v.y), 
+		      gh_double2scm(v.z));
 }
 
 SCM matrix3x32scm(matrix3x3 m)
 {
-  return(gh_call3(gh_lookup("matrix3x3"),
-		  vector32scm(m.c0),
-		  vector32scm(m.c1),
-		  vector32scm(m.c2)));
+  return make_vector3(vector32scm(m.c0),
+		      vector32scm(m.c1),
+		      vector32scm(m.c2));
 }
 
 cnumber scm2cnumber(SCM sx)
@@ -439,18 +448,16 @@ cmatrix3x3 scm2cmatrix3x3(SCM sm)
 
 SCM cvector32scm(cvector3 v)
 {
-     return(gh_call3(gh_lookup("vector3"),
-		     cnumber2scm(v.x),
-		     cnumber2scm(v.y),
-		     cnumber2scm(v.z)));
+  return make_vector3(cnumber2scm(v.x),
+		      cnumber2scm(v.y), 
+		      cnumber2scm(v.z));
 }
 
 SCM cmatrix3x32scm(cmatrix3x3 m)
 {
-     return(gh_call3(gh_lookup("matrix3x3"),
-		     cvector32scm(m.c0),
-		     cvector32scm(m.c1),
-		     cvector32scm(m.c2)));
+  return make_vector3(cvector32scm(m.c0),
+		      cvector32scm(m.c1),
+		      cvector32scm(m.c2));
 }
 
 /**************************************************************************/

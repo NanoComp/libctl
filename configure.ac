@@ -109,7 +109,7 @@ AC_TRY_LINK([#include <guile/gh.h>
 ], [scm_flush_all_ports();], [AC_DEFINE(HAVE_SCM_FLUSH_ALL_PORTS, 1, [Define if we have scm_flush_all_ports])], ok=no)
 AC_MSG_RESULT($ok)
 
-AC_CHECK_FUNCS(scm_make_complex scm_variable_set_x scm_c_lookup)
+AC_CHECK_FUNCS(scm_make_complex scm_variable_set_x scm_c_lookup scm_c_make_vector)
 
 AC_MSG_CHECKING([for SCM_COMPLEXP])
 ok=yes
