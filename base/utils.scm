@@ -58,8 +58,7 @@
 
 ; fold-left and fold-right: combine elements of list using an operator
 ; op, with initial element init, associating from the right or from
-; the left.  These two are equivalent if op is associative, but our
-; fold-right is not tail-recursive.
+; the left.  These two are equivalent if op is associative.
 
 (define (fold-right op init list)
   (if (null? list)
@@ -70,6 +69,9 @@
   (if (null? list)
       init
       (fold-left op (op init (car list)) (cdr list))))
+
+(define (fold-right op init list)
+  (fold-left (lambda (x y) (op y x)) init (reverse list)))
 
 ; ****************************************************************
 ; Miscellaneous utility functions.
