@@ -214,6 +214,19 @@ extern object function_object_property(object o, char *property_name);
 
 /**************************************************************************/
 
+/* main() hook functions.  These are prototypes of functions
+   defined by the USER and called just before the program starts
+   and just before it ends, respectively.  If you want to define
+   them, you should also define HAVE_CTL_HOOKS when compiling main.c.
+   
+   Note that due to the behavior of the Guile interactive mode, 
+   ctl_stop_hook will only get called in non-interactive mode.  Sigh. */
+
+extern void ctl_start_hook(int *argc, char ***argv);
+extern void ctl_stop_hook(void);
+
+/**************************************************************************/
+
   /* subplex multi-dimensional minimization routines: */
 
 typedef number (*subplex_func) (integer, number *, void *);

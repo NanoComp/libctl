@@ -102,6 +102,10 @@ int handle_args(int argc, char *argv[],
 
 /**************************************************************************/
 
+#ifdef HAVE_CTL_HOOKS
+static int ctl_stop_hook_called = 0;
+#endif
+
 /* Main program.  Start up Guile, declare functions, load any
    scripts passed on the command-line, and drop into interactive
    mode if read-input-vars was never called. */
@@ -178,10 +182,24 @@ void main_entry(int argc, char *argv[])
   interactive = gh_lookup("interactive?");
   if (interactive != SCM_BOOL_F)
        gh_repl(argc - i, argv + i); /* skip already-handled args */
+
+#ifdef HAVE_CTL_HOOKS
+  /* Note that the stop hook will never be called if we are in
+     interactive mode, because gh_repl calls exit().  Oh well. */
+  ctl_stop_hook_called = 1;
+  ctl_stop_hook();
+#endif
 }
 
 int main (int argc, char *argv[])
 {
+#ifdef HAVE_CTL_HOOKS
+  ctl_start_hook(&argc, &argv);
+#endif
   gh_enter (argc, argv, main_entry);
+#ifdef HAVE_CTL_HOOKS
+  if (!ctl_stop_hook_called)
+       ctl_stop_hook();
+#endif
   return EXIT_SUCCESS;
 }
