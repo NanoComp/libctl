@@ -33,6 +33,10 @@
 
 #include "ctl-io.h"
 
+#ifndef HAVE_GUILE_1_3
+#define gh_load gh_eval_file
+#endif
+
 /**************************************************************************/
 
 /* declare this function (in example.c) since I don't feel like
@@ -86,17 +90,17 @@ void main_entry(int argc, char *argv[])
 
   /* load ctl.scm if it was given at compile time */
 #ifdef CTL_SCM
-  gh_eval_file(CTL_SCM);
+  gh_load(CTL_SCM);
 #endif
 
   /* load the specification file if it was given at compile time */
 #ifdef SPEC_SCM
-  gh_eval_file(SPEC_SCM);
+  gh_load(SPEC_SCM);
 #endif
 
   /* load any scheme files specified on the command-line: */
   for (i = 1; i < argc; ++i)
-    gh_eval_file(argv[i]);
+    gh_load(argv[i]);
 
   /* if run was never called, drop into interactive mode: */
   /* (the num_runs count is kept by ctl-io in read_input_vars) */
