@@ -188,8 +188,7 @@
 				   (vector3 0 (vector3-y s) 0)
 				   (vector3 0 0 (vector3-z s)))))))
       (if (vector3? x)
-	  (vector3-scale 6.2831853071795864769252867665590057683943388
-			 (matrix3x3* (matrix3x3-inverse Rst) x))
+	  (matrix3x3* (matrix3x3-inverse Rst) x)
 	  (matrix3x3* (matrix3x3* (matrix3x3-inverse Rst) x) Rst)))))
 
 (define (cartesian->reciprocal x)
@@ -201,8 +200,7 @@
 				   (vector3 0 (vector3-y s) 0)
 				   (vector3 0 0 (vector3-z s)))))))
       (if (vector3? x)
-	  (vector3-scale (/ 6.2831853071795864769252867665590057683943388)
-			 (matrix3x3* Rst x))
+	  (matrix3x3* Rst x)
 	  (matrix3x3* (matrix3x3* Rst x) (matrix3x3-inverse Rst))))))
 
 (define (lattice->reciprocal x) (cartesian->reciprocal (lattice->cartesian x)))
