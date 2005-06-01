@@ -1,11 +1,21 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT
-AC_CONFIG_SRCDIR([base/ctl.c])
-AC_CONFIG_HEADER([base/ctl.h base/f77_func.h])
+AC_INIT(libctl, 2.3, stevenj@alum.mit.edu)
+AC_CONFIG_SRCDIR([src/ctl.c])
+AC_CONFIG_HEADERS([config.h src/ctl.h])
+
+# Shared-library version number; indicates api compatibility, and is
+# not the same as the "public" version number.  (Don't worry about this
+# except for public releases.)
+SHARED_VERSION_INFO="0:0:0"
+
+AM_INIT_AUTOMAKE(1.6)
+AC_SUBST(SHARED_VERSION_INFO)
+AM_ENABLE_SHARED(no) dnl shared libs cause too many headaches to be default
+AC_PROG_LIBTOOL
 
 ###########################################################################
 
-LIBCTL_VERSION=2.3
+LIBCTL_VERSION=$PACKAGE_VERSION
 AC_DEFINE_UNQUOTED(LIBCTL_VERSION, "$LIBCTL_VERSION",
 	   	   [Define to version string for libctl.])
 AC_SUBST(LIBCTL_VERSION)
@@ -22,23 +32,17 @@ AC_DEFINE_UNQUOTED(LIBCTL_BUGFIX_VERSION, $LIBCTL_BUGFIX_VERSION, [bugfix v.])
 
 # Checks for programs.
 AC_PROG_CC
-AC_PROG_MAKE_SET
-AC_PROG_INSTALL
-AC_PROG_RANLIB
 
 AC_CHECK_PROGS(INDENT, indent gindent, echo)
 AC_SUBST(INDENT)
 
 # check how to transform the name of the installed program:
-AC_ARG_PROGRAM
 
 AC_ARG_ENABLE(debug, [  --enable-debug          compile for debugging], ok=$enableval, ok=no)
 if test "$ok" = "yes"; then
         CFLAGS="-g"
         AC_DEFINE(DEBUG, 1, [Define to enable debugging checks.])
 fi
-
-AC_CANONICAL_HOST
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -150,12 +154,10 @@ AC_F77_WRAPPERS
 # (The flags need to go first so that they'll take precedence over
 # any previously-installed version of libctl.)
 
-CPPFLAGS="-I`pwd`/$srcdir/base -I`pwd`/$srcdir/utils $CPPFLAGS"
-LDFLAGS="-L`pwd`/$srcdir/base $LDFLAGS"
+CPPFLAGS="-I`pwd`/$srcdir/src -I`pwd`/$srcdir/utils $CPPFLAGS"
+LDFLAGS="-L`pwd`/$srcdir/src $LDFLAGS"
 
 ###########################################################################
-
-LIBS="-lctl $LIBS"
 
 LIBCTL_DIR="`pwd`/$srcdir"
 AC_SUBST(LIBCTL_DIR)
@@ -163,5 +165,6 @@ AC_SUBST(LIBCTL_DIR)
 GEN_CTL_IO="`pwd`/$srcdir/utils/gen-ctl-io"
 AC_SUBST(GEN_CTL_IO)
 
-AC_CONFIG_FILES([Makefile base/Makefile utils/Makefile examples/Makefile utils/gen-ctl-io])
+AC_CONFIG_FILES([Makefile src/Makefile utils/Makefile examples/Makefile])
+AC_CONFIG_FILES([utils/gen-ctl-io], [chmod u+x $srcdir/utils/gen-ctl-io])
 AC_OUTPUT

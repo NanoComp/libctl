@@ -23,7 +23,7 @@
 #include <string.h>
 
 #include "ctl.h"
-#include "f77-func.h"
+#include "config.h"
 
 /* This file contains glue code that enables us to call libctl from
    Fortran.  We have to take into account several things:

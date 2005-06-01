@@ -32,6 +32,9 @@
 #include <string.h>
 #include <guile/gh.h>
 
+/* for basename and dirname functions */
+#include <libgen.h>
+
 #include "ctl-io.h"
 
 #ifdef CXX_CTL_IO
@@ -106,6 +109,37 @@ int handle_args(int argc, char *argv[],
 
 /**************************************************************************/
 
+static int exists(const char *fname)
+{
+     FILE *f = fopen(fname, "r");
+     if (f) {
+	  fclose(f);
+	  return 1;
+     }
+     return 0;
+}
+
+static char *make_name(const char *for_dir, const char *for_base)
+{
+     char *dir0, *dir, *base0, *base, *name = 0;
+     dir0 = (char *) malloc(sizeof(char) * (strlen(for_dir) + 1));
+     base0 = (char *) malloc(sizeof(char) * (strlen(for_base) + 1));
+     strcpy(dir0, for_dir); dir = dirname(dir0);
+     if (strlen(dir)) {
+	  strcpy(base0, for_base); base = basename(base0);
+	  name = (char *) malloc(sizeof(char) * (strlen(dir) + 1 +
+						 strlen(base) + 1));
+	  strcpy(name, dir);
+	  strcat(name, "/");
+	  strcat(name, base);
+	  free(base0);
+     }
+     free(dir0);
+     return name;
+}
+
+/**************************************************************************/
+
 #ifdef HAVE_CTL_HOOKS
 static int ctl_stop_hook_called = 0;
 
@@ -162,8 +196,17 @@ void main_entry(int argc, char *argv[])
   /* load the specification file if it was given at compile time,
      and if it wasn't specified on the command-line: */
 #ifdef SPEC_SCM
-  if (!spec_file_loaded)
-       ctl_include(SPEC_SCM);
+  if (!spec_file_loaded) {
+       /* try first to load it in the program directory if it
+	  was specified explicitly (e.g. "./foo"), for cases
+	  where we are running a program that has not been installed */
+       char *spec_name = make_name(argv[0], SPEC_SCM);
+       if (spec_name && exists(spec_name))
+	    ctl_include(spec_name);
+       else
+	    ctl_include(SPEC_SCM);
+       free(spec_name);
+  }
 #endif
 
   /* define any variables and load any scheme files specified on the
