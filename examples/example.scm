@@ -57,3 +57,8 @@
 
 (define-external-function function-func false false 'number
   'function 'number)
+
+; ****************************************************************
+
+; Use "example>" instead of the default "guile>" prompt.
+(set! scm-repl-prompt "example> ")
