@@ -174,6 +174,82 @@ boolean point_in_fixed_objectp(vector3 p, geometric_object o)
 }
 
 /**************************************************************************/
+/* Return the normal vector from the given object to the given point,
+   using the surface of the object that the point is "closest" to for
+   some definition of "closest" that is reasonable (at least for
+   points near to the object). The length and sign of the normal
+   vector are arbitrary. */
+
+vector3 CTLIO normal_to_object(vector3 p, geometric_object o)
+{
+     geom_fix_object(o);
+     return normal_to_fixed_object(p, o);
+}
+
+vector3 normal_to_fixed_object(vector3 p, geometric_object o)
+{
+  vector3 r = vector3_minus(p,o.center);
+
+  switch (o.which_subclass) {
+  case GEOM CYLINDER:
+    {
+      vector3 rm = matrix3x3_vector3_mult(geometry_lattice.metric, r);
+      double proj = vector3_dot(o.subclass.cylinder_data->axis, rm),
+	   height = o.subclass.cylinder_data->height,
+	   radius, prad;
+      if (fabs(proj) > height * 0.5)
+	   return o.subclass.cylinder_data->axis;
+      radius = o.subclass.cylinder_data->radius;
+      prad = sqrt(fabs(vector3_dot(r,rm) - proj*proj));
+      if (o.subclass.cylinder_data->which_subclass == CYL CONE)
+	   radius += (proj/height + 0.5) *
+		(o.subclass.cylinder_data->subclass.cone_data->radius2
+		 - radius);
+      if (fabs(fabs(proj) - height * 0.5) < fabs(prad - radius))
+	   return o.subclass.cylinder_data->axis;
+      if (o.subclass.cylinder_data->which_subclass == CYL CONE)
+	   return vector3_minus(r, vector3_scale(proj + prad * (o.subclass.cylinder_data->subclass.cone_data->radius2 - radius) / height, o.subclass.cylinder_data->axis));
+      else
+	   return vector3_minus(r, vector3_scale(proj, o.subclass.cylinder_data->axis));
+    }
+  case GEOM BLOCK:
+    {
+      vector3 proj =
+	matrix3x3_vector3_mult(o.subclass.block_data->projection_matrix, r);
+      switch (o.subclass.block_data->which_subclass) {
+      case BLK BLOCK_SELF:
+	{
+	  vector3 size = o.subclass.block_data->size;
+	  double d1 = fabs(fabs(proj.x) - 0.5 * size.x);
+	  double d2 = fabs(fabs(proj.y) - 0.5 * size.y);
+	  double d3 = fabs(fabs(proj.z) - 0.5 * size.z);
+	  if (d1 < d2 && d1 < d3)
+	       return o.subclass.block_data->e1;
+	  else if (d2 < d1 && d2 < d3)
+	       return o.subclass.block_data->e2;
+	  else
+	       return o.subclass.block_data->e3;
+	}
+      case BLK ELLIPSOID:
+	{
+	  vector3 isa =
+	    o.subclass.block_data->subclass.ellipsoid_data->inverse_semi_axes;
+	  proj.x *= isa.x * isa.x;
+	  proj.y *= isa.y * isa.y;
+	  proj.z *= isa.z * isa.z;
+	  return vector3_plus(
+	       vector3_scale(proj.x,o.subclass.block_data->e1),
+	       vector3_plus(vector3_scale(proj.y,o.subclass.block_data->e2),
+			    vector3_scale(proj.z,o.subclass.block_data->e3)));
+	}
+      }
+    }
+  default:
+       return r;
+  }
+}
+
+/**************************************************************************/
 
 /* Here is a useful macro to loop over different possible shifts of
    the lattice vectors.  body is executed for each possible shift,
@@ -249,8 +325,9 @@ boolean point_in_periodic_fixed_objectp(vector3 p, geometric_object o)
 
 /**************************************************************************/
 
-/* Return the material type corresponding to the point p (in the lattice
-   basis).  Returns default_material if p is not in any object.
+/* Functions to return the object or material type corresponding to
+   the point p (in the lattice basis).  Returns default_material if p
+   is not in any object.
 
    Requires that the global input vars geometry_lattice, geometry,
    dimensions, default_material and ensure_periodicity already be
@@ -261,21 +338,30 @@ boolean point_in_periodic_fixed_objectp(vector3 p, geometric_object o)
    material_of_point_inobject is a variant that also returns whether
    or not the point was in any object.  */
 
-material_type material_of_point_inobject0(geometric_object_list geometry,
-					  vector3 p, boolean *inobject)
+geometric_object *object_of_point0(geometric_object_list geometry, vector3 p)
 {
      int index;
-     
-     *inobject = 1;
      /* loop in reverse order so that later items are given precedence: */
      for (index = geometry.num_items - 1; index >= 0; --index) {
 	  if ((ensure_periodicity
 	       && point_in_periodic_fixed_objectp(p, geometry.items[index]))
 	      || point_in_fixed_objectp(p, geometry.items[index]))
-	       return(geometry.items[index].material);
+	       return(geometry.items + index);
      }
-     *inobject = 0;
-     return default_material;
+     return 0; /* no object found */
+}
+
+geometric_object *object_of_point(vector3 p)
+{
+     return object_of_point0(geometry, p);
+}
+
+material_type material_of_point_inobject0(geometric_object_list geometry,
+					  vector3 p, boolean *inobject)
+{
+     geometric_object *o = object_of_point0(geometry, p);
+     *inobject = o != 0;
+     return (o ? o->material : default_material);
 }
 
 material_type material_of_point_inobject(vector3 p, boolean *inobject)
@@ -964,6 +1050,14 @@ static void shift_to_unit_cell(vector3 *p)
 	  p->z -= geometry_lattice.size.z;
      else if (p->z < -0.5 * geometry_lattice.size.z)
 	  p->z += geometry_lattice.size.z;
+}
+
+geometric_object *object_of_point_in_tree(vector3 p, geom_box_tree t)
+{
+     geom_box_object *gbo;
+     shift_to_unit_cell(&p);
+     gbo = find_box_object(p, t);
+     return (gbo ? gbo->o : 0);
 }
 
 material_type material_of_point_in_tree_inobject(vector3 p, geom_box_tree t,

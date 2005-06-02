@@ -159,6 +159,9 @@
 (define-external-function point-in-object? true false
   'boolean 'vector3 'geometric-object)
 
+(define-external-function normal-to-object true false
+  'vector3 'vector3 'geometric-object)
+
 (define-external-function point-in-periodic-object? true false
   'boolean 'vector3 'geometric-object)
 
