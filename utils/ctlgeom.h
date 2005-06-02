@@ -55,8 +55,9 @@ extern MATERIAL_TYPE material_of_point_inobject0(
 extern MATERIAL_TYPE material_of_point(vector3 p);
 extern MATERIAL_TYPE material_of_point0(GEOMETRIC_OBJECT_LIST geometry,
 					vector3 p);
-GEOMETRIC_OBJECT *object_of_point0(GEOMETRIC_OBJECT_LIST geometry, vector3 p);
-GEOMETRIC_OBJECT *object_of_point(vector3 p);
+GEOMETRIC_OBJECT *object_of_point0(GEOMETRIC_OBJECT_LIST geometry, vector3 p,
+				   vector3 *shiftby);
+GEOMETRIC_OBJECT *object_of_point(vector3 p, vector3 *shiftby);
 extern void display_geometric_object_info(int indentby, GEOMETRIC_OBJECT o);
 extern matrix3x3 square_basis(matrix3x3 lattice_basis, vector3 size);
 
@@ -86,7 +87,8 @@ extern MATERIAL_TYPE material_of_point_in_tree_inobject(vector3 p, geom_box_tree
 extern MATERIAL_TYPE material_of_point_in_tree_inobject0(GEOMETRIC_OBJECT_LIST geometry, vector3 p, geom_box_tree t, boolean *inobject);
 extern MATERIAL_TYPE material_of_point_in_tree(vector3 p, geom_box_tree t);
 extern MATERIAL_TYPE material_of_point_in_tree0(GEOMETRIC_OBJECT_LIST geometry, vector3 p, geom_box_tree t);
-GEOMETRIC_OBJECT *object_of_point_in_tree(vector3 p, geom_box_tree t);
+GEOMETRIC_OBJECT *object_of_point_in_tree(vector3 p, geom_box_tree t,
+					  vector3 *shiftby);
 extern void display_geom_box_tree(int indentby, geom_box_tree t);
 extern void geom_box_tree_stats(geom_box_tree t, int *depth, int *nobjects);
 

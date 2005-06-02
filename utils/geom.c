@@ -313,14 +313,19 @@ boolean CTLIO point_in_periodic_objectp(vector3 p, geometric_object o)
      return point_in_periodic_fixed_objectp(p, o);
 }
 
+boolean point_shift_in_periodic_fixed_objectp(vector3 p, geometric_object o,
+					      vector3 *shiftby)
+{
+     LOOP_PERIODIC((*shiftby),
+		   if (point_in_fixed_objectp(vector3_minus(p, *shiftby), o))
+		        return 1);
+     return 0;
+}
+
 boolean point_in_periodic_fixed_objectp(vector3 p, geometric_object o)
 {
      vector3 shiftby;
-
-     LOOP_PERIODIC(shiftby,
-		   if (point_in_fixed_objectp(vector3_minus(p, shiftby), o))
-		        return 1);
-     return 0;
+     return point_shift_in_periodic_fixed_objectp(p, o, &shiftby);
 }
 
 /**************************************************************************/
@@ -338,28 +343,31 @@ boolean point_in_periodic_fixed_objectp(vector3 p, geometric_object o)
    material_of_point_inobject is a variant that also returns whether
    or not the point was in any object.  */
 
-geometric_object *object_of_point0(geometric_object_list geometry, vector3 p)
+geometric_object *object_of_point0(geometric_object_list geometry, vector3 p,
+				   vector3 *shiftby)
 {
      int index;
+     shiftby->x = shiftby->y = shiftby->z = 0;
      /* loop in reverse order so that later items are given precedence: */
      for (index = geometry.num_items - 1; index >= 0; --index) {
 	  if ((ensure_periodicity
-	       && point_in_periodic_fixed_objectp(p, geometry.items[index]))
+	       && point_shift_in_periodic_fixed_objectp(p, geometry.items[index], shiftby))
 	      || point_in_fixed_objectp(p, geometry.items[index]))
 	       return(geometry.items + index);
      }
      return 0; /* no object found */
 }
 
-geometric_object *object_of_point(vector3 p)
+geometric_object *object_of_point(vector3 p, vector3 *shiftby)
 {
-     return object_of_point0(geometry, p);
+     return object_of_point0(geometry, p, shiftby);
 }
 
 material_type material_of_point_inobject0(geometric_object_list geometry,
 					  vector3 p, boolean *inobject)
 {
-     geometric_object *o = object_of_point0(geometry, p);
+     vector3 shiftby;
+     geometric_object *o = object_of_point0(geometry, p, &shiftby);
      *inobject = o != 0;
      return (o ? o->material : default_material);
 }
@@ -1052,12 +1060,20 @@ static void shift_to_unit_cell(vector3 *p)
 	  p->z += geometry_lattice.size.z;
 }
 
-geometric_object *object_of_point_in_tree(vector3 p, geom_box_tree t)
+geometric_object *object_of_point_in_tree(vector3 p, geom_box_tree t,
+					  vector3 *shiftby)
 {
      geom_box_object *gbo;
+     *shiftby = p;
      shift_to_unit_cell(&p);
+     *shiftby = vector3_minus(*shiftby, p);
      gbo = find_box_object(p, t);
-     return (gbo ? gbo->o : 0);
+     if (gbo) {
+	  *shiftby = vector3_plus(*shiftby, gbo->shiftby);
+	  return gbo->o;
+     }
+     else
+	  return 0;
 }
 
 material_type material_of_point_in_tree_inobject(vector3 p, geom_box_tree t,
