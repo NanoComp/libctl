@@ -128,7 +128,7 @@ vector3 vector3_scale(number s, vector3 v)
 vector3 unit_vector3(vector3 v)
 {
   number norm = vector3_norm(v);
-  if (norm < 1.0e-15)
+  if (norm == 0.0)
     return v;
   else
     return vector3_scale(1.0/norm, v);
