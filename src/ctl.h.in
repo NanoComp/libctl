@@ -125,18 +125,21 @@ extern int matrix3x3_equal(matrix3x3 m1, matrix3x3 m2);
 
 extern cnumber make_cnumber(number r, number i);
 extern cnumber cnumber_conj(cnumber c);
+extern int cnumber_equal(cnumber c1, cnumber c2);
 #define cnumber_re(c) ((c).re)
 #define cnumber_im(c) ((c).im)
 
 extern vector3 cvector3_re(cvector3 cv);
 extern vector3 cvector3_im(cvector3 cv);
 extern cvector3 make_cvector3(vector3 vr, vector3 vi);
+extern int cvector3_equal(cvector3 v1, cvector3 v2);
 
 extern matrix3x3 cmatrix3x3_re(cmatrix3x3 cm);
 extern matrix3x3 cmatrix3x3_im(cmatrix3x3 cm);
 extern cmatrix3x3 make_cmatrix3x3(matrix3x3 mr, matrix3x3 mi);
 cmatrix3x3 make_hermitian_cmatrix3x3(number m00, number m11, number m22,
                                      cnumber m01, cnumber m02, cnumber m12);
+extern int cmatrix3x3_equal(cmatrix3x3 m1, cmatrix3x3 m2);
 
 /**************************************************************************/
 
