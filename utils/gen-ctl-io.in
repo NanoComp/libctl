@@ -20,28 +20,51 @@
 #
 # Steven G. Johnson can be contacted at stevenj@alum.mit.edu.
 
-output_dir="`dirname $1`"
-
-no_c=true
-no_h=true
+code=false
+header=false
 cxx=false
 swig=false
+output_file=""
 
 while test $# -ge 1; do
     case $1 in
-        --code) no_c=false ;;
-        --header) no_h=false ;;
+        -o) shift; output_file=$1 ;;
         --cxx) cxx=true ;;
-        --swig) swig=true; ;;
+        --code) code=true; header=false; swig=false ;;
+        --header) header=true; code=false; swig=false ;;
+        --swig) swig=true; header=false; code=false ;;
         *) break;;
     esac
     shift
 done
 
-if test $cxx = true; then
-    code=ctl-io.cpp
+if test $code = true; then
+    if test $cxx = true; then
+	default_output_file=ctl-io.cpp
+    else
+	default_output_file=ctl-io.c
+    fi
+elif test $header = true; then
+    if test $cxx = true; then
+	default_output_file=ctl-io.hpp
+    else
+	default_output_file=ctl-io.h
+    fi
+elif test $swig = true; then
+    default_output_file=ctl-io.i
 else
-    code=ctl-io.c
+    echo "No output specified."
+    exit 1
+fi
+
+if test "x$output_file" = x; then
+    output_file=$default_output_file
+fi
+
+spec_file=$1
+if test ! -f "$spec_file"; then
+    echo "cannot read specification file $spec_file"
+    exit 1
 fi
 
 if test "$#" = "2"; then
@@ -54,19 +77,17 @@ if test ! -r $libctl_dir/utils/ctl-io.scm; then
     exit 1
 fi
 
-created=""
 ok=yes
 
 ###########################################################################
 
-if test $no_h = false; then
+if test $header = true; then
 
-rm -f $output_dir/ctl-io.h
-created="$created $output_dir/ctl-io.h"
+rm -f $output_file
 
-cat > $output_dir/ctl-io.h <<EOF
+cat > $output_file <<EOF
 /* THIS FILE WAS AUTOMATICALLY GENERATED.  DO NOT MODIFY! */
-/* generated from the file: $1 */
+/* generated from the file: $spec_file */
 
 #ifndef CTL_IO_H
 #define CTL_IO_H
@@ -77,57 +98,61 @@ cat > $output_dir/ctl-io.h <<EOF
 EOF
 
 if test $cxx = true; then
-    cat >> $output_dir/ctl-io.h <<EOF
+    cat >> $output_file <<EOF
 #define CXX_CTL_IO 1
 namespace ctlio {
 EOF
 else
-    cat >> $output_dir/ctl-io.h <<EOF
+    cat >> $output_file <<EOF
 #ifdef __cplusplus
 extern "C" {
 #endif                          /* __cplusplus */
 EOF
 fi
 
-echo >> $output_dir/ctl-io.h
+echo >> $output_file
 
 (guile -l $libctl_dir/base/include.scm \
-      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (set"'!'" cxx $cxx) (include "'"'"$1"'"'") (output-header)" >> $output_dir/ctl-io.h) || ok=no
+      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (set"'!'" cxx $cxx) (include "'"'"$spec_file"'"'") (output-header)" >> $output_file) || ok=no
 
-if test $ok = no; then rm -f $created; exit 1; fi
+if test $ok = no; then rm -f $output_file; exit 1; fi
 
-echo >> $output_dir/ctl-io.h
+echo >> $output_file
 
 if test $cxx = true; then
-    cat >> $output_dir/ctl-io.h <<EOF
+    cat >> $output_file <<EOF
 } /* namespace */
 EOF
 else
-    cat >> $output_dir/ctl-io.h <<EOF
+    cat >> $output_file <<EOF
 #ifdef __cplusplus
 }                               /* extern "C" */
 #endif                          /* __cplusplus */
 EOF
 fi
 
-cat >> $output_dir/ctl-io.h <<EOF
+cat >> $output_file <<EOF
 
 #endif                          /* CTL_IO_H */
 
 EOF
 
-fi # no_h = false
+if test $cxx = false; then
+  @INDENT@ $output_file > /dev/null 2>&1
+  rm -f ${output_file}~ ${output_file}.BAK
+fi
+
+fi # header = true
 
 ###########################################################################
 
-if test $no_c = false; then
+if test $code = true; then
 
-rm -f $output_dir/${code}
-created="$created $output_dir/${code}"
+rm -f $output_file
 
-cat > $output_dir/${code} <<EOF
+cat > $output_file <<EOF
 /* THIS FILE WAS AUTOMATICALLY GENERATED.  DO NOT MODIFY! */
-/* generated from the file: $1 */
+/* generated from the file: $spec_file */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -140,30 +165,33 @@ using namespace ctlio;
 EOF
 
 (guile -l $libctl_dir/base/include.scm \
-      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (set"'!'" cxx $cxx) (include "'"'"$1"'"'") (output-source)" >> $output_dir/${code}) || ok=no
+      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (set"'!'" cxx $cxx) (include "'"'"$spec_file"'"'") (output-source)" >> $output_file) || ok=no
 
-if test $ok = no; then rm -f $created; exit 1; fi
+if test $ok = no; then rm -f $output_file; exit 1; fi
 
-fi # no_c = false
+if test $cxx = false; then
+  @INDENT@ $output_file > /dev/null 2>&1
+  rm -f ${output_file}~ ${output_file}.BAK
+fi
+
+fi # code = true
 
 ###########################################################################
 
 if test $swig = true; then
 
-    created="$created $output_dir/ctl-io.i"
-
-    cat > $output_dir/ctl-io.i <<EOF
+    cat > $output_file <<EOF
 /* THIS FILE WAS AUTOMATICALLY GENERATED.  DO NOT MODIFY! */
-/* generated from the file: $1 */
+/* generated from the file: $spec_file */
 
 EOF
 
     (guile -l $libctl_dir/base/include.scm \
-      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (set"'!'" cxx $cxx) (include "'"'"$1"'"'") (output-swig-header)" >> $output_dir/ctl-io.i) || ok=no
+      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (set"'!'" cxx $cxx) (include "'"'"$spec_file"'"'") (output-swig-header)" >> $output_file) || ok=no
 
-    if test $ok = no; then rm -f $created; exit 1; fi
+    if test $ok = no; then rm -f $output_file; exit 1; fi
 
-    cat >> $output_dir/ctl-io.i <<EOF
+    cat >> $output_file <<EOF
 
 /******* SWIG type-conversion mappings for basic libctl types *******/
 
@@ -191,12 +219,3 @@ EOF
 EOF
 
 fi
-
-if test $cxx = false; then
-  if test $no_c = false; then @INDENT@ $output_dir/${code} > /dev/null 2>&1; fi
-  if test $no_h = false; then @INDENT@ $output_dir/ctl-io.h > /dev/null 2>&1; fi
-fi
-
-for f in $created; do
-    rm -f ${f}~ ${f}.BAK
-done

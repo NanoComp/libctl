@@ -398,10 +398,11 @@ directory (installed into a <code>bin</code> directory by <code>make
 install</code>):
 
 <pre>
-gen-ctl-io <i>specifications-file</i>
+gen-ctl-io --code <i>specifications-file</i>
+gen-ctl-io --header <i>specifications-file</i>
 </pre>
 
-<p>The <code>gen-ctl-io</code> script generates two files,
+<p>The <code>gen-ctl-io</code> commands above generate two files,
 <code>ctl-io.h</code> and <code>ctl-io.c</code>.  The former defines
 global variables and data structures for the input/output variables
 and classes, and the latter contains code to exchange this data with
