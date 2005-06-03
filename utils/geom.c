@@ -1345,6 +1345,7 @@ geometric_object make_sphere(material_type material, vector3 center,
      o.subclass.sphere_data = (sphere *) malloc(sizeof(sphere));
      CHECK(o.subclass.sphere_data, "out of memory");
      o.subclass.sphere_data->radius = radius;
+     return o;
 }
 
 geometric_object make_block(material_type material, vector3 center,
