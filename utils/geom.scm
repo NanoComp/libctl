@@ -21,7 +21,8 @@
 ; ****************************************************************
 
 (if (not (defined? 'material-type))
-    (define-class material-type no-parent)) ; define dummy class
+    (define-class material-type no-parent
+      (define-property data no-default 'SCM))) ; generic user-defined data
 
 (define-class geometric-object no-parent
   (define-property material no-default 'material-type)

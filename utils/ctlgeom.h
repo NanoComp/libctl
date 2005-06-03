@@ -22,7 +22,7 @@
 #ifndef GEOM_H
 #define GEOM_H
 
-#include <ctl-io.h>
+#include <ctlgeom-types.h>
 
 #ifdef CXX_CTL_IO
 #define MATERIAL_TYPE ctlio::material_type
@@ -95,6 +95,22 @@ extern void geom_box_tree_stats(geom_box_tree t, int *depth, int *nobjects);
 extern vector3 get_grid_size(void);
 extern vector3 get_resolution(void);
 extern void get_grid_size_n(int *nx, int *ny, int *nz);
+
+GEOMETRIC_OBJECT make_geometric_object(MATERIAL_TYPE material, vector3 center);
+GEOMETRIC_OBJECT make_cylinder(MATERIAL_TYPE material, vector3 center,
+			       number radius, number height, vector3 axis);
+GEOMETRIC_OBJECT make_cone(MATERIAL_TYPE material, vector3 center,
+			   number radius, number height, vector3 axis,
+			   number radius2);
+GEOMETRIC_OBJECT make_sphere(MATERIAL_TYPE material, vector3 center,
+			     number radius);
+GEOMETRIC_OBJECT make_block(MATERIAL_TYPE material, vector3 center,
+			    vector3 e1, vector3 e2, vector3 e3,
+			    vector3 size);
+GEOMETRIC_OBJECT make_ellipsoid(MATERIAL_TYPE material, vector3 center,
+				vector3 e1, vector3 e2, vector3 e3,
+				vector3 size);
+
 
 /**************************************************************************/
 

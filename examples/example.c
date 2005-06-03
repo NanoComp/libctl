@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #include <guile/gh.h>
 
-#include <ctl-io.h>
+#include "ctl-io.h"
 #include <ctlgeom.h>
 
 /**************************************************************************/

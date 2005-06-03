@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT(libctl, 2.3, stevenj@alum.mit.edu)
+AC_INIT(libctl, 3.0, stevenj@alum.mit.edu)
 AC_CONFIG_SRCDIR([src/ctl.c])
 AC_CONFIG_HEADERS([config.h src/ctl.h])
 

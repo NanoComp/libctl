@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <math.h>
 
+#include "ctl-io.h"
 #include <ctlgeom.h>
 
 #ifdef CXX_CTL_IO
@@ -1171,3 +1172,88 @@ void get_grid_size_n(int *nx, int *ny, int *nz)
 }
 
 /**************************************************************************/
+
+/* constructors for the geometry types (ugh, wish these
+   could be automatically generated from geom.scm) */
+
+geometric_object make_geometric_object(material_type material, vector3 center)
+{
+     geometric_object o;
+     material_type_copy(&material, &o.material);
+     o.center = center;
+     o.which_subclass = GEOM GEOMETRIC_OBJECT_SELF;
+     return o;
+}
+
+geometric_object make_cylinder(material_type material, vector3 center,
+			       number radius, number height, vector3 axis)
+{
+     geometric_object o = make_geometric_object(material, center);
+     o.which_subclass = GEOM CYLINDER;
+     o.subclass.cylinder_data = (cylinder *) malloc(sizeof(cylinder));
+     CHECK(o.subclass.cylinder_data, "out of memory");
+     o.subclass.cylinder_data->radius = radius;
+     o.subclass.cylinder_data->height = height;
+     o.subclass.cylinder_data->axis = axis;
+     o.subclass.cylinder_data->which_subclass = CYL CYLINDER_SELF;
+     geom_fix_object(o);
+     return o;
+}
+
+geometric_object make_cone(material_type material, vector3 center,
+			   number radius, number height, vector3 axis,
+			   number radius2)
+{
+     geometric_object o = make_cylinder(material, center, radius,height, axis);
+     o.subclass.cylinder_data->which_subclass = CYL CONE;
+     o.subclass.cylinder_data->subclass.cone_data
+	  = (cone *) malloc(sizeof(cone));
+     CHECK(o.subclass.cylinder_data->subclass.cone_data, "out of memory");
+     o.subclass.cylinder_data->subclass.cone_data->radius2 = radius2;
+     return o;
+}
+
+geometric_object make_sphere(material_type material, vector3 center,
+			     number radius)
+{
+     geometric_object o = make_geometric_object(material, center);
+     o.which_subclass = GEOM SPHERE;
+     o.subclass.sphere_data = (sphere *) malloc(sizeof(sphere));
+     CHECK(o.subclass.sphere_data, "out of memory");
+     o.subclass.sphere_data->radius = radius;
+}
+
+geometric_object make_block(material_type material, vector3 center,
+			    vector3 e1, vector3 e2, vector3 e3,
+			    vector3 size)
+{
+     geometric_object o = make_geometric_object(material, center);
+     o.which_subclass = GEOM BLOCK;
+     o.subclass.block_data = (block *) malloc(sizeof(block));
+     CHECK(o.subclass.block_data, "out of memory");
+     o.subclass.block_data->e1 = e1;
+     o.subclass.block_data->e2 = e2;
+     o.subclass.block_data->e3 = e3;
+     o.subclass.block_data->size = size;
+     o.subclass.block_data->which_subclass = BLK BLOCK_SELF;
+     geom_fix_object(o);
+     return o;
+}
+
+geometric_object make_ellipsoid(material_type material, vector3 center,
+				vector3 e1, vector3 e2, vector3 e3,
+				vector3 size)
+{
+     geometric_object o = make_block(material, center, e1,e2,e3, size);
+     o.subclass.block_data->which_subclass = BLK ELLIPSOID;
+     o.subclass.block_data->subclass.ellipsoid_data
+	  = (ellipsoid *) malloc(sizeof(ellipsoid));
+     CHECK(o.subclass.block_data->subclass.ellipsoid_data, "out of memory");
+     o.subclass.block_data->subclass.ellipsoid_data->inverse_semi_axes.x
+	  = 2.0 / size.x;
+     o.subclass.block_data->subclass.ellipsoid_data->inverse_semi_axes.y
+	  = 2.0 / size.y;
+     o.subclass.block_data->subclass.ellipsoid_data->inverse_semi_axes.z
+	  = 2.0 / size.z;
+     return o;
+}
