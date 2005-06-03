@@ -90,8 +90,8 @@ void geom_fix_object(geometric_object o)
 		   ->component_objects.items;
 	      for (i = 0; i < n; ++i) {
 #if MATERIAL_TYPE_ABSTRACT
-		   if (os[i]->material.which_subclass==MAT MATERIAL_TYPE_SELF)
-			material_type_copy(&o->material, &os[i]->material);
+		   if (os[i].material.which_subclass == MAT MATERIAL_TYPE_SELF)
+			material_type_copy(&o.material, &os[i].material);
 #endif
 		   geom_fix_object(os[i]);
 	      }
