@@ -116,7 +116,11 @@
 		       (class-identifier sc) "_data;\n"))
 		    subclasses)
 	  (print "} subclass;\n"))))
-  (print "} " (class-identifier class) ";\n\n"))
+  (print "} " (class-identifier class) ";\n")
+  (if (and (not (null? (find-direct-subclasses class)))
+	   (null? (class-properties class)))
+      (print "#define " (class-enum-name0 class) "_ABSTRACT 1\n"))
+  (print "\n"))
        
 (define (display-c-class-decls)
   (print "/******* Type declarations *******/\n\n")

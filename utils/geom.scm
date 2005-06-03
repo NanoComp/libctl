@@ -24,9 +24,24 @@
     (define-class material-type no-parent
       (define-property data no-default 'SCM))) ; generic user-defined data
 
+; A default material so that we don't have to specify a material for
+; an object when we just care about its geometry.  If material-type is
+; an "abstract superclass" (no properties of its own), programs could
+; interpret this as equating to default-material (below).  However, we
+; only define this default if (make material-type) works, i.e. if
+; defaults exist for all properties (if any) of material-type.
+(define nothing (if (for-all? (class-properties-all material-type)
+			      property-has-default?)
+		    (make material-type)
+		    no-default))
+
 (define-class geometric-object no-parent
-  (define-property material no-default 'material-type)
+  (define-property material nothing 'material-type)
   (define-property center no-default 'vector3))
+
+(define-class compound-geometric-object geometric-object
+  (define-property component-objects '()
+    (make-list-type 'geometric-object)))
 
 (define (non-negative? x) (not (negative? x)))
 
@@ -151,7 +166,7 @@
 ; ****************************************************************
 
 (define-input-var dimensions 3 'integer)
-(define-input-var default-material '() 'material-type)
+(define-input-var default-material nothing 'material-type)
 (define-input-var geometry-center (vector3 0) 'vector3)
 (define-input-var geometry-lattice (make lattice) 'lattice)
 (define-input-var geometry '() (make-list-type 'geometric-object))

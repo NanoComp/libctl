@@ -32,11 +32,13 @@ using namespace ctlio;
 #  define GEOM geometric_object::
 #  define BLK block::
 #  define CYL cylinder::
+#  define MAT material_type::
 #else
 #  define CTLIO 
 #  define GEOM 
 #  define BLK 
 #  define CYL  
+#  define MAT 
 #endif
 
 /**************************************************************************/
@@ -79,6 +81,22 @@ void geom_fix_object(geometric_object o)
 	      o.subclass.block_data->projection_matrix = matrix3x3_inverse(m);
 	      break;
 	 }
+	 case GEOM COMPOUND_GEOMETRIC_OBJECT:
+	 {
+	      int i;
+	      int n = o.subclass.compound_geometric_object_data
+		   ->component_objects.num_items;
+	      geometric_object *os = o.subclass.compound_geometric_object_data
+		   ->component_objects.items;
+	      for (i = 0; i < n; ++i) {
+#if MATERIAL_TYPE_ABSTRACT
+		   if (os[i]->material.which_subclass==MAT MATERIAL_TYPE_SELF)
+			material_type_copy(&o->material, &os[i]->material);
+#endif
+		   geom_fix_object(os[i]);
+	      }
+	      break;
+	 }
 	 case GEOM GEOMETRIC_OBJECT_SELF: case GEOM SPHERE:
 	      break; /* these objects are fine */
      }
@@ -118,14 +136,21 @@ boolean CTLIO point_in_objectp(vector3 p, geometric_object o)
 
 boolean point_in_fixed_objectp(vector3 p, geometric_object o)
 {
-  vector3 r = vector3_minus(p,o.center);
+     return point_in_fixed_pobjectp(p, &o);
+}
 
-  switch (o.which_subclass) {
+/* as point_in_fixed_objectp, but sets o to the object in question (if true)
+   (which may be different from the input o if o is a compound object) */
+boolean point_in_fixed_pobjectp(vector3 p, geometric_object *o)
+{
+  vector3 r = vector3_minus(p,o->center);
+
+  switch (o->which_subclass) {
   case GEOM GEOMETRIC_OBJECT_SELF:
     return 0;
   case GEOM SPHERE:
     {
-      number radius = o.subclass.sphere_data->radius;
+      number radius = o->subclass.sphere_data->radius;
       return(radius > 0.0 &&
 	     vector3_dot(r,matrix3x3_vector3_mult(geometry_lattice.metric, r))
 	     <= radius*radius);
@@ -133,13 +158,13 @@ boolean point_in_fixed_objectp(vector3 p, geometric_object o)
   case GEOM CYLINDER:
     {
       vector3 rm = matrix3x3_vector3_mult(geometry_lattice.metric, r);
-      number proj = vector3_dot(o.subclass.cylinder_data->axis, rm);
-      number height = o.subclass.cylinder_data->height;
+      number proj = vector3_dot(o->subclass.cylinder_data->axis, rm);
+      number height = o->subclass.cylinder_data->height;
       if (fabs(proj) <= 0.5 * height) {
-	number radius = o.subclass.cylinder_data->radius;
-	if (o.subclass.cylinder_data->which_subclass == CYL CONE)
+	number radius = o->subclass.cylinder_data->radius;
+	if (o->subclass.cylinder_data->which_subclass == CYL CONE)
 	     radius += (proj/height + 0.5) *
-		  (o.subclass.cylinder_data->subclass.cone_data->radius2
+		  (o->subclass.cylinder_data->subclass.cone_data->radius2
 		   - radius);
 	return(radius != 0.0 && vector3_dot(r,rm) - proj*proj <= radius*radius);
       }
@@ -149,11 +174,11 @@ boolean point_in_fixed_objectp(vector3 p, geometric_object o)
   case GEOM BLOCK:
     {
       vector3 proj =
-	matrix3x3_vector3_mult(o.subclass.block_data->projection_matrix, r);
-      switch (o.subclass.block_data->which_subclass) {
+	matrix3x3_vector3_mult(o->subclass.block_data->projection_matrix, r);
+      switch (o->subclass.block_data->which_subclass) {
       case BLK BLOCK_SELF:
 	{
-	  vector3 size = o.subclass.block_data->size;
+	  vector3 size = o->subclass.block_data->size;
 	  return(fabs(proj.x) <= 0.5 * size.x &&
 		 fabs(proj.y) <= 0.5 * size.y &&
 		 fabs(proj.z) <= 0.5 * size.z);
@@ -161,7 +186,7 @@ boolean point_in_fixed_objectp(vector3 p, geometric_object o)
       case BLK ELLIPSOID:
 	{
 	  vector3 isa =
-	    o.subclass.block_data->subclass.ellipsoid_data->inverse_semi_axes;
+	    o->subclass.block_data->subclass.ellipsoid_data->inverse_semi_axes;
 	  double
 	    a = proj.x * isa.x,
 	    b = proj.y * isa.y,
@@ -169,6 +194,22 @@ boolean point_in_fixed_objectp(vector3 p, geometric_object o)
 	  return(a*a + b*b + c*c <= 1.0);
 	}
       }
+    }
+  case GEOM COMPOUND_GEOMETRIC_OBJECT:
+    {
+	 int i;
+	 int n = o->subclass.compound_geometric_object_data
+	      ->component_objects.num_items;
+	 geometric_object *os = o->subclass.compound_geometric_object_data
+	      ->component_objects.items;
+	 vector3 shiftby = o->center;
+	 for (i = 0; i < n; ++i) {
+	      *o = os[i];
+	      o->center = vector3_plus(o->center, shiftby);
+	      if (point_in_fixed_pobjectp(p, o))
+		   return 1;
+	 }
+	 break;
     }
   }
   return 0;
@@ -314,19 +355,27 @@ boolean CTLIO point_in_periodic_objectp(vector3 p, geometric_object o)
      return point_in_periodic_fixed_objectp(p, o);
 }
 
-boolean point_shift_in_periodic_fixed_objectp(vector3 p, geometric_object o,
-					      vector3 *shiftby)
+boolean point_in_periodic_fixed_objectp(vector3 p, geometric_object o)
 {
-     LOOP_PERIODIC((*shiftby),
-		   if (point_in_fixed_objectp(vector3_minus(p, *shiftby), o))
+     vector3 shiftby;
+     LOOP_PERIODIC(shiftby,
+		   if (point_in_fixed_objectp(vector3_minus(p, shiftby), o))
 		        return 1);
      return 0;
 }
 
-boolean point_in_periodic_fixed_objectp(vector3 p, geometric_object o)
+boolean point_shift_in_periodic_fixed_pobjectp(vector3 p, geometric_object *o,
+					       vector3 *shiftby)
 {
-     vector3 shiftby;
-     return point_shift_in_periodic_fixed_objectp(p, o, &shiftby);
+     geometric_object o0 = *o;
+     LOOP_PERIODIC((*shiftby),
+		   { 
+			*o = o0;
+			if (point_in_fixed_pobjectp(
+			     vector3_minus(p, *shiftby), o))
+			     return 1;
+		   });
+     return 0;
 }
 
 /**************************************************************************/
@@ -344,22 +393,25 @@ boolean point_in_periodic_fixed_objectp(vector3 p, geometric_object o)
    material_of_point_inobject is a variant that also returns whether
    or not the point was in any object.  */
 
-geometric_object *object_of_point0(geometric_object_list geometry, vector3 p,
-				   vector3 *shiftby)
+geometric_object object_of_point0(geometric_object_list geometry, vector3 p,
+				  vector3 *shiftby)
 {
+     geometric_object o;
      int index;
      shiftby->x = shiftby->y = shiftby->z = 0;
      /* loop in reverse order so that later items are given precedence: */
      for (index = geometry.num_items - 1; index >= 0; --index) {
+	  o = geometry.items[index];
 	  if ((ensure_periodicity
-	       && point_shift_in_periodic_fixed_objectp(p, geometry.items[index], shiftby))
-	      || point_in_fixed_objectp(p, geometry.items[index]))
-	       return(geometry.items + index);
+	       && point_shift_in_periodic_fixed_pobjectp(p, &o, shiftby))
+	      || point_in_fixed_pobjectp(p, &o))
+	       return o;
      }
-     return 0; /* no object found */
+     o.which_subclass = GEOM GEOMETRIC_OBJECT_SELF; /* no object found */
+     return o;
 }
 
-geometric_object *object_of_point(vector3 p, vector3 *shiftby)
+geometric_object object_of_point(vector3 p, vector3 *shiftby)
 {
      return object_of_point0(geometry, p, shiftby);
 }
@@ -368,9 +420,9 @@ material_type material_of_point_inobject0(geometric_object_list geometry,
 					  vector3 p, boolean *inobject)
 {
      vector3 shiftby;
-     geometric_object *o = object_of_point0(geometry, p, &shiftby);
-     *inobject = o != 0;
-     return (o ? o->material : default_material);
+     geometric_object o = object_of_point0(geometry, p, &shiftby);
+     *inobject = o.which_subclass != GEOM GEOMETRIC_OBJECT_SELF;;
+     return (*inobject ? o.material : default_material);
 }
 
 material_type material_of_point_inobject(vector3 p, boolean *inobject)
@@ -422,6 +474,9 @@ void CTLIO display_geometric_object_info(int indentby, geometric_object o)
 		       break;
 	      }
 	      break;
+	 case GEOM COMPOUND_GEOMETRIC_OBJECT:
+	      printf("compound object");
+	      break;
 	 default:
 	      printf("geometric object");
               break;
@@ -461,6 +516,18 @@ void CTLIO display_geometric_object_info(int indentby, geometric_object o)
                      o.subclass.block_data->e3.y,
                      o.subclass.block_data->e3.z);
 	      break;
+	 case GEOM COMPOUND_GEOMETRIC_OBJECT:
+	 {
+	      int i;
+	      int n = o.subclass.compound_geometric_object_data
+		   ->component_objects.num_items;
+	      geometric_object *os = o.subclass.compound_geometric_object_data
+		   ->component_objects.items;
+	      printf("%*s     %d components:\n", indentby, "", n);
+	      for (i = 0; i < n; ++i)
+		   display_geometric_object_info(indentby + 5, os[i]);
+	      break;
+	 }
 	 default:
 	      break;
      }
@@ -719,6 +786,21 @@ static void get_bounding_box(geometric_object o, geom_box *box)
 	      geom_box_add_pt(box,
 	        vector3_plus(corner, vector3_plus(s1, vector3_plus(s2, s3))));
 	 }
+	 case GEOM COMPOUND_GEOMETRIC_OBJECT:
+	 {
+	      int i;
+	      int n = o.subclass.compound_geometric_object_data
+		   ->component_objects.num_items;
+	      geometric_object *os = o.subclass.compound_geometric_object_data
+		   ->component_objects.items;
+	      for (i = 0; i < n; ++i) {
+		   geom_box boxi;
+		   get_bounding_box(os[i], &boxi);
+		   geom_box_shift(&boxi, o.center);
+		   geom_box_union(box, box, &boxi);
+	      }
+	      break;
+	 }
      }
 }
 
@@ -928,10 +1010,57 @@ geom_box_tree create_geom_box_tree(void)
      return create_geom_box_tree0(geometry, b0);
 }
 
+static int num_objects_in_box(const geometric_object *o, vector3 shiftby,
+			      const geom_box *b)
+{
+     if (o->which_subclass == GEOM COMPOUND_GEOMETRIC_OBJECT) {
+	  int n = o->subclass.compound_geometric_object_data
+	       ->component_objects.num_items;
+	  geometric_object *os = o->subclass.compound_geometric_object_data
+	       ->component_objects.items;
+	  int i, sum = 0;
+	  shiftby = vector3_plus(shiftby, o->center);
+	  for (i = 0; i < n; ++i)
+	       sum += num_objects_in_box(os + i, shiftby, b);
+	  return sum;
+     }
+     else {
+	  geom_box ob;
+	  return object_in_box(*o, shiftby, &ob, b);
+     }
+}
+
+static int store_objects_in_box(const geometric_object *o, vector3 shiftby,
+				const geom_box *b,
+				geom_box_object *bo)
+{
+     if (o->which_subclass == GEOM COMPOUND_GEOMETRIC_OBJECT) {
+	  int n = o->subclass.compound_geometric_object_data
+	       ->component_objects.num_items;
+	  geometric_object *os = o->subclass.compound_geometric_object_data
+	       ->component_objects.items;
+	  int i, sum = 0;
+	  shiftby = vector3_plus(shiftby, o->center);
+	  for (i = 0; i < n; ++i)
+	       sum += store_objects_in_box(os + i, shiftby, b, bo + sum);
+	  return sum;
+     }
+     else {
+	  geom_box ob;
+	  if (object_in_box(*o, shiftby, &ob, b)) {
+	       bo->box = ob;
+	       bo->o = o;
+	       bo->shiftby = shiftby;
+	       return 1;
+	  }
+	  else
+	       return 0;
+     }
+}
+
 geom_box_tree create_geom_box_tree0(geometric_object_list geometry,
 				    geom_box b0)
 {
-     geom_box b;
      geom_box_tree t = new_geom_box_tree();
      int i, index;
 
@@ -941,11 +1070,12 @@ geom_box_tree create_geom_box_tree0(geometric_object_list geometry,
 	  vector3 shiftby = {0,0,0};
 	  if (ensure_periodicity) {
 	       LOOP_PERIODIC(shiftby,
-			     if (object_in_box(geometry.items[i], shiftby,
-					       &b, &t->b)) ++t->nobjects);
+			     t->nobjects += num_objects_in_box(
+				  geometry.items + i, shiftby, &t->b));
 	  }
-	  else if (object_in_box(geometry.items[i], shiftby, &b, &t->b))
-	       ++t->nobjects;
+	  else
+	       t->nobjects += num_objects_in_box(
+		    geometry.items + i, shiftby, &t->b);
      }
 
      t->objects = (geom_box_object *) malloc(t->nobjects *
@@ -956,21 +1086,15 @@ geom_box_tree create_geom_box_tree0(geometric_object_list geometry,
 	  vector3 shiftby = {0,0,0};
 	  if (ensure_periodicity) {
 	       LOOP_PERIODIC(shiftby,
-			     if (object_in_box(geometry.items[i], shiftby,
-					       &b, &t->b)) {
-				  t->objects[index].box = b;
-				  t->objects[index].o = &geometry.items[i];
-				  t->objects[index].shiftby = shiftby;
-				  index++;
-			     });
+			     index += store_objects_in_box(
+				  geometry.items + i, shiftby, &t->b,
+				  t->objects + index));
 	  }
-	  else if (object_in_box(geometry.items[i], shiftby, &b, &t->b)) {
-	       t->objects[index].box = b;
-	       t->objects[index].o = &geometry.items[i];
-	       t->objects[index].shiftby = shiftby;
-	       index++;
-	  }
+	  else 
+	       index += store_objects_in_box(
+		    geometry.items + i, shiftby, &t->b, t->objects + index);
      }
+     CHECK(index == t->nobjects, "bug in create_geom_box_tree0");
 
      divide_geom_box_tree(t);
      
@@ -1061,8 +1185,8 @@ static void shift_to_unit_cell(vector3 *p)
 	  p->z += geometry_lattice.size.z;
 }
 
-geometric_object *object_of_point_in_tree(vector3 p, geom_box_tree t,
-					  vector3 *shiftby)
+const geometric_object *object_of_point_in_tree(vector3 p, geom_box_tree t,
+						vector3 *shiftby)
 {
      geom_box_object *gbo;
      *shiftby = p;
