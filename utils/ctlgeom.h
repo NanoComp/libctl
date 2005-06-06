@@ -28,10 +28,12 @@
 #define MATERIAL_TYPE ctlio::material_type
 #define GEOMETRIC_OBJECT ctlio::geometric_object
 #define GEOMETRIC_OBJECT_LIST ctlio::geometric_object_list
+#define LATTICE ctlio::lattice
 #else
 #define MATERIAL_TYPE material_type
 #define GEOMETRIC_OBJECT geometric_object
 #define GEOMETRIC_OBJECT_LIST geometric_object_list
+#define LATTICE lattice
 #endif
 
 #ifdef __cplusplus
@@ -43,6 +45,8 @@ extern "C" {
 extern void geom_fix_object(GEOMETRIC_OBJECT o);
 extern void geom_fix_objects(void);
 extern void geom_fix_objects0(GEOMETRIC_OBJECT_LIST geometry);
+extern void geom_fix_lattice(void);
+extern void geom_fix_lattice0(LATTICE *L);
 extern boolean point_in_objectp(vector3 p, GEOMETRIC_OBJECT o);
 extern boolean point_in_periodic_objectp(vector3 p, GEOMETRIC_OBJECT o);
 extern boolean point_in_fixed_objectp(vector3 p, GEOMETRIC_OBJECT o);
@@ -50,6 +54,8 @@ extern boolean point_in_fixed_pobjectp(vector3 p, GEOMETRIC_OBJECT *o);
 extern boolean point_in_periodic_fixed_objectp(vector3 p, GEOMETRIC_OBJECT o);
 extern vector3 normal_to_object(vector3 p, GEOMETRIC_OBJECT o);
 extern vector3 normal_to_fixed_object(vector3 p, GEOMETRIC_OBJECT o);
+extern int intersect_line_with_object(vector3 p, vector3 d, geometric_object o,
+				      double s[2]);
 extern MATERIAL_TYPE material_of_point_inobject(vector3 p, boolean *inobject);
 extern MATERIAL_TYPE material_of_point_inobject0(
      GEOMETRIC_OBJECT_LIST geometry, vector3 p, boolean *inobject);
@@ -92,6 +98,10 @@ const GEOMETRIC_OBJECT *object_of_point_in_tree(vector3 p, geom_box_tree t,
 						vector3 *shiftby);
 extern void display_geom_box_tree(int indentby, geom_box_tree t);
 extern void geom_box_tree_stats(geom_box_tree t, int *depth, int *nobjects);
+
+extern number box_overlap_with_object(geom_box b, geometric_object o, number tol);
+extern number range_overlap_with_object(vector3 low, vector3 high,
+					geometric_object o, number tol);
 
 extern vector3 get_grid_size(void);
 extern vector3 get_resolution(void);

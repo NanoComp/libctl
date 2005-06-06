@@ -117,6 +117,25 @@ void geom_fix_objects(void)
      geom_fix_objects0(geometry);
 }
 
+void geom_fix_lattice0(lattice *L)
+{
+     L->basis1 = unit_vector3(L->basis1);
+     L->basis2 = unit_vector3(L->basis2);
+     L->basis3 = unit_vector3(L->basis3);
+     L->b1 = vector3_scale(L->basis_size.x, L->basis1);
+     L->b2 = vector3_scale(L->basis_size.y, L->basis2);
+     L->b3 = vector3_scale(L->basis_size.z, L->basis3);
+     L->basis.c0 = L->b1;
+     L->basis.c1 = L->b2;
+     L->basis.c2 = L->b3;
+     L->metric = matrix3x3_mult(matrix3x3_transpose(L->basis), L->basis);
+}
+
+void geom_fix_lattice(void)
+{
+     geom_fix_lattice0(&geometry_lattice);
+}
+
 /**************************************************************************/
 
 /* Return whether or not the point p (in the lattice basis) is inside
@@ -533,6 +552,176 @@ void CTLIO display_geometric_object_info(int indentby, geometric_object o)
 
 /**************************************************************************/
 
+/* Compute the intersections with o of a line along p+s*d, returning
+   the number of intersections (at most 2) and the two intersection "s"
+   values in s[0] and s[1].   (Note: o must not be a compound object.) */
+int intersect_line_with_object(vector3 p, vector3 d, geometric_object o,
+			       double s[2])
+{
+     p = vector3_minus(p, o.center);
+     s[0] = s[1] = 0;
+     switch (o.which_subclass) {
+	 case GEOM SPHERE: {
+	      number radius = o.subclass.sphere_data->radius;
+	      vector3 dm = matrix3x3_vector3_mult(geometry_lattice.metric, d);
+	      double a = vector3_dot(d, dm);
+	      double b2 = -vector3_dot(dm, p);
+	      double c = vector3_dot(p, matrix3x3_vector3_mult(
+		   geometry_lattice.metric, p)) - radius * radius;
+	      double discrim = b2*b2 - a*c;
+	      if (discrim < 0)
+		   return 0;
+	      else if (discrim == 0) {
+		   s[0] = b2 / a;
+		   return 1;
+	      }
+	      else {
+		   discrim = sqrt(discrim);
+		   s[0] = (b2 + discrim) / a;
+		   s[1] = (b2 - discrim) / a;
+		   return 2;
+	      }
+	 }
+	 case GEOM CYLINDER: {
+	      vector3 dm = matrix3x3_vector3_mult(geometry_lattice.metric, d);
+	      vector3 pm = matrix3x3_vector3_mult(geometry_lattice.metric, p);
+	      number height = o.subclass.cylinder_data->height;
+	      number radius = o.subclass.cylinder_data->radius;
+	      number radius2 = o.subclass.cylinder_data->which_subclass == CYL CONE ? o.subclass.cylinder_data->subclass.cone_data->radius2 : radius;
+	      double dproj = vector3_dot(o.subclass.cylinder_data->axis, dm);
+	      double pproj = vector3_dot(o.subclass.cylinder_data->axis, pm);
+	      double D = (radius2 - radius) / height;
+	      double L = radius + (radius2 - radius) * 0.5 + pproj*D;
+	      double a = vector3_dot(d,dm) - dproj*dproj * (1 + D*D);
+	      double b2 = dproj * (pproj + D*L) - vector3_dot(p,dm);
+	      double c = vector3_dot(p,pm) - pproj*pproj - L*L;
+	      double discrim = b2*b2 - a*c;
+	      int ret;
+	      if (a == 0) { /* linear equation */
+		   if (b2 == 0) {
+			if (c == 0) { /* infinite intersections */
+			     s[0] = ((height * 0.5) - pproj) / dproj;
+			     s[1] = -((height * 0.5) + pproj) / dproj;
+			     return 2;
+			}
+			else
+			     ret = 0;
+		   }
+		   else {
+			s[0] = 0.5 * c / b2;
+			ret = 1;
+		   }
+	      }
+              else if (discrim < 0)
+                   ret = 0;
+              else if (discrim == 0) {
+                   s[0] = b2 / a;
+                   ret = 1;
+              }
+              else {
+                   discrim = sqrt(discrim);
+                   s[0] = (b2 + discrim) / a;
+                   s[1] = (b2 - discrim) / a;
+                   ret = 2;
+	      }
+	      if (ret == 2 && fabs(pproj + s[1] * dproj) > height * 0.5)
+		   ret = 1;
+	      if (ret >= 1 && fabs(pproj + s[0] * dproj) > height * 0.5) {
+		   --ret;
+		   s[0] = s[1];
+	      }
+	      if (ret == 2 || dproj == 0)
+		   return ret;
+	      /* find intersections with endcaps */
+	      s[ret] = (height * 0.5 - pproj) / dproj;
+	      if (a * s[ret]*s[ret] - 2*b2 * s[ret] + c <= 0)
+		   ++ret;
+	      if (ret < 2) {
+		   s[ret] = -(height * 0.5 + pproj) / dproj;
+		   if (a * s[ret]*s[ret] - 2*b2 * s[ret] + c <= 0)
+			++ret;
+	      }
+	      if (ret == 2 && s[0] == s[1]) ret = 1;
+	      return ret;
+	 }
+	 case GEOM BLOCK:
+	 {
+	      vector3 dproj = matrix3x3_vector3_mult(o.subclass.block_data->projection_matrix, d);
+	      vector3 pproj = matrix3x3_vector3_mult(o.subclass.block_data->projection_matrix, p);
+	      switch (o.subclass.block_data->which_subclass) {
+		  case BLK BLOCK_SELF:
+		  {
+		       vector3 size = o.subclass.block_data->size;
+		       int ret = 0;
+		       size.x *= 0.5; size.y *= 0.5; size.z *= 0.5;
+		       if (dproj.x != 0) {
+			    s[ret] = (size.x - pproj.x) / dproj.x;
+			    if (fabs(pproj.y+s[ret]*dproj.y) <= size.y &&
+				fabs(pproj.z+s[ret]*dproj.z) <= size.z)
+				 ++ret;
+			    s[ret] = (-size.x - pproj.x) / dproj.x;
+			    if (fabs(pproj.y+s[ret]*dproj.y) <= size.y &&
+				fabs(pproj.z+s[ret]*dproj.z) <= size.z)
+				 ++ret;
+			    if (ret == 2) return 2;
+		       }
+		       if (dproj.y != 0) {
+			    s[ret] = (size.y - pproj.y) / dproj.y;
+			    if (fabs(pproj.x+s[ret]*dproj.x) <= size.x &&
+				fabs(pproj.z+s[ret]*dproj.z) <= size.z)
+				 ++ret;
+			    if (ret == 2) return 2;
+			    s[ret] = (-size.y - pproj.y) / dproj.y;
+			    if (fabs(pproj.x+s[ret]*dproj.x) <= size.x &&
+				fabs(pproj.z+s[ret]*dproj.z) <= size.z)
+				 ++ret;
+			    if (ret == 2) return 2;
+		       }
+		       if (dproj.z != 0) {
+			    s[ret] = (size.z - pproj.z) / dproj.z;
+			    if (fabs(pproj.x+s[ret]*dproj.x) <= size.x &&
+				fabs(pproj.y+s[ret]*dproj.y) <= size.y)
+				 ++ret;
+			    if (ret == 2) return 2;
+			    s[ret] = (-size.z - pproj.z) / dproj.z;
+			    if (fabs(pproj.x+s[ret]*dproj.x) <= size.x &&
+				fabs(pproj.y+s[ret]*dproj.y) <= size.y)
+				 ++ret;
+		       }
+		       return ret;
+		  }
+		  case BLK ELLIPSOID:
+		  {
+		       vector3 isa = o.subclass.block_data->subclass.ellipsoid_data->inverse_semi_axes;
+		       double a, b2, c, discrim;
+		       dproj.x *= isa.x; dproj.y *= isa.y; dproj.z *= isa.z;
+		       pproj.x *= isa.x; pproj.y *= isa.y; pproj.z *= isa.z;
+		       a = vector3_dot(dproj, dproj);
+		       b2 = -vector3_dot(dproj, pproj);
+		       c = vector3_dot(pproj, pproj) - 1;
+		       discrim = b2*b2 - a*c;
+		       if (discrim < 0)
+			    return 0;
+		       else if (discrim == 0) {
+			    s[0] = b2 / a;
+			    return 1;
+		       }
+		       else {
+			    discrim = sqrt(discrim);
+			    s[0] = (b2 + discrim) / a;
+			    s[1] = (b2 - discrim) / a;
+			    return 2;
+		       }
+		  }
+	      }
+	 }
+	 default:
+	      return 0;
+     }      
+}
+
+/**************************************************************************/
+
 /* Given a basis (matrix columns are the basis unit vectors) and the
    size of the lattice (in basis vectors), returns a new "square"
    basis.  This corresponds to a region of the same volume, but made
@@ -586,7 +775,8 @@ matrix3x3 CTLIO square_basis(matrix3x3 basis, vector3 size)
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
-static void geom_box_union(geom_box *bu, geom_box *b1, geom_box *b2)
+static void geom_box_union(geom_box *bu,
+			   const geom_box *b1, const geom_box *b2)
 {
      bu->low.x = MIN(b1->low.x, b2->low.x);
      bu->low.y = MIN(b1->low.y, b2->low.y);
@@ -594,6 +784,18 @@ static void geom_box_union(geom_box *bu, geom_box *b1, geom_box *b2)
      bu->high.x = MAX(b1->high.x, b2->high.x);
      bu->high.y = MAX(b1->high.y, b2->high.y);
      bu->high.z = MAX(b1->high.z, b2->high.z);
+}
+
+static void geom_box_intersection(geom_box *bi, 
+				  const geom_box *b1,
+				  const geom_box *b2)
+{
+     bi->low.x = MAX(b1->low.x, b2->low.x);
+     bi->low.y = MAX(b1->low.y, b2->low.y);
+     bi->low.z = MAX(b1->low.z, b2->low.z);
+     bi->high.x = MIN(b1->high.x, b2->high.x);
+     bi->high.y = MIN(b1->high.y, b2->high.y);
+     bi->high.z = MIN(b1->high.z, b2->high.z);
 }
 
 static void geom_box_add_pt(geom_box *b, vector3 p)
@@ -801,6 +1003,86 @@ static void get_bounding_box(geometric_object o, geom_box *box)
 	      break;
 	 }
      }
+}
+
+/**************************************************************************/
+/* compute the fraction of a box's volume (or area/length in 2d/1d) that
+   overlaps an object */
+
+static double overlap_vol(geometric_object o, number tol,
+			  vector3 e0, double a0, double b0,
+			  vector3 e1, double a1, double b1,
+			  vector3 e2, double a2, double b2)
+{
+     double itol = 1.0 / ((int) (1/tol + 0.5));
+     double d1 = a1 == b1 ? 1 : (b1 - a1) * itol;
+     double d2 = a2 == b2 ? 1 : (b2 - a2) * itol;
+     double x1, x2;
+     double V = 0;
+
+     for (x1 = a1 == b1 ? a1 : a1 + d1*0.5; x1 <= b1; x1 += d1)
+	  for (x2 = a2 == b2 ? a2 : a2 + d2*0.5; x2 <= b2; x2 += d2) {
+	       double s[2];
+	       vector3 p;
+	       p.x = e1.x * x1 + e2.x * x2;
+	       p.y = e1.y * x1 + e2.y * x2;
+	       p.z = e1.z * x1 + e2.z * x2;
+	       if (2 == intersect_line_with_object(p, e0, o, s)) {
+		    double ds = (s[0] < s[1]
+				 ? MIN(s[1],b0) - MAX(s[0],a0)
+				 : MIN(s[0],b0) - MAX(s[1],a0));
+		    if (ds > 0)
+			 V += ds * d1 * d2;
+	       }
+	  }
+     return V;
+}
+
+number box_overlap_with_object(geom_box b, geometric_object o, number tol)
+{
+     int empty_x = b.low.x == b.high.x;
+     int empty_y = b.low.y == b.high.y;
+     int empty_z = b.low.z == b.high.z;
+     double V0 = ((empty_x ? 1 : b.high.x - b.low.x) *
+		  (empty_y ? 1 : b.high.y - b.low.y) *
+		  (empty_z ? 1 : b.high.z - b.low.z));
+     vector3 ex = {1,0,0}, ey = {0,1,0}, ez = {0,0,1};
+     geom_box bb;
+
+     get_bounding_box(o, &bb);
+     geom_box_intersection(&bb, &b, &bb);
+     if (bb.low.x > bb.high.x || bb.low.y > bb.high.y || bb.low.z > bb.high.z
+	 || (!empty_x && bb.low.x == bb.high.x)
+	 || (!empty_y && bb.low.y == bb.high.y)
+	 || (!empty_z && bb.low.z == bb.high.z))
+	  return 0.0;
+
+     if (empty_x && empty_y && empty_z) return 1.0;
+
+     if (!empty_x)
+	  return overlap_vol(o, tol, 
+			     ex, bb.low.x, bb.high.x,
+			     ey, bb.low.y, bb.high.y,
+			     ez, bb.low.z, bb.high.z) / V0;
+     if (!empty_y)
+	  return overlap_vol(o, tol, 
+			     ey, bb.low.y, bb.high.y,
+			     ex, bb.low.x, bb.high.x,
+			     ez, bb.low.z, bb.high.z) / V0;
+     if (!empty_z)
+	  return overlap_vol(o, tol, 
+			     ez, bb.low.z, bb.high.z,
+			     ex, bb.low.x, bb.high.x,
+			     ey, bb.low.y, bb.high.y) / V0;
+}
+
+number range_overlap_with_object(vector3 low, vector3 high,
+				 geometric_object o, number tol)
+{
+     geom_box b;
+     b.low = low;
+     b.high = high;
+     return box_overlap_with_object(b, o, tol);
 }
 
 /**************************************************************************/
