@@ -217,10 +217,10 @@ boolean point_in_fixed_pobjectp(vector3 p, geometric_object *o)
 
 /**************************************************************************/
 /* Return the normal vector from the given object to the given point,
-   using the surface of the object that the point is "closest" to for
-   some definition of "closest" that is reasonable (at least for
-   points near to the object). The length and sign of the normal
-   vector are arbitrary. */
+   in lattice coordinates, using the surface of the object that the
+   point is "closest" to for some definition of "closest" that is
+   reasonable (at least for points near to the object). The length and
+   sign of the normal vector are arbitrary. */
 
 vector3 CTLIO normal_to_object(vector3 p, geometric_object o)
 {
@@ -266,11 +266,11 @@ vector3 normal_to_fixed_object(vector3 p, geometric_object o)
 	  double d2 = fabs(fabs(proj.y) - 0.5 * size.y);
 	  double d3 = fabs(fabs(proj.z) - 0.5 * size.z);
 	  if (d1 < d2 && d1 < d3)
-	       return o.subclass.block_data->e1;
+	       return matrix3x3_row1(o.subclass.block_data->projection_matrix);
 	  else if (d2 < d1 && d2 < d3)
-	       return o.subclass.block_data->e2;
+	       return matrix3x3_row2(o.subclass.block_data->projection_matrix);
 	  else
-	       return o.subclass.block_data->e3;
+	       return matrix3x3_row3(o.subclass.block_data->projection_matrix);
 	}
       case BLK ELLIPSOID:
 	{
@@ -279,10 +279,8 @@ vector3 normal_to_fixed_object(vector3 p, geometric_object o)
 	  proj.x *= isa.x * isa.x;
 	  proj.y *= isa.y * isa.y;
 	  proj.z *= isa.z * isa.z;
-	  return vector3_plus(
-	       vector3_scale(proj.x,o.subclass.block_data->e1),
-	       vector3_plus(vector3_scale(proj.y,o.subclass.block_data->e2),
-			    vector3_scale(proj.z,o.subclass.block_data->e3)));
+	  return matrix3x3_transpose_vector3_mult(
+	       o.subclass.block_data->projection_matrix, proj);
 	}
       }
     }

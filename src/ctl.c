@@ -179,6 +179,16 @@ vector3 matrix3x3_vector3_mult(matrix3x3 m, vector3 v)
   return vnew;
 }
 
+vector3 matrix3x3_transpose_vector3_mult(matrix3x3 m, vector3 v)
+{
+  vector3 vnew;
+
+  vnew.x = m.c0.x * v.x + m.c0.y * v.y + m.c0.z * v.z;
+  vnew.y = m.c1.x * v.x + m.c1.y * v.y + m.c1.z * v.z;
+  vnew.z = m.c2.x * v.x + m.c2.y * v.y + m.c2.z * v.z;
+  return vnew;
+}
+
 matrix3x3 matrix3x3_mult(matrix3x3 m1, matrix3x3 m2)
 {
   matrix3x3 m;
@@ -252,6 +262,33 @@ int matrix3x3_equal(matrix3x3 m1, matrix3x3 m2)
      return (vector3_equal(m1.c0, m2.c0)
 	     && vector3_equal(m1.c1, m2.c1)
 	     && vector3_equal(m1.c2, m2.c2));
+}
+
+vector3 matrix3x3_row1(matrix3x3 m)
+{
+     vector3 v;
+     v.x = m.c0.x;
+     v.y = m.c1.x;
+     v.z = m.c2.x;
+     return v;
+}
+
+vector3 matrix3x3_row2(matrix3x3 m)
+{
+     vector3 v;
+     v.x = m.c0.y;
+     v.y = m.c1.y;
+     v.z = m.c2.y;
+     return v;
+}
+
+vector3 matrix3x3_row3(matrix3x3 m)
+{
+     vector3 v;
+     v.x = m.c0.z;
+     v.y = m.c1.z;
+     v.z = m.c2.z;
+     return v;
 }
 
 /**************************************************************************/
