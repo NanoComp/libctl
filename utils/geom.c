@@ -1057,8 +1057,6 @@ number box_overlap_with_object(geom_box b, geometric_object o, number tol)
 	 || (!empty_z && bb.low.z == bb.high.z))
 	  return 0.0;
 
-     if (empty_x && empty_y && empty_z) return 1.0;
-
      if (!empty_x)
 	  return overlap_vol(o, tol, 
 			     ex, bb.low.x, bb.high.x,
@@ -1074,6 +1072,8 @@ number box_overlap_with_object(geom_box b, geometric_object o, number tol)
 			     ez, bb.low.z, bb.high.z,
 			     ex, bb.low.x, bb.high.x,
 			     ey, bb.low.y, bb.high.y) / V0;
+
+     return 1.0;
 }
 
 number range_overlap_with_object(vector3 low, vector3 high,
