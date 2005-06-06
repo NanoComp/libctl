@@ -783,6 +783,7 @@ static void get_bounding_box(geometric_object o, geom_box *box)
 	      geom_box_add_pt(box, vector3_plus(corner, vector3_plus(s3, s2)));
 	      geom_box_add_pt(box,
 	        vector3_plus(corner, vector3_plus(s1, vector3_plus(s2, s3))));
+	      break;
 	 }
 	 case GEOM COMPOUND_GEOMETRIC_OBJECT:
 	 {
