@@ -1484,8 +1484,10 @@ const geometric_object *object_of_point_in_tree(vector3 p, geom_box_tree t,
 	  *precedence = gbo->precedence;
 	  return gbo->o;
      }
-     else
+     else {
+	  *precedence = 0;
 	  return 0;
+     }
 }
 
 material_type material_of_point_in_tree_inobject(vector3 p, geom_box_tree t,
