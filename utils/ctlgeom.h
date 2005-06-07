@@ -76,6 +76,7 @@ typedef struct {
      geom_box box;
      const GEOMETRIC_OBJECT *o;
      vector3 shiftby;
+     int precedence;
 } geom_box_object;
 
 typedef struct geom_box_tree_struct {
@@ -95,7 +96,8 @@ extern MATERIAL_TYPE material_of_point_in_tree_inobject0(GEOMETRIC_OBJECT_LIST g
 extern MATERIAL_TYPE material_of_point_in_tree(vector3 p, geom_box_tree t);
 extern MATERIAL_TYPE material_of_point_in_tree0(GEOMETRIC_OBJECT_LIST geometry, vector3 p, geom_box_tree t);
 const GEOMETRIC_OBJECT *object_of_point_in_tree(vector3 p, geom_box_tree t,
-						vector3 *shiftby);
+						vector3 *shiftby,
+						int *precedence);
 extern void display_geom_box_tree(int indentby, geom_box_tree t);
 extern void geom_box_tree_stats(geom_box_tree t, int *depth, int *nobjects);
 

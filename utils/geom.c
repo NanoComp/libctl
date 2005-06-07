@@ -1313,7 +1313,8 @@ static int num_objects_in_box(const geometric_object *o, vector3 shiftby,
 
 static int store_objects_in_box(const geometric_object *o, vector3 shiftby,
 				const geom_box *b,
-				geom_box_object *bo)
+				geom_box_object *bo,
+				int precedence)
 {
      if (o->which_subclass == GEOM COMPOUND_GEOMETRIC_OBJECT) {
 	  int n = o->subclass.compound_geometric_object_data
@@ -1323,7 +1324,8 @@ static int store_objects_in_box(const geometric_object *o, vector3 shiftby,
 	  int i, sum = 0;
 	  shiftby = vector3_plus(shiftby, o->center);
 	  for (i = 0; i < n; ++i)
-	       sum += store_objects_in_box(os + i, shiftby, b, bo + sum);
+	       sum += store_objects_in_box(os + i, shiftby, b, bo + sum,
+					   precedence - sum);
 	  return sum;
      }
      else {
@@ -1332,6 +1334,7 @@ static int store_objects_in_box(const geometric_object *o, vector3 shiftby,
 	       bo->box = ob;
 	       bo->o = o;
 	       bo->shiftby = shiftby;
+	       bo->precedence = precedence;
 	       return 1;
 	  }
 	  else
@@ -1369,11 +1372,12 @@ geom_box_tree create_geom_box_tree0(geometric_object_list geometry,
 	       LOOP_PERIODIC(shiftby,
 			     index += store_objects_in_box(
 				  geometry.items + i, shiftby, &t->b,
-				  t->objects + index));
+				  t->objects + index, t->nobjects - index));
 	  }
 	  else 
 	       index += store_objects_in_box(
-		    geometry.items + i, shiftby, &t->b, t->objects + index);
+		    geometry.items + i, shiftby, &t->b, 
+		    t->objects + index, t->nobjects - index);
      }
      CHECK(index == t->nobjects, "bug in create_geom_box_tree0");
 
@@ -1467,7 +1471,8 @@ static void shift_to_unit_cell(vector3 *p)
 }
 
 const geometric_object *object_of_point_in_tree(vector3 p, geom_box_tree t,
-						vector3 *shiftby)
+						vector3 *shiftby,
+						int *precedence)
 {
      geom_box_object *gbo;
      *shiftby = p;
@@ -1476,6 +1481,7 @@ const geometric_object *object_of_point_in_tree(vector3 p, geom_box_tree t,
      gbo = find_box_object(p, t);
      if (gbo) {
 	  *shiftby = vector3_plus(*shiftby, gbo->shiftby);
+	  *precedence = gbo->precedence;
 	  return gbo->o;
      }
      else
