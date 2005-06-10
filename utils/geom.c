@@ -1009,37 +1009,48 @@ static void get_bounding_box(geometric_object o, geom_box *box)
 /* compute the fraction of a box's volume (or area/length in 2d/1d) that
    overlaps an object */
 
-static double overlap_vol(geometric_object o, number tol,
-			  vector3 e0, double a0, double b0,
-			  vector3 e1, double a1, double b1,
-			  vector3 e2, double a2, double b2)
-{
-     double itol = 1.0 / ((int) (1/tol + 0.5));
-     double d1 = a1 == b1 ? 1 : (b1 - a1) * itol;
-     double d2 = a2 == b2 ? 1 : (b2 - a2) * itol;
-     double x1, x2;
-     double V = 0;
+typedef struct {
+     geometric_object o;
+     vector3 p, dir;
+     int pdim[2]; /* the (up to two) integration directions */
+     unsigned dim;
+     double a0, b0;
+} overlap_data;
 
-     for (x1 = a1 == b1 ? a1 : a1 + d1*0.5; x1 <= b1; x1 += d1)
-	  for (x2 = a2 == b2 ? a2 : a2 + d2*0.5; x2 <= b2; x2 += d2) {
-	       double s[2];
-	       vector3 p;
-	       p.x = e1.x * x1 + e2.x * x2;
-	       p.y = e1.y * x1 + e2.y * x2;
-	       p.z = e1.z * x1 + e2.z * x2;
-	       if (2 == intersect_line_with_object(p, e0, o, s)) {
-		    double ds = (s[0] < s[1]
-				 ? MIN(s[1],b0) - MAX(s[0],a0)
-				 : MIN(s[0],b0) - MAX(s[1],a0));
-		    if (ds > 0)
-			 V += ds * d1 * d2;
+static double overlap_integrand(integer ndim, number *x, void *data_)
+{
+     overlap_data *data = (overlap_data *) data_;
+     double s[2];
+     vector3 p = data->p;
+
+     if (data->dim > 0) {
+	  switch (data->pdim[0]) {
+	      case 0: p.x = x[0]; break;
+	      case 1: p.y = x[0]; break;
+	      case 2: p.z = x[0]; break;
+	  }
+	  if (data->dim > 1) {
+	       switch (data->pdim[1]) {
+		   case 0: p.x = x[1]; break;
+		   case 1: p.y = x[1]; break;
+		   case 2: p.z = x[1]; break;
 	       }
 	  }
-     return V;
+     }
+
+     if (2 == intersect_line_with_object(p, data->dir, data->o, s)) {
+	  double ds = (s[0] < s[1]
+		       ? MIN(s[1],data->b0) - MAX(s[0],data->a0)
+		       : MIN(s[0],data->b0) - MAX(s[1],data->a0));
+	  return (ds > 0 ? ds : 0.0);
+     }
+     return 0.0;
 }
 
-number box_overlap_with_object(geom_box b, geometric_object o, number tol)
+number box_overlap_with_object(geom_box b, geometric_object o,
+			       number tol, integer maxeval)
 {
+     overlap_data data;
      int empty_x = b.low.x == b.high.x;
      int empty_y = b.low.y == b.high.y;
      int empty_z = b.low.z == b.high.z;
@@ -1048,6 +1059,8 @@ number box_overlap_with_object(geom_box b, geometric_object o, number tol)
 		  (empty_z ? 1 : b.high.z - b.low.z));
      vector3 ex = {1,0,0}, ey = {0,1,0}, ez = {0,0,1};
      geom_box bb;
+     double xmin[2], xmax[2], esterr;
+     int errflag;
 
      get_bounding_box(o, &bb);
      geom_box_intersection(&bb, &b, &bb);
@@ -1057,32 +1070,71 @@ number box_overlap_with_object(geom_box b, geometric_object o, number tol)
 	 || (!empty_z && bb.low.z == bb.high.z))
 	  return 0.0;
 
-     if (!empty_x)
-	  return overlap_vol(o, tol, 
-			     ex, bb.low.x, bb.high.x,
-			     ey, bb.low.y, bb.high.y,
-			     ez, bb.low.z, bb.high.z) / V0;
-     if (!empty_y)
-	  return overlap_vol(o, tol, 
-			     ey, bb.low.y, bb.high.y,
-			     ex, bb.low.x, bb.high.x,
-			     ez, bb.low.z, bb.high.z) / V0;
-     if (!empty_z)
-	  return overlap_vol(o, tol, 
-			     ez, bb.low.z, bb.high.z,
-			     ex, bb.low.x, bb.high.x,
-			     ey, bb.low.y, bb.high.y) / V0;
+     data.o = o;
+     data.p.x = data.p.y = data.p.z = 0;
+     data.dim = 0;
+     if (!empty_x) {
+	  data.dir = ex;
+	  data.a0 = bb.low.x;
+	  data.b0 = bb.high.x;
+	  if (!empty_y) {
+	       xmin[data.dim] = bb.low.y;
+	       xmax[data.dim] = bb.high.y;
+	       data.pdim[data.dim++] = 1;
+	  }
+	  if (!empty_z) {
+	       xmin[data.dim] = bb.low.z;
+	       xmax[data.dim] = bb.high.z;
+	       data.pdim[data.dim++] = 2;
+	  }
+     }
+     else if (!empty_y) {
+	  data.dir = ey;
+	  data.a0 = bb.low.y;
+	  data.b0 = bb.high.y;
+	  if (!empty_x) {
+	       xmin[data.dim] = bb.low.x;
+	       xmax[data.dim] = bb.high.x;
+	       data.pdim[data.dim++] = 0;
+	  }
+	  if (!empty_z) {
+	       xmin[data.dim] = bb.low.z;
+	       xmax[data.dim] = bb.high.z;
+	       data.pdim[data.dim++] = 2;
+	  }
+     }
+     else if (!empty_z) {
+	  data.dir = ez;
+	  data.a0 = bb.low.z;
+	  data.b0 = bb.high.z;
+	  if (!empty_x) {
+	       xmin[data.dim] = bb.low.x;
+	       xmax[data.dim] = bb.high.x;
+	       data.pdim[data.dim++] = 0;
+	  }
+	  if (!empty_y) {
+	       xmin[data.dim] = bb.low.y;
+	       xmax[data.dim] = bb.high.y;
+	       data.pdim[data.dim++] = 1;
+	  }
+     }
+
+     return adaptive_integration(overlap_integrand, xmin, xmax, 
+				 data.dim, &data, 
+				 tol, maxeval,
+				 &esterr, &errflag) / V0;
 
      return 1.0;
 }
 
 number range_overlap_with_object(vector3 low, vector3 high,
-				 geometric_object o, number tol)
+				 geometric_object o, number tol, 
+				 integer maxeval)
 {
      geom_box b;
      b.low = low;
      b.high = high;
-     return box_overlap_with_object(b, o, tol);
+     return box_overlap_with_object(b, o, tol, maxeval);
 }
 
 /**************************************************************************/

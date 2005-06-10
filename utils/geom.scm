@@ -188,7 +188,7 @@
   no-return-value 'integer 'geometric-object)
 
 (define-external-function range-overlap-with-object true false
-  'number 'vector3 'vector3 'geometric-object 'number)
+  'number 'vector3 'vector3 'geometric-object 'number 'integer)
 
 (define-external-function square-basis false false
   'matrix3x3 'matrix3x3 'vector3)

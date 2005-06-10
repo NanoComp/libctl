@@ -101,9 +101,10 @@ const GEOMETRIC_OBJECT *object_of_point_in_tree(vector3 p, geom_box_tree t,
 extern void display_geom_box_tree(int indentby, geom_box_tree t);
 extern void geom_box_tree_stats(geom_box_tree t, int *depth, int *nobjects);
 
-extern number box_overlap_with_object(geom_box b, geometric_object o, number tol);
+extern number box_overlap_with_object(geom_box b, geometric_object o, number tol, integer maxeval);
 extern number range_overlap_with_object(vector3 low, vector3 high,
-					geometric_object o, number tol);
+					geometric_object o, number tol,
+					integer maxeval);
 
 extern vector3 get_grid_size(void);
 extern vector3 get_resolution(void);

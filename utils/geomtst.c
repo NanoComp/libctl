@@ -152,7 +152,7 @@ static void test_overlap(double tol)
      b.low = vector3_plus(b.low, vector3_scale(d, dir));
      b.high = vector3_plus(b.high, vector3_scale(d, dir));
 
-     olap = box_overlap_with_object(b, o, tol);
+     olap = box_overlap_with_object(b, o, tol, 100/tol);
      olap0 = simple_overlap(b, o, tol);
 
      if (fabs(olap0 - olap) > 2 * tol * fabs(olap)) {
@@ -177,7 +177,7 @@ static void test_overlap(double tol)
 	  while (1) {
 	       tol /= sqrt(2.0);
 	       fprintf(stderr, "olap = %g, olap0 = %g (with tol = %e)\n",
-		       box_overlap_with_object(b, o, tol),
+		       box_overlap_with_object(b, o, tol, 100/tol),
 		       simple_overlap(b, o, tol), tol);
 	  }
 #endif
