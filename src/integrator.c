@@ -415,6 +415,13 @@ static rule *make_rule75genzmalik(unsigned dim)
 
      if (dim < 2) return 0; /* this rule does not support 1d integrals */
 
+     /* Because of the use of a bit-field in evalR_Rfs, we are limited
+	to be < 32 dimensions (or however many bits are in unsigned).
+	This is not a practical limitation...long before you reach
+	32 dimensions, the Genz-Malik cubature becomes excruciatingly
+	slow and is superseded by other methods (e.g. Monte-Carlo). */
+     if (dim >= sizeof(unsigned) * 8) return 0;
+
      r = (rule75genzmalik *) malloc(sizeof(rule75genzmalik));
      r->parent.dim = dim;
 
@@ -718,6 +725,7 @@ static int adapt_integrate(integrand f, void *fdata,
 	  return 0;
      }
      r = dim == 1 ? make_rule15gauss(dim) : make_rule75genzmalik(dim);
+     if (!r) { *val = 0; *err = HUGE_VAL; return -2; /* ERROR */ }
      h = make_hypercube_range(dim, xmin, xmax);
      int status = ruleadapt_integrate(r, f, fdata, &h,
 				      maxEval, reqAbsError, reqRelError,
