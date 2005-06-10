@@ -1023,13 +1023,13 @@ static double overlap_integrand(integer ndim, number *x, void *data_)
      double s[2];
      vector3 p = data->p;
 
-     if (data->dim > 0) {
+     if (ndim > 0) {
 	  switch (data->pdim[0]) {
 	      case 0: p.x = x[0]; break;
 	      case 1: p.y = x[0]; break;
 	      case 2: p.z = x[0]; break;
 	  }
-	  if (data->dim > 1) {
+	  if (ndim > 1) {
 	       switch (data->pdim[1]) {
 		   case 0: p.x = x[1]; break;
 		   case 1: p.y = x[1]; break;
@@ -1118,13 +1118,13 @@ number box_overlap_with_object(geom_box b, geometric_object o,
 	       data.pdim[data.dim++] = 1;
 	  }
      }
+     else
+	  return 1.0;
 
      return adaptive_integration(overlap_integrand, xmin, xmax, 
 				 data.dim, &data, 
 				 tol, maxeval,
 				 &esterr, &errflag) / V0;
-
-     return 1.0;
 }
 
 number range_overlap_with_object(vector3 low, vector3 high,

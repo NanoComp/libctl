@@ -713,8 +713,8 @@ static int adapt_integrate(integrand f, void *fdata,
      esterr ee;
      
      if (dim == 0) { /* trivial integration */
-	  ee.val = f(0, xmin, fdata);
-	  ee.err = 0;
+	  *val = f(0, xmin, fdata);
+	  *err = 0;
 	  return 0;
      }
      r = dim == 1 ? make_rule15gauss(dim) : make_rule75genzmalik(dim);
