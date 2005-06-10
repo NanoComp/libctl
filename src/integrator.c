@@ -92,7 +92,7 @@ static double compute_vol(const hypercube *h)
      return vol;
 }
 
-static hypercube make_hypercube(unsigned dim, const double *center, const double *width)
+static hypercube make_hypercube(unsigned dim, const double *center, const double *halfwidth)
 {
      unsigned i;
      hypercube h;
@@ -100,7 +100,7 @@ static hypercube make_hypercube(unsigned dim, const double *center, const double
      h.data = (double *) malloc(sizeof(double) * dim * 2);
      for (i = 0; i < dim; ++i) {
 	  h.data[i] = center[i];
-	  h.data[i + dim] = width[i];
+	  h.data[i + dim] = halfwidth[i];
      }
      h.vol = compute_vol(&h);
      return h;
@@ -376,15 +376,15 @@ static unsigned rule75genzmalik_evalError(rule *r_, integrand f, void *fdata, co
      unsigned i, dimDiffMax, dim = r_->dim;
      double sum1 = 0.0, sum2 = 0.0, sum3 = 0.0, sum4, result, res5th;
      const double *center = h->data;
-     const double *width = h->data + dim;
+     const double *halfwidth = h->data + dim;
 
      for (i = 0; i < dim; ++i)
 	  r->p[i] = center[i];
 
      for (i = 0; i < dim; ++i)
-	  r->widthLambda2[i] = width[i] * lambda2;
+	  r->widthLambda2[i] = halfwidth[i] * lambda2;
      for (i = 0; i < dim; ++i)
-	  r->widthLambda[i] = width[i] * lambda4;
+	  r->widthLambda[i] = halfwidth[i] * lambda4;
 
      /* Evaluate function in the center, in f(lambda2,0,...,0) and
         f(lambda3=lambda4, 0,...,0).  Estimate dimension with largest error */
@@ -395,7 +395,7 @@ static unsigned rule75genzmalik_evalError(rule *r_, integrand f, void *fdata, co
 
      /* Calculate sum5 for f(lambda5, lambda5, ..., lambda5) */
      for (i = 0; i < dim; ++i)
-	  r->widthLambda[i] = width[i] * lambda5;
+	  r->widthLambda[i] = halfwidth[i] * lambda5;
      double sum5 = evalR_Rfs(f, fdata, dim, r->p, center, r->widthLambda);
 
      /* Calculate fifth and seventh order results */
@@ -487,7 +487,7 @@ static unsigned rule15gauss_evalError(rule *r, integrand f, void *fdata,
      };
 
      const double center = h->data[0];
-     const double width = h->data[1];
+     const double halfwidth = h->data[1];
      double fv1[n - 1], fv2[n - 1];
      const double f_center = f(1, &center, fdata);
      double result_gauss = f_center * wg[n/2 - 1];
@@ -498,7 +498,7 @@ static unsigned rule15gauss_evalError(rule *r, integrand f, void *fdata,
 
      for (j = 0; j < (n - 1) / 2; ++j) {
 	  int j2 = 2*j + 1;
-	  double x, f1, f2, fsum, w = width * xgk[j2];
+	  double x, f1, f2, fsum, w = halfwidth * xgk[j2];
 	  x = center - w; fv1[j2] = f1 = f(1, &x, fdata);
 	  x = center + w; fv2[j2] = f2 = f(1, &x, fdata);
 	  fsum = f1 + f2;
@@ -509,23 +509,23 @@ static unsigned rule15gauss_evalError(rule *r, integrand f, void *fdata,
 
      for (j = 0; j < n/2; ++j) {
 	  int j2 = 2*j;
-	  double x, f1, f2, w = width * xgk[j2];
+	  double x, f1, f2, w = halfwidth * xgk[j2];
 	  x = center - w; fv1[j2] = f1 = f(1, &x, fdata);
           x = center + w; fv2[j2] = f2 = f(1, &x, fdata);
           result_kronrod += wgk[j2] * (f1 + f2);
           result_abs += wgk[j2] * (fabs(f1) + fabs(f2));
      }
 
-     ee->val = result_kronrod * width;
+     ee->val = result_kronrod * halfwidth;
 
      /* compute error estimate: */
      mean = result_kronrod * 0.5;
      result_asc = wgk[n - 1] * fabs(f_center - mean);
      for (j = 0; j < n - 1; ++j)
 	  result_asc += wgk[j] * (fabs(fv1[j]-mean) + fabs(fv2[j]-mean));
-     err = (result_kronrod - result_gauss) * width;
-     result_abs *= width;
-     result_asc *= width;
+     err = (result_kronrod - result_gauss) * halfwidth;
+     result_abs *= halfwidth;
+     result_asc *= halfwidth;
      if (result_asc != 0 && err != 0) {
 	  double scale = pow((200 * err / result_asc), 1.5);
 	  if (scale < 1)
