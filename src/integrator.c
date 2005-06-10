@@ -213,8 +213,7 @@ static unsigned ls0(unsigned n)
 	  0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4,
 	  0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 8,
      };
-     unsigned bit;
-     bit = 0;
+     unsigned bit = 0;
      while ((n & 0xff) == 0xff) {
 	  n >>= 8;
 	  bit += 8;
