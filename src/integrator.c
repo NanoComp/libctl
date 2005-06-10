@@ -241,11 +241,11 @@ static double evalR_Rfs(integrand f, void *fdata, unsigned dim, double *p, const
 
      /* Loop through the points in Gray-code ordering */
      for (i = 0;; ++i) {
-	  unsigned mask;
+	  unsigned mask, d;
 
 	  sum += f(dim, p, fdata);
 
-	  unsigned d = ls0(i);	/* which coordinate to flip */
+	  d = ls0(i);	/* which coordinate to flip */
 	  if (d >= dim)
 	       break;
 
@@ -373,7 +373,7 @@ static unsigned rule75genzmalik_evalError(rule *r_, integrand f, void *fdata, co
 
      rule75genzmalik *r = (rule75genzmalik *) r_;
      unsigned i, dimDiffMax, dim = r_->dim;
-     double sum1 = 0.0, sum2 = 0.0, sum3 = 0.0, sum4, result, res5th;
+     double sum1 = 0.0, sum2 = 0.0, sum3 = 0.0, sum4, sum5, result, res5th;
      const double *center = h->data;
      const double *halfwidth = h->data + dim;
 
@@ -395,7 +395,7 @@ static unsigned rule75genzmalik_evalError(rule *r_, integrand f, void *fdata, co
      /* Calculate sum5 for f(lambda5, lambda5, ..., lambda5) */
      for (i = 0; i < dim; ++i)
 	  r->widthLambda[i] = halfwidth[i] * lambda5;
-     double sum5 = evalR_Rfs(f, fdata, dim, r->p, center, r->widthLambda);
+     sum5 = evalR_Rfs(f, fdata, dim, r->p, center, r->widthLambda);
 
      /* Calculate fifth and seventh order results */
 
@@ -487,7 +487,7 @@ static unsigned rule15gauss_evalError(rule *r, integrand f, void *fdata,
 
      const double center = h->data[0];
      const double halfwidth = h->data[1];
-     double fv1[n - 1], fv2[n - 1];
+     double fv1[7], fv2[7];
      const double f_center = f(1, &center, fdata);
      double result_gauss = f_center * wg[n/2 - 1];
      double result_kronrod = f_center * wgk[n - 1];
@@ -716,6 +716,7 @@ static int adapt_integrate(integrand f, void *fdata,
      rule *r;
      hypercube h;
      esterr ee;
+     int status;
      
      if (dim == 0) { /* trivial integration */
 	  *val = f(0, xmin, fdata);
@@ -725,9 +726,9 @@ static int adapt_integrate(integrand f, void *fdata,
      r = dim == 1 ? make_rule15gauss(dim) : make_rule75genzmalik(dim);
      if (!r) { *val = 0; *err = HUGE_VAL; return -2; /* ERROR */ }
      h = make_hypercube_range(dim, xmin, xmax);
-     int status = ruleadapt_integrate(r, f, fdata, &h,
-				      maxEval, reqAbsError, reqRelError,
-				      &ee);
+     status = ruleadapt_integrate(r, f, fdata, &h,
+				  maxEval, reqAbsError, reqRelError,
+				  &ee);
      *val = ee.val;
      *err = ee.err;
      destroy_hypercube(&h);
