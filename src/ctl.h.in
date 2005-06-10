@@ -302,9 +302,9 @@ extern void ctl_stop_hook(void);
 
   /* subplex multi-dimensional minimization routines: */
 
-typedef number (*subplex_func) (integer, number *, void *);
+typedef number (*multivar_func) (integer, number *, void *);
 
-extern number subplex(subplex_func f, number *x, integer n, void *fdata,
+extern number subplex(multivar_func f, number *x, integer n, void *fdata,
 		      number tol, integer maxnfe,	
 		      number fmin, boolean use_fmin,
 		      number *scale,	
@@ -313,6 +313,16 @@ extern SCM subplex_scm(SCM f_scm, SCM x_scm,
 		       SCM tol_scm, SCM maxnfe_scm,
 		       SCM fmin_scm, SCM use_fmin_scm,
 		       SCM scale_scm);
+
+  /* multi-dimensional integration routines */
+
+extern number adaptive_integration(multivar_func f, number *xmin, number *xmax,
+				   integer n, void *fdata, 
+				   number reltol, integer maxnfe, 
+				   number *esterr, integer *errflag);
+
+extern SCM adaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
+				    SCM tol_scm, SCM maxnfe_scm);
 
 /**************************************************************************/
 

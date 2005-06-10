@@ -174,6 +174,10 @@ void main_entry(int argc, char *argv[])
   /* Export the subplex minimization routine: */
   gh_new_procedure ("subplex", (SCM (*)(void)) subplex_scm, 7, 0, 0);
 
+  /* Export the adaptive integration routine: */
+  gh_new_procedure ("adaptive-integration", 
+		    (SCM (*)(void)) adaptive_integration_scm, 5, 0, 0);
+
 #ifdef HAVE_CTL_EXPORT_HOOK
   ctl_export_hook();
 #endif

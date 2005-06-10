@@ -67,7 +67,7 @@ typedef boolean logical;
 #define TRUE_ 1
 #define FALSE_ 0
 
-typedef subplex_func D_fp;
+typedef multivar_func D_fp;
 
 #define max(a,b) ((a) > (b) ? (a) : (b))
 #define min(a,b) ((a) < (b) ? (a) : (b))
@@ -2167,7 +2167,7 @@ L120:
 
    Return value: value of f at minimum.
 */
-number subplex(subplex_func f, number *x, integer n, void *fdata,
+number subplex(multivar_func f, number *x, integer n, void *fdata,
 	       number tol, integer maxnfe,
 	       number fmin, boolean use_fmin,
 	       number *scale,

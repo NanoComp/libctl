@@ -573,7 +573,8 @@
 ; Integrate the multi-dimensional function f from a..b, within the
 ; specified tolerance.  a and b are either numbers (for 1d integrals),
 ; or vectors/lists of the same length giving the bounds in each dimension.
-(define (integrate f a b tol)
+;  NOTE: this is our *old* routine that uses the trapezoidal rule
+(define (integrate-old f a b tol)
   (define (int f a b)
     (if (null? a)
 	(f)
@@ -586,5 +587,14 @@
    ((and (number? a) (number? b))
     (integrate f (list a) (list b) tol))
    (else (int f a b))))
+
+; As above, but use adaptive cubature rules in integrator.c
+(define (integrate f a b tol . maxnfe)
+  (define (to-list x)
+    (cond ((number? x) (list x))
+	  ((vector? x) (vector->list x))
+	  (else x)))
+  (adaptive-integration (lambda (x) (apply f x)) (to-list a) (to-list b) tol 
+			(if (null? maxnfe) 0 (car maxnfe))))
 
 ; ****************************************************************
