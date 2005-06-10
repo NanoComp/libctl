@@ -652,41 +652,30 @@ static heap_item heap_pop(heap *h)
 
 static int ruleadapt_integrate(rule *r, integrand f, void *fdata, const hypercube *h, unsigned maxEval, double reqAbsError, double reqRelError, esterr *ee)
 {
-     unsigned initialRegions;	/* number of initial regions (non-adaptive) */
-     unsigned minIter;		/* minimum number of adaptive subdivisions */
      unsigned maxIter;		/* maximum number of adaptive subdivisions */
-     unsigned initialPoints;
      heap regions;
      unsigned i;
      int status = -1; /* = ERROR */
 
-     initialRegions = 1; /* or: use some percentage of maxEval/r->num_points */
-     initialPoints = initialRegions * r->num_points;
-     minIter = 0;
      if (maxEval) {
-	  if (initialPoints > maxEval) {
-	       initialRegions = maxEval / r->num_points;
-	       initialPoints = initialRegions * r->num_points;
-	  }
-	  maxEval -= initialPoints;
-	  maxIter = maxEval / (2 * r->num_points);
-     } else
+	  if (r->num_points > maxEval)
+	       return status; /* ERROR */
+	  maxIter = (maxEval - r->num_points) / (2 * r->num_points);
+     }
+     else
 	  maxIter = UINT_MAX;
 
-     if (initialRegions == 0)
-	  return status;	/* ERROR */
-
-     regions = heap_alloc(initialRegions);
+     regions = heap_alloc(1);
 
      heap_push(&regions, eval_region(make_region(h), f, fdata, r));
-     /* or: 
+     /* another possibility is to specify some non-adaptive subdivisions: 
 	if (initialRegions != 1)
 	   partition(h, initialRegions, EQUIDISTANT, &regions, f,fdata, r); */
 
      for (i = 0; i < maxIter; ++i) {
 	  region R, R2;
-	  if (i >= minIter && (regions.ee.err <= reqAbsError 
-			       || relError(regions.ee) <= reqRelError)) {
+	  if (regions.ee.err <= reqAbsError 
+	      || relError(regions.ee) <= reqRelError) {
 	       status = 0; /* converged! */
 	       break;
 	  }
@@ -759,18 +748,12 @@ double f_test(unsigned dim, const double *x, void *data)
      unsigned i;
      ++count;
      switch (which_integrand) {
-	 case 0: /* discontinuous objective: volume of hypersphere */
-	      val = 0;
-	      for (i = 0; i < dim; ++i)
-		   val += x[i] * x[i];
-	      val = val < radius * radius;
-	      break;
-	 case 1: /* simple smooth (separable) objective: prod. cos(x[i]). */
+	 case 0: /* simple smooth (separable) objective: prod. cos(x[i]). */
 	      val = 1;
 	      for (i = 0; i < dim; ++i)
 		   val *= cos(x[i]);
 	      break;
-	 case 2: { /* integral of exp(-x^2), rescaled to (0,infinity) limits */
+	 case 1: { /* integral of exp(-x^2), rescaled to (0,infinity) limits */
 	      double scale = 1.0;
 	      val = 0;
 	      for (i = 0; i < dim; ++i) {
@@ -779,6 +762,12 @@ double f_test(unsigned dim, const double *x, void *data)
 		   scale *= M_2_SQRTPI / (x[i] * x[i]);
 	      }
 	      val = exp(-val) * scale;
+	      break;
+	 case 2: /* discontinuous objective: volume of hypersphere */
+	      val = 0;
+	      for (i = 0; i < dim; ++i)
+		   val += x[i] * x[i];
+	      val = val < radius * radius;
 	      break;
 	 }
 		   
@@ -814,15 +803,15 @@ static double exact_integral(unsigned dim, const double *xmax) {
      double val;
      switch(which_integrand) {
 	 case 0:
-	      val = dim == 0 ? 1 : S(dim) * pow(radius * 0.5, dim) / dim;
-	      break;
-	 case 1:
 	      val = 1;
 	      for (i = 0; i < dim; ++i)
 		   val *= sin(xmax[i]);
 	      break;
-	 case 2:
+	 case 1:
 	      val = 1;
+	      break;
+	 case 2:
+	      val = dim == 0 ? 1 : S(dim) * pow(radius * 0.5, dim) / dim;
 	      break;
 	 default:
 	      fprintf(stderr, "unknown integrand %d\n", which_integrand);
@@ -839,7 +828,7 @@ int main(int argc, char **argv)
 
      dim = argc > 1 ? atoi(argv[1]) : 2;
      tol = argc > 2 ? atof(argv[2]) : 1e-2;
-     which_integrand = argc > 3 ? atoi(argv[3]) : 1;
+     which_integrand = argc > 3 ? atoi(argv[3]) : 0;
      maxEval = argc > 4 ? atoi(argv[4]) : 0;
 
      xmin = (double *) malloc(dim * sizeof(double));
@@ -862,7 +851,7 @@ int main(int argc, char **argv)
      return 0;
 }
 
-#endif
+#else
 
 /*************************************************************************/
 /* libctl interface */
@@ -936,3 +925,5 @@ SCM adaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
      
      return gh_cons(gh_double2scm(integral), gh_double2scm(tol));
 }
+
+#endif
