@@ -56,9 +56,9 @@ typedef double (*integrand) (unsigned ndim, const double *x, void *);
 /* Integrate the function f from xmin[dim] to xmax[dim], with at most
    maxEval function evaluations (0 for no limit), until the given
    absolute or relative error is achieved.  val returns the integral,
-   and err returns the estimate for the absolute error in
-   val.  The return value of the function is 0 on success and non-zero
-   if there was an error. */
+   and err returns the estimate for the absolute error in val.  The
+   return value of the function is 0 on success and non-zero if there
+   was an error. */
 static int adapt_integrate(integrand f, void *fdata,
 		    unsigned dim, const double *xmin, const double *xmax, 
 		    unsigned maxEval, 
