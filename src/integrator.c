@@ -514,7 +514,6 @@ static unsigned rule15gauss_evalError(rule *r, integrand f, void *fdata,
           x = center + w; fv2[j2] = f2 = f(1, &x, fdata);
           result_kronrod += wgk[j2] * (f1 + f2);
           result_abs += wgk[j2] * (fabs(f1) + fabs(f2));
-
      }
 
      ee->val = result_kronrod * width;
