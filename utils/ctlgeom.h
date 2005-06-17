@@ -42,6 +42,7 @@ extern "C" {
 
 /**************************************************************************/
 
+extern void geom_initialize(void);
 extern void geom_fix_object(GEOMETRIC_OBJECT o);
 extern void geom_fix_objects(void);
 extern void geom_fix_objects0(GEOMETRIC_OBJECT_LIST geometry);

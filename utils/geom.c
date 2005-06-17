@@ -136,6 +136,18 @@ void geom_fix_lattice(void)
      geom_fix_lattice0(&geometry_lattice);
 }
 
+void geom_initialize(void)
+{
+     /* initialize all of the input variables that are normally
+	initialized from Scheme */
+     geom_fix_lattice();
+     geometry_center.x = geometry_center.y = geometry_center.z = 0;
+     dimensions = 3;
+     ensure_periodicity = 1;
+     geometry.num_items = 0;
+     geometry.items = 0;
+}
+
 /**************************************************************************/
 
 /* Return whether or not the point p (in the lattice basis) is inside
