@@ -522,7 +522,7 @@ static unsigned rule15gauss_evalError(rule *r, integrand f, void *fdata,
      result_asc = wgk[n - 1] * fabs(f_center - mean);
      for (j = 0; j < n - 1; ++j)
 	  result_asc += wgk[j] * (fabs(fv1[j]-mean) + fabs(fv2[j]-mean));
-     err = (result_kronrod - result_gauss) * halfwidth;
+     err = fabs(result_kronrod - result_gauss) * halfwidth;
      result_abs *= halfwidth;
      result_asc *= halfwidth;
      if (result_asc != 0 && err != 0) {
