@@ -51,17 +51,21 @@
     (/ (fold-left + 0 (map unary-abs (map binary- (cdr nums)
 					  (reverse (cdr (reverse nums))))))
        (length (cdr nums))))
-  (cons
-   (car nums)
-   (fold-right
-    append '()
-    (map
-     (lambda (x y)
-       (let ((m (inexact->exact (+ -0.5 (* (+ n 1) (/ (unary-abs (binary- x y))
-						      meandiff))))))
-	 (reverse (arith-sequence y (binary/ (binary- x y) (+ m 1)) (+ m 1)))))
-     (reverse (cdr (reverse nums))) ; nums w/o last value
-     (cdr nums))))) ; nums w/o first value
+  (if (zero? n)
+      nums
+      (cons
+       (car nums)
+       (fold-right
+	append '()
+	(map
+	 (lambda (x y)
+	   (let ((m (inexact->exact 
+		     (+ -0.5 (* (+ n 1) (/ (unary-abs (binary- x y))
+					   meandiff))))))
+	     (reverse (arith-sequence y (binary/ (binary- x y) (+ m 1)) 
+				      (+ m 1)))))
+	 (reverse (cdr (reverse nums))) ; nums w/o last value
+	 (cdr nums)))))) ; nums w/o first value
 
 ; ****************************************************************
 ; Minimization and root-finding utilities (useful in ctl scripts)
