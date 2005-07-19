@@ -247,6 +247,70 @@ boolean point_in_fixed_pobjectp(vector3 p, geometric_object *o)
 }
 
 /**************************************************************************/
+
+/* convert a point p inside o to a coordinate in [0,1]^3 that
+   is some "natural" coordinate for the object */
+vector3 to_geom_object_coords(vector3 p, geometric_object o)
+{
+  const vector3 half = {0.5, 0.5, 0.5};
+  vector3 r = vector3_minus(p,o.center);
+
+  switch (o.which_subclass) {
+  default: {
+       vector3 po = {0,0,0};
+       return po;
+  }
+  case GEOM SPHERE:
+    {
+      number radius = o.subclass.sphere_data->radius;
+      return vector3_plus(half, vector3_scale(0.5 / radius, r));
+    }
+  /* case GEOM CYLINDER:
+     NOT YET IMPLEMENTED */
+  case GEOM BLOCK:
+    {
+      vector3 proj =
+	matrix3x3_vector3_mult(o.subclass.block_data->projection_matrix, r);
+      vector3 size = o.subclass.block_data->size;
+      if (size.x != 0.0) proj.x /= size.x;
+      if (size.y != 0.0) proj.y /= size.y;
+      if (size.z != 0.0) proj.z /= size.z;
+      return vector3_plus(half, proj);
+    }
+  }
+}
+
+/* inverse of to_geom_object_coords */
+vector3 from_geom_object_coords(vector3 p, geometric_object o)
+{
+  const vector3 half = {0.5, 0.5, 0.5};
+  p = vector3_minus(p, half);
+  switch (o.which_subclass) {
+  default: 
+       return o.center;
+  case GEOM SPHERE:
+    {
+      number radius = o.subclass.sphere_data->radius;
+      return vector3_plus(o.center, vector3_scale(radius / 0.5, p));
+    }
+  /* case GEOM CYLINDER:
+     NOT YET IMPLEMENTED */
+  case GEOM BLOCK:
+    {
+      vector3 size = o.subclass.block_data->size;
+      return vector3_plus(
+	   o.center,
+	   vector3_plus(
+		vector3_scale(size.x * p.x, o.subclass.block_data->e1),
+		vector3_plus(
+		     vector3_scale(size.y * p.y, o.subclass.block_data->e2),
+		     vector3_scale(size.z * p.z, o.subclass.block_data->e3))
+		));
+    }
+  }
+}
+
+/**************************************************************************/
 /* Return the normal vector from the given object to the given point,
    in lattice coordinates, using the surface of the object that the
    point is "closest" to for some definition of "closest" that is
@@ -1494,25 +1558,31 @@ geom_box_tree restrict_geom_box_tree(geom_box_tree t, const geom_box *b)
 
 /**************************************************************************/
 
-/* recursively search the tree for the given point. */
-static geom_box_object *find_box_object(vector3 p, geom_box_tree t)
+/* recursively search the tree for the given point, returning the
+   subtree (if any) that contains it and the index oindex of the
+   object in that tree.  The input value of oindex indicates the
+   starting object to search in t (0 to search all). */
+static geom_box_tree tree_search(vector3 p, geom_box_tree t, int *oindex)
 {
      int i;
-     geom_box_object *gbo;
+     geom_box_tree gbt;
 
      if (!t || !geom_box_contains_point(&t->b, p))
 	  return NULL;
 
-     for (i = 0; i < t->nobjects; ++i)
+     for (i = *oindex; i < t->nobjects; ++i)
 	  if (geom_box_contains_point(&t->objects[i].box, p) &&
 	      point_in_fixed_objectp(vector3_minus(p, t->objects[i].shiftby),
-				     *t->objects[i].o))
-	       return(&t->objects[i]);
-     
-     gbo = find_box_object(p, t->t1);
-     if (!gbo)
-	  gbo = find_box_object(p, t->t2);
-     return gbo;
+				     *t->objects[i].o)) {
+	       *oindex = i;
+	       return t;
+	  }
+
+     *oindex = 0;
+     gbt = tree_search(p, t->t1, oindex);
+     if (!gbt)
+	  gbt = tree_search(p, t->t2, oindex);
+     return gbt;
 }
 
 /* shift p to be within the unit cell of the lattice (centered on the
@@ -1538,12 +1608,13 @@ const geometric_object *object_of_point_in_tree(vector3 p, geom_box_tree t,
 						vector3 *shiftby,
 						int *precedence)
 {
-     geom_box_object *gbo;
+     int oindex = 0;
      *shiftby = p;
      shift_to_unit_cell(&p);
      *shiftby = vector3_minus(*shiftby, p);
-     gbo = find_box_object(p, t);
-     if (gbo) {
+     t = tree_search(p, t, &oindex);
+     if (t) {
+	  geom_box_object *gbo = t->objects + oindex;
 	  *shiftby = vector3_plus(*shiftby, gbo->shiftby);
 	  *precedence = gbo->precedence;
 	  return gbo->o;
@@ -1557,13 +1628,12 @@ const geometric_object *object_of_point_in_tree(vector3 p, geom_box_tree t,
 material_type material_of_point_in_tree_inobject(vector3 p, geom_box_tree t,
 						 boolean *inobject)
 {
-     geom_box_object *gbo;
-
+     int oindex = 0;
      shift_to_unit_cell(&p);
-     gbo = find_box_object(p, t);
-     if (gbo) {
+     t = tree_search(p, t, &oindex);
+     if (t) {
 	  *inobject = 1;
-	  return (gbo->o->material);
+	  return (t->objects[oindex].o->material);
      }
      else {
 	  *inobject = 0;
@@ -1575,6 +1645,29 @@ material_type material_of_point_in_tree(vector3 p, geom_box_tree t)
 {
      boolean inobject;
      return material_of_point_in_tree_inobject(p, t, &inobject);
+}
+
+geom_box_tree geom_tree_search_next(vector3 p, geom_box_tree t, int *oindex)
+{
+     shift_to_unit_cell(&p);
+     *oindex += 1; /* search starting at next oindex */
+     return tree_search(p, t, oindex);
+}
+
+geom_box_tree geom_tree_search(vector3 p, geom_box_tree t, int *oindex)
+{
+     *oindex = -1; /* search all indices > -1 */
+     return geom_tree_search_next(p, t, oindex);
+}
+
+/**************************************************************************/
+
+/* convert a vector p in the given object to some coordinate
+   in [0,1]^3 that is a more "natural" map of the object interior. */
+vector3 to_geom_box_coords(vector3 p, geom_box_object *gbo)
+{
+     shift_to_unit_cell(&p);
+     return to_geom_object_coords(vector3_minus(p, gbo->shiftby), *gbo->o);
 }
 
 /**************************************************************************/

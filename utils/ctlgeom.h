@@ -53,6 +53,8 @@ extern boolean point_in_periodic_objectp(vector3 p, GEOMETRIC_OBJECT o);
 extern boolean point_in_fixed_objectp(vector3 p, GEOMETRIC_OBJECT o);
 extern boolean point_in_fixed_pobjectp(vector3 p, GEOMETRIC_OBJECT *o);
 extern boolean point_in_periodic_fixed_objectp(vector3 p, GEOMETRIC_OBJECT o);
+extern vector3 to_geom_object_coords(vector3 p, geometric_object o);
+extern vector3 from_geom_object_coords(vector3 p, geometric_object o);
 extern vector3 normal_to_object(vector3 p, GEOMETRIC_OBJECT o);
 extern vector3 normal_to_fixed_object(vector3 p, GEOMETRIC_OBJECT o);
 extern int intersect_line_with_object(vector3 p, vector3 d, geometric_object o,
@@ -92,6 +94,8 @@ extern geom_box_tree create_geom_box_tree(void);
 extern geom_box_tree create_geom_box_tree0(GEOMETRIC_OBJECT_LIST geometry,
 					   geom_box b0);
 extern geom_box_tree restrict_geom_box_tree(geom_box_tree, const geom_box *);
+extern geom_box_tree geom_tree_search(vector3 p, geom_box_tree t, int *oindex);
+extern geom_box_tree geom_tree_search_next(vector3 p, geom_box_tree t, int *oindex);
 extern MATERIAL_TYPE material_of_point_in_tree_inobject(vector3 p, geom_box_tree t, boolean *inobject);
 extern MATERIAL_TYPE material_of_point_in_tree_inobject0(GEOMETRIC_OBJECT_LIST geometry, vector3 p, geom_box_tree t, boolean *inobject);
 extern MATERIAL_TYPE material_of_point_in_tree(vector3 p, geom_box_tree t);
@@ -99,6 +103,7 @@ extern MATERIAL_TYPE material_of_point_in_tree0(GEOMETRIC_OBJECT_LIST geometry, 
 const GEOMETRIC_OBJECT *object_of_point_in_tree(vector3 p, geom_box_tree t,
 						vector3 *shiftby,
 						int *precedence);
+extern vector3 to_geom_box_coords(vector3 p, geom_box_object *gbo);
 extern void display_geom_box_tree(int indentby, geom_box_tree t);
 extern void geom_box_tree_stats(geom_box_tree t, int *depth, int *nobjects);
 
