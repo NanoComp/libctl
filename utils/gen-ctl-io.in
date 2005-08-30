@@ -53,8 +53,10 @@ elif test $header = true; then
 elif test $swig = true; then
     default_output_file=ctl-io.i
 else
-    echo "No output specified."
-    exit 1
+#   No output specified.  Backwards compatibility mode (code + header output).
+    $0 --header $*
+    $0 --code $*
+    exit 0
 fi
 
 if test "x$output_file" = x; then
