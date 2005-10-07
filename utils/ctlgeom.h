@@ -68,7 +68,6 @@ extern MATERIAL_TYPE material_of_point0(GEOMETRIC_OBJECT_LIST geometry,
 GEOMETRIC_OBJECT object_of_point0(GEOMETRIC_OBJECT_LIST geometry, vector3 p,
 				   vector3 *shiftby);
 GEOMETRIC_OBJECT object_of_point(vector3 p, vector3 *shiftby);
-extern void display_geometric_object_info(int indentby, GEOMETRIC_OBJECT o);
 extern matrix3x3 square_basis(matrix3x3 lattice_basis, vector3 size);
 
 typedef struct {
