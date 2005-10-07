@@ -53,11 +53,11 @@ extern boolean point_in_periodic_objectp(vector3 p, GEOMETRIC_OBJECT o);
 extern boolean point_in_fixed_objectp(vector3 p, GEOMETRIC_OBJECT o);
 extern boolean point_in_fixed_pobjectp(vector3 p, GEOMETRIC_OBJECT *o);
 extern boolean point_in_periodic_fixed_objectp(vector3 p, GEOMETRIC_OBJECT o);
-extern vector3 to_geom_object_coords(vector3 p, geometric_object o);
-extern vector3 from_geom_object_coords(vector3 p, geometric_object o);
+extern vector3 to_geom_object_coords(vector3 p, GEOMETRIC_OBJECT o);
+extern vector3 from_geom_object_coords(vector3 p, GEOMETRIC_OBJECT o);
 extern vector3 normal_to_object(vector3 p, GEOMETRIC_OBJECT o);
 extern vector3 normal_to_fixed_object(vector3 p, GEOMETRIC_OBJECT o);
-extern int intersect_line_with_object(vector3 p, vector3 d, geometric_object o,
+extern int intersect_line_with_object(vector3 p, vector3 d, GEOMETRIC_OBJECT o,
 				      double s[2]);
 extern MATERIAL_TYPE material_of_point_inobject(vector3 p, boolean *inobject);
 extern MATERIAL_TYPE material_of_point_inobject0(
@@ -107,9 +107,9 @@ extern vector3 to_geom_box_coords(vector3 p, geom_box_object *gbo);
 extern void display_geom_box_tree(int indentby, geom_box_tree t);
 extern void geom_box_tree_stats(geom_box_tree t, int *depth, int *nobjects);
 
-extern number box_overlap_with_object(geom_box b, geometric_object o, number tol, integer maxeval);
+extern number box_overlap_with_object(geom_box b, GEOMETRIC_OBJECT o, number tol, integer maxeval);
 extern number range_overlap_with_object(vector3 low, vector3 high,
-					geometric_object o, number tol,
+					GEOMETRIC_OBJECT o, number tol,
 					integer maxeval);
 
 extern vector3 get_grid_size(void);
