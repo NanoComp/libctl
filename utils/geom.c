@@ -1203,9 +1203,9 @@ number box_overlap_with_object(geom_box b, geometric_object o,
 				 &esterr, &errflag) / V0;
 }
 
-number range_overlap_with_object(vector3 low, vector3 high,
-				 geometric_object o, number tol, 
-				 integer maxeval)
+number CTLIO range_overlap_with_object(vector3 low, vector3 high,
+				       geometric_object o, number tol, 
+				       integer maxeval)
 {
      geom_box b;
      b.low = low;
