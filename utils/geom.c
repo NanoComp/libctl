@@ -139,7 +139,7 @@ void geom_fix_lattice(void)
 void geom_initialize(void)
 {
      /* initialize all of the input variables that are normally
-	initialized from Scheme */
+	initialized from Scheme, except for default_material  */
      geom_fix_lattice();
      geometry_center.x = geometry_center.y = geometry_center.z = 0;
      dimensions = 3;

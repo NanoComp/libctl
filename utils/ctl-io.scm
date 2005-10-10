@@ -798,7 +798,9 @@
 ; ***************************************************************************
 
 (define (swig-type-header type-name)
-  (print "%typemap(guile,in) " (c-type-string type-name) " {\n")
+  (print "%typemap(guile,in) " 
+	 (if cxx (string-append namespace "::") "")
+	 (c-type-string type-name) " {\n")
   (if cxx (print "using namespace " namespace ";\n"))
   (input-value "$input" "$1" type-name get-c-local)
   (print "}\n")
@@ -809,7 +811,9 @@
 			     (get-type-descriptor 
 			      (list-el-type-name type-name))))))
       (begin
-	(print "%typemap(guile,out) " (c-type-string type-name) " {\n")
+	(print "%typemap(guile,out) " 
+	       (if cxx (string-append namespace "::") "")
+	       (c-type-string type-name) " {\n")
 	(if cxx (print "using namespace " namespace ";\n"))
 	(output-value "$result" "$1" type-name set-c-local)
 	(print "}\n")))
