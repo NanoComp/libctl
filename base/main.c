@@ -194,6 +194,13 @@ void main_entry(int argc, char *argv[])
 
   i = handle_args(argc, argv, &spec_file_loaded, &continue_run);
 
+  {
+       char definestr[] = "(define verbose? false)";
+       strcpy(definestr, "(define verbose? ");
+       strcat(definestr, verbose ? "true)" : "false)");
+       gh_eval_str(definestr);
+  }
+
   if (!continue_run)
        goto done;
 

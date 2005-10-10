@@ -44,6 +44,11 @@
 	    last-index
 	    (string-find-previous-char (substring s 0 last-index) c)))))
 
+(define (strip-suffix suff s)
+  (if (string-suffix? suff s)
+      (substring s 0 (- (string-length s) (string-length suff)))
+      s))
+
 (define (strip-trailing-slashes s)
   (if (string-suffix? "/" s)
       (strip-trailing-slashes (substring s 0 (- (string-length s) 1)))
