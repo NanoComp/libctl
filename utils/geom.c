@@ -136,11 +136,26 @@ void geom_fix_lattice(void)
      geom_fix_lattice0(&geometry_lattice);
 }
 
+void geom_cartesian_lattice0(lattice *L)
+{
+     L->basis1.x = 1; L->basis1.y = 0; L->basis1.z = 0;
+     L->basis2.x = 0; L->basis2.y = 1; L->basis2.z = 0;
+     L->basis3.x = 0; L->basis3.y = 0; L->basis3.z = 1;
+     L->basis_size.x = L->basis_size.y = L->basis_size.z = 1;
+     geom_fix_lattice0(L);
+}
+
+void geom_cartesian_lattice(void)
+{
+     geom_cartesian_lattice0(&geometry_lattice);
+}
+
 void geom_initialize(void)
 {
-     /* initialize all of the input variables that are normally
-	initialized from Scheme, except for default_material  */
-     geom_fix_lattice();
+     /* initialize many of the input variables that are normally
+	initialized from Scheme, except for default_material and
+	geometry_lattice.size. */
+     geom_cartesian_lattice();
      geometry_center.x = geometry_center.y = geometry_center.z = 0;
      dimensions = 3;
      ensure_periodicity = 1;
