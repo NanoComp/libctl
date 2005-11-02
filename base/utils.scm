@@ -104,7 +104,10 @@
 (define print-ok? true) ; so that the user can disable output
 
 (define (print . items)
-  (if print-ok? (for-each (lambda (item) (display item)) items)))
+  (if print-ok? 
+      (begin
+	(for-each (lambda (item) (display item)) items)
+	(flush-all-ports))))
 
 (define display-many print) ; backwards compatibility with earlier libctl
 
