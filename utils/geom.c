@@ -1601,22 +1601,22 @@ static geom_box_tree tree_search(vector3 p, geom_box_tree t, int *oindex)
 }
 
 /* shift p to be within the unit cell of the lattice (centered on the
-   origin); p is required to be no more than one lattice constant
-   away from the unit cell in any direction. */
-static void shift_to_unit_cell(vector3 *p)
+   origin) */
+vector3 shift_to_unit_cell(vector3 p)
 {
-     if (p->x >= 0.5 * geometry_lattice.size.x)
-	  p->x -= geometry_lattice.size.x;
-     else if (p->x < -0.5 * geometry_lattice.size.x)
-	  p->x += geometry_lattice.size.x;
-     if (p->y >= 0.5 * geometry_lattice.size.y)
-	  p->y -= geometry_lattice.size.y;
-     else if (p->y < -0.5 * geometry_lattice.size.y)
-	  p->y += geometry_lattice.size.y;
-     if (p->z >= 0.5 * geometry_lattice.size.z)
-	  p->z -= geometry_lattice.size.z;
-     else if (p->z < -0.5 * geometry_lattice.size.z)
-	  p->z += geometry_lattice.size.z;
+     while (p.x >= 0.5 * geometry_lattice.size.x)
+	  p.x -= geometry_lattice.size.x;
+     while (p.x < -0.5 * geometry_lattice.size.x)
+	  p.x += geometry_lattice.size.x;
+     while (p.y >= 0.5 * geometry_lattice.size.y)
+	  p.y -= geometry_lattice.size.y;
+     while (p.y < -0.5 * geometry_lattice.size.y)
+	  p.y += geometry_lattice.size.y;
+     while (p.z >= 0.5 * geometry_lattice.size.z)
+	  p.z -= geometry_lattice.size.z;
+     while (p.z < -0.5 * geometry_lattice.size.z)
+	  p.z += geometry_lattice.size.z;
+     return p;
 }
 
 const geometric_object *object_of_point_in_tree(vector3 p, geom_box_tree t,
@@ -1624,17 +1624,15 @@ const geometric_object *object_of_point_in_tree(vector3 p, geom_box_tree t,
 						int *precedence)
 {
      int oindex = 0;
-     *shiftby = p;
-     shift_to_unit_cell(&p);
-     *shiftby = vector3_minus(*shiftby, p);
      t = tree_search(p, t, &oindex);
      if (t) {
 	  geom_box_object *gbo = t->objects + oindex;
-	  *shiftby = vector3_plus(*shiftby, gbo->shiftby);
+	  *shiftby = gbo->shiftby;
 	  *precedence = gbo->precedence;
 	  return gbo->o;
      }
      else {
+	  shiftby->x = shiftby->y = shiftby->z = 0;
 	  *precedence = 0;
 	  return 0;
      }
@@ -1644,7 +1642,6 @@ material_type material_of_point_in_tree_inobject(vector3 p, geom_box_tree t,
 						 boolean *inobject)
 {
      int oindex = 0;
-     shift_to_unit_cell(&p);
      t = tree_search(p, t, &oindex);
      if (t) {
 	  *inobject = 1;
@@ -1664,7 +1661,6 @@ material_type material_of_point_in_tree(vector3 p, geom_box_tree t)
 
 geom_box_tree geom_tree_search_next(vector3 p, geom_box_tree t, int *oindex)
 {
-     shift_to_unit_cell(&p);
      *oindex += 1; /* search starting at next oindex */
      return tree_search(p, t, oindex);
 }
@@ -1681,7 +1677,6 @@ geom_box_tree geom_tree_search(vector3 p, geom_box_tree t, int *oindex)
    in [0,1]^3 that is a more "natural" map of the object interior. */
 vector3 to_geom_box_coords(vector3 p, geom_box_object *gbo)
 {
-     shift_to_unit_cell(&p);
      return to_geom_object_coords(vector3_minus(p, gbo->shiftby), *gbo->o);
 }
 
