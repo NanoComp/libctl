@@ -1,3 +1,58 @@
+libctl 3.0
+
+  * Switch to use automake and libtool.  Can now install shared libraries
+    with --enable-shared.
+
+  * gen-ctl-io now supports separate generation of code and header files
+    via --code and --header arguments.  (Better for parallel make.)
+    Also support a -o option to give a different output file name.
+
+  * gen-ctl-io can now export C++ code by using the --cxx flag.
+
+  * gen-ctl-io can now export SWIG .i files for automatic type conversion
+    in SWIG wrapper generation, using the --swig flag.
+
+  * Backwards incompatible change: users must include their own ctl-io.h
+    *before* ctlgeom.h, or you get ctlgeom-types.h instead (this is
+    for use with the "stand-alone" libctlgeom.a library below.
+
+  * Slightly backwards incompatible: Various geometry_tree in_object
+    functions no longer shift the point to the unit cell, which I found
+    could yield undesirable behaviors in some cases (for Meep).  New
+    function shift_to_unit_cell(pt) can be used to pre-process the
+    argument if you want the old behavior.
+
+  * New multi-dimensional integration routines using adaptive cubature.
+    (Much more efficient than nested 1d integrations.)
+
+  * New interpolate-uniform function that tries to maintain a uniform
+    distance between points (i.e. variable number of interpolated points
+    between different list elements, as needed).
+
+  * Now install a "stand-alone" libctlgeom.a library to make it easier
+    to call geometry routines from non-Scheme code.
+
+  * New routines to compute overlap fraction of box with object,
+    compute analytical normal vectors, etcetera.  (For upcoming
+    version of MPB.)  Also new routines to get the object of
+    a point, not just the material.  Also new routines to operate
+    on a supplied geometry list parameter instead of using the global.
+
+  * gen-ctl-io now generates object equal/copy functions.
+
+  * In unit-vector3, only return 0 when norm==0, not merely if it is small.
+
+  * Added one-sided numerical derivative routine.
+
+  * Define "verbose?" variable corresponding to main.c variable.
+
+  * (print) calls (flush-all-ports) to keep C and Scheme I/O in sync.
+
+  * Fix in find-root-deriv to prevent infinite loop in some cases where
+    the root does not exist; thanks to XiuLun Yang for the bug report.
+
+  * Bug fix in make_hermitian_cmatrix3x3; thanks to Mischa Megens.
+
 libctl 2.2 (9/12/2002)
 
   * Added simple trapezoidal-rule adaptive numeric integration routine.
