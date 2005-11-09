@@ -589,7 +589,7 @@
 		    el-type-name)
        (print "}\n")
     (print "}\n")
-    (print (free var-str ".items") ");\n")
+    (print (free var-str ".items") ";\n")
     (set! list-temp-suffix saved-suffix)))
 
 (define (destroy-object var-str type-name)
@@ -613,7 +613,7 @@
        (destroy-object (string-append "*o.subclass." 
 				      (class-identifier sc) "_data")
 		       (class-type-name sc))
-       (print (free1 "o.subclass." (class-identifier sc) "_data") ");\n")
+       (print (free1 "o.subclass." (class-identifier sc) "_data") ";\n")
        (print "}\n")
        (print "else "))
      subclasses)
