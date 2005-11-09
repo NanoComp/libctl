@@ -88,7 +88,7 @@
 	(string-append "delete (" var ")")
 	(string-append "free(" var ")"))))
 
-(define (malloc tnames . nums)
+(define (malloc tname . nums)
   (let ((num (apply string-append nums)))
     (if cxx
 	(string-append "(new " tname "[" num "])")
