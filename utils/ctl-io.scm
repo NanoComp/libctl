@@ -74,6 +74,34 @@
   (c-var-decl' var-name var-type-name ""))
 
 ; ***************************************************************************
+; use new/delete for C++, malloc/free for C
+
+(define (free . vars)
+  (let ((var (apply string-append vars)))
+    (if cxx 
+	(string-append "delete[] (" var ")")
+	(string-append "free(" var ")"))))
+      
+(define (free1 . vars)
+  (let ((var (apply string-append vars)))
+    (if cxx 
+	(string-append "delete (" var ")")
+	(string-append "free(" var ")"))))
+
+(define (malloc tnames . nums)
+  (let ((num (apply string-append nums)))
+    (if cxx
+	(string-append "(new " tname "[" num "])")
+	(string-append 
+	 "((" tname " *) malloc(sizeof(" tname ") * (" num ")))"))))
+
+(define (malloc1 . tnames)
+  (let ((tname (apply string-append tnames)))
+    (if cxx
+	(string-append "(new " tname ")")
+	(string-append "((" tname " *) malloc(sizeof(" tname ")))"))))
+
+; ***************************************************************************
 
 (define (find-direct-subclasses class)
   (list-transform-positive class-list
@@ -213,11 +241,9 @@
     (print "int " index-name-str ";\n")
     (print c-var-name-str 
 		  ".num_items = list_length(" lo-name-str ");\n")
-    (print c-var-name-str ".items = (" 
-		  (c-type-string type-name)
-		  "*) malloc(sizeof("
-		  (c-type-string type-name) ") * "
-		  c-var-name-str ".num_items);\n")
+    (print c-var-name-str ".items = " 
+	   (malloc (c-type-string type-name) c-var-name-str ".num_items") 
+	   ";\n")
     (print "for (" index-name-str " = 0; " index-name-str " < "
 		  c-var-name-str ".num_items; " index-name-str "++) {\n")
     (input-value index-name-str 
@@ -254,10 +280,8 @@
        (print "if (object_is_member(\"" (class-type-name sc) 
 		     "\", so)) {\n")
        (print "o->which_subclass = " (class-enum-name sc) ";\n")
-       (print "o->subclass." (class-identifier sc)
-		     "_data = (" (class-identifier sc)
-		     "*) malloc(sizeof("
-		     (class-identifier sc) "));\n")
+       (print "o->subclass." (class-identifier sc) "_data = "
+	      (malloc1 (class-identifier sc)) ";\n")
        (print (class-input-function-name (class-type-name sc)) 
 		     "(so, o->subclass." (class-identifier sc) "_data);\n"
 		     "}\nelse "))
@@ -321,11 +345,9 @@
     (print "int " index-name-str ";\n")
     (print c-var-name-str ".num_items = "
 	   c0-var-name-str ".num_items;\n")
-    (print c-var-name-str ".items = (" 
-		  (c-type-string type-name)
-		  "*) malloc(sizeof("
-		  (c-type-string type-name) ") * "
-		  c-var-name-str ".num_items);\n")
+    (print c-var-name-str ".items = " 
+	   (malloc (c-type-string type-name) c-var-name-str ".num_items")
+	   ";\n")
     (print "for (" index-name-str " = 0; " index-name-str " < "
 		  c-var-name-str ".num_items; " index-name-str "++) {\n")
     (copy-value (string-append c0-var-name-str ".items[" index-name-str "]")
@@ -361,10 +383,8 @@
      (lambda (sc)
        (print "if (o0->which_subclass == " (class-enum-name sc) ") {\n")
        (print "o->which_subclass = " (class-enum-name sc) ";\n")
-       (print "o->subclass." (class-identifier sc)
-		     "_data = (" (class-identifier sc)
-		     "*) malloc(sizeof("
-		     (class-identifier sc) "));\n")
+       (print "o->subclass." (class-identifier sc) "_data = "
+	      (malloc1 (class-identifier sc)) ";\n")
        (print (class-copy-function-name (class-type-name sc)) 
 	      "(o0->subclass." (class-identifier sc) 
 	      "_data, o->subclass." (class-identifier sc) "_data);\n"
@@ -541,7 +561,7 @@
   (let ((desc (get-type-descriptor type-name)))
     (cond 
      ((eq? type-name 'string)
-      (print "free(" var-str ");\n"))
+      (print (free var-str) ";\n"))
      ((eq? (type-descriptor-kind desc) 'uniform-list)
       (destroy-list var-str (list-el-type-name type-name)))
      ((eq? (type-descriptor-kind desc) 'object)
@@ -569,7 +589,7 @@
 		    el-type-name)
        (print "}\n")
     (print "}\n")
-    (print "free(" var-str ".items);\n")
+    (print (free var-str ".items") ");\n")
     (set! list-temp-suffix saved-suffix)))
 
 (define (destroy-object var-str type-name)
@@ -593,7 +613,7 @@
        (destroy-object (string-append "*o.subclass." 
 				      (class-identifier sc) "_data")
 		       (class-type-name sc))
-       (print "free(o.subclass." (class-identifier sc) "_data);\n")
+       (print (free1 "o.subclass." (class-identifier sc) "_data") ");\n")
        (print "}\n")
        (print "else "))
      subclasses)
@@ -816,6 +836,7 @@
 	       (c-type-string type-name) " {\n")
 	(if cxx (print "using namespace " namespace ";\n"))
 	(output-value "$result" "$1" type-name set-c-local)
+	(destroy-c-var "$1" type-name)
 	(print "}\n")))
   (print "\n")
 )

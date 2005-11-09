@@ -41,6 +41,18 @@ using namespace ctlio;
 #  define MAT 
 #endif
 
+#ifdef __cplusplus
+#  define MALLOC(type,num) (new type[num])
+#  define MALLOC1(type) (new type)
+#  define FREE(p) delete[] (p)
+#  define FREE1(p) delete (p)
+#else
+#  define MALLOC(type,num) ((type *) malloc(sizeof(type) * (num)))
+#  define MALLOC1(type) MALLOC(type,1)
+#  define FREE(p) free(p)
+#  define FREE1(p) free(p)
+#endif
+
 /**************************************************************************/
 
 /* If v is a vector in the lattice basis, normalize v so that
@@ -1262,7 +1274,7 @@ static geom_box_tree new_geom_box_tree(void)
 {
      geom_box_tree t;
 
-     t = (geom_box_tree) malloc(sizeof(struct geom_box_tree_struct));
+     t = MALLOC1(struct geom_box_tree_struct);
      CHECK(t, "out of memory");
      t->t1 = t->t2 = NULL;
      t->nobjects = 0;
@@ -1394,13 +1406,11 @@ static void divide_geom_box_tree(geom_box_tree t)
      t->t2->b = t->b2;
 
      t->t1->nobjects = division_nobjects[best][0];
-     t->t1->objects = (geom_box_object *) malloc(t->t1->nobjects *
-						 sizeof(geom_box_object));
+     t->t1->objects = MALLOC(geom_box_object, t->t1->nobjects);
      CHECK(t->t1->objects, "out of memory");
 
      t->t2->nobjects = division_nobjects[best][1];
-     t->t2->objects = (geom_box_object *) malloc(t->t2->nobjects *
-						 sizeof(geom_box_object));
+     t->t2->objects = MALLOC(geom_box_object, t->t2->nobjects);
      CHECK(t->t2->objects, "out of memory");
 	  
      for (j = n1 = n2 = 0; j < t->nobjects; ++j) {
@@ -1505,8 +1515,7 @@ geom_box_tree create_geom_box_tree0(geometric_object_list geometry,
 		    geometry.items + i, shiftby, &t->b);
      }
 
-     t->objects = (geom_box_object *) malloc(t->nobjects *
-					     sizeof(geom_box_object));
+     t->objects = MALLOC(geom_box_object, t->nobjects);
      CHECK(t->objects || t->nobjects == 0, "out of memory");
 	  
      for (i = geometry.num_items - 1, index = 0; i >= 0; --i) {
@@ -1544,8 +1553,7 @@ geom_box_tree restrict_geom_box_tree(geom_box_tree t, const geom_box *b)
 	  if (geom_boxes_intersect(&t->objects[i].box, b))
 	       ++j;
      tr->nobjects = j;
-     tr->objects = (geom_box_object *) malloc(tr->nobjects *
-					      sizeof(geom_box_object));
+     tr->objects = MALLOC(geom_box_object, tr->nobjects);
      CHECK(tr->objects || tr->nobjects == 0, "out of memory");
 
      for (i = 0, j = 0; i < t->nobjects; ++i)
@@ -1778,7 +1786,7 @@ geometric_object make_cylinder(material_type material, vector3 center,
 {
      geometric_object o = make_geometric_object(material, center);
      o.which_subclass = GEOM CYLINDER;
-     o.subclass.cylinder_data = (cylinder *) malloc(sizeof(cylinder));
+     o.subclass.cylinder_data = MALLOC1(cylinder);
      CHECK(o.subclass.cylinder_data, "out of memory");
      o.subclass.cylinder_data->radius = radius;
      o.subclass.cylinder_data->height = height;
@@ -1794,8 +1802,7 @@ geometric_object make_cone(material_type material, vector3 center,
 {
      geometric_object o = make_cylinder(material, center, radius,height, axis);
      o.subclass.cylinder_data->which_subclass = CYL CONE;
-     o.subclass.cylinder_data->subclass.cone_data
-	  = (cone *) malloc(sizeof(cone));
+     o.subclass.cylinder_data->subclass.cone_data = MALLOC1(cone);
      CHECK(o.subclass.cylinder_data->subclass.cone_data, "out of memory");
      o.subclass.cylinder_data->subclass.cone_data->radius2 = radius2;
      return o;
@@ -1806,7 +1813,7 @@ geometric_object make_sphere(material_type material, vector3 center,
 {
      geometric_object o = make_geometric_object(material, center);
      o.which_subclass = GEOM SPHERE;
-     o.subclass.sphere_data = (sphere *) malloc(sizeof(sphere));
+     o.subclass.sphere_data = MALLOC1(sphere);
      CHECK(o.subclass.sphere_data, "out of memory");
      o.subclass.sphere_data->radius = radius;
      return o;
@@ -1818,7 +1825,7 @@ geometric_object make_block(material_type material, vector3 center,
 {
      geometric_object o = make_geometric_object(material, center);
      o.which_subclass = GEOM BLOCK;
-     o.subclass.block_data = (block *) malloc(sizeof(block));
+     o.subclass.block_data = MALLOC1(block);
      CHECK(o.subclass.block_data, "out of memory");
      o.subclass.block_data->e1 = e1;
      o.subclass.block_data->e2 = e2;
@@ -1835,8 +1842,7 @@ geometric_object make_ellipsoid(material_type material, vector3 center,
 {
      geometric_object o = make_block(material, center, e1,e2,e3, size);
      o.subclass.block_data->which_subclass = BLK ELLIPSOID;
-     o.subclass.block_data->subclass.ellipsoid_data
-	  = (ellipsoid *) malloc(sizeof(ellipsoid));
+     o.subclass.block_data->subclass.ellipsoid_data = MALLOC1(ellipsoid);
      CHECK(o.subclass.block_data->subclass.ellipsoid_data, "out of memory");
      o.subclass.block_data->subclass.ellipsoid_data->inverse_semi_axes.x
 	  = 2.0 / size.x;
