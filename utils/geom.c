@@ -1638,8 +1638,8 @@ const geometric_object *object_of_point_in_tree(vector3 p, geom_box_tree t,
      }
 }
 
-material_type material_of_point_in_tree_inobject(vector3 p, geom_box_tree t,
-						 boolean *inobject)
+material_type material_of_unshifted_point_in_tree_inobject(
+     vector3 p, geom_box_tree t, boolean *inobject)
 {
      int oindex = 0;
      t = tree_search(p, t, &oindex);
@@ -1651,6 +1651,14 @@ material_type material_of_point_in_tree_inobject(vector3 p, geom_box_tree t,
 	  *inobject = 0;
 	  return default_material;
      }
+}
+
+material_type material_of_point_in_tree_inobject(vector3 p, geom_box_tree t,
+						 boolean *inobject)
+{
+     // backwards compatibility
+     return material_of_unshifted_point_in_tree_inobject(
+	  shift_to_unit_cell(p), t, inobject);
 }
 
 material_type material_of_point_in_tree(vector3 p, geom_box_tree t)

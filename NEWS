@@ -16,12 +16,6 @@ libctl 3.0
     *before* ctlgeom.h, or you get ctlgeom-types.h instead (this is
     for use with the "stand-alone" libctlgeom.a library below.
 
-  * Slightly backwards incompatible: Various geometry_tree in_object
-    functions no longer shift the point to the unit cell, which I found
-    could yield undesirable behaviors in some cases (for Meep).  New
-    function shift_to_unit_cell(pt) can be used to pre-process the
-    argument if you want the old behavior.
-
   * New multi-dimensional integration routines using adaptive cubature.
     (Much more efficient than nested 1d integrations.)
 
@@ -36,7 +30,10 @@ libctl 3.0
     compute analytical normal vectors, etcetera.  (For upcoming
     version of MPB.)  Also new routines to get the object of
     a point, not just the material.  Also new routines to operate
-    on a supplied geometry list parameter instead of using the global.
+    on a supplied geometry list parameter instead of using the global;
+    unlike the old material_of_point_in_tree functions, these
+    functions do not shift the argument to the unit cell, but you
+    can use the new function shift_to_unit_cell to get this behavior.
 
   * gen-ctl-io now generates object equal/copy functions.
 

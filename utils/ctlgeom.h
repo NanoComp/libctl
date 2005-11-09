@@ -99,9 +99,8 @@ extern geom_box_tree restrict_geom_box_tree(geom_box_tree, const geom_box *);
 extern geom_box_tree geom_tree_search(vector3 p, geom_box_tree t, int *oindex);
 extern geom_box_tree geom_tree_search_next(vector3 p, geom_box_tree t, int *oindex);
 extern MATERIAL_TYPE material_of_point_in_tree_inobject(vector3 p, geom_box_tree t, boolean *inobject);
-extern MATERIAL_TYPE material_of_point_in_tree_inobject0(GEOMETRIC_OBJECT_LIST geometry, vector3 p, geom_box_tree t, boolean *inobject);
 extern MATERIAL_TYPE material_of_point_in_tree(vector3 p, geom_box_tree t);
-extern MATERIAL_TYPE material_of_point_in_tree0(GEOMETRIC_OBJECT_LIST geometry, vector3 p, geom_box_tree t);
+extern MATERIAL_TYPE material_of_unshifted_point_in_tree_inobject(vector3 p, geom_box_tree t, boolean *inobject);
 const GEOMETRIC_OBJECT *object_of_point_in_tree(vector3 p, geom_box_tree t,
 						vector3 *shiftby,
 						int *precedence);
