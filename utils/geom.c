@@ -1252,8 +1252,8 @@ void destroy_geom_box_tree(geom_box_tree t)
 	  destroy_geom_box_tree(t->t1);
 	  destroy_geom_box_tree(t->t2);
 	  if (t->nobjects && t->objects)
-	       free(t->objects);
-	  free(t);
+	       FREE(t->objects);
+	  FREE1(t);
      }
 }
 
@@ -1427,7 +1427,7 @@ static void divide_geom_box_tree(geom_box_tree t)
 	   "BUG in divide_geom_box_tree: wrong nobjects");
 
      t->nobjects = 0;
-     free(t->objects);
+     FREE(t->objects);
      t->objects = NULL;
 
      divide_geom_box_tree(t->t1);
@@ -1567,12 +1567,12 @@ geom_box_tree restrict_geom_box_tree(geom_box_tree t, const geom_box *b)
 	  if (tr->t1 && !tr->t2) {
 	       geom_box_tree tr0 = tr;
 	       tr = tr->t1;
-	       free(tr0);
+	       FREE1(tr0);
 	  }
 	  else if (tr->t2 && !tr->t1) {
 	       geom_box_tree tr0 = tr;
 	       tr = tr->t2;
-	       free(tr0);
+	       FREE1(tr0);
 	  }
      }
 
