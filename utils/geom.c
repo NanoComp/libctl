@@ -1116,6 +1116,7 @@ typedef struct {
      geometric_object o;
      vector3 p, dir;
      int pdim[2]; /* the (up to two) integration directions */
+     double scx[2]; /* scale factor (e.g. sign flip) for x coordinates */
      unsigned dim;
      double a0, b0;
 } overlap_data;
@@ -1124,19 +1125,20 @@ static double overlap_integrand(integer ndim, number *x, void *data_)
 {
      overlap_data *data = (overlap_data *) data_;
      double s[2];
+     const double *scx = data->scx;
      vector3 p = data->p;
 
      if (ndim > 0) {
 	  switch (data->pdim[0]) {
-	      case 0: p.x = x[0]; break;
-	      case 1: p.y = x[0]; break;
-	      case 2: p.z = x[0]; break;
+	      case 0: p.x = scx[0] * x[0]; break;
+	      case 1: p.y = scx[0] * x[0]; break;
+	      case 2: p.z = scx[0] * x[0]; break;
 	  }
 	  if (ndim > 1) {
 	       switch (data->pdim[1]) {
-		   case 0: p.x = x[1]; break;
-		   case 1: p.y = x[1]; break;
-		   case 2: p.z = x[1]; break;
+		   case 0: p.x = scx[1] * x[1]; break;
+		   case 1: p.y = scx[1] * x[1]; break;
+		   case 2: p.z = scx[1] * x[1]; break;
 	       }
 	  }
      }
@@ -1164,6 +1166,7 @@ number box_overlap_with_object(geom_box b, geometric_object o,
      geom_box bb;
      double xmin[2], xmax[2], esterr;
      int errflag;
+     unsigned i;
 
      get_bounding_box(o, &bb);
      geom_box_intersection(&bb, &b, &bb);
@@ -1223,6 +1226,21 @@ number box_overlap_with_object(geom_box b, geometric_object o,
      }
      else
 	  return 1.0;
+
+     /* To maintain mirror symmetries through the x/y/z axes, we flip
+        the integration range whenever xmax < 0.  (This is in case
+        the integration routine is not fully symmetric, which may
+        happen(?) due to the upper bound on the #evaluations.)*/
+     for (i = 0; i < data.dim; ++i) {
+	  if (xmax[i] < 0) {
+	       double xm = xmin[i];
+	       data.scx[i] = -1;
+	       xmin[i] = -xmax[i];
+	       xmax[i] = -xm;
+	  }
+	  else
+	       data.scx[i] = 1;
+     }
 
      return adaptive_integration(overlap_integrand, xmin, xmax, 
 				 data.dim, &data, 
@@ -1521,10 +1539,11 @@ geom_box_tree create_geom_box_tree0(geometric_object_list geometry,
      for (i = geometry.num_items - 1, index = 0; i >= 0; --i) {
 	  vector3 shiftby = {0,0,0};
 	  if (ensure_periodicity) {
+	       int precedence = t->nobjects - index;
 	       LOOP_PERIODIC(shiftby,
 			     index += store_objects_in_box(
 				  geometry.items + i, shiftby, &t->b,
-				  t->objects + index, t->nobjects - index));
+				  t->objects + index, precedence));
 	  }
 	  else 
 	       index += store_objects_in_box(
@@ -1664,7 +1683,7 @@ material_type material_of_unshifted_point_in_tree_inobject(
 material_type material_of_point_in_tree_inobject(vector3 p, geom_box_tree t,
 						 boolean *inobject)
 {
-     // backwards compatibility
+     /* backwards compatibility */
      return material_of_unshifted_point_in_tree_inobject(
 	  shift_to_unit_cell(p), t, inobject);
 }
