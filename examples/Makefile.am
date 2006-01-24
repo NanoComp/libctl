@@ -18,11 +18,12 @@
 # in this section of the file.  Replace "example" with the name of
 # your program.
 
-# change "noinst" to "bin" to be able to install program with 'make install'
-noinst_PROGRAMS = example
-
 SPECIFICATION_FILE = example.scm
 EXTRA_DIST = example.scm README run.ctl
+
+# change "noinst" to "bin" and uncomment pkgdata line to 'make install' program
+noinst_PROGRAMS = example
+# pkgdata_DATA = $(SPECIFICATION_FILE)
 
 MY_SOURCES = example.c # plus any other .c/.h files you need
 
@@ -48,7 +49,7 @@ GEN_CTL_IO = @GEN_CTL_IO@
 
 CTL_DEFS = -DCTL_SCM='"'$(LIBCTL_DIR)/base/ctl.scm'"' \
        -DINCLUDE_SCM='"'$(LIBCTL_DIR)/base/include.scm'"' \
-          -DSPEC_SCM='"'$(prefix)/share/libctl/specs/$(SPECIFICATION_FILE)'"' \
+          -DSPEC_SCM='"'$(pkgdatadir)/$(SPECIFICATION_FILE)'"' \
     -DVERSION_STRING='"'$(VERSION_STRING)'"'
 
 example_SOURCES = $(MY_SOURCES)
