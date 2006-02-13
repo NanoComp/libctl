@@ -57,6 +57,9 @@ extern "C" {
 /* Define if gh_lookup is not broken */
 #undef GH_LOOKUP_OK
 
+/* Define if we have C99 complex numbers and hence complex integration */
+#undef CTL_HAS_COMPLEX_INTEGRATION
+
 /**************************************************************************/
 
   /* Basic types: */
@@ -324,6 +327,8 @@ extern number adaptive_integration(multivar_func f, number *xmin, number *xmax,
 extern SCM adaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
 				    SCM tol_scm, SCM maxnfe_scm);
 
+#ifdef CTL_HAS_COMPLEX_INTEGRATION
+
 typedef cnumber (*cmultivar_func) (integer, number *, void *);
 
 extern cnumber cadaptive_integration(cmultivar_func f, number *xmin, number *xmax,
@@ -333,6 +338,8 @@ extern cnumber cadaptive_integration(cmultivar_func f, number *xmin, number *xma
 
 extern SCM cadaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
 				    SCM tol_scm, SCM maxnfe_scm);
+
+#endif /* CTL_HAS_COMPLEX_INTEGRATION */
 
 /**************************************************************************/
 

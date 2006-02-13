@@ -148,6 +148,24 @@ AC_F77_DUMMY_MAIN([], [AC_MSG_WARN([Fortran wrapper functions will not be includ
 AC_F77_WRAPPERS
 
 ###########################################################################
+# Check for C99 complex-number support, for cintegrate.c
+
+AC_CHECK_HEADERS(complex.h)
+AC_CACHE_CHECK([for C complex keyword], acx_cv_c_complex,
+ [acx_cv_c_complex=unsupported
+  for acx_kw in complex _Complex __complex__; do
+    AC_TRY_COMPILE([#include <complex.h>], [float $acx_kw foo;],
+                   [acx_cv_c_complex=$acx_kw; break])
+  done
+ ])
+
+if test "$acx_cv_c_complex" = "unsupported"; then
+   AC_MSG_WARN([C doesn't support complex numbers; disabling complex integration.])
+else
+   AC_DEFINE([CTL_HAS_COMPLEX_INTEGRATION], [1], [If we have C99 complex nums])
+fi
+
+###########################################################################
 
 # Add libctl and libgeom -I/-L/-l flags to CPPFLAGS/LDFLAGS/LIBS,
 # so that examples/Makefile.in can be used as-is for other programs.

@@ -619,7 +619,10 @@
     (cond ((number? x) (list x))
 	  ((vector? x) (vector->list x))
 	  (else x)))
-  (cadaptive-integration (lambda (x) (apply f x)) (to-list a) (to-list b) tol 
-			(if (null? maxnfe) 0 (car maxnfe))))
+  ((if (defined? 'cadaptive-integration) 
+       cadaptive-integration ; only compiled when complex nums are available
+       adaptive-integration)
+   (lambda (x) (apply f x)) (to-list a) (to-list b) tol 
+   (if (null? maxnfe) 0 (car maxnfe))))
 
 ; ****************************************************************

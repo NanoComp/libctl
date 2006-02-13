@@ -1,3 +1,7 @@
+#include "ctl.h"
+
+#ifdef CTL_HAS_COMPLEX_INTEGRATION
+
 /*
  * Copyright (c) 2005 Steven G. Johnson
  *
@@ -946,8 +950,6 @@ int main(int argc, char **argv)
 /*************************************************************************/
 /* libctl interface */
 
-#include "ctl.h"
-
 static int adapt_integrate(integrand f, void *fdata,
 		    unsigned dim, const double *xmin, const double *xmax, 
 		    unsigned maxEval, 
@@ -1035,3 +1037,5 @@ SCM cadaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
 }
 
 #endif
+
+#endif /* CTL_HAS_COMPLEX_INTEGRATION */
