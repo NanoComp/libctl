@@ -608,9 +608,9 @@
 	 (car a) (car b) tol)))
   (cond
    ((and (vector? a) (vector? b))
-    (integrate f (vector->list a) (vector->list b) tol))
+    (integrate-old f (vector->list a) (vector->list b) tol))
    ((and (number? a) (number? b))
-    (integrate f (list a) (list b) tol))
+    (integrate-old f (list a) (list b) tol))
    (else (int f a b))))
 
 ; As above, but use adaptive cubature rules in integrator.c
