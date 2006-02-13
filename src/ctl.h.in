@@ -324,6 +324,16 @@ extern number adaptive_integration(multivar_func f, number *xmin, number *xmax,
 extern SCM adaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
 				    SCM tol_scm, SCM maxnfe_scm);
 
+typedef cnumber (*cmultivar_func) (integer, number *, void *);
+
+extern cnumber cadaptive_integration(cmultivar_func f, number *xmin, number *xmax,
+				   integer n, void *fdata, 
+				   number reltol, integer maxnfe, 
+				   number *esterr, integer *errflag);
+
+extern SCM cadaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
+				    SCM tol_scm, SCM maxnfe_scm);
+
 /**************************************************************************/
 
 #ifdef __cplusplus

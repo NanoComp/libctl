@@ -619,7 +619,7 @@
     (cond ((number? x) (list x))
 	  ((vector? x) (vector->list x))
 	  (else x)))
-  (adaptive-integration (lambda (x) (apply f x)) (to-list a) (to-list b) tol 
+  (cadaptive-integration (lambda (x) (apply f x)) (to-list a) (to-list b) tol 
 			(if (null? maxnfe) 0 (car maxnfe))))
 
 ; ****************************************************************
