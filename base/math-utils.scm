@@ -565,6 +565,8 @@
 ; Also, implementing thse simple algorithms in Scheme lets us use our
 ; polymorphic arithmetic functions so that we can easily integrate
 ; real, complex, and vector-valued functions.
+;
+; UPDATE: quadrature/cubature rules are now implemented via C
 
 ; Integrate the 1d function (f x) from x=a..b to within the specified
 ; fractional tolerance.
@@ -614,7 +616,8 @@
    (else (int f a b))))
 
 ; As above, but use adaptive cubature rules in integrator.c
-(define (integrate f a b tol . maxnfe)
+; Optionally, can take absolute tolerance and max # function evals as args.
+(define (integrate f a b reltol . abstol-and-maxnfe)
   (define (to-list x)
     (cond ((number? x) (list x))
 	  ((vector? x) (vector->list x))
@@ -622,7 +625,10 @@
   ((if (defined? 'cadaptive-integration) 
        cadaptive-integration ; only compiled when complex nums are available
        adaptive-integration)
-   (lambda (x) (apply f x)) (to-list a) (to-list b) tol 
-   (if (null? maxnfe) 0 (car maxnfe))))
+   (lambda (x) (apply f x)) 
+   (to-list a) (to-list b) 
+   (if (null? abstol-and-maxnfe) 0.0 (car abstol-and-maxnfe))
+   reltol
+   (if (< (length abstol-and-maxnfe) 2) 0 (cadr abstol-and-maxnfe))))
 
 ; ****************************************************************

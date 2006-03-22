@@ -1244,7 +1244,7 @@ number box_overlap_with_object(geom_box b, geometric_object o,
 
      return adaptive_integration(overlap_integrand, xmin, xmax, 
 				 data.dim, &data, 
-				 tol, maxeval,
+				 0.0, tol, maxeval,
 				 &esterr, &errflag) / V0;
 }
 

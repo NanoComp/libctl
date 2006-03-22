@@ -943,12 +943,12 @@ static int adapt_integrate(integrand f, void *fdata,
 
 number adaptive_integration(multivar_func f, number *xmin, number *xmax,
 			    integer n, void *fdata,
-			    number tol, integer maxnfe,
+			    number abstol, number reltol, integer maxnfe,
 			    number *esterr, integer *errflag)
 {
      double val;
      *errflag = adapt_integrate((integrand) f, fdata, n, xmin, xmax,
-				maxnfe, 0, tol, &val, esterr);
+				maxnfe, abstol, reltol, &val, esterr);
      return val;
 }
 
@@ -956,13 +956,14 @@ number adaptive_integration(multivar_func f, number *xmin, number *xmax,
 extern number f_scm_wrapper(integer n, number *x, void *f_scm_p);
 
 SCM adaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
-			     SCM tol_scm, SCM maxnfe_scm)
+			     SCM abstol_scm, SCM reltol_scm, SCM maxnfe_scm)
 {
      integer n, maxnfe, errflag, i;
-     number *xmin, *xmax, tol, integral;
+     number *xmin, *xmax, abstol, reltol, integral;
 
      n = list_length(xmin_scm);
-     tol = fabs(gh_scm2double(tol_scm));
+     abstol = fabs(gh_scm2double(abstol_scm));
+     reltol = fabs(gh_scm2double(reltol_scm));
      maxnfe = gh_scm2int(maxnfe_scm);
 
      if (list_length(xmax_scm) != n) {
@@ -983,7 +984,8 @@ SCM adaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
      }
 
      integral = adaptive_integration(f_scm_wrapper, xmin, xmax, n, &f_scm,
-				     tol, maxnfe, &tol, &errflag);
+				     abstol, reltol, maxnfe, 
+				     &abstol, &errflag);
 
      free(xmax);
      free(xmin);
@@ -1000,7 +1002,7 @@ SCM adaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
 	      break;
      }
      
-     return gh_cons(gh_double2scm(integral), gh_double2scm(tol));
+     return gh_cons(gh_double2scm(integral), gh_double2scm(abstol));
 }
 
 #endif

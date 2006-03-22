@@ -970,14 +970,14 @@ static num cnum_wrap(unsigned ndim, const double *x, void *fdata_)
 
 cnumber cadaptive_integration(cmultivar_func f, number *xmin, number *xmax,
 			     integer n, void *fdata,
-			     number tol, integer maxnfe,
-			     number *esterr, integer *errflag)
+			      number abstol, number reltol, integer maxnfe,
+			      number *esterr, integer *errflag)
 {
      num val;
      cnum_wrap_data wdata;
      wdata.f = f; wdata.fdata = fdata;
      *errflag = adapt_integrate(cnum_wrap, &wdata, n, xmin, xmax,
-				maxnfe, 0, tol, &val, esterr);
+				maxnfe, abstol, reltol, &val, esterr);
      return make_cnumber(creal(val), cimag(val));
 }
 
@@ -988,14 +988,15 @@ static cnumber cf_scm_wrapper(integer n, number *x, void *f_scm_p)
 }
 
 SCM cadaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
-			     SCM tol_scm, SCM maxnfe_scm)
+			      SCM abstol_scm, SCM reltol_scm, SCM maxnfe_scm)
 {
      integer n, maxnfe, errflag, i;
-     number *xmin, *xmax, tol;
+     number *xmin, *xmax, abstol, reltol;
      cnumber integral;
 
      n = list_length(xmin_scm);
-     tol = fabs(gh_scm2double(tol_scm));
+     abstol = fabs(gh_scm2double(abstol_scm));
+     reltol = fabs(gh_scm2double(reltol_scm));
      maxnfe = gh_scm2int(maxnfe_scm);
 
      if (list_length(xmax_scm) != n) {
@@ -1016,7 +1017,8 @@ SCM cadaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
      }
 
      integral = cadaptive_integration(cf_scm_wrapper, xmin, xmax, n, &f_scm,
-				     tol, maxnfe, &tol, &errflag);
+				      abstol, reltol, maxnfe, 
+				      &abstol, &errflag);
 
      free(xmax);
      free(xmin);
@@ -1033,7 +1035,7 @@ SCM cadaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
 	      break;
      }
      
-     return gh_cons(cnumber2scm(integral), gh_double2scm(tol));
+     return gh_cons(cnumber2scm(integral), gh_double2scm(abstol));
 }
 
 #endif

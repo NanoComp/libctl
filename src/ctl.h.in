@@ -321,23 +321,25 @@ extern SCM subplex_scm(SCM f_scm, SCM x_scm,
 
 extern number adaptive_integration(multivar_func f, number *xmin, number *xmax,
 				   integer n, void *fdata, 
-				   number reltol, integer maxnfe, 
+				   number abstol, number reltol, 
+				   integer maxnfe, 
 				   number *esterr, integer *errflag);
 
 extern SCM adaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
-				    SCM tol_scm, SCM maxnfe_scm);
+				    SCM abstol_scm, SCM reltol_scm, SCM maxnfe_scm);
 
 #ifdef CTL_HAS_COMPLEX_INTEGRATION
 
 typedef cnumber (*cmultivar_func) (integer, number *, void *);
 
 extern cnumber cadaptive_integration(cmultivar_func f, number *xmin, number *xmax,
-				   integer n, void *fdata, 
-				   number reltol, integer maxnfe, 
-				   number *esterr, integer *errflag);
+				     integer n, void *fdata, 
+				     number abstol, number reltol,
+				     integer maxnfe, 
+				     number *esterr, integer *errflag);
 
 extern SCM cadaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
-				    SCM tol_scm, SCM maxnfe_scm);
+				     SCM abstol_scm, SCM reltol_scm, SCM maxnfe_scm);
 
 #endif /* CTL_HAS_COMPLEX_INTEGRATION */
 
