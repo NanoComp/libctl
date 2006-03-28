@@ -2,11 +2,11 @@
  * Copyright (c) 2005 Steven G. Johnson
  *
  * Portions (see comments) based on HIntLib (also distributed under
- * the GNU GPL), copyright (c) 2002-2005 Rudolf Schuerer.
+ * the GNU GPL, v2 or later), copyright (c) 2002-2005 Rudolf Schuerer.
  *     (http://www.cosy.sbg.ac.at/~rschuer/hintlib/)
  *
  * Portions (see comments) based on GNU GSL (also distributed under
- * the GNU GPL), copyright (c) 1996-2000 Brian Gough.
+ * the GNU GPL, v2 or later), copyright (c) 1996-2000 Brian Gough.
  *     (http://www.gnu.org/software/gsl/)
  *
  * This program is free software; you can redistribute it and/or modify

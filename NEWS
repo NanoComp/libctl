@@ -3,6 +3,9 @@ libctl 3.0
   * Switch to use automake and libtool.  Can now install shared libraries
     with --enable-shared.
 
+  * License is now GNU GPL (v2 or later) rather than the GNU LGPL, due
+    to use of third-party GPL code for multi-dimensional integration (below).
+
   * gen-ctl-io now supports separate generation of code and header files
     via --code and --header arguments.  (Better for parallel make.)
     Also support a -o option to give a different output file name.
@@ -17,7 +20,9 @@ libctl 3.0
     for use with the "stand-alone" libctlgeom.a library below.
 
   * New multi-dimensional integration routines using adaptive cubature.
-    (Much more efficient than nested 1d integrations.)
+    (Much more efficient than nested 1d integrations.)  Adapted in part
+    from the HIntlib Library by Rudolf Schuerer and from the GNU Scientific
+    Library (GSL) by Brian Gough.
 
   * New interpolate-uniform function that tries to maintain a uniform
     distance between points (i.e. variable number of interpolated points
