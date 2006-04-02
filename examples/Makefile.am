@@ -19,7 +19,7 @@
 # your program.
 
 SPECIFICATION_FILE = example.scm
-EXTRA_DIST = example.scm README run.ctl
+EXTRA_DIST = example.scm.in README run.ctl
 
 # change "noinst" to "bin" and uncomment pkgdata line to 'make install' program
 noinst_PROGRAMS = example

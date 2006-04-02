@@ -180,9 +180,9 @@ LDFLAGS="-L`pwd`/$srcdir/src $LDFLAGS"
 LIBCTL_DIR="`pwd`/$srcdir"
 AC_SUBST(LIBCTL_DIR)
 
-GEN_CTL_IO="`pwd`/$srcdir/utils/gen-ctl-io"
+GEN_CTL_IO="`pwd`/utils/gen-ctl-io"
 AC_SUBST(GEN_CTL_IO)
 
-AC_CONFIG_FILES([Makefile src/Makefile utils/Makefile examples/Makefile])
-AC_CONFIG_FILES([utils/gen-ctl-io], [chmod u+x $srcdir/utils/gen-ctl-io])
+AC_CONFIG_FILES([Makefile src/Makefile utils/Makefile examples/Makefile examples/example.scm])
+AC_CONFIG_FILES([utils/gen-ctl-io], [chmod u+x utils/gen-ctl-io])
 AC_OUTPUT
