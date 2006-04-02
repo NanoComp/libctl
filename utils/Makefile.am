@@ -27,7 +27,7 @@ ctlgeom-types.h: ctl-io.h
 	cp -f ctl-io.h $@
 
 geom-ctl-io.c: ctl-io.c
-	sed 's,/.* Input variables .*/,\0@#include "geom-ctl-io-defaults.c"@#if 0@,;s,/.* Output variables .*/,#endif@\0,' ctl-io.c | tr '@' '\n' > $@
+	sed 's,/.* Input variables .*/,@#include "geom-ctl-io-defaults.c"@#if 0@,;s,/.* Output variables .*/,#endif@,' ctl-io.c | tr '@' '\n' > $@
 
 clean-local:
 	rm -f ctl-io.[ch] geom-ctl-io.c ctlgeom-types.h

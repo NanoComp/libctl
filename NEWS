@@ -1,4 +1,4 @@
-libctl 3.0
+libctl 3.0 (4/1/2006)
 
   * Switch to use automake and libtool.  Can now install shared libraries
     with --enable-shared.

@@ -177,8 +177,11 @@ void main_entry(int argc, char *argv[])
   /* Export the adaptive integration routines: */
   gh_new_procedure ("adaptive-integration", 
 		    (SCM (*)(void)) adaptive_integration_scm, 6, 0, 0);
+
+#ifdef CTL_HAS_COMPLEX_INTEGRATION
   gh_new_procedure ("cadaptive-integration", 
 		    (SCM (*)(void)) cadaptive_integration_scm, 6, 0, 0);
+#endif
 
 #ifdef HAVE_CTL_EXPORT_HOOK
   ctl_export_hook();
