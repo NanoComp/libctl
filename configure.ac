@@ -167,21 +167,16 @@ fi
 
 ###########################################################################
 
-# Add libctl and libgeom -I/-L/-l flags to CPPFLAGS/LDFLAGS/LIBS,
-# so that examples/Makefile.in can be used as-is for other programs.
-# (The flags need to go first so that they'll take precedence over
-# any previously-installed version of libctl.)
+libctl_dir=$srcdir
+case $libctl_dir in .*) libctl_dir=`pwd`/$libctl_dir ;; esac
 
-CPPFLAGS="-I`pwd`/$srcdir/src -I`pwd`/$srcdir/utils $CPPFLAGS"
-LDFLAGS="-L`pwd`/$srcdir/src $LDFLAGS"
-
-###########################################################################
-
-LIBCTL_DIR="`pwd`/$srcdir"
+LIBCTL_DIR="$libctl_dir"
 AC_SUBST(LIBCTL_DIR)
 
 GEN_CTL_IO="`pwd`/utils/gen-ctl-io"
 AC_SUBST(GEN_CTL_IO)
+
+###########################################################################
 
 AC_CONFIG_FILES([Makefile src/Makefile utils/Makefile examples/Makefile examples/example.scm])
 AC_CONFIG_FILES([utils/gen-ctl-io], [chmod u+x utils/gen-ctl-io])

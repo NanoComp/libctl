@@ -22,7 +22,9 @@
 #ifndef GEOM_H
 #define GEOM_H
 
-#include <ctlgeom-types.h>
+#ifndef CTL_IO_H
+#  include <ctlgeom-types.h>
+#endif
 
 #ifdef CXX_CTL_IO
 #define MATERIAL_TYPE ctlio::material_type
