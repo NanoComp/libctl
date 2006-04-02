@@ -1,5 +1,5 @@
 lib_LTLIBRARIES = libctl.la
-include_HEADERS = ctl.h
+nodist_include_HEADERS = ctl.h
 
 BUILT_SOURCES = ctl.h
 EXTRA_DIST = ctl.h.in
