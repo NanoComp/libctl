@@ -176,6 +176,9 @@ AC_SUBST(LIBCTL_DIR)
 GEN_CTL_IO="`pwd`/utils/gen-ctl-io"
 AC_SUBST(GEN_CTL_IO)
 
+# On IRIX, basename/dirname functions require -lgen
+AC_CHECK_LIB(gen, basename)
+
 ###########################################################################
 
 AC_CONFIG_FILES([Makefile src/Makefile utils/Makefile examples/Makefile examples/example.scm])
