@@ -72,7 +72,8 @@ fi
 if test "$#" = "2"; then
     libctl_dir="$2"
 else
-    libctl_dir="@prefix@/share/libctl"
+    prefix="@prefix@"
+    libctl_dir="@datadir@/libctl"
 fi
 case $libctl_dir in .*) libctl_dir=`pwd`/$libctl_dir ;; esac
 if test ! -r $libctl_dir/utils/ctl-io.scm; then
