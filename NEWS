@@ -1,3 +1,10 @@
+libctl 3.0.1 (5/1/2006)
+
+  * Change shared-library version to 3:0:0 instead of 0:0:0.  This
+    avoids conflicts with shared library version numbers that has
+    been assigned to earlier versions of libctl for Debian; thanks to
+    Josselin Mouette for the suggestion.
+
 libctl 3.0 (4/1/2006)
 
   * Switch to use automake and libtool.  Can now install shared libraries
