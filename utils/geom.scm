@@ -201,7 +201,7 @@
 (define-param grid-size false) ; force grid size, if set
 
 (define (get-resolution)
-  (if (vector3? resolution)
+  (if (vector? resolution)
       resolution
       (vector3 resolution resolution resolution)))
 (define (get-grid-size)
