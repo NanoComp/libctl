@@ -189,7 +189,7 @@ void main_entry(int argc, char *argv[])
 
   /* load include.scm if it was given at compile time */
 #ifdef INCLUDE_SCM
-  ctl_include(INCLUDE_SCM);
+  gh_load(INCLUDE_SCM);
 #endif
 
   /* load ctl.scm if it was given at compile time */
