@@ -1,12 +1,12 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT(libctl, 3.0.1, stevenj@alum.mit.edu)
+AC_INIT(libctl, 3.0.2, stevenj@alum.mit.edu)
 AC_CONFIG_SRCDIR([src/ctl.c])
 AC_CONFIG_HEADERS([config.h src/ctl.h])
 
 # Shared-library version number; indicates api compatibility, and is
 # not the same as the "public" version number.  (Don't worry about this
 # except for public releases.)
-SHARED_VERSION_INFO="3:0:0"
+SHARED_VERSION_INFO="3:1:0" # CURRENT:REVISION:AGE
 
 AM_INIT_AUTOMAKE(1.6)
 AC_SUBST(SHARED_VERSION_INFO)

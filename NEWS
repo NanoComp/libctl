@@ -1,3 +1,7 @@
+libctl 3.0.2 (8/22/2006)
+
+  * Fix minor Guile incompatibility on some systems.
+
 libctl 3.0.1 (5/1/2006)
 
   * Change shared-library version to 3:0:0 instead of 0:0:0.  This
