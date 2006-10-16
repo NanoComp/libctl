@@ -10,7 +10,7 @@ BUILT_SOURCES = gen-ctl-io geom-ctl-io.c ctl-io.c ctl-io.h ctlgeom-types.h
 
 libctlgeom_la_SOURCES = geom.c 
 nodist_libctlgeom_la_SOURCES = geom-ctl-io.c ctl-io.h
-libctlgeom_la_LDFLAGS = -no-undefined -version-info @SHARED_VERSION_INFO@
+libctlgeom_la_LDFLAGS = -version-info @SHARED_VERSION_INFO@ $(top_builddir)/src/libctl.la
 
 geomtst_SOURCES = geomtst.c
 geomtst_LDADD = libctlgeom.la $(top_builddir)/src/libctl.la
