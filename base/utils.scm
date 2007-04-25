@@ -191,6 +191,15 @@
        ,@statements
        (display-time ,message (- (current-time) begin-time-start-t)))))
 
+; like begin-time, but returns the value of the last statement,
+; similar to (begin ...).  In retrospect, returning the time by
+; default was probably a mistake.
+(defmacro-public begin-timed (message . statements)
+  `(let ((begin-time-start-t (current-time)))
+     (let ((val (begin "no statements" ,@statements)))
+       (display-time ,message (- (current-time) begin-time-start-t))
+       val)))
+
 ; ****************************************************************
 
 ; Return a 'memoized' version of the function f, which caches its
