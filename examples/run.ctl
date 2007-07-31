@@ -66,4 +66,4 @@
 
 ; The (run) command normally turns interactive mode off; turn it back
 ; on so that we are dropped into a Guile command line:
-(set! interactive? true)
+(set-param! interactive? true)
