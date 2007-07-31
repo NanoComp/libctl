@@ -415,10 +415,16 @@ static SCM make_vector3(SCM x, SCM y, SCM z)
 {
   SCM vscm, *data;
   vscm = scm_c_make_vector(3, SCM_UNSPECIFIED);
+#ifdef SCM_SIMPLE_VECTOR_SET
+  SCM_SIMPLE_VECTOR_SET(vscm, 0, x);
+  SCM_SIMPLE_VECTOR_SET(vscm, 1, y);
+  SCM_SIMPLE_VECTOR_SET(vscm, 2, z);
+#else
   data = SCM_VELTS(vscm);
   data[0] = x;
   data[1] = y;
   data[2] = z;
+#endif
   return vscm;
 }
 
