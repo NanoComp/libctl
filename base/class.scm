@@ -130,6 +130,7 @@
 (define (primitive-type? type-name)
   (or (eq? type-name 'number)
       (eq? type-name 'integer)
+      (eq? type-name 'boolean)
       (eq? type-name 'function)
       (eq? type-name 'SCM)))
 
