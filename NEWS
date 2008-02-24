@@ -1,3 +1,14 @@
+libctl 3.0.3 (2/24/2008)
+
+  * Added "begin-timed" function, which is similar to "begin-time" except
+    that it returns the value of the last statement (like "begin") rather
+    than the time.
+
+  * Bug fix: allow classes to have boolean properties.
+
+  * Bug fixes for compilation under C++, thanks to David Foster:
+    include missing string.h header and fixed gh_new_procedure prototype.
+
 libctl 3.0.2 (8/22/2006)
 
   * Fix minor Guile incompatibility on some systems.
