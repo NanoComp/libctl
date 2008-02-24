@@ -721,7 +721,7 @@
    "gh_new_procedure(\""
    (external-function-aux-name (external-function-name external-function))
    "\", "
-   "(SCM (*)(void)) "
+   "(SCM (*)()) "
    (symbol->c-identifier
     (external-function-aux-name (external-function-name external-function)))
    ", "

@@ -158,6 +158,7 @@ cat > $output_file <<EOF
 /* THIS FILE WAS AUTOMATICALLY GENERATED.  DO NOT MODIFY! */
 /* generated from the file: $spec_file */
 
+#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "ctl-io.h"
