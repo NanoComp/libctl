@@ -1,4 +1,4 @@
-libctl 3.0.3 (2/24/2008)
+libctl 3.0.3 (2/27/2008)
 
   * Added "begin-timed" function, which is similar to "begin-time" except
     that it returns the value of the last statement (like "begin") rather
