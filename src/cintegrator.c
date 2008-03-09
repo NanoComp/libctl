@@ -927,7 +927,7 @@ int main(int argc, char **argv)
      xmax = (double *) malloc(dim * sizeof(double));
      for (i = 0; i < dim; ++i) {
 	  xmin[i] = 0;
-	  xmax[i] = 1 + (which_integrand >= 2 ? 0 : 0.4 * sin(i));
+	  xmax[i] = 1 + (which_integrand >= 1 ? 0 : 0.4 * sin(i));
      }
 
      printf("%u-dim integral, tolerance = %g, integrand = %d\n",
