@@ -293,7 +293,7 @@ static num evalRR0_0fs(integrand f, void *fdata, unsigned dim, double *p, const 
      return sum;
 }
 
-static double evalR0_0fs4d(integrand f, void *fdata, unsigned dim, double *p, const double *c, num *sum0_, const double *r1, num *sum1_, const double *r2, num *sum2_)
+static unsigned evalR0_0fs4d(integrand f, void *fdata, unsigned dim, double *p, const double *c, num *sum0_, const double *r1, num *sum1_, const double *r2, num *sum2_)
 {
      double maxdiff = 0;
      unsigned i, dimDiffMax = 0;
