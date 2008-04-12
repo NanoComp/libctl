@@ -174,6 +174,12 @@ void main_entry(int argc, char *argv[])
   /* Export the subplex minimization routine: */
   gh_new_procedure ("subplex", (SCM (*)(void)) subplex_scm, 7, 0, 0);
 
+#ifdef HAVE_NLOPT
+  /* Export the nlopt minimization routine, if available: */
+  gh_new_procedure ("nlopt-minimize", (SCM (*)(void)) nlopt_minimize_scm, 
+		    12, 0, 0);
+#endif
+
   /* Export the adaptive integration routines: */
   gh_new_procedure ("adaptive-integration", 
 		    (SCM (*)(void)) adaptive_integration_scm, 6, 0, 0);

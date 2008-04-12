@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT(libctl, 3.0.3, stevenj@alum.mit.edu)
+AC_INIT(libctl, 3.1, stevenj@alum.mit.edu)
 AC_CONFIG_SRCDIR([src/ctl.c])
 AC_CONFIG_HEADERS([config.h src/ctl.h])
 
@@ -164,6 +164,12 @@ if test "$acx_cv_c_complex" = "unsupported"; then
 else
    AC_DEFINE([CTL_HAS_COMPLEX_INTEGRATION], [1], [If we have C99 complex nums])
 fi
+
+###########################################################################
+# Check for nlopt, or at least its header, and extract Scheme constants
+
+AC_PROG_EGREP
+AC_CHECK_HEADERS(nlopt.h)
 
 ###########################################################################
 
