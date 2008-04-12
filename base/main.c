@@ -155,8 +155,7 @@ extern SCM nlopt_minimize_scm(SCM algorithm_scm,
 		       SCM f_scm,
                        SCM lb_scm, SCM ub_scm, SCM x_scm,
 		       SCM minf_max_scm, SCM ftol_rel_scm, SCM ftol_abs_scm,
-                       SCM xtol_rel_scm, SCM xtol_abs_scm,
-		       SCM maxeval_scm, SCM maxtime_scm);
+		       SCM rest);
 
 
 /* Main program.  Start up Guile, declare functions, load any
@@ -185,7 +184,7 @@ void main_entry(int argc, char *argv[])
 #ifdef HAVE_NLOPT
   /* Export the nlopt minimization routine, if available: */
   gh_new_procedure ("nlopt-minimize", (SCM (*)(void)) nlopt_minimize_scm, 
-		    12, 0, 0);
+		    8, 0, 1);
 #endif
 
   /* Export the adaptive integration routines: */
