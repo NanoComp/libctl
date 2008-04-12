@@ -151,6 +151,14 @@ extern void ctl_stop_hook(void);
 extern void ctl_export_hook(void);
 #endif
 
+extern SCM nlopt_minimize_scm(SCM algorithm_scm,
+		       SCM f_scm,
+                       SCM lb_scm, SCM ub_scm, SCM x_scm,
+		       SCM minf_max_scm, SCM ftol_rel_scm, SCM ftol_abs_scm,
+                       SCM xtol_rel_scm, SCM xtol_abs_scm,
+		       SCM maxeval_scm, SCM maxtime_scm);
+
+
 /* Main program.  Start up Guile, declare functions, load any
    scripts passed on the command-line, and drop into interactive
    mode if read-input-vars was never called. */

@@ -2,13 +2,14 @@
 
 #ifdef HAVE_NLOPT
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
 #include <ctl.h>
 #include <nlopt.h>
 
-double f_scm_wrapper(integer n, const double *x, double *grad, void *f_scm_p)
+static double f_scm_wrap(integer n, const double *x, double *grad, void *f_scm_p)
 {
      SCM *f_scm = (SCM *) f_scm_p;
      SCM ret = gh_call1(*f_scm, make_number_list(n, x));
@@ -19,7 +20,7 @@ double f_scm_wrapper(integer n, const double *x, double *grad, void *f_scm_p)
 	  SCM gscm = ret;
 	  int i;
 	  for (i = 0; i < n; ++i) {
-	       scm = SCM_CDR(gscm);
+	       gscm = SCM_CDR(gscm);
 	       grad[i] = scm_to_double(SCM_CAR(gscm));
 	  }
 	  return scm_to_double(SCM_CAR(ret));
@@ -34,7 +35,7 @@ SCM nlopt_minimize_scm(SCM algorithm_scm,
 		       SCM xtol_rel_scm, SCM xtol_abs_scm,
 		       SCM maxeval_scm, SCM maxtime_scm)
 {
-     nlopt_algorithm = (nlopt_algorithm) scm_to_int(algorithm_scm);
+     nlopt_algorithm algorithm = (nlopt_algorithm) scm_to_int(algorithm_scm);
      int i, n = list_length(x_scm);
      double *x, *lb, *ub, *xtol_abs = 0;
      double minf_max = scm_to_double(minf_max_scm);
@@ -73,19 +74,19 @@ SCM nlopt_minimize_scm(SCM algorithm_scm,
      }
      if (list_length(xtol_abs_scm)) {
 	  xtol_abs = ub + n;
-	  or (v=xtol_abs_scm, i=0; i < n; ++i) {
+	  for (v=xtol_abs_scm, i=0; i < n; ++i) {
 	       xtol_abs[i] = scm_to_double(SCM_CAR(v));
 	       v = SCM_CDR(v);
 	  }
      }
 
-     result = subplex(algorithm, n, f_scm_wrapper, &f_scm,
-		      lb, ub, x, &minf,
-		      minf_max, ftol_rel, ftol_abs, xtol_rel, xtol_abs,
-		      maxeal, maxtime);
+     result = nlopt_minimize(algorithm, n, f_scm_wrap, &f_scm,
+			     lb, ub, x, &minf,
+			     minf_max, ftol_rel, ftol_abs, xtol_rel, xtol_abs,
+			     maxeal, maxtime);
 
      ret = scm_cons(scm_from_int((int) result),
-		    scm_cons(scm_from_double(minf), make_number_list(n, x));
+		    scm_cons(scm_from_double(minf), make_number_list(n, x)));
 
      free(x);
 
