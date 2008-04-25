@@ -28,6 +28,11 @@
 ; the path of the top-level Guile invocation, which may not be the
 ; same as the path of the current Scheme file.  Our include function
 ; remembers the path of the current file and loads relative to this.
+;
+; Note that this problem of Guile's "load" function was fixed a long
+; time ago, apparently.  But I still find it useful to have my own
+; "include" function to keep track of the currently-loaded filename,
+; which is used to prepend the ctl filename to output files.
 
 (define (string-suffix? suff s)
   (if (> (string-length suff) (string-length s))
@@ -76,10 +81,10 @@
     (if (pathname-absolute? (car pathpair))
 	(begin
 	  (set! include-dir (car pathpair))
-	  (load pathname))
+	  (primitive-load pathname))
 	(begin
 	  (set! include-dir (string-append include-dir (car pathpair)))
-	  (load (string-append include-dir (cdr pathpair)))))
+	  (primitive-load (string-append include-dir (cdr pathpair)))))
     (set! include-dir save-include-dir))
   (set! include-files (cdr include-files)))
 
