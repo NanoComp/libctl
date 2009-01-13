@@ -436,7 +436,7 @@
 		 (df (if (> err err0)
 			 df0
 			 (cdr (assoc errmin (map cons errs (cdr a)))))))
-	    (if (or (< err (* tol (unary-abs df)) )
+	    (if (or (<= err (* tol (unary-abs df)) )
 		    (> (unary-abs (binary- (car (reverse a)) (car (reverse prev-a))))
 		       (* 2 err)))
 		(list df err)
