@@ -959,7 +959,7 @@ static number compute_dot_cross(vector3 a, vector3 b, vector3 c)
 
    Requires that geometry_lattice global has been initialized,
    etcetera.  */
-static void get_bounding_box(geometric_object o, geom_box *box)
+void geom_get_bounding_box(geometric_object o, geom_box *box)
 {
      geom_fix_object(o);
 
@@ -1099,7 +1099,7 @@ static void get_bounding_box(geometric_object o, geom_box *box)
 		   ->component_objects.items;
 	      for (i = 0; i < n; ++i) {
 		   geom_box boxi;
-		   get_bounding_box(os[i], &boxi);
+		   geom_get_bounding_box(os[i], &boxi);
 		   geom_box_shift(&boxi, o.center);
 		   geom_box_union(box, box, &boxi);
 	      }
@@ -1109,8 +1109,10 @@ static void get_bounding_box(geometric_object o, geom_box *box)
 }
 
 /**************************************************************************/
-/* compute the fraction of a box's volume (or area/length in 2d/1d) that
-   overlaps an object */
+/* Compute the fraction of a box's volume (or area/length in 2d/1d) that
+   overlaps an object.   Instead of a box, we also allow an ellipsoid
+   inscribed inside the box (or a skewed ellipsoid if the box is not
+   orthogonal). */
 
 typedef struct {
      geometric_object o;
@@ -1118,7 +1120,10 @@ typedef struct {
      int pdim[2]; /* the (up to two) integration directions */
      double scx[2]; /* scale factor (e.g. sign flip) for x coordinates */
      unsigned dim;
-     double a0, b0;
+     double a0, b0; /* box limits along analytic direction */
+     int is_ellipsoid; /* 0 for box, 1 for ellipsoid */
+     double winv[2], c[2]; /* ellipsoid width-inverses/centers in int. dirs */
+     double w0, c0; /* width/center along analytic direction */
 } overlap_data;
 
 static double overlap_integrand(integer ndim, number *x, void *data_)
@@ -1127,6 +1132,7 @@ static double overlap_integrand(integer ndim, number *x, void *data_)
      double s[2];
      const double *scx = data->scx;
      vector3 p = data->p;
+     double a0 = data->a0, b0 = data->b0;
 
      if (ndim > 0) {
 	  switch (data->pdim[0]) {
@@ -1143,17 +1149,33 @@ static double overlap_integrand(integer ndim, number *x, void *data_)
 	  }
      }
 
+     if (data->is_ellipsoid) {
+	  /* compute width of ellipsoid at this point, along the
+	     analytic-intersection direction */
+	  double w = 1.0;
+	  int i;
+	  for (i = 0; i < ndim; ++i) {
+	       double dx = (x[i] - data->c[i]) * data->winv[i];
+	       w -= dx * dx;
+	  }
+	  if (w < 0) return 0.0; /* outside the ellipsoid */
+	  w = data->w0 * sqrt(w);
+	  a0 = data->c0 - w; b0 = data->c0 + w;
+     }
+
      if (2 == intersect_line_with_object(p, data->dir, data->o, s)) {
 	  double ds = (s[0] < s[1]
-		       ? MIN(s[1],data->b0) - MAX(s[0],data->a0)
-		       : MIN(s[0],data->b0) - MAX(s[1],data->a0));
+		       ? MIN(s[1],b0) - MAX(s[0],a0)
+		       : MIN(s[0],b0) - MAX(s[1],a0));
 	  return (ds > 0 ? ds : 0.0);
      }
      return 0.0;
 }
 
-number box_overlap_with_object(geom_box b, geometric_object o,
-			       number tol, integer maxeval)
+#define K_PI 3.14159265358979323846
+
+number overlap_with_object(geom_box b, int is_ellipsoid, geometric_object o,
+			   number tol, integer maxeval)
 {
      overlap_data data;
      int empty_x = b.low.x == b.high.x;
@@ -1164,11 +1186,11 @@ number box_overlap_with_object(geom_box b, geometric_object o,
 		  (empty_z ? 1 : b.high.z - b.low.z));
      vector3 ex = {1,0,0}, ey = {0,1,0}, ez = {0,0,1};
      geom_box bb;
-     double xmin[2], xmax[2], esterr;
+     double xmin[2] = {0,0}, xmax[2] = {0,0}, esterr;
      int errflag;
      unsigned i;
 
-     get_bounding_box(o, &bb);
+     geom_get_bounding_box(o, &bb);
      geom_box_intersection(&bb, &b, &bb);
      if (bb.low.x > bb.high.x || bb.low.y > bb.high.y || bb.low.z > bb.high.z
 	 || (!empty_x && bb.low.x == bb.high.x)
@@ -1242,10 +1264,36 @@ number box_overlap_with_object(geom_box b, geometric_object o,
 	       data.scx[i] = 1;
      }
 
+     if ((data.is_ellipsoid = is_ellipsoid)) { /* data for ellipsoid calc. */
+	  data.winv[0] = 2.0 / (xmax[0] == xmin[0] ? 2.0 : xmax[0] - xmin[0]);
+	  data.winv[1] = 2.0 / (xmax[1] == xmin[1] ? 2.0 : xmax[1] - xmin[1]);
+	  data.c[0] = (xmax[0] + xmin[0]) * 0.5;
+	  data.c[1] = (xmax[1] + xmin[1]) * 0.5;
+	  data.w0 = (data.b0 - data.a0) * 0.5;
+	  data.c0 = (data.b0 + data.a0) * 0.5;
+
+	  if (data.dim == 1)
+	       V0 *= K_PI / 4;
+	  else if (data.dim == 2)
+	       V0 *= K_PI / 6; 
+     }
+
      return adaptive_integration(overlap_integrand, xmin, xmax, 
 				 data.dim, &data, 
 				 0.0, tol, maxeval,
 				 &esterr, &errflag) / V0;
+}
+
+number box_overlap_with_object(geom_box b, geometric_object o,
+			       number tol, integer maxeval)
+{
+     return overlap_with_object(b, 0, o, tol, maxeval);
+}
+
+number ellipsoid_overlap_with_object(geom_box b, geometric_object o,
+				     number tol, integer maxeval)
+{
+     return overlap_with_object(b, 1, o, tol, maxeval);
 }
 
 number CTLIO range_overlap_with_object(vector3 low, vector3 high,
@@ -1281,7 +1329,7 @@ void destroy_geom_box_tree(geom_box_tree t)
 static int object_in_box(geometric_object o, vector3 shiftby,
 			 geom_box *obj_b, const geom_box *b)
 {
-     get_bounding_box(o, obj_b);
+     geom_get_bounding_box(o, obj_b);
      geom_box_shift(obj_b, shiftby);
      return geom_boxes_intersect(obj_b, b);
 }

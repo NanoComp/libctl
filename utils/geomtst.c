@@ -130,7 +130,42 @@ static double simple_overlap(geom_box b, geometric_object o, double tol)
      return olap0;
 }
 
-static void test_overlap(double tol)
+static double sqr(double x) { return x * x; }
+
+static double simple_ellip_overlap(geom_box b, geometric_object o, double tol)
+{
+     double d1,d2,d3, x1,x2,x3, c1,c2,c3, w1,w2,w3, olap0 = 0;
+     double itol = 1.0 / ((int) (1/tol + 0.5));
+
+     d1 = (b.high.x - b.low.x) * itol;
+     d2 = (b.high.y - b.low.y) * itol;
+     d3 = (b.high.z - b.low.z) * itol;
+     c1 = (b.high.x + b.low.x) * 0.5;
+     c2 = (b.high.y + b.low.y) * 0.5;
+     c3 = (b.high.z + b.low.z) * 0.5;
+     w1 = 2.0 / (b.high.x - b.low.x);
+     w2 = 2.0 / (b.high.y - b.low.y);
+     w3 = 2.0 / (b.high.z - b.low.z);
+     for (x1 = b.low.x + d1*0.5; x1 <= b.high.x; x1 += d1)
+      for (x2 = b.low.y + d2*0.5; x2 <= b.high.y; x2 += d2)
+       for (x3 = b.low.z + d3*0.5; x3 <= b.high.z; x3 += d3) 
+	    if (sqr((x1 - c1) * w1) + sqr((x2 - c2) * w2) + sqr((x3 - c3) * w3)
+		< 1.0) {
+		 vector3 v;
+		 v.x = x1; v.y = x2; v.z = x3;
+		 olap0 += d1*d2*d3 * point_in_fixed_objectp(v, o);
+	    }
+     olap0 /= (b.high.x-b.low.x) * (b.high.y-b.low.y) * (b.high.z-b.low.z);
+     olap0 /= 3.14159265358979323846 / 6;
+     return olap0;
+}
+
+static void test_overlap(double tol,
+			 number (*box_overlap_with_object)
+			 (geom_box b, geometric_object o,
+			  number tol, integer maxeval),
+			 double (*simple_overlap)
+			 (geom_box b, geometric_object o, double tol))
 {
      geometric_object o = random_object();
      vector3 dir = random_unit_vector3();
@@ -198,7 +233,18 @@ int main(void)
 
      srand(time(NULL));
 
-     for (i = 0; i < ntest; ++i) test_overlap(tol);
+     geom_initialize();
+
+     for (i = 0; i < ntest; ++i) {
+	  printf("**** box overlap: ****\n");
+	  test_overlap(tol,
+		       box_overlap_with_object,
+		       simple_overlap);
+	  printf("**** ellipsoid overlap: ****\n");
+	  test_overlap(tol,
+		       ellipsoid_overlap_with_object,
+		       simple_ellip_overlap);
+     }
      
      return 0;
 }
