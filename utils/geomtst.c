@@ -200,7 +200,7 @@ static void test_overlap(double tol,
 	  b.low.y = b.high.y = 0;
 
      olap = box_overlap_with_object(b, o, tol/100, 10000/tol);
-     olap0 = simple_overlap(b, o, tol);
+     olap0 = simple_overlap(b, o, tol/2);
 
      if (fabs(olap0 - olap) > 2 * tol * fabs(olap)) {
 	  fprintf(stderr, "Large error %e in overlap (%g vs. %g) for:\n"
@@ -225,7 +225,7 @@ static void test_overlap(double tol,
 	       tol /= sqrt(2.0);
 	       fprintf(stderr, "olap = %g, olap0 = %g (with tol = %e)\n",
 		       box_overlap_with_object(b, o, tol/100, 10000/tol),
-		       simple_overlap(b, o, tol), tol);
+		       simple_overlap(b, o, tol/2), tol);
 	  }
 #endif
 	  exit(1);
