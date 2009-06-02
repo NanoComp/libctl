@@ -73,6 +73,7 @@ if test "$#" = "2"; then
     libctl_dir="$2"
 else
     prefix="@prefix@"
+    datarootdir="@datarootdir@"
     libctl_dir="@datadir@/libctl"
 fi
 case $libctl_dir in .*) libctl_dir=`pwd`/$libctl_dir ;; esac
