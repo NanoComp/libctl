@@ -1133,6 +1133,7 @@ static double overlap_integrand(integer ndim, number *x, void *data_)
      const double *scx = data->scx;
      vector3 p = data->p;
      double a0 = data->a0, b0 = data->b0;
+     double scale_result = 1.0;
 
      if (ndim > 0) {
 	  switch (data->pdim[0]) {
@@ -1149,13 +1150,22 @@ static double overlap_integrand(integer ndim, number *x, void *data_)
 	  }
      }
 
-     if (data->is_ellipsoid) {
+     if (data->is_ellipsoid && ndim > 0) {
 	  /* compute width of ellipsoid at this point, along the
 	     analytic-intersection direction */
-	  double w = 1.0;
-	  int i;
-	  for (i = 0; i < ndim; ++i) {
-	       double dx = (x[i] - data->c[i]) * data->winv[i];
+	  double dx = (x[0] - data->c[0]) * data->winv[0];
+	  double w = 1.0 - dx * dx;
+	  if (ndim > 1) { /* rescale 2nd dimension to stay inside ellipsoid */
+	       double x1;
+	       if (w < 0) return 0.0; /* outside the ellipsoid */
+	       scale_result = sqrt(w);
+	       x1 = data->c[1] + (x[1] - data->c[1]) * scale_result;
+	       switch (data->pdim[1]) {
+		   case 0: p.x = scx[1] * x1; break;
+		   case 1: p.y = scx[1] * x1; break;
+		   case 2: p.z = scx[1] * x1; break;
+               }
+	       dx = (x1 - data->c[1]) * data->winv[1];
 	       w -= dx * dx;
 	  }
 	  if (w < 0) return 0.0; /* outside the ellipsoid */
@@ -1167,7 +1177,7 @@ static double overlap_integrand(integer ndim, number *x, void *data_)
 	  double ds = (s[0] < s[1]
 		       ? MIN(s[1],b0) - MAX(s[0],a0)
 		       : MIN(s[0],b0) - MAX(s[1],a0));
-	  return (ds > 0 ? ds : 0.0);
+	  return (ds > 0 ? ds * scale_result : 0.0);
      }
      return 0.0;
 }
@@ -1198,6 +1208,9 @@ number overlap_with_object(geom_box b, int is_ellipsoid, geometric_object o,
 	 || (!empty_z && bb.low.z == bb.high.z))
 	  return 0.0;
 
+     data.winv[0] = data.winv[1] = data.w0 = 1.0;
+     data.c[0] = data.c[1] = data.c0 = 0;
+
      data.o = o;
      data.p.x = data.p.y = data.p.z = 0;
      data.dim = 0;
@@ -1205,14 +1218,20 @@ number overlap_with_object(geom_box b, int is_ellipsoid, geometric_object o,
 	  data.dir = ex;
 	  data.a0 = bb.low.x;
 	  data.b0 = bb.high.x;
+	  data.w0 = 0.5 * (b.high.x - b.low.x);
+	  data.c0 = 0.5 * (b.high.x + b.low.x);
 	  if (!empty_y) {
 	       xmin[data.dim] = bb.low.y;
 	       xmax[data.dim] = bb.high.y;
+	       data.winv[data.dim] = 2.0 / (b.high.y - b.low.y);
+	       data.c[data.dim] = 0.5 * (b.high.y + b.low.y);
 	       data.pdim[data.dim++] = 1;
 	  }
 	  if (!empty_z) {
 	       xmin[data.dim] = bb.low.z;
 	       xmax[data.dim] = bb.high.z;
+	       data.winv[data.dim] = 2.0 / (b.high.z - b.low.z);
+	       data.c[data.dim] = 0.5 * (b.high.z + b.low.z);
 	       data.pdim[data.dim++] = 2;
 	  }
      }
@@ -1220,14 +1239,20 @@ number overlap_with_object(geom_box b, int is_ellipsoid, geometric_object o,
 	  data.dir = ey;
 	  data.a0 = bb.low.y;
 	  data.b0 = bb.high.y;
+	  data.w0 = 0.5 * (b.high.y - b.low.y);
+	  data.c0 = 0.5 * (b.high.y + b.low.y);
 	  if (!empty_x) {
 	       xmin[data.dim] = bb.low.x;
 	       xmax[data.dim] = bb.high.x;
+	       data.winv[data.dim] = 2.0 / (b.high.x - b.low.x);
+	       data.c[data.dim] = 0.5 * (b.high.x + b.low.x);
 	       data.pdim[data.dim++] = 0;
 	  }
 	  if (!empty_z) {
 	       xmin[data.dim] = bb.low.z;
 	       xmax[data.dim] = bb.high.z;
+	       data.winv[data.dim] = 2.0 / (b.high.z - b.low.z);
+	       data.c[data.dim] = 0.5 * (b.high.z + b.low.z);
 	       data.pdim[data.dim++] = 2;
 	  }
      }
@@ -1235,20 +1260,27 @@ number overlap_with_object(geom_box b, int is_ellipsoid, geometric_object o,
 	  data.dir = ez;
 	  data.a0 = bb.low.z;
 	  data.b0 = bb.high.z;
+	  data.w0 = 0.5 * (b.high.z - b.low.z);
+	  data.c0 = 0.5 * (b.high.z + b.low.z);
 	  if (!empty_x) {
 	       xmin[data.dim] = bb.low.x;
 	       xmax[data.dim] = bb.high.x;
+	       data.winv[data.dim] = 2.0 / (b.high.x - b.low.x);
+	       data.c[data.dim] = 0.5 * (b.high.x + b.low.x);
 	       data.pdim[data.dim++] = 0;
 	  }
 	  if (!empty_y) {
 	       xmin[data.dim] = bb.low.y;
 	       xmax[data.dim] = bb.high.y;
+	       data.winv[data.dim] = 2.0 / (b.high.y - b.low.y);
+	       data.c[data.dim] = 0.5 * (b.high.y + b.low.y);
 	       data.pdim[data.dim++] = 1;
 	  }
      }
      else
 	  return 1.0;
 
+#if 1
      /* To maintain mirror symmetries through the x/y/z axes, we flip
         the integration range whenever xmax < 0.  (This is in case
         the integration routine is not fully symmetric, which may
@@ -1259,19 +1291,16 @@ number overlap_with_object(geom_box b, int is_ellipsoid, geometric_object o,
 	       data.scx[i] = -1;
 	       xmin[i] = -xmax[i];
 	       xmax[i] = -xm;
+	       data.c[i] = -data.c[i];
 	  }
 	  else
 	       data.scx[i] = 1;
      }
+#else
+     for (i = 0; i < data.dim; ++i) data.scx[i] = 1;
+#endif
 
      if ((data.is_ellipsoid = is_ellipsoid)) { /* data for ellipsoid calc. */
-	  data.winv[0] = 2.0 / (xmax[0] == xmin[0] ? 2.0 : xmax[0] - xmin[0]);
-	  data.winv[1] = 2.0 / (xmax[1] == xmin[1] ? 2.0 : xmax[1] - xmin[1]);
-	  data.c[0] = (xmax[0] + xmin[0]) * 0.5;
-	  data.c[1] = (xmax[1] + xmin[1]) * 0.5;
-	  data.w0 = (data.b0 - data.a0) * 0.5;
-	  data.c0 = (data.b0 + data.a0) * 0.5;
-
 	  if (data.dim == 1)
 	       V0 *= K_PI / 4;
 	  else if (data.dim == 2)

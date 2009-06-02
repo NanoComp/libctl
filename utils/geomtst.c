@@ -111,6 +111,8 @@ geometric_object random_object(void)
 
 /************************************************************************/
 
+static double z1(double x) { return (x == 0 ? 1.0 : x); }
+
 static double simple_overlap(geom_box b, geometric_object o, double tol)
 {
      double d1,d2,d3, x1,x2,x3, olap0 = 0;
@@ -119,14 +121,14 @@ static double simple_overlap(geom_box b, geometric_object o, double tol)
      d1 = (b.high.x - b.low.x) * itol;
      d2 = (b.high.y - b.low.y) * itol;
      d3 = (b.high.z - b.low.z) * itol;
-     for (x1 = b.low.x + d1*0.5; x1 <= b.high.x; x1 += d1)
-      for (x2 = b.low.y + d2*0.5; x2 <= b.high.y; x2 += d2)
-       for (x3 = b.low.z + d3*0.5; x3 <= b.high.z; x3 += d3) {
-	    vector3 v;
-	    v.x = x1; v.y = x2; v.z = x3;
-	    olap0 += d1*d2*d3 * point_in_fixed_objectp(v, o);
-       }
-     olap0 /= (b.high.x-b.low.x) * (b.high.y-b.low.y) * (b.high.z-b.low.z);
+     for (x1 = b.low.x + d1*0.5; x1 <= b.high.x; x1 += d1+(b.high.x==b.low.x))
+     for (x2 = b.low.y + d2*0.5; x2 <= b.high.y; x2 += d2+(b.high.y==b.low.y))
+     for (x3 = b.low.z + d3*0.5; x3 <= b.high.z; x3 += d3+(b.high.z==b.low.z)){
+	  vector3 v;
+	  v.x = x1; v.y = x2; v.z = x3;
+	  olap0 += z1(d1)*z1(d2)*z1(d3) * point_in_fixed_objectp(v, o);
+     }
+     olap0 /= z1(b.high.x-b.low.x) * z1(b.high.y-b.low.y) * z1(b.high.z-b.low.z);
      return olap0;
 }
 
@@ -136,6 +138,7 @@ static double simple_ellip_overlap(geom_box b, geometric_object o, double tol)
 {
      double d1,d2,d3, x1,x2,x3, c1,c2,c3, w1,w2,w3, olap0 = 0;
      double itol = 1.0 / ((int) (1/tol + 0.5));
+     int dim;
 
      d1 = (b.high.x - b.low.x) * itol;
      d2 = (b.high.y - b.low.y) * itol;
@@ -143,20 +146,22 @@ static double simple_ellip_overlap(geom_box b, geometric_object o, double tol)
      c1 = (b.high.x + b.low.x) * 0.5;
      c2 = (b.high.y + b.low.y) * 0.5;
      c3 = (b.high.z + b.low.z) * 0.5;
-     w1 = 2.0 / (b.high.x - b.low.x);
-     w2 = 2.0 / (b.high.y - b.low.y);
-     w3 = 2.0 / (b.high.z - b.low.z);
-     for (x1 = b.low.x + d1*0.5; x1 <= b.high.x; x1 += d1)
-      for (x2 = b.low.y + d2*0.5; x2 <= b.high.y; x2 += d2)
-       for (x3 = b.low.z + d3*0.5; x3 <= b.high.z; x3 += d3) 
-	    if (sqr((x1 - c1) * w1) + sqr((x2 - c2) * w2) + sqr((x3 - c3) * w3)
-		< 1.0) {
-		 vector3 v;
-		 v.x = x1; v.y = x2; v.z = x3;
-		 olap0 += d1*d2*d3 * point_in_fixed_objectp(v, o);
-	    }
-     olap0 /= (b.high.x-b.low.x) * (b.high.y-b.low.y) * (b.high.z-b.low.z);
-     olap0 /= 3.14159265358979323846 / 6;
+     w1 = 2.0 / z1(b.high.x - b.low.x);
+     w2 = 2.0 / z1(b.high.y - b.low.y);
+     w3 = 2.0 / z1(b.high.z - b.low.z);
+     for (x1 = b.low.x + d1*0.5; x1 <= b.high.x; x1 += d1+(b.high.x==b.low.x))
+     for (x2 = b.low.y + d2*0.5; x2 <= b.high.y; x2 += d2+(b.high.y==b.low.y))
+     for (x3 = b.low.z + d3*0.5; x3 <= b.high.z; x3 += d3+(b.high.z==b.low.z))
+	  if (sqr((x1 - c1) * w1) + sqr((x2 - c2) * w2) + sqr((x3 - c3) * w3)
+	      < 1.0) {
+	       vector3 v;
+	       v.x = x1; v.y = x2; v.z = x3;
+	       olap0 += z1(d1)*z1(d2)*z1(d3) * point_in_fixed_objectp(v, o);
+	  }
+     olap0 /= z1(b.high.x-b.low.x) * z1(b.high.y-b.low.y) * z1(b.high.z-b.low.z);
+     dim = (b.high.x!=b.low.x) + (b.high.y!=b.low.y) + (b.high.z!=b.low.z);
+     olap0 /= dim == 3 ? 3.14159265358979323846 / 6 :
+	  (dim == 2 ? 3.14159265358979323846 / 4 : 1);
      return olap0;
 }
 
@@ -171,6 +176,7 @@ static void test_overlap(double tol,
      vector3 dir = random_unit_vector3();
      geom_box b;
      double d, olap, olap0;
+     int dim;
 
 #if 1
      geometry_lattice.basis1 = random_unit_vector3();
@@ -187,7 +193,13 @@ static void test_overlap(double tol,
      b.low = vector3_plus(b.low, vector3_scale(d, dir));
      b.high = vector3_plus(b.high, vector3_scale(d, dir));
 
-     olap = box_overlap_with_object(b, o, tol, 100/tol);
+     dim = rand() % 3 + 1;
+     if (dim < 3)
+	  b.low.z = b.high.z = 0;
+     if (dim < 2)
+	  b.low.y = b.high.y = 0;
+
+     olap = box_overlap_with_object(b, o, tol/100, 10000/tol);
      olap0 = simple_overlap(b, o, tol);
 
      if (fabs(olap0 - olap) > 2 * tol * fabs(olap)) {
@@ -212,14 +224,15 @@ static void test_overlap(double tol,
 	  while (1) {
 	       tol /= sqrt(2.0);
 	       fprintf(stderr, "olap = %g, olap0 = %g (with tol = %e)\n",
-		       box_overlap_with_object(b, o, tol, 100/tol),
+		       box_overlap_with_object(b, o, tol/100, 10000/tol),
 		       simple_overlap(b, o, tol), tol);
 	  }
 #endif
 	  exit(1);
      }
      else
-	  printf("Got overlap %g vs. %g with tol = %e\n", olap,olap0,tol);
+	  printf("Got %dd overlap %g vs. %g with tol = %e\n", 
+		 dim,olap,olap0,tol);
      geometric_object_destroy(o);
 }
 
