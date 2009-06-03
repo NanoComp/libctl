@@ -110,7 +110,7 @@ extern vector3 to_geom_box_coords(vector3 p, geom_box_object *gbo);
 extern void display_geom_box_tree(int indentby, geom_box_tree t);
 extern void geom_box_tree_stats(geom_box_tree t, int *depth, int *nobjects);
 
-extern void geom_get_bounding_box(geometric_object o, geom_box *box);
+extern void geom_get_bounding_box(GEOMETRIC_OBJECT o, geom_box *box);
 extern number box_overlap_with_object(geom_box b, GEOMETRIC_OBJECT o, number tol, integer maxeval);
 extern number ellipsoid_overlap_with_object(geom_box b, GEOMETRIC_OBJECT o, number tol, integer maxeval);
 extern number range_overlap_with_object(vector3 low, vector3 high,
