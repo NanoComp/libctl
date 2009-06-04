@@ -51,20 +51,21 @@ AC_HEADER_STDC
 
 # Find Guile library, flags, etcetera:
 
-AC_CHECK_PROG(guile_ok, guile, yes, no)
-if test x"$guile_ok" = xno; then
+AC_CHECK_PROG(GUILE, guile, guile, unknown)
+if test x"$guile_ok" = xunknown; then
 	AC_MSG_ERROR([could not find guile program; check your PATH])
 fi
+AC_SUBST(GUILE)
 
-AC_CHECK_PROG(HAVE_GUILE_CONFIG, guile-config, yes, no)
-if test "$HAVE_GUILE_CONFIG" = "yes"; then
-	CPPFLAGS="$CPPFLAGS `guile-config compile`"
-	LIBS="$LIBS `guile-config link`"
-else
+AC_CHECK_PROG(GUILE_CONFIG, guile-config, guile-config, unknown)
+if test "x$GUILE_CONFIG" = "xunknown"; then
 	AC_CHECK_LIB(m, sqrt)
 	AC_CHECK_LIB(readline, readline)
 	AC_CHECK_LIB(dl, dlopen)
 	AC_CHECK_LIB(guile, gh_eval_str)
+else
+	CPPFLAGS="$CPPFLAGS `$GUILE_CONFIG compile`"
+	LIBS="$LIBS `$GUILE_CONFIG link`"
 fi
 
 AC_MSG_CHECKING([if linking to guile works])

@@ -117,7 +117,7 @@ fi
 
 echo >> $output_file
 
-(guile -l $libctl_dir/base/include.scm \
+(@GUILE@ -l $libctl_dir/base/include.scm \
       -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (set"'!'" cxx $cxx) (include "'"'"$spec_file"'"'") (output-header)" >> $output_file) || ok=no
 
 if test $ok = no; then rm -f $output_file; exit 1; fi
@@ -170,7 +170,7 @@ using namespace ctlio;
 
 EOF
 
-(guile -l $libctl_dir/base/include.scm \
+(@GUILE@ -l $libctl_dir/base/include.scm \
       -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (set"'!'" cxx $cxx) (include "'"'"$spec_file"'"'") (output-source)" >> $output_file) || ok=no
 
 if test $ok = no; then rm -f $output_file; exit 1; fi
@@ -192,7 +192,7 @@ if test $swig = true; then
 
 EOF
 
-    (guile -l $libctl_dir/base/include.scm \
+    (@GUILE@ -l $libctl_dir/base/include.scm \
       -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (set"'!'" cxx $cxx) (include "'"'"$spec_file"'"'") (output-swig-header)" >> $output_file) || ok=no
 
     if test $ok = no; then rm -f $output_file; exit 1; fi
