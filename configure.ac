@@ -6,7 +6,7 @@ AC_CONFIG_HEADERS([config.h src/ctl.h])
 # Shared-library version number; indicates api compatibility, and is
 # not the same as the "public" version number.  (Don't worry about this
 # except for public releases.)
-SHARED_VERSION_INFO="3:2:0" # CURRENT:REVISION:AGE
+SHARED_VERSION_INFO="4:0:1" # CURRENT:REVISION:AGE
 
 AM_INIT_AUTOMAKE(1.6)
 AC_SUBST(SHARED_VERSION_INFO)

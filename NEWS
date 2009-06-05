@@ -1,3 +1,21 @@
+libctl 3.1 (6/5/2009)
+
+  * Support specifying the location of the guile and guile-config
+    programs with GUILE and GUILE_CONFIG environment variables in
+    the configure script.
+
+  * Support for calling NLopt optimization library (also requires
+    the program using libctl to be changed to link nlopt).
+
+  * New ellipsoid_overlap_with_object function, analogous to
+    box_overlap_with_object function.
+
+  * Bug fix in "include" function for recent versions of Guile,
+    to properly keep track of the current include directory.
+
+  * Bug fix in numerical-derivative routine, which didn't converge
+    when the error was exactly zero.
+
 libctl 3.0.3 (2/27/2008)
 
   * Added "begin-timed" function, which is similar to "begin-time" except
