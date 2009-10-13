@@ -44,6 +44,11 @@ using namespace ctlio;
 /* define a global "verbose" variable set by the --verbose command-line opt. */
 int verbose = 0;
 
+/* a "quiet" variable, that if nonzero suppresses all non-error output...
+   this is used by parallel software to suppress output from processes
+   other than the master process */
+int libctl_quiet = 0;
+
 /**************************************************************************/
 
 /* Handle command-line args, returning first arg not handled.
@@ -62,19 +67,21 @@ int handle_args(int argc, char *argv[],
 	  if (argv[i][0] != '-')
 	       break;
 	  if (!strcmp(argv[i], "--version") || !strcmp(argv[i], "-V")) {
-	       char *guile_vers;
+	       if (!libctl_quiet) {
+		    char *guile_vers;
 #ifdef VERSION_STRING
-	       /* print version string, if defined: */
-	       printf(VERSION_STRING);
+		    /* print version string, if defined: */
+		    printf(VERSION_STRING);
 #endif
 #ifdef LIBCTL_VERSION
-	       printf("\nUsing libctl %s", LIBCTL_VERSION);
+		    printf("\nUsing libctl %s", LIBCTL_VERSION);
 #else
-	       printf("\nUsing libctl");
+		    printf("\nUsing libctl");
 #endif
-	       guile_vers = gh_scm2newstr(gh_eval_str("(version)"), NULL);
-	       printf(" and Guile %s.\n", guile_vers);
-	       free(guile_vers);
+		    guile_vers = gh_scm2newstr(gh_eval_str("(version)"), NULL);
+		    printf(" and Guile %s.\n", guile_vers);
+		    free(guile_vers);
+	       }
 	       *continue_run = 0;
 	  }
 	  else if (!strcmp(argv[i], "--verbose") || !strcmp(argv[i], "-v"))
@@ -85,6 +92,7 @@ int handle_args(int argc, char *argv[],
 	  }
 	  else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
 	       char *slash = strrchr(argv[0], '/');
+	       if (!libctl_quiet)
 	       printf("Usage: %s [options] [definitions] [ctl files]\n"
 		      "options:\n"
 		      "             --help, -h: this help\n"
@@ -98,8 +106,9 @@ int handle_args(int argc, char *argv[],
 	       *continue_run = 0;
 	  }
 	  else {
-	       fprintf(stderr, "Unknown option %s!  Use the --help option"
-		       " for more information.\n", argv[i]);
+	       if (!libctl_quiet)
+		    fprintf(stderr, "Unknown option %s!  Use the --help option"
+			    " for more information.\n", argv[i]);
 	       exit(EXIT_FAILURE);
 	  }
      }
@@ -254,7 +263,7 @@ void main_entry(int argc, char *argv[])
       strcat(definestr,")");
       eq = strchr(definestr,'=');
       *eq = ' ';
-      printf("command-line param: %s\n", argv[i]);
+      if (!libctl_quiet) printf("command-line param: %s\n", argv[i]);
       gh_eval_str(definestr);
       { /* add the name of the defined variable to params-set-list */
 	   char *remember_define;

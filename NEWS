@@ -1,3 +1,9 @@
+libctl 3.1.1:
+
+  * Add "libctl_quiet" variable to main.c so that libctl-using programs
+    can suppress all output if desired (e.g. to avoid duplicate outputs
+    on parallel machines).
+
 libctl 3.1 (6/5/2009)
 
   * Support specifying the location of the guile and guile-config
