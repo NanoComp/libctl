@@ -21,14 +21,16 @@
 ; ****************************************************************
 ; vector3 and associated operators.  (a type to represent 3-vectors)
 
+(define (vector3->inexact v) (vector-map exact->inexact v))
 (define (vector3 . args)
-  (if (= (length args) 0)
-      (vector 0 0 0)
-      (if (= (length args) 1)
-	  (vector (first args) 0 0)
-	  (if (= (length args) 2)
-	      (vector (first args) (second args) 0)
-	      (vector (first args) (second args) (third args))))))
+  (vector3->inexact
+   (if (= (length args) 0)
+       (vector 0 0 0)
+       (if (= (length args) 1)
+	   (vector (first args) 0 0)
+	   (if (= (length args) 2)
+	       (vector (first args) (second args) 0)
+	       (vector (first args) (second args) (third args)))))))
 (define cvector3 vector3)
 (define (vector3? v)
   (and (vector? v)
@@ -94,6 +96,10 @@
    (else false)))
 
 (define (unary-abs x) (if (vector3? x) (vector3-norm x) (magnitude x)))
+
+(define (unary->inexact x) (if (vector3? x) 
+			       (vector3->inexact x)
+			       (exact->inexact x)))
 
 ; ****************************************************************
 
