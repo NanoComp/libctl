@@ -53,6 +53,8 @@ using namespace ctlio;
 #  define FREE1(p) free(p)
 #endif
 
+#define K_PI 3.14159265358979323846
+
 /**************************************************************************/
 
 /* If v is a vector in the lattice basis, normalize v so that
@@ -65,6 +67,17 @@ static void lattice_normalize(vector3 *v)
 			   matrix3x3_vector3_mult(geometry_lattice.metric, 
 						  *v))),
 	  *v);
+}
+
+static vector3 lattice_to_cartesian(vector3 v)
+{
+     return matrix3x3_vector3_mult(geometry_lattice.basis, v);
+}
+
+static vector3 cartesian_to_lattice(vector3 v)
+{
+     return matrix3x3_vector3_mult(matrix3x3_inverse(geometry_lattice.basis), 
+				   v);
 }
 
 /* "Fix" the parameters of the given object to account for the
@@ -80,6 +93,18 @@ void geom_fix_object(geometric_object o)
      switch(o.which_subclass) {
 	 case GEOM CYLINDER:
 	      lattice_normalize(&o.subclass.cylinder_data->axis);
+	      if (o.subclass.cylinder_data->which_subclass == CYL WEDGE) {
+		   vector3 a = o.subclass.cylinder_data->axis;
+		   vector3 s = o.subclass.cylinder_data->subclass.wedge_data->wedge_start;
+		   double p = vector3_dot(s, matrix3x3_vector3_mult(geometry_lattice.metric, a));
+		   o.subclass.cylinder_data->subclass.wedge_data->e1 = 
+			vector3_minus(s, vector3_scale(p, a));
+		   lattice_normalize(&o.subclass.cylinder_data->subclass.wedge_data->e1);
+		   o.subclass.cylinder_data->subclass.wedge_data->e2 = 
+			cartesian_to_lattice(
+			     vector3_cross(lattice_to_cartesian(o.subclass.cylinder_data->axis),
+					   lattice_to_cartesian(o.subclass.cylinder_data->subclass.wedge_data->e1)));
+	      }
 	      break;
 	 case GEOM BLOCK:
 	 {
@@ -224,6 +249,13 @@ boolean point_in_fixed_pobjectp(vector3 p, geometric_object *o)
 	     radius += (proj/height + 0.5) *
 		  (o->subclass.cylinder_data->subclass.cone_data->radius2
 		   - radius);
+	else if (o->subclass.cylinder_data->which_subclass == CYL WEDGE) {
+	     number x = vector3_dot(rm, o->subclass.cylinder_data->subclass.wedge_data->e1);
+	     number y = vector3_dot(rm, o->subclass.cylinder_data->subclass.wedge_data->e2);
+	     number theta = atan2(y, x);
+	     if (theta < 0) theta = theta + 2 * K_PI;
+	     if (theta > o->subclass.cylinder_data->subclass.wedge_data->wedge_angle) return 0;
+	}
 	return(radius != 0.0 && vector3_dot(r,rm) - proj*proj <= radius*radius);
       }
       else
@@ -573,6 +605,9 @@ void CTLIO display_geometric_object_info(int indentby, geometric_object o)
      switch (o.which_subclass) {
 	 case GEOM CYLINDER:
 	      switch (o.subclass.cylinder_data->which_subclass) {
+		  case CYL WEDGE:
+		       printf("wedge");
+		       break;
 		  case CYL CONE:
 		       printf("cone");
 		       break;
@@ -614,6 +649,9 @@ void CTLIO display_geometric_object_info(int indentby, geometric_object o)
 	      if (o.subclass.cylinder_data->which_subclass == CYL CONE)
 		   printf("%*s     radius2 %g\n", indentby, "",
 		        o.subclass.cylinder_data->subclass.cone_data->radius2);
+	      else if (o.subclass.cylinder_data->which_subclass == CYL WEDGE)
+		   printf("%*s     wedge-theta %g\n", indentby, "",
+		        o.subclass.cylinder_data->subclass.wedge_data->wedge_angle);
 	      break;
 	 case GEOM SPHERE:
               printf("%*s     radius %g\n", indentby, "", 
@@ -1181,8 +1219,6 @@ static double overlap_integrand(integer ndim, number *x, void *data_)
      }
      return 0.0;
 }
-
-#define K_PI 3.14159265358979323846
 
 number overlap_with_object(geom_box b, int is_ellipsoid, geometric_object o,
 			   number tol, integer maxeval)
@@ -1901,6 +1937,20 @@ geometric_object make_cone(material_type material, vector3 center,
      o.subclass.cylinder_data->subclass.cone_data = MALLOC1(cone);
      CHECK(o.subclass.cylinder_data->subclass.cone_data, "out of memory");
      o.subclass.cylinder_data->subclass.cone_data->radius2 = radius2;
+     return o;
+}
+
+geometric_object make_wedge(material_type material, vector3 center,
+			    number radius, number height, vector3 axis,
+			    number wedge_angle, vector3 wedge_start)
+{
+     geometric_object o = make_cylinder(material, center, radius,height, axis);
+     o.subclass.cylinder_data->which_subclass = CYL WEDGE;
+     o.subclass.cylinder_data->subclass.wedge_data = MALLOC1(wedge);
+     CHECK(o.subclass.cylinder_data->subclass.wedge_data, "out of memory");
+     o.subclass.cylinder_data->subclass.wedge_data->wedge_angle = wedge_angle;
+     o.subclass.cylinder_data->subclass.wedge_data->wedge_start = wedge_start;
+     geom_fix_object(o);
      return o;
 }
 

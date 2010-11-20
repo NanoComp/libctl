@@ -53,6 +53,21 @@
 (define-class cone cylinder
   (define-property radius2 0 'number))
 	       
+(define-class wedge cylinder
+  (define-property wedge-angle (* 8 (atan 1)) 'number)
+  (define-property wedge-start (vector3 1 0 0) 'vector3)
+  (define-derived-property e1 'vector3
+    (lambda (object)
+      (let ((a (object-property-value object 'axis))
+	    (s (object-property-value object 'wedge-start)))
+	(unit-vector3 (vector3- s (vector3-scale (vector3-dot a s) a))))))
+  (define-derived-property e2 'vector3
+    (lambda (object)
+      (let ((a (object-property-value object 'axis))
+	    (s (object-property-value object 'start))
+	    (e1 (object-property-value object 'e1)))
+	(vector3-cross a e1)))))
+	       
 (define-class sphere geometric-object
   (define-property radius no-default 'number non-negative?))
 	       
