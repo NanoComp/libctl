@@ -22,6 +22,7 @@
 ; vector3 and associated operators.  (a type to represent 3-vectors)
 
 (define (vector3->inexact v) (vector-map exact->inexact v))
+(define (vector3->exact v) (vector-map inexact->exact v))
 (define (vector3 . args)
   (vector3->inexact
    (if (= (length args) 0)
