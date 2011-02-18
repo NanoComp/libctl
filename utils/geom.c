@@ -253,8 +253,15 @@ boolean point_in_fixed_pobjectp(vector3 p, geometric_object *o)
 	     number x = vector3_dot(rm, o->subclass.cylinder_data->subclass.wedge_data->e1);
 	     number y = vector3_dot(rm, o->subclass.cylinder_data->subclass.wedge_data->e2);
 	     number theta = atan2(y, x);
-	     if (theta < 0) theta = theta + 2 * K_PI;
-	     if (theta > o->subclass.cylinder_data->subclass.wedge_data->wedge_angle) return 0;
+	     number wedge_angle = o->subclass.cylinder_data->subclass.wedge_data->wedge_angle;
+	     if (wedge_angle > 0) {
+		  if (theta < 0) theta = theta + 2 * K_PI;
+		  if (theta > wedge_angle) return 0;
+	     }
+	     else {
+		  if (theta > 0) theta = theta - 2 * K_PI;
+		  if (theta < wedge_angle) return 0;
+	     }
 	}
 	return(radius != 0.0 && vector3_dot(r,rm) - proj*proj <= radius*radius);
       }
