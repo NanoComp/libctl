@@ -227,15 +227,20 @@
 					       (car x)
 					       (apply vector3 x)))))
 
-(define (list-property-value-constructor name)
-  (lambda x (make-property-value-pair name x)))
+(define (list-property-value-constructor name type-name)
+  (lambda x 
+    (make-property-value-pair 
+     name 
+     (if (and (= (length x) 1) (check-type type-name (car x)))
+	 (car x)
+	 x))))
 
 (define (type-property-value-constructor type-name name)
   (cond
    ((or (eq? type-name 'vector3)  (eq? type-name 'cvector3))
     (vector3-property-value-constructor name))
    ((list-type-name? type-name)
-    (list-property-value-constructor name))
+    (list-property-value-constructor name type-name))
    (else (property-value-constructor name))))
 
 (define (post-processing-constructor post-process-func constructor)
