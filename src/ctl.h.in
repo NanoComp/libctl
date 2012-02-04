@@ -155,8 +155,8 @@ extern int cmatrix3x3_equal(cmatrix3x3 m1, cmatrix3x3 m2);
 
 #ifndef HAVE_GH_BOOL2SCM
   /* Guile 1.2 is missing gh_bool2scm for some reason; redefine: */
-extern SCM bool2scm(boolean);
-#define gh_bool2scm bool2scm
+extern SCM ctl_gh_bool2scm(boolean);
+#define gh_bool2scm ctl_gh_bool2scm
 #endif
 
 extern vector3 scm2vector3(SCM sv);

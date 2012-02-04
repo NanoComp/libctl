@@ -32,7 +32,7 @@
 
 #ifndef HAVE_GH_BOOL2SCM
 /* Guile 1.2 is missing gh_bool2scm for some reason; redefine: */
-SCM bool2scm(boolean b) { return (b ? SCM_BOOL_T : SCM_BOOL_F); }
+SCM ctl_gh_bool2scm(boolean b) { return (b ? SCM_BOOL_T : SCM_BOOL_F); }
 #endif
 
 #ifndef HAVE_GH_LENGTH
