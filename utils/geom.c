@@ -428,7 +428,7 @@ vector3 normal_to_fixed_object(vector3 p, geometric_object o)
 	  double d3 = fabs(fabs(proj.z) - 0.5 * size.z);
 	  if (d1 < d2 && d1 < d3)
 	       return matrix3x3_row1(o.subclass.block_data->projection_matrix);
-	  else if (d2 < d1 && d2 < d3)
+	  else if (d2 < d3)
 	       return matrix3x3_row2(o.subclass.block_data->projection_matrix);
 	  else
 	       return matrix3x3_row3(o.subclass.block_data->projection_matrix);
