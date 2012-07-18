@@ -4,6 +4,23 @@ libctl 3.1.1:
     can suppress all output if desired (e.g. to avoid duplicate outputs
     on parallel machines).
 
+  * Added "wedge" object type for circular/cylindrical wedges, as a subclass
+    of cylinder: (make wedge (center ...) (axis ...) (radius ...) ...) with
+    two new properties: (wedge-angle ...) for the angle in radians, and
+    (wedge-start v) for a vector v such that the wedge angles start at
+    zero in the (v, axis) plane.
+
+  * list-type constructors now accept either (name ...elements...) or
+    (name (list ...elements...)).
+
+  * add vector3->exact function for to-integer rounding.  Otherwise, ensure
+    that interpolation results are floating-point to prevent type-conversion
+    errors.
+
+  * Rename 'string' to 'char*' in ctl-io.h for C++ compatibility.
+
+  * Bug fix in normal-to-object near corners of blocks.
+
 libctl 3.1 (6/5/2009)
 
   * Support specifying the location of the guile and guile-config
