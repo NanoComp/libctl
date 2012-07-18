@@ -1,4 +1,4 @@
-libctl 3.1.1:
+libctl 3.2:
 
   * Add "libctl_quiet" variable to main.c so that libctl-using programs
     can suppress all output if desired (e.g. to avoid duplicate outputs
@@ -8,7 +8,8 @@ libctl 3.1.1:
     of cylinder: (make wedge (center ...) (axis ...) (radius ...) ...) with
     two new properties: (wedge-angle ...) for the angle in radians, and
     (wedge-start v) for a vector v such that the wedge angles start at
-    zero in the (v, axis) plane.
+    zero in the (v, axis) plane.  [Caveat: subpixel averaging is
+    currently inaccurate for the flat wedge edges.]
 
   * list-type constructors now accept either (name ...elements...) or
     (name (list ...elements...)).
