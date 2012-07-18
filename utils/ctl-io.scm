@@ -46,7 +46,9 @@
 
 (define symbol->c-identifier (compose c-identifier symbol->string))
 
-(define c-type-string (compose c-identifier type-string))
+(define (c-type-string t)
+  (if (eq? t 'string) "char*" ; "string" name is reserved in C++
+      (c-identifier (type-string t))))
 
 (define declared-type-names '())
 (define (declare-type-name type-name)
