@@ -2207,7 +2207,7 @@ number subplex(multivar_func f, number *x, integer n, void *fdata,
 number f_scm_wrapper(integer n, number *x, void *f_scm_p)
 {
      SCM *f_scm = (SCM *) f_scm_p;
-     return gh_scm2double(gh_call1(*f_scm, make_number_list(n, x)));
+     return ctl_convert_number_to_c(gh_call1(*f_scm, make_number_list(n, x)));
 }
 
 /* Scheme-callable wrapper for subplex() function, above. */
@@ -2222,10 +2222,10 @@ SCM subplex_scm(SCM f_scm, SCM x_scm,
      SCM retval;
 
      n = list_length(x_scm);
-     tol = fabs(gh_scm2double(tol_scm));
-     maxnfe = gh_scm2int(maxnfe_scm);
-     fmin = gh_scm2double(fmin_scm);
-     use_fmin = gh_scm2bool(use_fmin_scm);
+     tol = fabs(ctl_convert_number_to_c(tol_scm));
+     maxnfe = ctl_convert_integer_to_c(maxnfe_scm);
+     fmin = ctl_convert_number_to_c(fmin_scm);
+     use_fmin = ctl_convert_boolean_to_c(use_fmin_scm);
 
      scale_len = list_length(scale_scm);
      if (scale_len != 1 && scale_len != n) {
@@ -2269,7 +2269,7 @@ SCM subplex_scm(SCM f_scm, SCM x_scm,
 	      break;
      }
 
-     retval = gh_cons(make_number_list(n, x), gh_double2scm(fx));
+     retval = gh_cons(make_number_list(n, x), ctl_convert_number_to_scm(fx));
 
      free(scale);
      free(x);

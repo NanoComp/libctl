@@ -20,9 +20,16 @@
 
 ; ****************************************************************
 
+; hackery to define material-type if it is not defined, required by
+; the fact that Guile 2.x won't allow us to put define-class inside
+; an "if" statement.
+(define-class mt-hack no-parent
+  (define-property data no-default 'SCM)) ; generic user-defined data
+(set! class-list (cdr class-list)) ; delete mt-hack from list
+(set! mt-hack (cons 'material-type (cdr mt-hack))) ; rename to material-type
 (if (not (defined? 'material-type))
-    (define-class material-type no-parent
-      (define-property data no-default 'SCM))) ; generic user-defined data
+    (set! class-list (cons mt-hack class-list)))
+(define material-type (if (defined? 'material-type) material-type mt-hack))
 
 ; A default material so that we don't have to specify a material for
 ; an object when we just care about its geometry.  If material-type is

@@ -56,3 +56,13 @@
 	(- (get-choice (length items)) 1))))
 
 ; ****************************************************************
+; utility to set the Scheme prompt, since they changed the interface in guile 2
+
+(define (ctl-set-prompt! p)
+  (if (defined? 'scm-repl-prompt)
+      (set! scm-repl-prompt p)
+      ((module-ref (resolve-interface '(system repl common))
+		   'repl-default-prompt-set!)
+       p)))
+
+; ****************************************************************

@@ -962,9 +962,9 @@ SCM adaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
      number *xmin, *xmax, abstol, reltol, integral;
 
      n = list_length(xmin_scm);
-     abstol = fabs(gh_scm2double(abstol_scm));
-     reltol = fabs(gh_scm2double(reltol_scm));
-     maxnfe = gh_scm2int(maxnfe_scm);
+     abstol = fabs(ctl_convert_number_to_c(abstol_scm));
+     reltol = fabs(ctl_convert_number_to_c(reltol_scm));
+     maxnfe = ctl_convert_integer_to_c(maxnfe_scm);
 
      if (list_length(xmax_scm) != n) {
 	  fprintf(stderr, "adaptive_integration: xmin/xmax dimension mismatch\n");
@@ -1001,8 +1001,9 @@ SCM adaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
 	      fprintf(stderr, "adaptive_integration: lenwork too small\n");
 	      break;
      }
-     
-     return gh_cons(gh_double2scm(integral), gh_double2scm(abstol));
+
+     return gh_cons(ctl_convert_number_to_scm(integral), 
+		    ctl_convert_number_to_scm(abstol));
 }
 
 #endif

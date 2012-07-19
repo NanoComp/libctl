@@ -61,4 +61,4 @@
 ; ****************************************************************
 
 ; Use "example>" instead of the default "guile>" prompt.
-(set! scm-repl-prompt "example> ")
+(ctl-set-prompt! "example> ")

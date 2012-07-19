@@ -363,12 +363,13 @@
   ; bracketed the root, so do this via lazy evaluation.
   (define f-memo (memoize f))
   (define (lazy x) (if (number? x) x (x)))
-  (define ((pick-bound which?))
-    (let ((fmin-pair (f-memo x-min)) (fmax-pair (f-memo x-max)))
-      (let ((fmin (car fmin-pair)) (fmax (car fmax-pair)))
-	(if (which? fmin) x-min
-	    (if (which? fmax) x-max
-		(error "failed to bracket the root in find-root-deriv"))))))
+  (define (pick-bound which?)
+    (lambda ()
+      (let ((fmin-pair (f-memo x-min)) (fmax-pair (f-memo x-max)))
+	(let ((fmin (car fmin-pair)) (fmax (car fmax-pair)))
+	  (if (which? fmin) x-min
+	      (if (which? fmax) x-max
+		  (error "failed to bracket the root in find-root-deriv")))))))
 
   (define (in-bounds? x f df a b)
     (negative? (* (- f (* df (- x a)))

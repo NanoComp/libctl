@@ -30,7 +30,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <guile/gh.h>
 
 /* for basename and dirname functions */
 #include <libgen.h>
@@ -78,7 +77,8 @@ int handle_args(int argc, char *argv[],
 #else
 		    printf("\nUsing libctl");
 #endif
-		    guile_vers = gh_scm2newstr(gh_eval_str("(version)"), NULL);
+		    guile_vers = ctl_convert_string_to_c(
+			 gh_eval_str("(version)"));
 		    printf(" and Guile %s.\n", guile_vers);
 		    free(guile_vers);
 	       }
@@ -171,7 +171,11 @@ extern SCM nlopt_minimize_scm(SCM algorithm_scm,
    scripts passed on the command-line, and drop into interactive
    mode if read-input-vars was never called. */
 
-void main_entry(int argc, char *argv[])
+void main_entry(
+#ifdef HAVE_NO_GH
+     void *main_entry_data, /* unused, required by scm_boot_guile */
+#endif
+     int argc, char *argv[])
 {
   int i;
   boolean spec_file_loaded, continue_run;
@@ -311,7 +315,11 @@ int main (int argc, char *argv[])
 #ifdef HAVE_CTL_HOOKS
   ctl_start_hook(&argc, &argv);
 #endif
+#ifdef HAVE_NO_GH
+  scm_boot_guile (argc, argv, main_entry, NULL);
+#else
   gh_enter (argc, argv, main_entry);
+#endif
 #ifdef HAVE_CTL_HOOKS
   if (!ctl_stop_hook_called)
        ctl_stop_hook();

@@ -1,5 +1,6 @@
 SUBDIRS = src utils examples
 EXTRA_DIST = COPYRIGHT doc base
+ACLOCAL_AMFLAGS = -I m4
 
 BASE_SCM = base/class.scm base/ctl.scm base/extern-funcs.scm		\
 base/help.scm base/include.scm base/interaction.scm base/io-vars.scm	\

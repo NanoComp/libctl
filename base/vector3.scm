@@ -21,7 +21,10 @@
 ; ****************************************************************
 ; vector3 and associated operators.  (a type to represent 3-vectors)
 
-(define (vector3->inexact v) (vector-map exact->inexact v))
+; Guile 1.6 does not support exact->inexact on complex numbers, grrr
+(define (ctl-exact->inexact x)
+  (if (real? x) (exact->inexact x) x))
+(define (vector3->inexact v) (vector-map ctl-exact->inexact v))
 (define (vector3->exact v) (vector-map inexact->exact v))
 (define (vector3 . args)
   (vector3->inexact
@@ -100,7 +103,7 @@
 
 (define (unary->inexact x) (if (vector3? x) 
 			       (vector3->inexact x)
-			       (exact->inexact x)))
+			       (ctl-exact->inexact x)))
 
 ; ****************************************************************
 

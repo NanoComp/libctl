@@ -17,10 +17,10 @@ geomtst_LDADD = libctlgeom.la $(top_builddir)/src/libctl.la
 
 dist_man_MANS = gen-ctl-io.1
 
-ctl-io.c: geom.scm
+ctl-io.c: geom.scm $(GEN_CTL_IO)
 	$(GEN_CTL_IO) --code -o $@ $(srcdir)/geom.scm $(top_srcdir)
 
-ctl-io.h: geom.scm
+ctl-io.h: geom.scm $(GEN_CTL_IO)
 	$(GEN_CTL_IO) --header -o $@ $(srcdir)/geom.scm $(top_srcdir)
 
 ctlgeom-types.h: ctl-io.h

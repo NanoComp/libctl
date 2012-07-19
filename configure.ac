@@ -2,6 +2,8 @@
 AC_INIT(libctl, 3.2, stevenj@alum.mit.edu)
 AC_CONFIG_SRCDIR([src/ctl.c])
 AC_CONFIG_HEADERS([config.h src/ctl.h])
+AC_CONFIG_MACRO_DIR([m4])
+AM_MAINTAINER_MODE
 
 # Shared-library version number; indicates api compatibility, and is
 # not the same as the "public" version number.  (Don't worry about this
@@ -32,6 +34,7 @@ AC_DEFINE_UNQUOTED(LIBCTL_BUGFIX_VERSION, $LIBCTL_BUGFIX_VERSION, [bugfix v.])
 
 # Checks for programs.
 AC_PROG_CC
+AM_PROG_CC_C_O
 
 AC_CHECK_PROGS(INDENT, indent gindent, echo)
 AC_SUBST(INDENT)
@@ -62,21 +65,47 @@ if test "x$GUILE_CONFIG" = "xunknown"; then
 	AC_CHECK_LIB(m, sqrt)
 	AC_CHECK_LIB(readline, readline)
 	AC_CHECK_LIB(dl, dlopen)
-	AC_CHECK_LIB(guile, gh_eval_str)
+	ok=no
+	AC_CHECK_LIB(guile, gh_eval_str, [ok=yes],
+	             [AC_CHECK_LIB(guile, scm_eval_string, [ok=yes])])
+        if test $ok = yes; then
+	   LIBS="-lguile $LIBS"
+	   AC_DEFINE(HAVE_LIBGUILE, 1, [Define if we have -lguile])
+	fi
 else
 	CPPFLAGS="$CPPFLAGS `$GUILE_CONFIG compile`"
 	LIBS="$LIBS `$GUILE_CONFIG link`"
 fi
 
 AC_MSG_CHECKING([if linking to guile works])
-AC_TRY_LINK_FUNC(gh_enter, AC_MSG_RESULT(yes), [
-AC_MSG_RESULT(no)
-AC_MSG_ERROR(Guile could not be found)
-])
+AC_TRY_LINK_FUNC(gh_enter, AC_MSG_RESULT(yes),
+   [AC_TRY_LINK_FUNC(scm_boot_guile, AC_MSG_RESULT(yes),
+       [AC_MSG_RESULT(no)
+        AC_MSG_ERROR(Guile could not be found)])])
+AC_CHECK_HEADERS([libguile.h guile/gh.h])
 
 ###########################################################################
 
 # Checks for Guile features:
+
+AC_MSG_CHECKING([for modern non-gh interface])
+ok=yes
+AC_TRY_LINK([#include <libguile.h>
+], [scm_from_double(0.0);scm_from_int(0);scm_boot_guile(0,0,0,0);scm_c_define_gsubr(0,0,0,0,0);], [AC_DEFINE(HAVE_NO_GH, 1, [Define if we can avoid the gh interface])], ok=no)
+AC_MSG_RESULT($ok)
+
+
+AC_MSG_CHECKING([for gh_enter])
+ok=yes
+AC_TRY_LINK([#include <guile/gh.h>
+], [gh_enter(0,0,0);], [AC_DEFINE(HAVE_GH_ENTER, 1, [Define if we have gh_enter.])], ok=no)
+AC_MSG_RESULT($ok)
+
+AC_MSG_CHECKING([for gh_eval_str])
+ok=yes
+AC_TRY_LINK([#include <guile/gh.h>
+], [gh_eval_str(0);], [AC_DEFINE(HAVE_GH_EVAL_STR, 1, [Define if we have gh_eval_str.])], ok=no)
+AC_MSG_RESULT($ok)
 
 AC_MSG_CHECKING([for gh_load])
 ok=yes
@@ -114,7 +143,7 @@ AC_TRY_LINK([#include <guile/gh.h>
 ], [scm_flush_all_ports();], [AC_DEFINE(HAVE_SCM_FLUSH_ALL_PORTS, 1, [Define if we have scm_flush_all_ports])], ok=no)
 AC_MSG_RESULT($ok)
 
-AC_CHECK_FUNCS(scm_make_complex scm_variable_set_x scm_c_lookup scm_c_make_vector)
+AC_CHECK_FUNCS(scm_make_complex scm_c_make_rectangular scm_variable_set_x scm_c_lookup scm_c_make_vector scm_variable_ref)
 
 AC_MSG_CHECKING([for SCM_COMPLEXP])
 ok=yes
@@ -145,6 +174,7 @@ AC_MSG_RESULT($ok)
 
 # Find Fortran name-mangling routines, for wrapper functions
 
+AC_PROG_F77
 AC_F77_DUMMY_MAIN([], [AC_MSG_WARN([Fortran wrapper functions will not be included])])
 AC_F77_WRAPPERS
 

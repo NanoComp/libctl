@@ -97,7 +97,6 @@ cat > $output_file <<EOF
 #ifndef CTL_IO_H
 #define CTL_IO_H
 
-#include <guile/gh.h>
 #include <ctl.h>
 
 EOF

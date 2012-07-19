@@ -1,5 +1,7 @@
 libctl 3.2:
 
+  * Now works with Guile version 2.x (older versions are still supported).
+
   * Add "libctl_quiet" variable to main.c so that libctl-using programs
     can suppress all output if desired (e.g. to avoid duplicate outputs
     on parallel machines).
@@ -14,9 +16,12 @@ libctl 3.2:
   * list-type constructors now accept either (name ...elements...) or
     (name (list ...elements...)).
 
-  * add vector3->exact function for to-integer rounding.  Otherwise, ensure
+  * Add vector3->exact function for to-integer rounding.  Otherwise, ensure
     that interpolation results are floating-point to prevent type-conversion
     errors.
+
+  * Added ctl-set-prompt! to set interactive prompt in both old and new
+    Guile versions.
 
   * Rename 'string' to 'char*' in ctl-io.h for C++ compatibility.
 

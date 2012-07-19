@@ -30,16 +30,20 @@
 
 /* Functions missing from Guile 1.2: */
 
-#ifndef HAVE_GH_BOOL2SCM
+#if !defined(HAVE_GH_BOOL2SCM) && !defined(HAVE_NO_GH)
 /* Guile 1.2 is missing gh_bool2scm for some reason; redefine: */
 SCM ctl_gh_bool2scm(boolean b) { return (b ? SCM_BOOL_T : SCM_BOOL_F); }
 #endif
 
-#ifndef HAVE_GH_LENGTH
-#define gh_length gh_list_length
+#if defined(HAVE_NO_GH)
+#  define gh_length(x) scm_to_long(scm_length(x))
+#elif !defined(HAVE_GH_LENGTH)
+#  define gh_length gh_list_length
 #endif
 
-#ifndef HAVE_GH_LIST_REF
+#if defined(HAVE_NO_GH)
+#  define list_ref(l,index) scm_list_ref(l,scm_from_int(index))
+#elif !defined(HAVE_GH_LIST_REF)
 /* Guile 1.2 doesn't have the gh_list_ref function.  Sigh. */
 /* Note: index must be in [0,list_length(l) - 1].  We don't check! */
 static SCM list_ref(list l, int index)
@@ -53,13 +57,16 @@ static SCM list_ref(list l, int index)
   }
   return cur;
 }
-
 #else /* HAVE_GH_LIST_REF */
 #define list_ref(l,index) gh_list_ref(l,gh_int2scm(index))
 #endif
 
-#ifndef HAVE_GH_VECTOR_REF
-#define gh_vector_ref gh_vref
+#if defined(HAVE_NO_GH)
+#  define vector_ref(v,i) scm_c_vector_ref(v,i)
+#elif !defined(HAVE_GH_VECTOR_REF)
+#  define vector_ref(v,i) gh_vref(v,gh_int2scm(i))
+#else
+#  define vector_ref(v,i) gh_vector_ref(v,gh_int2scm(i))
 #endif
 
 /**************************************************************************/
@@ -75,7 +82,11 @@ void ctl_include(char *filename)
   if (include_proc == SCM_UNDEFINED)
     gh_load(filename);
   else
+#ifdef HAVE_NO_GH
+    scm_call_1(include_proc, ctl_convert_string_to_scm(filename));
+#else
     gh_call1(include_proc, gh_str02scm(filename));
+#endif
 }
 
 /* convert a pathname into one relative to the current include dir */
@@ -85,7 +96,7 @@ char *ctl_fix_path(const char *path)
      if (path[0] != '/') {
 	  SCM include_dir = gh_lookup("include-dir");
 	  if (include_dir != SCM_UNDEFINED) {
-	       char *dir = gh_scm2newstr(include_dir, NULL);
+	       char *dir = ctl_convert_string_to_c(include_dir);
 	       newpath = (char *) malloc(sizeof(char) * (strlen(dir) + 
 							 strlen(path) + 2));
 	       strcpy(newpath, dir);
@@ -395,9 +406,9 @@ vector3 scm2vector3(SCM sv)
 {
   vector3 v;
 
-  v.x = gh_scm2double(gh_vector_ref(sv,gh_int2scm(0)));
-  v.y = gh_scm2double(gh_vector_ref(sv,gh_int2scm(1)));
-  v.z = gh_scm2double(gh_vector_ref(sv,gh_int2scm(2)));
+  v.x = ctl_convert_number_to_c(vector_ref(sv,0));
+  v.y = ctl_convert_number_to_c(vector_ref(sv,1));
+  v.z = ctl_convert_number_to_c(vector_ref(sv,2));
   return v;
 }
 
@@ -405,34 +416,37 @@ matrix3x3 scm2matrix3x3(SCM sm)
 {
   matrix3x3 m;
 
-  m.c0 = scm2vector3(gh_vector_ref(sm,gh_int2scm(0)));
-  m.c1 = scm2vector3(gh_vector_ref(sm,gh_int2scm(1)));
-  m.c2 = scm2vector3(gh_vector_ref(sm,gh_int2scm(2)));
+  m.c0 = scm2vector3(vector_ref(sm,0));
+  m.c1 = scm2vector3(vector_ref(sm,1));
+  m.c2 = scm2vector3(vector_ref(sm,2));
   return m;
 }
 
 static SCM make_vector3(SCM x, SCM y, SCM z)
 {
-  SCM vscm, *data;
+  SCM vscm;
   vscm = scm_c_make_vector(3, SCM_UNSPECIFIED);
 #ifdef SCM_SIMPLE_VECTOR_SET
   SCM_SIMPLE_VECTOR_SET(vscm, 0, x);
   SCM_SIMPLE_VECTOR_SET(vscm, 1, y);
   SCM_SIMPLE_VECTOR_SET(vscm, 2, z);
 #else
-  data = SCM_VELTS(vscm);
-  data[0] = x;
-  data[1] = y;
-  data[2] = z;
+  {
+       SCM *data;
+       data = SCM_VELTS(vscm);
+       data[0] = x;
+       data[1] = y;
+       data[2] = z;
+  }
 #endif
   return vscm;
 }
 
 SCM vector32scm(vector3 v)
 {
-  return make_vector3(gh_double2scm(v.x),
-		      gh_double2scm(v.y), 
-		      gh_double2scm(v.z));
+  return make_vector3(ctl_convert_number_to_scm(v.x),
+		      ctl_convert_number_to_scm(v.y), 
+		      ctl_convert_number_to_scm(v.z));
 }
 
 SCM matrix3x32scm(matrix3x3 m)
@@ -446,12 +460,12 @@ cnumber scm2cnumber(SCM sx)
 {
 #ifdef HAVE_SCM_COMPLEXP
      if (scm_real_p(sx) && !(SCM_COMPLEXP(sx)))
-	  return make_cnumber(gh_scm2double(sx), 0.0);
+	  return make_cnumber(ctl_convert_number_to_c(sx), 0.0);
      else
 	  return make_cnumber(SCM_COMPLEX_REAL(sx), SCM_COMPLEX_IMAG(sx));
 #else
      if (scm_real_p(sx) && !(SCM_NIMP(sx) && SCM_INEXP(sx) && SCM_CPLXP(sx)))
-	  return make_cnumber(gh_scm2double(sx), 0.0);
+	  return make_cnumber(ctl_convert_number_to_c(sx), 0.0);
      else
 	  return make_cnumber(SCM_REALPART(sx), SCM_IMAG(sx));
 #endif
@@ -459,11 +473,13 @@ cnumber scm2cnumber(SCM sx)
 
 SCM cnumber2scm(cnumber x)
 {
-#ifdef HAVE_SCM_MAKE_COMPLEX
+#if defined(HAVE_SCM_C_MAKE_RECTANGULAR) /* Guile 1.6.5 */
+     return scm_c_make_rectangular(x.re, x.im); /* Guile 1.5 */
+#elif defined(HAVE_SCM_MAKE_COMPLEX)
      return scm_make_complex(x.re, x.im); /* Guile 1.5 */
 #else
      if (x.im == 0.0)
-	  return gh_double2scm(x.re);
+	  return ctl_convert_number_to_scm(x.re);
      else
 	  return scm_makdbl(x.re, x.im);
 #endif
@@ -473,9 +489,9 @@ cvector3 scm2cvector3(SCM sv)
 {
      cvector3 v;
 
-     v.x = scm2cnumber(gh_vector_ref(sv,gh_int2scm(0)));
-     v.y = scm2cnumber(gh_vector_ref(sv,gh_int2scm(1)));
-     v.z = scm2cnumber(gh_vector_ref(sv,gh_int2scm(2)));
+     v.x = scm2cnumber(vector_ref(sv,0));
+     v.y = scm2cnumber(vector_ref(sv,1));
+     v.z = scm2cnumber(vector_ref(sv,2));
      return v;
 }
 
@@ -483,9 +499,9 @@ cmatrix3x3 scm2cmatrix3x3(SCM sm)
 {
      cmatrix3x3 m;
 
-     m.c0 = scm2cvector3(gh_vector_ref(sm,gh_int2scm(0)));
-     m.c1 = scm2cvector3(gh_vector_ref(sm,gh_int2scm(1)));
-     m.c2 = scm2cvector3(gh_vector_ref(sm,gh_int2scm(2)));
+     m.c0 = scm2cvector3(vector_ref(sm,0));
+     m.c1 = scm2cvector3(vector_ref(sm,1));
+     m.c2 = scm2cvector3(vector_ref(sm,2));
      return m;
 }
 
@@ -511,12 +527,12 @@ SCM cmatrix3x32scm(cmatrix3x3 m)
 
 integer ctl_get_integer(char *identifier)
 {
-  return(gh_scm2int(gh_lookup(identifier)));
+  return(ctl_convert_integer_to_c(gh_lookup(identifier)));
 }
 
 number ctl_get_number(char *identifier)
 {
-  return(gh_scm2double(gh_lookup(identifier)));
+  return(ctl_convert_number_to_c(gh_lookup(identifier)));
 }
 
 cnumber ctl_get_cnumber(char *identifier)
@@ -526,12 +542,12 @@ cnumber ctl_get_cnumber(char *identifier)
 
 boolean ctl_get_boolean(char *identifier)
 {
-  return(gh_scm2bool(gh_lookup(identifier)));
+  return(ctl_convert_boolean_to_c(gh_lookup(identifier)));
 }
 
 char* ctl_get_string(char *identifier)
 {
-  return(gh_scm2newstr(gh_lookup(identifier), NULL));
+  return(ctl_convert_string_to_c(gh_lookup(identifier)));
 }
 
 vector3 ctl_get_vector3(char *identifier)
@@ -630,12 +646,12 @@ static void set_value(char *identifier, SCM value)
 
 void ctl_set_integer(char *identifier, integer value)
 {
-  set_value(identifier, gh_int2scm(value));
+  set_value(identifier, ctl_convert_integer_to_scm(value));
 }
 
 void ctl_set_number(char *identifier, number value)
 {
-  set_value(identifier, gh_double2scm(value));
+  set_value(identifier, ctl_convert_number_to_scm(value));
 }
 
 void ctl_set_cnumber(char *identifier, cnumber value)
@@ -645,12 +661,12 @@ void ctl_set_cnumber(char *identifier, cnumber value)
 
 void ctl_set_boolean(char *identifier, boolean value)
 {
-  set_value(identifier, gh_bool2scm(value));
+  set_value(identifier, ctl_convert_boolean_to_scm(value));
 }
 
 void ctl_set_string(char *identifier, char *value)
 {
-  set_value(identifier, gh_str02scm(value));
+  set_value(identifier, ctl_convert_string_to_scm(value));
 }
 
 void ctl_set_vector3(char *identifier, vector3 value)
@@ -704,12 +720,12 @@ int list_length(list l)
 
 integer integer_list_ref(list l, int index)
 {
-  return(gh_scm2int(list_ref(l,index)));
+  return(ctl_convert_integer_to_c(list_ref(l,index)));
 }
 
 number number_list_ref(list l, int index)
 {
-  return(gh_scm2double(list_ref(l,index)));
+  return(ctl_convert_number_to_c(list_ref(l,index)));
 }
 
 cnumber cnumber_list_ref(list l, int index)
@@ -724,7 +740,7 @@ boolean boolean_list_ref(list l, int index)
 
 char* string_list_ref(list l, int index)
 {
-  return(gh_scm2newstr(list_ref(l,index),NULL));
+  return(ctl_convert_string_to_c(list_ref(l,index)));
 }
 
 vector3 vector3_list_ref(list l, int index)
@@ -771,6 +787,10 @@ SCM SCM_list_ref(list l, int index)
 
 /* list creation */
 
+#ifdef HAVE_NO_GH
+#  define gh_cons scm_cons
+#endif
+
 #define MAKE_LIST(conv) \
 { \
   int i; \
@@ -780,20 +800,38 @@ SCM SCM_list_ref(list l, int index)
   return(cur_list); \
 } \
 
+#ifdef HAVE_NO_GH
+
 list make_integer_list(int num_items, const integer *items)
-MAKE_LIST(gh_int2scm)
+MAKE_LIST(scm_from_int)
+
+list make_boolean_list(int num_items, const boolean *items)
+MAKE_LIST(scm_from_bool)
+
+list make_string_list(int num_items, const char **items)
+MAKE_LIST(scm_from_locale_string)
 
 list make_number_list(int num_items, const number *items)
-MAKE_LIST(gh_double2scm)
+MAKE_LIST(scm_from_double)
 
-list make_cnumber_list(int num_items, const cnumber *items)
-MAKE_LIST(cnumber2scm)
+#else /* ! HAVE_NO_GH */
+
+list make_integer_list(int num_items, const integer *items)
+MAKE_LIST(gh_int2scm)
 
 list make_boolean_list(int num_items, const boolean *items)
 MAKE_LIST(gh_bool2scm)
 
 list make_string_list(int num_items, const char **items)
 MAKE_LIST(gh_str02scm)
+
+list make_number_list(int num_items, const number *items)
+MAKE_LIST(gh_double2scm)
+
+#endif /* ! HAVE_NO_GH */
+
+list make_cnumber_list(int num_items, const cnumber *items)
+MAKE_LIST(cnumber2scm)
 
 list make_vector3_list(int num_items, const vector3 *items)
 MAKE_LIST(vector32scm)
@@ -826,6 +864,11 @@ MAKE_LIST(NO_CONVERSION)
 
 /* object properties */
 
+#ifdef HAVE_NO_GH
+#  define gh_call2 scm_call_2
+#  define gh_symbol2scm scm_from_locale_symbol
+#endif
+
 boolean object_is_member(char *type_name, object o)
 {
   return(SCM_BOOL_F != gh_call2(gh_lookup("object-member?"),
@@ -842,12 +885,12 @@ static SCM object_property_value(object o, char *property_name)
 
 integer integer_object_property(object o, char *property_name)
 {
-  return(gh_scm2int(object_property_value(o,property_name)));
+  return(ctl_convert_integer_to_c(object_property_value(o,property_name)));
 }
 
 number number_object_property(object o, char *property_name)
 {
-  return(gh_scm2double(object_property_value(o,property_name)));
+  return(ctl_convert_number_to_c(object_property_value(o,property_name)));
 }
 
 cnumber cnumber_object_property(object o, char *property_name)
@@ -862,7 +905,7 @@ boolean boolean_object_property(object o, char *property_name)
 
 char* string_object_property(object o, char *property_name)
 {
-  return(gh_scm2newstr(object_property_value(o,property_name),NULL));
+  return(ctl_convert_string_to_c(object_property_value(o,property_name)));
 }
 
 vector3 vector3_object_property(object o, char *property_name)

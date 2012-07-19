@@ -22,7 +22,12 @@
 #ifndef CTL_H
 #define CTL_H
 
-#include <guile/gh.h>
+#undef HAVE_NO_GH
+#ifdef HAVE_NO_GH
+#  include <libguile.h>
+#else
+#  include <guile/gh.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,6 +45,8 @@ extern "C" {
 #undef LIBCTL_BUGFIX_VERSION
 
 /* Define if you have the following functions */
+#undef HAVE_GH_ENTER
+#undef HAVE_GH_EVAL_STR
 #undef HAVE_GH_LOAD
 #undef HAVE_GH_BOOL2SCM
 #undef HAVE_GH_VECTOR_REF
@@ -47,9 +54,11 @@ extern "C" {
 #undef HAVE_GH_LENGTH
 #undef HAVE_SCM_FLUSH_ALL_PORTS
 #undef HAVE_SCM_MAKE_COMPLEX
+#undef HAVE_SCM_C_MAKE_RECTANGULAR
 #undef HAVE_SCM_VARIABLE_SET_X
 #undef HAVE_SCM_C_LOOKUP
 #undef HAVE_SCM_C_MAKE_VECTOR
+#undef HAVE_SCM_VARIABLE_REF
 
 /* Define if you have the HAVE_SCM_COMPLEXP macro. */
 #undef HAVE_SCM_COMPLEXP
@@ -86,12 +95,31 @@ typedef struct { cvector3 c0, c1, c2; /* the columns */ } cmatrix3x3;
 
 /**************************************************************************/
 
-#ifndef GH_LOOKUP_OK
-#  define gh_lookup scm_symbol_value0
+#ifdef HAVE_NO_GH /* use replacements for gh functions */
+#  define gh_call0 scm_call_0
+#  define gh_call1 scm_call_1
+#  define gh_call2 scm_call_2
+#  define gh_call3 scm_call_3
+#  define gh_eval_str scm_c_eval_string
+#  define gh_cons scm_cons
+#  define gh_new_procedure(name, fcn, req, opt, rst) scm_c_define_gsubr(name, req, opt, rst, fcn)
+#  define gh_repl scm_shell
 #endif
 
-#ifndef HAVE_GH_LOAD
-#  define gh_load gh_eval_file 
+#if !defined(GH_LOOKUP_OK) || defined(HAVE_NO_GH)
+#  if defined(HAVE_SCM_VARIABLE_REF) && defined(HAVE_SCM_C_LOOKUP)
+#    define gh_lookup(name) scm_variable_ref(scm_c_lookup(name))
+#  else
+#    define gh_lookup scm_symbol_value0
+#  endif
+#endif
+
+#if !defined(HAVE_GH_LOAD) || defined(HAVE_NO_GH)
+#  ifdef HAVE_NO_GH
+#    define gh_load scm_c_primitive_load
+#  else
+#    define gh_load gh_eval_file 
+#  endif
 #endif
 
 extern void ctl_include(char *filename);
@@ -153,10 +181,10 @@ extern int cmatrix3x3_equal(cmatrix3x3 m1, cmatrix3x3 m2);
 
   /* type conversion */
 
-#ifndef HAVE_GH_BOOL2SCM
+#if !defined(HAVE_GH_BOOL2SCM) && !defined(HAVE_NO_GH)
   /* Guile 1.2 is missing gh_bool2scm for some reason; redefine: */
-extern SCM ctl_gh_bool2scm(boolean);
-#define gh_bool2scm ctl_gh_bool2scm
+   extern SCM ctl_gh_bool2scm(boolean);
+#  define gh_bool2scm ctl_gh_bool2scm
 #endif
 
 extern vector3 scm2vector3(SCM sv);
@@ -171,11 +199,27 @@ extern SCM cvector32scm(cvector3 v);
 extern cmatrix3x3 scm2cmatrix3x3(SCM sm);
 extern SCM cmatrix3x32scm(cmatrix3x3 m);
 
-#define ctl_convert_number_to_scm(x) gh_double2scm(x)
+#ifdef HAVE_NO_GH
+#  define ctl_convert_number_to_scm(x) scm_from_double(x)
+#  define ctl_convert_number_to_c(x) scm_to_double(x)
+#  define ctl_convert_integer_to_scm(x) scm_from_int(x)
+#  define ctl_convert_integer_to_c(x) scm_to_int(x)
+#  define ctl_convert_string_to_scm(x) scm_from_locale_string(x)
+#  define ctl_convert_string_to_c(x) scm_to_locale_string(x)
+#  define ctl_convert_boolean_to_scm(x) scm_from_bool(x)
+#  define ctl_convert_boolean_to_c(x) scm_to_bool(x)
+#else
+#  define ctl_convert_number_to_scm(x) gh_double2scm(x)
+#  define ctl_convert_number_to_c(x) gh_scm2double(x)
+#  define ctl_convert_integer_to_scm(x) gh_int2scm(x)
+#  define ctl_convert_integer_to_c(x) gh_scm2int(x)
+#  define ctl_convert_string_to_scm(x) gh_str02scm(x)
+#  define ctl_convert_string_to_c(x) gh_scm2newstr(x, 0)
+#  define ctl_convert_boolean_to_scm(x) gh_bool2scm(x)
+#  define ctl_convert_boolean_to_c(x) gh_scm2bool(x)
+#endif
+
 #define ctl_convert_cnumber_to_scm(x) cnumber2scm(x)
-#define ctl_convert_integer_to_scm(x) gh_int2scm(x)
-#define ctl_convert_string_to_scm(x) gh_str02scm(x)
-#define ctl_convert_boolean_to_scm(x) gh_bool2scm(x)
 #define ctl_convert_vector3_to_scm(x) vector32scm(x)
 #define ctl_convert_matrix3x3_to_scm(x) matrix3x32scm(x)
 #define ctl_convert_cvector3_to_scm(x) cvector32scm(x)
@@ -185,11 +229,7 @@ extern SCM cmatrix3x32scm(cmatrix3x3 m);
 #define ctl_convert_object_to_scm(x) (x)
 #define ctl_convert_list_to_scm(x) (x)
 
-#define ctl_convert_number_to_c(x) gh_scm2double(x)
 #define ctl_convert_cnumber_to_c(x) scm2cnumber(x)
-#define ctl_convert_integer_to_c(x) gh_scm2int(x)
-#define ctl_convert_string_to_c(x) gh_scm2newstr(x, 0)
-#define ctl_convert_boolean_to_c(x) gh_scm2bool(x)
 #define ctl_convert_vector3_to_c(x) scm2vector3(x)
 #define ctl_convert_matrix3x3_to_c(x) scm2matrix3x3(x)
 #define ctl_convert_cvector3_to_c(x) scm2cvector3(x)

@@ -191,11 +191,6 @@
 	  (class-member? type-name (class-parent class)))
       false))
 
-(defmacro-public define-class (class-name parent . properties)
-  `(define ,class-name (make-class (quote ,class-name)
-				   ,parent
-				   ,@properties)))
-
 (define no-parent false)
 
 (define (make class . property-values)
@@ -271,3 +266,57 @@
 		  (make-derived ,derive-func)))
 
 ; ****************************************************************
+; Define classes.  A bit ugly since we support (define-property ...)
+; in the property list, but Guile 2.x doesn't allow (define ...) to
+; be used in the middle of a list expression.  So, we need to extract
+; those definitions first and duplicate some of the define-property
+; code above.
+
+(defmacro-public define-class (class-name parent . properties)
+  (let ((pdefs (map
+		(lambda (p) 
+		  (let ((name (cadr p))
+			(type-name (cadddr p)))
+		    `(define ,name
+		       (type-property-value-constructor 
+			,type-name (quote ,name)))))
+		(list-transform-positive properties 
+		  (lambda (p) (eq? (car p) 'define-property)))))
+	(ppdefs (map
+		 (lambda (p) 
+		   (let ((name (cadr p))
+			 (type-name (cadddr p))
+			 (post-process-func (list-ref p 4)))
+		     `(define ,name (post-processing-constructor
+				     ,post-process-func
+				     (type-property-value-constructor 
+				      ,type-name (quote ,name))))))
+		 (list-transform-positive properties 
+		   (lambda (p) 
+		     (eq? (car p) 'define-post-processed-property)))))
+	(props (map
+		(lambda (p)
+		  (cond
+		   ((eq? (car p) 'define-property)
+		    (let ((name (cadr p))
+			  (default (caddr p))
+			  (type-name (cadddr p))
+			  (constraints (cddddr p)))
+		      `(make-property (quote ,name) ,type-name ,default
+				      not-derived ,@constraints)))
+		   ((eq? (car p) 'define-post-processed-property)
+		    (let ((name (cadr p))
+			  (default (caddr p))
+			  (type-name (cadddr p))
+			  (post-process-func (list-ref p 4))
+			  (constraints (cdr (cddddr p))))
+		      `(make-property (quote ,name) ,type-name ,default
+				      not-derived ,@constraints)))
+		   (else p)))
+		properties)))
+  `(begin
+     ,@pdefs
+     ,@ppdefs
+     (define ,class-name (make-class (quote ,class-name)
+				   ,parent
+				   ,@props)))))
