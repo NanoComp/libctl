@@ -102,6 +102,8 @@ typedef struct { cvector3 c0, c1, c2; /* the columns */ } cmatrix3x3;
 #  define gh_call3 scm_call_3
 #  define gh_eval_str scm_c_eval_string
 #  define gh_cons scm_cons
+#  define gh_car scm_car
+#  define gh_cdr scm_cdr
 #  if SCM_MAJOR_VERSION >= 2 /* get types right for C++, since fc
 			        argument is void* (grrr) in Guile 2.x */
 #    define gh_new_procedure(name, fcn, req, opt, rst) scm_c_define_gsubr(name, req, opt, rst, (scm_t_subr) (fcn))

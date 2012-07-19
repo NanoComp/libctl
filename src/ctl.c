@@ -787,10 +787,6 @@ SCM SCM_list_ref(list l, int index)
 
 /* list creation */
 
-#ifdef HAVE_NO_GH
-#  define gh_cons scm_cons
-#endif
-
 #define MAKE_LIST(conv) \
 { \
   int i; \
