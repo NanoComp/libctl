@@ -1,4 +1,4 @@
-libctl 3.2:
+libctl 3.2 (7/20/2012)
 
   * Now works with Guile version 2.x (older versions are still supported).
 
