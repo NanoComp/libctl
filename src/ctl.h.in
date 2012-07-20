@@ -100,7 +100,10 @@ typedef struct { cvector3 c0, c1, c2; /* the columns */ } cmatrix3x3;
 #  define gh_call1 scm_call_1
 #  define gh_call2 scm_call_2
 #  define gh_call3 scm_call_3
+#  define gh_apply scm_apply_0
 #  define gh_eval_str scm_c_eval_string
+#  define gh_symbol2scm scm_from_locale_symbol
+#  define gh_symbol2newstr(x) scm_to_locale_string(scm_symbol_to_string(x))
 #  define gh_cons scm_cons
 #  define gh_car scm_car
 #  define gh_cdr scm_cdr

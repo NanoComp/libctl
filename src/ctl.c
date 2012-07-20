@@ -860,11 +860,6 @@ MAKE_LIST(NO_CONVERSION)
 
 /* object properties */
 
-#ifdef HAVE_NO_GH
-#  define gh_call2 scm_call_2
-#  define gh_symbol2scm scm_from_locale_symbol
-#endif
-
 boolean object_is_member(char *type_name, object o)
 {
   return(SCM_BOOL_F != gh_call2(gh_lookup("object-member?"),
