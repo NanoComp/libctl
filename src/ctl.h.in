@@ -103,7 +103,7 @@ typedef struct { cvector3 c0, c1, c2; /* the columns */ } cmatrix3x3;
 #  define gh_apply scm_apply_0
 #  define gh_eval_str scm_c_eval_string
 #  define gh_symbol2scm scm_from_locale_symbol
-#  define gh_symbol2newstr(x) scm_to_locale_string(scm_symbol_to_string(x))
+#  define ctl_symbol2newstr(x) scm_to_locale_string(scm_symbol_to_string(x))
 #  define gh_cons scm_cons
 #  define gh_car scm_car
 #  define gh_cdr scm_cdr
@@ -114,6 +114,8 @@ typedef struct { cvector3 c0, c1, c2; /* the columns */ } cmatrix3x3;
 #    define gh_new_procedure(name, fcn, req, opt, rst) scm_c_define_gsubr(name, req, opt, rst, fcn)
 #  endif
 #  define gh_repl scm_shell
+#else
+#  define ctl_symbol2newstr(x) gh_symbol2newstr(x, 0)
 #endif
 
 #if !defined(GH_LOOKUP_OK) || defined(HAVE_NO_GH)

@@ -1,3 +1,7 @@
+libctl 3.2.1
+
+  * Fix incorrect gh_symbol2newstr macro replacement.
+
 libctl 3.2 (7/20/2012)
 
   * Now works with Guile version 2.x (older versions are still supported).
