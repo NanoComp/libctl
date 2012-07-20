@@ -139,7 +139,11 @@ AC_MSG_RESULT($ok)
 
 AC_MSG_CHECKING([for scm_flush_all_ports])
 ok=yes
-AC_TRY_LINK([#include <guile/gh.h>
+AC_TRY_LINK([#if defined(HAVE_LIBGUILE_H)
+#  include <libguile.h>
+#else
+#  include <guile/gh.h>
+#endif
 ], [scm_flush_all_ports();], [AC_DEFINE(HAVE_SCM_FLUSH_ALL_PORTS, 1, [Define if we have scm_flush_all_ports])], ok=no)
 AC_MSG_RESULT($ok)
 
@@ -147,7 +151,11 @@ AC_CHECK_FUNCS(scm_make_complex scm_c_make_rectangular scm_variable_set_x scm_c_
 
 AC_MSG_CHECKING([for SCM_COMPLEXP])
 ok=yes
-AC_TRY_LINK([#include <guile/gh.h>
+AC_TRY_LINK([#if defined(HAVE_LIBGUILE_H)
+#  include <libguile.h> 
+#else 
+#  include <guile/gh.h>
+#endif
 ], [SCM x; SCM_COMPLEXP(x);], [AC_DEFINE(HAVE_SCM_COMPLEXP, 1, [Define if we have SCM_COMPLEXP])], ok=no)
 AC_MSG_RESULT($ok)
 
