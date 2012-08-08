@@ -1,4 +1,4 @@
-libctl 3.2.1
+libctl 3.2.1 (8/8/2012)
 
   * Fix incorrect gh_symbol2newstr macro replacement.
 
