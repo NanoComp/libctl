@@ -62,9 +62,9 @@
 	     append '()
 	     (map
 	      (lambda (x y)
-		(let ((m (inexact->exact 
+		(let ((m (inexact->exact (round
 			  (+ -0.5 (* (+ n 1) (/ (unary-abs (binary- x y))
-						meandiff))))))
+						meandiff)))))))
 		  (reverse (arith-sequence y (binary/ (binary- x y) (+ m 1)) 
 					   (+ m 1)))))
 	      (reverse (cdr (reverse nums))) ; nums w/o last value
