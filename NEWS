@@ -1,3 +1,7 @@
+libctl 3.2.2
+
+  * Bug fix to interpolate-uniform for guile 1.8+.
+
 libctl 3.2.1 (8/8/2012)
 
   * Fix incorrect gh_symbol2newstr macro replacement.
