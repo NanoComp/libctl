@@ -10,4 +10,4 @@ base/vector3.scm
 nobase_dist_pkgdata_DATA = $(BASE_SCM) base/main.c utils/ctl-io.scm utils/geom.c utils/geom.scm utils/nlopt-constants.scm utils/nlopt.c
 
 dist-hook:
-	darcs changes --summary > $(distdir)/ChangeLog
+	git log > $(distdir)/ChangeLog
