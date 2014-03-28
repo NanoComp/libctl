@@ -10,7 +10,7 @@ AM_MAINTAINER_MODE
 # except for public releases.)
 SHARED_VERSION_INFO="5:2:0" # CURRENT:REVISION:AGE
 
-AM_INIT_AUTOMAKE(1.6)
+AM_INIT_AUTOMAKE([foreign])
 AC_SUBST(SHARED_VERSION_INFO)
 AM_ENABLE_SHARED(no) dnl shared libs cause too many headaches to be default
 AC_PROG_LIBTOOL
