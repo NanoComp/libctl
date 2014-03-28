@@ -1,4 +1,4 @@
-libctl 3.2.2
+libctl 3.2.2 (3/28/2014)
 
   * Bug fix to interpolate-uniform for guile 1.8+.
 
