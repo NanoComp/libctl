@@ -183,8 +183,11 @@ AC_MSG_RESULT($ok)
 # Find Fortran name-mangling routines, for wrapper functions
 
 AC_PROG_F77
-AC_F77_DUMMY_MAIN([], [AC_MSG_WARN([Fortran wrapper functions will not be included])])
-AC_F77_WRAPPERS
+if test -z "$F77"; then
+   AC_MSG_WARN([Fortran wrapper functions will not be included])
+else
+   AC_F77_WRAPPERS
+fi
 
 ###########################################################################
 # Check for C99 complex-number support, for cintegrate.c
