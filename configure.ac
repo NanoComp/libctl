@@ -60,9 +60,11 @@ if test x"$guile_ok" = xunknown; then
 fi
 AC_SUBST(GUILE)
 
+# seems to be needed on ubuntu (issue #1):
+AC_CHECK_LIB(m, sqrt)
+
 AC_CHECK_PROG(GUILE_CONFIG, guile-config, guile-config, unknown)
 if test "x$GUILE_CONFIG" = "xunknown"; then
-	AC_CHECK_LIB(m, sqrt)
 	AC_CHECK_LIB(readline, readline)
 	AC_CHECK_LIB(dl, dlopen)
 	ok=no
