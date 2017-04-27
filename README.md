@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/stevengj/libctl.svg?branch=master)](https://travis-ci.org/stevengj/libctl)
+
 This is libctl, a [Guile](http://www.gnu.org/software/guile/)-based library for supporting flexible control
 files in scientific simulations.  libctl was written by Steven G. Johnson,
 and its home page is: http://ab-initio.mit.edu/libctl

@@ -1,0 +1,27 @@
+language: c
+sudo: false
+
+matrix:
+  include:
+    - os: linux
+      addons:
+        apt:
+          packages:
+          - autoconf
+          - automake
+          - libtool
+          - guile-2.0-dev
+      script:
+        - sh autogen.sh --prefix=~/.local
+        - make && make check && make install
+        - rm -rf * ~/.local
+        - rm -rf * ~/.local
+    - os: osx
+      install:
+        - brew update
+        - brew install guile autoconf automake libtool
+      script:
+        - sh autogen.sh --prefix=~/.local
+        - make && make check && make install
+        - rm -rf * ~/.local
+        - rm -rf * ~/.local
