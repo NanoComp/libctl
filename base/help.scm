@@ -1,4 +1,4 @@
-; libctl: flexible Guile-based control files for scientific software 
+; libctl: flexible Guile-based control files for scientific software
 ; Copyright (C) 1998-2014 Massachusetts Institute of Technology and Steven G. Johnson
 ;
 ; This library is free software; you can redistribute it and/or
@@ -10,7 +10,7 @@
 ; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 ; Lesser General Public License for more details.
-; 
+;
 ; You should have received a copy of the GNU Lesser General Public
 ; License along with this library; if not, write to the
 ; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
@@ -29,7 +29,7 @@
   (for-each
    (lambda (property)
      (if (not (property-derived? property))
-	 (begin 
+	 (begin
 	   (indent (+ indentby 4))
 	   (print (type-string (property-type-name property)) " "
 			 (property-name property))
@@ -37,7 +37,7 @@
 	       (print " = " (property-default-value property)))
 	   (print "\n"))))
    (class-properties class)))
-			  
+
 (define (class-help class) (display-class 0 class))
 
 (define (variable-help var)

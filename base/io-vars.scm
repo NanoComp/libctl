@@ -1,4 +1,4 @@
-; libctl: flexible Guile-based control files for scientific software 
+; libctl: flexible Guile-based control files for scientific software
 ; Copyright (C) 1998-2014 Massachusetts Institute of Technology and Steven G. Johnson
 ;
 ; This library is free software; you can redistribute it and/or
@@ -10,7 +10,7 @@
 ; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 ; Lesser General Public License for more details.
-; 
+;
 ; You should have received a copy of the GNU Lesser General Public
 ; License along with this library; if not, write to the
 ; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
@@ -45,7 +45,7 @@
 (define (var-value var) ((var-value-thunk var)))
 
 (define (input-var! value-thunk var-name var-type-name . var-constraints)
-  (let ((new-var (make-var value-thunk var-name 
+  (let ((new-var (make-var value-thunk var-name
 			   var-type-name var-constraints)))
     (set! input-var-list (cons new-var input-var-list))
     new-var))
@@ -77,11 +77,11 @@
 
 (define (check-vars var-list)
   (for-all? var-list
-	    (lambda (v) 
+	    (lambda (v)
 		   (if (not (check-type (var-type-name v) (var-value v)))
 		       (error "wrong type for variable" (var-name v) 'type
 			      (var-type-name v))
-		       (if (not (check-constraints 
+		       (if (not (check-constraints
 				 (var-constraints v) (var-value v)))
 			   (error "failed constraint for" (var-name v))
 			   true)))))

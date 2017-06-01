@@ -1,4 +1,4 @@
-; libctl: flexible Guile-based control files for scientific software 
+; libctl: flexible Guile-based control files for scientific software
 ; Copyright (C) 1998-2014 Massachusetts Institute of Technology and Steven G. Johnson
 ;
 ; This library is free software; you can redistribute it and/or
@@ -10,7 +10,7 @@
 ; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 ; Lesser General Public License for more details.
-; 
+;
 ; You should have received a copy of the GNU Lesser General Public
 ; License along with this library; if not, write to the
 ; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
@@ -39,7 +39,7 @@
 (define (ns namespace) (if cxx (string-append namespace "::") ""))
 
 (define (c-identifier s)
-  (list->string (map (lambda (c) 
+  (list->string (map (lambda (c)
 		       (if (or (eq? c #\-) (eq? c #\space))
 			   #\_ (if (eq? c #\?) #\p (if (eq? c #\!) #\B c))))
 		     (string->list s))))
@@ -80,13 +80,13 @@
 
 (define (free . vars)
   (let ((var (apply string-append vars)))
-    (if cxx 
+    (if cxx
 	(string-append "delete[] (" var ")")
 	(string-append "free(" var ")"))))
-      
+
 (define (free1 . vars)
   (let ((var (apply string-append vars)))
-    (if cxx 
+    (if cxx
 	(string-append "delete (" var ")")
 	(string-append "free(" var ")"))))
 
@@ -94,7 +94,7 @@
   (let ((num (apply string-append nums)))
     (if cxx
 	(string-append "(new " tname "[" num "])")
-	(string-append 
+	(string-append
 	 "((" tname " *) malloc(sizeof(" tname ") * (" num ")))"))))
 
 (define (malloc1 . tnames)
@@ -128,7 +128,7 @@
 	    (class-properties class))
   (print "typedef struct " (class-identifier class)
 		"_struct {\n")
-  (for-each 
+  (for-each
    (lambda (property)
      (c-var-decl (property-name property) (property-type-name property)))
    (class-properties class))
@@ -151,7 +151,7 @@
 	   (null? (class-properties class)))
       (print "#define " (class-enum-name0 class) "_ABSTRACT 1\n"))
   (print "\n"))
-       
+
 (define (display-c-class-decls)
   (print "/******* Type declarations *******/\n\n")
   (for-each c-class-decl (reverse class-list)))
@@ -168,14 +168,14 @@
   (lambda (var)
     (if (not (member var input-var-list))
 	(declarer var)
-	(begin (print "/* " (var-name var) 
+	(begin (print "/* " (var-name var)
 			     " is both input and output */\n")))))
 
 (define (all-type-names)
   (append
    exported-type-list
-   (map var-type-name 
-	(append (reverse input-var-list) 
+   (map var-type-name
+	(append (reverse input-var-list)
 		(reverse output-var-list)))
    (map external-function-return-type-name
 	external-function-list)
@@ -204,7 +204,7 @@
   (let ((desc (get-type-descriptor type-name)))
     (cond
      ((eq? (type-descriptor-kind desc) 'simple)
-      (print c-var-name-str " = " 
+      (print c-var-name-str " = "
 		    (getter type-name s-var-name-str) ";\n"))
      ((eq? (type-descriptor-kind desc) 'object)
       (print (class-input-function-name type-name) "("
@@ -241,14 +241,14 @@
     (print "list " lo-name-str " = "
 		  list-object-get-str ";\n")
     (print "int " index-name-str ";\n")
-    (print c-var-name-str 
+    (print c-var-name-str
 		  ".num_items = list_length(" lo-name-str ");\n")
-    (print c-var-name-str ".items = " 
-	   (malloc (c-type-string type-name) c-var-name-str ".num_items") 
+    (print c-var-name-str ".items = "
+	   (malloc (c-type-string type-name) c-var-name-str ".num_items")
 	   ";\n")
     (print "for (" index-name-str " = 0; " index-name-str " < "
 		  c-var-name-str ".num_items; " index-name-str "++) {\n")
-    (input-value index-name-str 
+    (input-value index-name-str
 		 (string-append c-var-name-str ".items[" index-name-str "]")
 		 type-name (list-getter lo-name-str))
     (print "}\n")
@@ -271,7 +271,7 @@
   (for-each
    (lambda (property)
      (input-value (symbol->string (property-name property))
-		  (string-append "o->" (symbol->c-identifier 
+		  (string-append "o->" (symbol->c-identifier
 					(property-name property)))
 		  (property-type-name property)
 		  (property-getter "so")))
@@ -279,19 +279,19 @@
   (let ((subclasses (find-direct-subclasses class)))
     (for-each
      (lambda (sc)
-       (print "if (object_is_member(\"" (class-type-name sc) 
+       (print "if (object_is_member(\"" (class-type-name sc)
 		     "\", so)) {\n")
        (print "o->which_subclass = " (class-enum-name sc) ";\n")
        (print "o->subclass." (class-identifier sc) "_data = "
 	      (malloc1 (class-identifier sc)) ";\n")
-       (print (class-input-function-name (class-type-name sc)) 
+       (print (class-input-function-name (class-type-name sc))
 		     "(so, o->subclass." (class-identifier sc) "_data);\n"
 		     "}\nelse "))
      subclasses)
    (if (not (null? subclasses))
        (begin
 	 (print "\n")
-	 (print "o->which_subclass = " 
+	 (print "o->which_subclass = "
 		       (class-self-enum-name class) ";\n"))))
   (print "}\n\n"))
 
@@ -347,7 +347,7 @@
     (print "int " index-name-str ";\n")
     (print c-var-name-str ".num_items = "
 	   c0-var-name-str ".num_items;\n")
-    (print c-var-name-str ".items = " 
+    (print c-var-name-str ".items = "
 	   (malloc (c-type-string type-name) c-var-name-str ".num_items")
 	   ";\n")
     (print "for (" index-name-str " = 0; " index-name-str " < "
@@ -374,9 +374,9 @@
   (print "\n{\n")
   (for-each
    (lambda (property)
-     (copy-value (string-append "o0->" (symbol->c-identifier 
+     (copy-value (string-append "o0->" (symbol->c-identifier
 					(property-name property)))
-		 (string-append "o->" (symbol->c-identifier 
+		 (string-append "o->" (symbol->c-identifier
 				       (property-name property)))
 		 (property-type-name property)))
    (class-properties class))
@@ -387,15 +387,15 @@
        (print "o->which_subclass = " (class-enum-name sc) ";\n")
        (print "o->subclass." (class-identifier sc) "_data = "
 	      (malloc1 (class-identifier sc)) ";\n")
-       (print (class-copy-function-name (class-type-name sc)) 
-	      "(o0->subclass." (class-identifier sc) 
+       (print (class-copy-function-name (class-type-name sc))
+	      "(o0->subclass." (class-identifier sc)
 	      "_data, o->subclass." (class-identifier sc) "_data);\n"
 	      "}\nelse "))
      subclasses)
    (if (not (null? subclasses))
        (begin
 	 (print "\n")
-	 (print "o->which_subclass = " 
+	 (print "o->which_subclass = "
 		       (class-self-enum-name class) ";\n"))))
   (print "}\n\n"))
 
@@ -465,9 +465,9 @@
   (print "\n{\n")
   (for-each
    (lambda (property)
-     (equal-value (string-append "o0->" (symbol->c-identifier 
+     (equal-value (string-append "o0->" (symbol->c-identifier
 					(property-name property)))
-		 (string-append "o->" (symbol->c-identifier 
+		 (string-append "o->" (symbol->c-identifier
 				       (property-name property)))
 		 (property-type-name property)))
    (class-properties class))
@@ -477,8 +477,8 @@
     (for-each
      (lambda (sc)
        (print "if (o0->which_subclass == " (class-enum-name sc) ") {\n")
-       (print "if (!" (class-equal-function-name (class-type-name sc)) 
-	      "(o0->subclass." (class-identifier sc) 
+       (print "if (!" (class-equal-function-name (class-type-name sc))
+	      "(o0->subclass." (class-identifier sc)
 	      "_data, o->subclass." (class-identifier sc) "_data)) return 0;\n"
 	      "}\nelse "))
      subclasses)
@@ -527,7 +527,7 @@
      ((eq? (type-descriptor-kind desc) 'object)
       (export-object-value c-var-name-str type-name
 			   (lambda (sobj-str)
-			     (print 
+			     (print
 			      (setter 'object s-var-name-str sobj-str))
 			      (print "\n"))))
      ((eq? (type-descriptor-kind desc) 'uniform-list)
@@ -561,7 +561,7 @@
 
 (define (destroy-c-var var-str type-name)
   (let ((desc (get-type-descriptor type-name)))
-    (cond 
+    (cond
      ((eq? type-name 'string)
       (print (free var-str) ";\n"))
      ((eq? (type-descriptor-kind desc) 'uniform-list)
@@ -612,7 +612,7 @@
     (for-each
      (lambda (sc)
        (print "if (o.which_subclass == " (class-enum-name sc) ") {\n")
-       (destroy-object (string-append "*o.subclass." 
+       (destroy-object (string-append "*o.subclass."
 				      (class-identifier sc) "_data")
 		       (class-type-name sc))
        (print (free1 "o.subclass." (class-identifier sc) "_data") ";\n")
@@ -762,7 +762,7 @@
    (external-function-arg-type-names external-function)
    (list->indices (external-function-arg-type-names external-function) 0))
   (print "\n")
-  
+
   (for-each
    (lambda (arg-type-name argnum)
      (input-value (string-append "arg_scm_" (number->string argnum))
@@ -820,20 +820,20 @@
 ; ***************************************************************************
 
 (define (swig-type-header type-name)
-  (print "%typemap(guile,in) " 
+  (print "%typemap(guile,in) "
 	 (if cxx (string-append namespace "::") "")
 	 (c-type-string type-name) " {\n")
   (if cxx (print "using namespace " namespace ";\n"))
   (input-value "$input" "$1" type-name get-c-local)
   (print "}\n")
-  (if (and (not (eq? 'object (type-descriptor-kind 
+  (if (and (not (eq? 'object (type-descriptor-kind
 			      (get-type-descriptor type-name))))
 	   (or (not (list-type-name? type-name))
-	       (eq? 'simple (type-descriptor-kind 
-			     (get-type-descriptor 
+	       (eq? 'simple (type-descriptor-kind
+			     (get-type-descriptor
 			      (list-el-type-name type-name))))))
       (begin
-	(print "%typemap(guile,out) " 
+	(print "%typemap(guile,out) "
 	       (if cxx (string-append namespace "::") "")
 	       (c-type-string type-name) " {\n")
 	(if cxx (print "using namespace " namespace ";\n"))

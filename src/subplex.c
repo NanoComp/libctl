@@ -149,9 +149,9 @@ L40:
     mp1 = m + 1;
     i__1 = *n;
     for (i__ = mp1; i__ <= i__1; i__ += 6) {
-	dtemp = dtemp + (d__1 = dx[i__], abs(d__1)) + (d__2 = dx[i__ + 1], 
-		abs(d__2)) + (d__3 = dx[i__ + 2], abs(d__3)) + (d__4 = dx[i__ 
-		+ 3], abs(d__4)) + (d__5 = dx[i__ + 4], abs(d__5)) + (d__6 = 
+	dtemp = dtemp + (d__1 = dx[i__], abs(d__1)) + (d__2 = dx[i__ + 1],
+		abs(d__2)) + (d__3 = dx[i__ + 2], abs(d__3)) + (d__4 = dx[i__
+		+ 3], abs(d__4)) + (d__5 = dx[i__ + 4], abs(d__5)) + (d__6 =
 		dx[i__ + 5], abs(d__6));
 /* L50: */
     }
@@ -165,7 +165,7 @@ L60:
 	-lf2c -lm   (in that order)
 */
 
-static int daxpy_(integer *n, doublereal *da, doublereal *dx, 
+static int daxpy_(integer *n, doublereal *da, doublereal *dx,
 	integer *incx, doublereal *dy, integer *incy)
 {
     /* System generated locals */
@@ -251,7 +251,7 @@ L40:
 	-lf2c -lm   (in that order)
 */
 
-static int dcopy_(integer *n, doublereal *dx, integer *incx, 
+static int dcopy_(integer *n, doublereal *dx, integer *incx,
 	doublereal *dy, integer *incy)
 {
     /* System generated locals */
@@ -337,7 +337,7 @@ L40:
 	-lf2c -lm   (in that order)
 */
 
-static int dscal_(integer *n, doublereal *da, doublereal *dx, 
+static int dscal_(integer *n, doublereal *da, doublereal *dx,
 	integer *incx)
 {
     /* System generated locals */
@@ -582,7 +582,7 @@ static int calcc_(integer *ns, doublereal *s, integer *ih, integer *
 	-lf2c -lm   (in that order)
 */
 
-static int order_(integer *npts, doublereal *fs, integer *il, 
+static int order_(integer *npts, doublereal *fs, integer *il,
 	integer *is, integer *ih)
 {
     /* System generated locals */
@@ -675,7 +675,7 @@ static struct {
 
 #define usubc_1 usubc_
 
-static int partx_(integer *n, integer *ip, doublereal *absdx, 
+static int partx_(integer *n, integer *ip, doublereal *absdx,
 	integer *nsubs, integer *nsvals)
 {
     /* System generated locals */
@@ -870,7 +870,7 @@ L10:
 	-lf2c -lm   (in that order)
 */
 
-static int newpt_(integer *ns, doublereal *coef, doublereal *xbase, 
+static int newpt_(integer *ns, doublereal *coef, doublereal *xbase,
 	doublereal *xold, logical *new__, doublereal *xnew, logical *small)
 {
     /* System generated locals */
@@ -973,7 +973,7 @@ static int newpt_(integer *ns, doublereal *coef, doublereal *xbase,
 	-lf2c -lm   (in that order)
 */
 
-static int start_(integer *n, doublereal *x, doublereal *step, 
+static int start_(integer *n, doublereal *x, doublereal *step,
 	integer *ns, integer *ips, doublereal *s, logical *small)
 {
     /* System generated locals */
@@ -1120,12 +1120,12 @@ static int fstats_(doublereal *fx, integer *ifxwt, logical *reset)
 	nsv = usubc_1.nfxe;
 	f1sv = usubc_1.fxstat[0];
 	usubc_1.nfxe += *ifxwt;
-	usubc_1.fxstat[0] += *ifxwt * (*fx - usubc_1.fxstat[0]) / 
+	usubc_1.fxstat[0] += *ifxwt * (*fx - usubc_1.fxstat[0]) /
 		usubc_1.nfxe;
 	usubc_1.fxstat[1] = max(usubc_1.fxstat[1],*fx);
 	usubc_1.fxstat[2] = min(usubc_1.fxstat[2],*fx);
 /* Computing MAX */
-	d__1 = abs(usubc_1.fxstat[1]), d__2 = abs(usubc_1.fxstat[2]), d__1 = 
+	d__1 = abs(usubc_1.fxstat[1]), d__2 = abs(usubc_1.fxstat[2]), d__1 =
 		max(d__1,d__2);
 	fscale = max(d__1,1.);
 /* Computing 2nd power */
@@ -1270,7 +1270,7 @@ static int evalf_(D_fp f,void*fdata, integer *ns, integer *ips, doublereal *xs,
 */
 
 static int simplx_(D_fp f, void *fdata, integer *n, doublereal *step, integer *
-	ns, integer *ips, integer *maxnfe, logical *cmode, doublereal *x, 
+	ns, integer *ips, integer *maxnfe, logical *cmode, doublereal *x,
 	doublereal *fx, integer *nfe, doublereal *s, doublereal *fs, integer *
 	iflag)
 {
@@ -1395,7 +1395,7 @@ static int simplx_(D_fp f, void *fdata, integer *n, doublereal *step, integer *
     isubc_1.new__ = TRUE_;
     i__1 = npts;
     for (j = 2; j <= i__1; ++j) {
-	evalf_((D_fp)f, fdata,ns, &ips[1], &s[j * s_dim1 + 1], n, &x[1], &fs[j], 
+	evalf_((D_fp)f, fdata,ns, &ips[1], &s[j * s_dim1 + 1], n, &x[1], &fs[j],
 		nfe);
 /* L10: */
     }
@@ -1452,13 +1452,13 @@ L20:
 		    c_true, &s[itemp * s_dim1 + 1], &small);
 	} else {
 	    d__1 = -usubc_1.beta;
-	    newpt_(ns, &d__1, &s[icent * s_dim1 + 1], &s[itemp * s_dim1 + 1], 
+	    newpt_(ns, &d__1, &s[icent * s_dim1 + 1], &s[itemp * s_dim1 + 1],
 		    &c_false, &dum, &small);
 	}
 	if (small) {
 	    goto L40;
 	}
-	evalf_((D_fp)f,fdata, ns, &ips[1], &s[itemp * s_dim1 + 1], n, &x[1], &fc, 
+	evalf_((D_fp)f,fdata, ns, &ips[1], &s[itemp * s_dim1 + 1], n, &x[1], &fc,
 		nfe);
 /* Computing MIN */
 	d__1 = fr, d__2 = fs[ih];
@@ -1498,12 +1498,12 @@ L40:
 	*fx = isubc_1.sfbest;
     }
 L50:
-    if (usubc_1.nfstop > 0 && *fx <= isubc_1.sfstop && usubc_1.nfxe >= 
+    if (usubc_1.nfstop > 0 && *fx <= isubc_1.sfstop && usubc_1.nfxe >=
 	    usubc_1.nfstop) {
 	*iflag = 2;
     } else if (*nfe >= *maxnfe) {
 	*iflag = -1;
-    } else if (dist_(ns, &s[ih * s_dim1 + 1], &s[il * s_dim1 + 1]) <= tol || 
+    } else if (dist_(ns, &s[ih * s_dim1 + 1], &s[il * s_dim1 + 1]) <= tol ||
 	    small) {
 	*iflag = 0;
     } else {
@@ -1705,7 +1705,7 @@ static double d_sign(doublereal *x, doublereal *y)
      return copysign(*x, *y);
 }
 
-static int setstp_(integer *nsubs, integer *n, doublereal *deltax, 
+static int setstp_(integer *nsubs, integer *n, doublereal *deltax,
 		   doublereal *step)
 {
     /* System generated locals */
@@ -1976,7 +1976,7 @@ static int subplx_(D_fp f, void *fdata, integer *n, doublereal *tol, integer *
 	    if (usubc_1.omega <= 0. || usubc_1.omega >= 1.) {
 		goto L120;
 	    }
-	    if (usubc_1.nsmin < 1 || usubc_1.nsmax < usubc_1.nsmin || *n < 
+	    if (usubc_1.nsmin < 1 || usubc_1.nsmax < usubc_1.nsmin || *n <
 		    usubc_1.nsmax) {
 		goto L120;
 	    }
@@ -2146,7 +2146,7 @@ L120:
    unconstrained optimization:
 
    Parameters:
-   
+
    f: function f(n,x,fdata) to be optimized
    n: problem dimension
    x[n]: (input) starting guess position, (output) computed minimum
@@ -2194,7 +2194,7 @@ number subplex(multivar_func f, number *x, integer n, void *fdata,
 
      subplx_(f,fdata, &n,
 	     &tol, &maxnfe, &mode,
-	     scale, x, 
+	     scale, x,
 	     &fx, nfe,
 	     work, iwork, errflag);
 

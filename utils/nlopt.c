@@ -27,7 +27,7 @@ static double f_scm_wrap(integer n, const double *x, double *grad, void *f_scm_p
      }
 }
 
-/* Scheme-callable wrapper for nlopt_minimize() function. 
+/* Scheme-callable wrapper for nlopt_minimize() function.
    Note that Guile-callable C subroutines cannot take more than
    10 arguments (grrr), so we past the last few arguments with a "rest"
    list parameter */
@@ -36,9 +36,9 @@ SCM nlopt_minimize_scm(SCM algorithm_scm,
 		       SCM lb_scm, SCM ub_scm, SCM x_scm,
 		       SCM minf_max_scm, SCM ftol_rel_scm, SCM ftol_abs_scm,
 		       SCM rest
-		       /* 
+		       /*
 		       SCM xtol_rel_scm, SCM xtol_abs_scm,
-		       SCM maxeval_scm, SCM maxtime_scm 
+		       SCM maxeval_scm, SCM maxtime_scm
 		       */)
 {
      nlopt_algorithm algorithm = (nlopt_algorithm) scm_to_int(algorithm_scm);
@@ -70,7 +70,7 @@ SCM nlopt_minimize_scm(SCM algorithm_scm,
 	  fprintf(stderr, "nlopt_minimize_scm: invalid arguments\n");
 	  exit(EXIT_FAILURE);
      }
-	  
+
      for (v=x_scm, i=0; i < n; ++i) {
 	  x[i] = scm_to_double(SCM_CAR(v));
 	  v = SCM_CDR(v);
@@ -96,7 +96,7 @@ SCM nlopt_minimize_scm(SCM algorithm_scm,
 	  }
      }
      if (nrest >= 3) maxeval = scm_to_int(scm_caddr(rest));
-     if (nrest >= 4) maxtime = scm_to_double(scm_cadddr(rest)); 
+     if (nrest >= 4) maxtime = scm_to_double(scm_cadddr(rest));
 
      result = nlopt_minimize(algorithm, n, f_scm_wrap, &f_scm,
 			     lb, ub, x, &minf,

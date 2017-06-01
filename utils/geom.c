@@ -1,4 +1,4 @@
-/* libctl: flexible Guile-based control files for scientific software 
+/* libctl: flexible Guile-based control files for scientific software
  * Copyright (C) 1998-2014 Massachusetts Institute of Technology and Steven G. Johnson
  *
  * This library is free software; you can redistribute it and/or
@@ -10,7 +10,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
@@ -34,11 +34,11 @@ using namespace ctlio;
 #  define CYL cylinder::
 #  define MAT material_type::
 #else
-#  define CTLIO 
-#  define GEOM 
-#  define BLK 
-#  define CYL  
-#  define MAT 
+#  define CTLIO
+#  define GEOM
+#  define BLK
+#  define CYL
+#  define MAT
 #endif
 
 #ifdef __cplusplus
@@ -62,9 +62,9 @@ using namespace ctlio;
 static void lattice_normalize(vector3 *v)
 {
      *v = vector3_scale(
-	  1.0 / 
-	  sqrt(vector3_dot(*v, 
-			   matrix3x3_vector3_mult(geometry_lattice.metric, 
+	  1.0 /
+	  sqrt(vector3_dot(*v,
+			   matrix3x3_vector3_mult(geometry_lattice.metric,
 						  *v))),
 	  *v);
 }
@@ -76,7 +76,7 @@ static vector3 lattice_to_cartesian(vector3 v)
 
 static vector3 cartesian_to_lattice(vector3 v)
 {
-     return matrix3x3_vector3_mult(matrix3x3_inverse(geometry_lattice.basis), 
+     return matrix3x3_vector3_mult(matrix3x3_inverse(geometry_lattice.basis),
 				   v);
 }
 
@@ -97,10 +97,10 @@ void geom_fix_object(geometric_object o)
 		   vector3 a = o.subclass.cylinder_data->axis;
 		   vector3 s = o.subclass.cylinder_data->subclass.wedge_data->wedge_start;
 		   double p = vector3_dot(s, matrix3x3_vector3_mult(geometry_lattice.metric, a));
-		   o.subclass.cylinder_data->subclass.wedge_data->e1 = 
+		   o.subclass.cylinder_data->subclass.wedge_data->e1 =
 			vector3_minus(s, vector3_scale(p, a));
 		   lattice_normalize(&o.subclass.cylinder_data->subclass.wedge_data->e1);
-		   o.subclass.cylinder_data->subclass.wedge_data->e2 = 
+		   o.subclass.cylinder_data->subclass.wedge_data->e2 =
 			cartesian_to_lattice(
 			     vector3_cross(lattice_to_cartesian(o.subclass.cylinder_data->axis),
 					   lattice_to_cartesian(o.subclass.cylinder_data->subclass.wedge_data->e1)));
@@ -352,7 +352,7 @@ vector3 from_geom_object_coords(vector3 p, geometric_object o)
   const vector3 half = {0.5, 0.5, 0.5};
   p = vector3_minus(p, half);
   switch (o.which_subclass) {
-  default: 
+  default:
        return o.center;
   case GEOM SPHERE:
     {
@@ -528,7 +528,7 @@ boolean point_shift_in_periodic_fixed_pobjectp(vector3 p, geometric_object *o,
 {
      geometric_object o0 = *o;
      LOOP_PERIODIC((*shiftby),
-		   { 
+		   {
 			*o = o0;
 			if (point_in_fixed_pobjectp(
 			     vector3_minus(p, *shiftby), o))
@@ -545,9 +545,9 @@ boolean point_shift_in_periodic_fixed_pobjectp(vector3 p, geometric_object *o,
 
    Requires that the global input vars geometry_lattice, geometry,
    dimensions, default_material and ensure_periodicity already be
-   initialized. 
+   initialized.
 
-   Also requires that geom_fix_objects() has been called! 
+   Also requires that geom_fix_objects() has been called!
 
    material_of_point_inobject is a variant that also returns whether
    or not the point was in any object.  */
@@ -661,7 +661,7 @@ void CTLIO display_geometric_object_info(int indentby, geometric_object o)
 		        o.subclass.cylinder_data->subclass.wedge_data->wedge_angle);
 	      break;
 	 case GEOM SPHERE:
-              printf("%*s     radius %g\n", indentby, "", 
+              printf("%*s     radius %g\n", indentby, "",
 		     o.subclass.sphere_data->radius);
               break;
 	 case GEOM BLOCK:
@@ -865,7 +865,7 @@ int intersect_line_with_object(vector3 p, vector3 d, geometric_object o,
 	 }
 	 default:
 	      return 0;
-     }      
+     }
 }
 
 /**************************************************************************/
@@ -934,7 +934,7 @@ static void geom_box_union(geom_box *bu,
      bu->high.z = MAX(b1->high.z, b2->high.z);
 }
 
-static void geom_box_intersection(geom_box *bi, 
+static void geom_box_intersection(geom_box *bi,
 				  const geom_box *b1,
 				  const geom_box *b2)
 {
@@ -1069,7 +1069,7 @@ void geom_get_bounding_box(geometric_object o, geom_box *box)
 	      eproj = vector3_dot(e23, axis);
 	      r1 = fabs(sqrt(fabs(elen2 - eproj*eproj)) /
 			vector3_dot(e23, geometry_lattice.b1));
-	      
+
 	      elen2 = vector3_dot(e31, e31);
 	      eproj = vector3_dot(e31, axis);
 	      r2 = fabs(sqrt(fabs(elen2 - eproj*eproj)) /
@@ -1084,7 +1084,7 @@ void geom_get_bounding_box(geometric_object o, geom_box *box)
 	      axis = o.subclass.cylinder_data->axis;
 
 	      tmp_box = *box; /* set tmp_box to center of object */
-	      
+
 	      /* bounding box for -h*axis cylinder end: */
 	      box->low.x -= h * axis.x + r1*radius;
 	      box->low.y -= h * axis.y + r2*radius;
@@ -1119,7 +1119,7 @@ void geom_get_bounding_box(geometric_object o, geom_box *box)
 					 o.subclass.block_data->e2);
 	      vector3 s3 = vector3_scale(o.subclass.block_data->size.z,
 					 o.subclass.block_data->e3);
-	      vector3 corner = 
+	      vector3 corner =
 		   vector3_plus(o.center,
 		      vector3_scale(-0.5,
                                     vector3_plus(s1, vector3_plus(s2, s3))));
@@ -1347,11 +1347,11 @@ number overlap_with_object(geom_box b, int is_ellipsoid, geometric_object o,
 	  if (data.dim == 1)
 	       V0 *= K_PI / 4;
 	  else if (data.dim == 2)
-	       V0 *= K_PI / 6; 
+	       V0 *= K_PI / 6;
      }
 
-     return adaptive_integration(overlap_integrand, xmin, xmax, 
-				 data.dim, &data, 
+     return adaptive_integration(overlap_integrand, xmin, xmax,
+				 data.dim, &data,
 				 0.0, tol, maxeval,
 				 &esterr, &errflag) / V0;
 }
@@ -1369,7 +1369,7 @@ number ellipsoid_overlap_with_object(geom_box b, geometric_object o,
 }
 
 number CTLIO range_overlap_with_object(vector3 low, vector3 high,
-				       geometric_object o, number tol, 
+				       geometric_object o, number tol,
 				       integer maxeval)
 {
      geom_box b;
@@ -1522,7 +1522,7 @@ static void divide_geom_box_tree(geom_box_tree t)
 	the best partition. */
      for (i = 0; i < dimensions; ++i) {
 	  find_best_partition(t->nobjects, t->objects, i, &division_point[i],
-			      &division_nobjects[i][0], 
+			      &division_nobjects[i][0],
 			      &division_nobjects[i][1]);
 	  if (MAX(division_nobjects[i][0], division_nobjects[i][1]) <
 	      MAX(division_nobjects[best][0], division_nobjects[best][1]))
@@ -1550,7 +1550,7 @@ static void divide_geom_box_tree(geom_box_tree t)
      t->t2->nobjects = division_nobjects[best][1];
      t->t2->objects = MALLOC(geom_box_object, t->t2->nobjects);
      CHECK(t->t2->objects, "out of memory");
-	  
+
      for (j = n1 = n2 = 0; j < t->nobjects; ++j) {
 	  if (geom_boxes_intersect(&t->b1, &t->objects[j].box)) {
 	       CHECK(n1 < t->t1->nobjects, "BUG in divide_geom_box_tree");
@@ -1655,7 +1655,7 @@ geom_box_tree create_geom_box_tree0(geometric_object_list geometry,
 
      t->objects = MALLOC(geom_box_object, t->nobjects);
      CHECK(t->objects || t->nobjects == 0, "out of memory");
-	  
+
      for (i = geometry.num_items - 1, index = 0; i >= 0; --i) {
 	  vector3 shiftby = {0,0,0};
 	  if (ensure_periodicity) {
@@ -1665,15 +1665,15 @@ geom_box_tree create_geom_box_tree0(geometric_object_list geometry,
 				  geometry.items + i, shiftby, &t->b,
 				  t->objects + index, precedence));
 	  }
-	  else 
+	  else
 	       index += store_objects_in_box(
-		    geometry.items + i, shiftby, &t->b, 
+		    geometry.items + i, shiftby, &t->b,
 		    t->objects + index, t->nobjects - index);
      }
      CHECK(index == t->nobjects, "bug in create_geom_box_tree0");
 
      divide_geom_box_tree(t);
-     
+
      return t;
 }
 
@@ -1870,7 +1870,7 @@ static void get_tree_stats(geom_box_tree t, int *depth, int *nobjects)
 {
      if (t) {
 	  int d1, d2;
-	  
+
 	  *nobjects += t->nobjects;
 	  d1 = d2 = *depth + 1;
 	  get_tree_stats(t->t1, &d1, nobjects);

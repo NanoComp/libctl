@@ -1,4 +1,4 @@
-; libctl: flexible Guile-based control files for scientific software 
+; libctl: flexible Guile-based control files for scientific software
 ; Copyright (C) 1998-2014 Massachusetts Institute of Technology and Steven G. Johnson
 ;
 ; This library is free software; you can redistribute it and/or
@@ -10,7 +10,7 @@
 ; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 ; Lesser General Public License for more details.
-; 
+;
 ; You should have received a copy of the GNU Lesser General Public
 ; License along with this library; if not, write to the
 ; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
@@ -32,7 +32,7 @@
 (define (object-type-names object) (car object))
 (define (object-property-values object) (cdr object))
 (define (object-member? type-name object)
-  (and (pair? object) 
+  (and (pair? object)
        (list? (object-type-names object))
        (member type-name (object-type-names object))))
 (define (object-property-value object property-name)
@@ -115,7 +115,7 @@
     (make-simple-type-descriptor 'SCM (lambda (x) true)))
    ((eq? type-name 'function)
     (make-simple-type-descriptor 'function procedure?))
-   ((eq? type-name 'vector3) 
+   ((eq? type-name 'vector3)
     (make-simple-type-descriptor 'vector3 real-vector3?))
    ((eq? type-name 'cvector3) (make-simple-type-descriptor 'cvector3 vector3?))
    ((eq? type-name 'matrix3x3)
@@ -206,7 +206,7 @@
 	(fold-left (lambda (o p)
 		     (modify-object o (derive-property p o)))
 		   o
-		   (list-transform-positive 
+		   (list-transform-positive
 		       (class-properties class) property-derived?)))
       null-object))
 
@@ -223,9 +223,9 @@
 					       (apply vector3 x)))))
 
 (define (list-property-value-constructor name type-name)
-  (lambda x 
-    (make-property-value-pair 
-     name 
+  (lambda x
+    (make-property-value-pair
+     name
      (if (and (= (length x) 1) (check-type type-name (car x)))
 	 (car x)
 	 x))))
@@ -274,25 +274,25 @@
 
 (defmacro-public define-class (class-name parent . properties)
   (let ((pdefs (map
-		(lambda (p) 
+		(lambda (p)
 		  (let ((name (cadr p))
 			(type-name (cadddr p)))
 		    `(define ,name
-		       (type-property-value-constructor 
+		       (type-property-value-constructor
 			,type-name (quote ,name)))))
-		(list-transform-positive properties 
+		(list-transform-positive properties
 		  (lambda (p) (eq? (car p) 'define-property)))))
 	(ppdefs (map
-		 (lambda (p) 
+		 (lambda (p)
 		   (let ((name (cadr p))
 			 (type-name (cadddr p))
 			 (post-process-func (list-ref p 4)))
 		     `(define ,name (post-processing-constructor
 				     ,post-process-func
-				     (type-property-value-constructor 
+				     (type-property-value-constructor
 				      ,type-name (quote ,name))))))
-		 (list-transform-positive properties 
-		   (lambda (p) 
+		 (list-transform-positive properties
+		   (lambda (p)
 		     (eq? (car p) 'define-post-processed-property)))))
 	(props (map
 		(lambda (p)

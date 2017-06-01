@@ -1,4 +1,4 @@
-/* libctl: flexible Guile-based control files for scientific software 
+/* libctl: flexible Guile-based control files for scientific software
  * Copyright (C) 1998-2014 Massachusetts Institute of Technology and Steven G. Johnson
  *
  * This library is free software; you can redistribute it and/or
@@ -10,7 +10,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
@@ -42,7 +42,7 @@ static void display_object_info(geometric_object obj)
   printf("     center = (%g,%g,%g), epsilon = %g\n",
 	 obj.center.x, obj.center.y,
 	 obj.center.z, obj.material.epsilon);
-  
+
   switch (obj.which_subclass) {
   case CYLINDER:
     printf("          cylinder with height %g, axis (%g, %g, %g)\n",
@@ -100,7 +100,7 @@ void run_program(void)
   for (i = 0; i < k_points.num_items; ++i)
     printf("     (%g,%g,%g)\n",
 	   k_points.items[i].x, k_points.items[i].y, k_points.items[i].z);
-  
+
   printf("\nsome geometry info:\n");
   for (i = 0; i < geometry.num_items; ++i)
     display_object_info(geometry.items[i]);
@@ -128,7 +128,7 @@ void run_program(void)
 
   if (num_write_output_vars > 1)
     destroy_output_vars(); /* we are responsible for calling this */
-  
+
   printf("dummy = (%g+%gi, %g+%gi, %g+%gi)\n", dummy.x.re, dummy.x.im,
 	 dummy.y.re, dummy.y.im, dummy.z.re, dummy.z.im);
   dummy = make_cvector3(vector3_scale(2, cvector3_re(dummy)),
@@ -172,7 +172,7 @@ vector3_list list_func_test(number x, integer_list s, vector3 v)
 /* return func(arg), where func is a Scheme function returning a number. */
 number function_func(function func, number arg)
 {
-     return 
+     return
 	  ctl_convert_number_to_c(
 	       gh_call1(func, ctl_convert_number_to_scm(arg)));
 }

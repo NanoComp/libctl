@@ -1,4 +1,4 @@
-; libctl: flexible Guile-based control files for scientific software 
+; libctl: flexible Guile-based control files for scientific software
 ; Copyright (C) 1998-2014 Massachusetts Institute of Technology and Steven G. Johnson
 ;
 ; This library is free software; you can redistribute it and/or
@@ -10,7 +10,7 @@
 ; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 ; Lesser General Public License for more details.
-; 
+;
 ; You should have received a copy of the GNU Lesser General Public
 ; License along with this library; if not, write to the
 ; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
@@ -32,9 +32,9 @@
 ; Given a list of numbers, linearly interpolates n values between
 ; each pair of numbers.
 (define (interpolate n nums)
-  (map 
+  (map
    unary->inexact
-   (cons 
+   (cons
     (car nums)
     (fold-right
      append '()
@@ -65,7 +65,7 @@
 		(let ((m (inexact->exact (round
 			  (+ -0.5 (* (+ n 1) (/ (unary-abs (binary- x y))
 						meandiff)))))))
-		  (reverse (arith-sequence y (binary/ (binary- x y) (+ m 1)) 
+		  (reverse (arith-sequence y (binary/ (binary- x y) (+ m 1))
 					   (+ m 1)))))
 	      (reverse (cdr (reverse nums))) ; nums w/o last value
 	      (cdr nums))))))) ; nums w/o first value
@@ -112,7 +112,7 @@
   (define (tol-scale x) (* tol (+ (magnitude x) 1e-6)))
   (define (converged? x a b)
     (<= (magnitude (- x (midpoint a b))) (- (* 2 (tol-scale x)) (* 0.5 (- b a)))))
-  
+
   (define golden-ratio (* 0.5 (- 3 (sqrt 5))))
   (define (golden-interpolate x a b)
     (* golden-ratio (if (>= x (midpoint a b)) (- a x) (- b x))))
@@ -140,7 +140,7 @@
 					  step prev-step)
 			  (brent-minimize x new-a new-b v w fx fv fw
 					  step prev-step)))))))))
-	      
+
     (if (converged? x a b)
 	(cons x fx)
 	(if (> (magnitude prev-prev-step) (tol-scale x))
@@ -222,7 +222,7 @@
        (let ((val (apply f args)))
 	 (if (or (null? best-args) (< val best-val))
 	     (begin
-	       (print "extremization: best so far is " 
+	       (print "extremization: best so far is "
 			     val " at " args "\n")
 	       (set! best-val val)
 	       (set! best-args args)))
@@ -281,7 +281,7 @@
 	(if (= (car vals) val)
 	    (cons el (cdr els))
 	    (cons (car els) (replace= val (cdr vals) (cdr els) el)))))
-  
+
   ; replace direction where largest decrease occurred:
   (define (update-dirs decreases dirs p0 p)
     (replace= (apply max decreases) decreases dirs (v- p p0)))
@@ -322,7 +322,7 @@
 (define (find-root f tol x-min x-max)
   (define (midpoint a b) (* 0.5 (+ a b)))
   (define (sign x) (if (< x 0) -1 1))
-  
+
   (define (best-bracket a b x1 x2 fa fb f1 f2)
     (if (positive? (* f1 f2))
 	(if (positive? (* fa f1))
@@ -332,9 +332,9 @@
 	    (list x1 x2 f1 f2)
 	    (list x2 x1 f2 f1))))
 
-  (define (converged? a b x) (< (min (magnitude (- x a)) (magnitude (- x b))) 
+  (define (converged? a b x) (< (min (magnitude (- x a)) (magnitude (- x b)))
 				(* tol (magnitude x))))
-  
+
   ; find the root by Ridder's method:
   (define (ridder a b fa fb)
     (if (or (= fa 0) (= fb 0))
@@ -350,7 +350,7 @@
 		    (if (= fm 0) m x)
 		    (let ((fx (f x)))
 		      (apply ridder (best-bracket a b x m fa fb fx fm))))))))))
-	
+
   (ridder x-min x-max (f x-min) (f x-max)))
 
 ; ****************************************************************
@@ -374,7 +374,7 @@
   (define (in-bounds? x f df a b)
     (negative? (* (- f (* df (- x a)))
 		  (- f (* df (- x b))))))
-	  
+
   (define (newton x a b dx)
     (if (< (abs dx) (abs (* tol x)))
 	x
@@ -422,10 +422,10 @@
     (if (null? prev-a)
 	(list a0)
 	(cons a0 (deriv-a (binary/
-			   (binary- (binary* a0 fac) (car prev-a)) 
+			   (binary- (binary* a0 fac) (car prev-a))
 			   (- fac 1))
 			  (cdr prev-a) (* fac fac0) fac0))))
-  
+
   (define (deriv dx df0 err0 prev-a fac0)
     (let ((a (deriv-a (binary/ (binary- (f (+ x dx)) (f (- x dx))) (* 2 dx))
 		      prev-a fac0 fac0)))
@@ -447,7 +447,7 @@
 		(deriv (/ dx (sqrt fac0)) df err a fac0))))))
 
   (deriv dx 0 1e30 '() 2))
-      
+
 (define (do-derivative-wrap do-deriv f x dx-and-tol)
   (let ((dx (if (> (length dx-and-tol) 0)
 		(car dx-and-tol)
@@ -494,11 +494,11 @@
     (if (null? prev-a)
 	(list a0)
 	(cons a0 (deriv-a (binary/
-			   (binary- (binary* a0 fac) (car prev-a)) 
+			   (binary- (binary* a0 fac) (car prev-a))
 			   (- fac 1))
 			  (cdr prev-a) (* fac fac0) fac0))))
   (define fx (f x))
-  
+
   (define (deriv dx df0 err0 prev-a fac0)
     (let ((a (deriv-a (binary/ (binary- (f (+ x dx)) fx) dx)
 		      prev-a fac0 fac0)))
@@ -520,20 +520,20 @@
 		(deriv (/ dx fac0) df err a fac0))))))
 
   (deriv dx 0 1e30 '() (sqrt 2)))
-      
+
 ; Compute both the first and second derivatives at the same time
 ; (using minimal extra function evaluations).
 (define (do-derivative-wrap2+ do-deriv only2? f x dx-and-tol)
   (define f-memo (memoize f))
   (define (f-deriv y)
-    (if (= y x) 
+    (if (= y x)
 	0.0
-	(binary* (binary+ (f-memo y) 
+	(binary* (binary+ (f-memo y)
 			  (binary- (f-memo x)
 				   (binary* 2.0 (f-memo (* 0.5 (+ x y))))))
 		 (/ 4 (- y x)))))
   (append
-   (if only2? 
+   (if only2?
        (list 0 0)
        (do-derivative-wrap do-deriv f-memo x dx-and-tol))
    (do-derivative-wrap do-deriv f-deriv x dx-and-tol)))
@@ -585,7 +585,7 @@
 	  (binary* (- b a) (binary+ (f a) (f b)))
 	  (let ((steps (pow2 (- n 2))))
 	    (let ((dx (/ (- b a) steps)))
-	      (binary* 
+	      (binary*
 	       dx
 	       (do ((cur-sum 0) (i 0 (+ i 1)) (x (+ a dx) (+ x dx)))
 		   ((>= i steps) cur-sum)
@@ -593,14 +593,14 @@
   (define (trap n sum)
     (let ((newsum (trap0 n sum)))
       (if (and (> n 5)
-	       (or (> n 20) 
+	       (or (> n 20)
 		   (binary= newsum sum)
 		    (< (unary-abs (binary- newsum sum))
 		       (* tol (unary-abs newsum)))))
 	  newsum
 	  (trap (+ n 1) newsum))))
   (trap 1 0.0))
-	  
+
 ; Integrate the multi-dimensional function f from a..b, within the
 ; specified tolerance.  a and b are either numbers (for 1d integrals),
 ; or vectors/lists of the same length giving the bounds in each dimension.
@@ -626,11 +626,11 @@
     (cond ((number? x) (list x))
 	  ((vector? x) (vector->list x))
 	  (else x)))
-  ((if (defined? 'cadaptive-integration) 
+  ((if (defined? 'cadaptive-integration)
        cadaptive-integration ; only compiled when complex nums are available
        adaptive-integration)
-   (lambda (x) (apply f x)) 
-   (to-list a) (to-list b) 
+   (lambda (x) (apply f x))
+   (to-list a) (to-list b)
    (if (null? abstol-and-maxnfe) 0.0 (car abstol-and-maxnfe))
    reltol
    (if (< (length abstol-and-maxnfe) 2) 0 (cadr abstol-and-maxnfe))))

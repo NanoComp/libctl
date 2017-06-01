@@ -57,7 +57,7 @@
       (ax+by 1 (simplex-point-x (car s)) 1 (simplex-sum-x (cdr s)))))
 
 (define (simplex-centroid-x s)
-  (let ((sum (ax+by 1 (simplex-sum-x s) 
+  (let ((sum (ax+by 1 (simplex-sum-x s)
 		    -1 (simplex-point-x (simplex-high s)))))
     (ax+by (/ (- (length s) 1)) sum 0.0 '())))
 
@@ -96,7 +96,7 @@
       (let ((vr (apply f xr)))
 	(if (and (<= vr (simplex-point-val s-h2))
 		 (>= vr (simplex-point-val s-l)))
-	    
+
 	    (simplex-replace s s-h (simplex-point xr vr))
 	    (if (< vr (simplex-point-val s-l))
 		(let ((xe (ax+by (- 1 simplex-expand-ratio) x0
@@ -107,7 +107,7 @@
 			(simplex-replace s s-h (simplex-point xe ve)))))
 		(if (and (< vr  (simplex-point-val s-h))
 			 (> vr  (simplex-point-val s-h2)))
-		    (simplex-contract f (simplex-replace 
+		    (simplex-contract f (simplex-replace
 					 s s-h (simplex-point xr vr)))
 		    (simplex-contract f s))))))))
 
@@ -115,7 +115,7 @@
   (let ((s-h (simplex-high s))
         (s-l (simplex-low s)))
     (if (<= (magnitude (- (simplex-point-val s-h) (simplex-point-val s-l)))
-	    (* 0.5 tol (+ tol (magnitude (simplex-point-val s-h)) 
+	    (* 0.5 tol (+ tol (magnitude (simplex-point-val s-h))
 			  (magnitude (simplex-point-val s-l)))))
 	s-l
 	(begin

@@ -154,8 +154,8 @@ AC_CHECK_FUNCS(scm_make_complex scm_c_make_rectangular scm_variable_set_x scm_c_
 AC_MSG_CHECKING([for SCM_COMPLEXP])
 ok=yes
 AC_TRY_LINK([#if defined(HAVE_LIBGUILE_H)
-#  include <libguile.h> 
-#else 
+#  include <libguile.h>
+#else
 #  include <guile/gh.h>
 #endif
 ], [SCM x; SCM_COMPLEXP(x);], [AC_DEFINE(HAVE_SCM_COMPLEXP, 1, [Define if we have SCM_COMPLEXP])], ok=no)

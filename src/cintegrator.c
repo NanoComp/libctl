@@ -59,7 +59,7 @@
 
 /* numeric type for integrand */
 #include <complex.h>
-typedef complex double num; 
+typedef complex double num;
 #define num_abs cabs
 
 typedef num (*integrand) (unsigned ndim, const double *x, void *);
@@ -71,9 +71,9 @@ typedef num (*integrand) (unsigned ndim, const double *x, void *);
    return value of the function is 0 on success and non-zero if there
    was an error. */
 static int adapt_integrate(integrand f, void *fdata,
-		    unsigned dim, const double *xmin, const double *xmax, 
-		    unsigned maxEval, 
-		    double reqAbsError, double reqRelError, 
+		    unsigned dim, const double *xmin, const double *xmax,
+		    unsigned maxEval,
+		    double reqAbsError, double reqRelError,
 		    num *val, double *err);
 
 /***************************************************************************/
@@ -478,7 +478,7 @@ static unsigned rule15gauss_evalError(rule *r, integrand f, void *fdata,
 	  0.405845151377397166906606412076961,
 	  0.207784955007898467600689403773245,
 	  0.000000000000000000000000000000000
-	  /* xgk[1], xgk[3], ... abscissae of the 7-point gauss rule. 
+	  /* xgk[1], xgk[3], ... abscissae of the 7-point gauss rule.
 	     xgk[0], xgk[2], ... to optimally extend the 7-point gauss rule */
      };
      static const double wg[4] = {  /* weights of the 7-point gauss rule */
@@ -554,7 +554,7 @@ static unsigned rule15gauss_evalError(rule *r, integrand f, void *fdata,
 	       err = min_err;
      }
      ee->err = err;
-     
+
      return 0; /* no choice but to divide 0th dimension */
 }
 
@@ -684,13 +684,13 @@ static int ruleadapt_integrate(rule *r, integrand f, void *fdata, const hypercub
      regions = heap_alloc(1);
 
      heap_push(&regions, eval_region(make_region(h), f, fdata, r));
-     /* another possibility is to specify some non-adaptive subdivisions: 
+     /* another possibility is to specify some non-adaptive subdivisions:
 	if (initialRegions != 1)
 	   partition(h, initialRegions, EQUIDISTANT, &regions, f,fdata, r); */
 
      for (i = 0; i < maxIter; ++i) {
 	  region R, R2;
-	  if (regions.ee.err <= reqAbsError 
+	  if (regions.ee.err <= reqAbsError
 	      || relError(regions.ee) <= reqRelError) {
 	       status = 0; /* converged! */
 	       break;
@@ -713,16 +713,16 @@ static int ruleadapt_integrate(rule *r, integrand f, void *fdata, const hypercub
      return status;
 }
 
-static int adapt_integrate(integrand f, void *fdata, 
-		    unsigned dim, const double *xmin, const double *xmax, 
-		    unsigned maxEval, double reqAbsError, double reqRelError, 
+static int adapt_integrate(integrand f, void *fdata,
+		    unsigned dim, const double *xmin, const double *xmax,
+		    unsigned maxEval, double reqAbsError, double reqRelError,
 		    num *val, double *err)
 {
      rule *r;
      hypercube h;
      esterr ee;
      int status;
-     
+
      if (dim == 0) { /* trivial integration */
 	  *val = f(0, xmin, fdata);
 	  *err = 0;
@@ -744,14 +744,14 @@ static int adapt_integrate(integrand f, void *fdata,
 /***************************************************************************/
 
 /* Compile with -DTEST_INTEGRATOR for a self-contained test program.
-   
+
    Usage: ./integrator <dim> <tol> <integrand> <maxeval>
 
    where <dim> = # dimensions, <tol> = relative tolerance,
    <integrand> is either 0/1/2 for the three test integrands (see below),
    and <maxeval> is the maximum # function evaluations (0 for none).
 */
-   
+
 #ifdef TEST_INTEGRATOR
 
 int count = 0;
@@ -806,7 +806,7 @@ num f2 (unsigned dim, const double *x, void *params)
 	  sum1 += dx1 * dx1;
 	  sum2 += dx2 * dx2;
      }
-     return 0.5 * pow (M_2_SQRTPI / (2. * a), dim) 
+     return 0.5 * pow (M_2_SQRTPI / (2. * a), dim)
 	  * (exp (-sum1 / (a * a)) + exp (-sum2 / (a * a)));
 }
 
@@ -932,10 +932,10 @@ int main(int argc, char **argv)
 
      printf("%u-dim integral, tolerance = %g, integrand = %d\n",
 	    dim, tol, which_integrand);
-     adapt_integrate(f_test, &fdata, 
-		     dim, xmin, xmax, 
+     adapt_integrate(f_test, &fdata,
+		     dim, xmin, xmax,
 		     maxEval, 0, tol, &val, &err);
-     printf("integration val = %g, est. err = %g, true err = %g\n", 
+     printf("integration val = %g, est. err = %g, true err = %g\n",
 	    val, err, num_abs(val - exact_integral(dim, xmax)));
      printf("#evals = %d\n", count);
 
@@ -951,9 +951,9 @@ int main(int argc, char **argv)
 /* libctl interface */
 
 static int adapt_integrate(integrand f, void *fdata,
-		    unsigned dim, const double *xmin, const double *xmax, 
-		    unsigned maxEval, 
-		    double reqAbsError, double reqRelError, 
+		    unsigned dim, const double *xmin, const double *xmax,
+		    unsigned maxEval,
+		    double reqAbsError, double reqRelError,
 		    num *val, double *err);
 
 typedef struct {
@@ -1017,7 +1017,7 @@ SCM cadaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
      }
 
      integral = cadaptive_integration(cf_scm_wrapper, xmin, xmax, n, &f_scm,
-				      abstol, reltol, maxnfe, 
+				      abstol, reltol, maxnfe,
 				      &abstol, &errflag);
 
      free(xmax);
@@ -1034,7 +1034,7 @@ SCM cadaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
 	      fprintf(stderr, "adaptive_integration: lenwork too small\n");
 	      break;
      }
-     
+
      return gh_cons(cnumber2scm(integral), ctl_convert_number_to_scm(abstol));
 }
 

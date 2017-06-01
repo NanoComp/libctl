@@ -1,4 +1,4 @@
-/* libctl: flexible Guile-based control files for scientific software 
+/* libctl: flexible Guile-based control files for scientific software
  * Copyright (C) 1998-2014 Massachusetts Institute of Technology and Steven G. Johnson
  *
  * This library is free software; you can redistribute it and/or
@@ -10,7 +10,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
@@ -97,7 +97,7 @@ char *ctl_fix_path(const char *path)
 	  SCM include_dir = gh_lookup("include-dir");
 	  if (include_dir != SCM_UNDEFINED) {
 	       char *dir = ctl_convert_string_to_c(include_dir);
-	       newpath = (char *) malloc(sizeof(char) * (strlen(dir) + 
+	       newpath = (char *) malloc(sizeof(char) * (strlen(dir) +
 							 strlen(path) + 2));
 	       strcpy(newpath, dir);
 	       free(dir);
@@ -222,7 +222,7 @@ matrix3x3 matrix3x3_mult(matrix3x3 m1, matrix3x3 m2)
 matrix3x3 matrix3x3_transpose(matrix3x3 m)
 {
      matrix3x3 mt;
-    
+
      mt.c0.x = m.c0.x;
      mt.c1.x = m.c0.y;
      mt.c2.x = m.c0.z;
@@ -256,11 +256,11 @@ matrix3x3 matrix3x3_inverse(matrix3x3 m)
      minv.c0.x = detinv * (m.c1.y * m.c2.z - m.c2.y * m.c1.z);
      minv.c1.y = detinv * (m.c0.x * m.c2.z - m.c2.x * m.c0.z);
      minv.c2.z = detinv * (m.c1.y * m.c0.x - m.c0.y * m.c1.x);
-     
+
      minv.c0.z = detinv * (m.c0.y * m.c1.z - m.c1.y * m.c0.z);
      minv.c0.y = -detinv * (m.c0.y * m.c2.z - m.c2.y * m.c0.z);
      minv.c1.z = -detinv * (m.c0.x * m.c1.z - m.c1.x * m.c0.z);
-     
+
      minv.c2.x = detinv * (m.c1.x * m.c2.y - m.c1.y * m.c2.x);
      minv.c1.x = -detinv * (m.c1.x * m.c2.z - m.c1.z * m.c2.x);
      minv.c2.y = -detinv * (m.c0.x * m.c2.y - m.c0.y * m.c2.x);
@@ -445,7 +445,7 @@ static SCM make_vector3(SCM x, SCM y, SCM z)
 SCM vector32scm(vector3 v)
 {
   return make_vector3(ctl_convert_number_to_scm(v.x),
-		      ctl_convert_number_to_scm(v.y), 
+		      ctl_convert_number_to_scm(v.y),
 		      ctl_convert_number_to_scm(v.z));
 }
 
@@ -508,7 +508,7 @@ cmatrix3x3 scm2cmatrix3x3(SCM sm)
 SCM cvector32scm(cvector3 v)
 {
   return make_vector3(cnumber2scm(v.x),
-		      cnumber2scm(v.y), 
+		      cnumber2scm(v.y),
 		      cnumber2scm(v.z));
 }
 
@@ -606,9 +606,9 @@ SCM ctl_get_SCM(char *identifier)
    the correct module somehow; I also used this function to replace
    gh_lookup, which broke in Guile 1.3 as well...sigh.)
 
-   Note that I can't call "set!" because it is really a macro. 
+   Note that I can't call "set!" because it is really a macro.
 
-   All the ugliness is confined to the set_value() routine, though.  
+   All the ugliness is confined to the set_value() routine, though.
 
    Update: in Guile 1.5, we can call scm_variable_set_x (equivalent
    to variable-set!) to set values of variables, which are looked up
@@ -841,7 +841,7 @@ MAKE_LIST(cvector32scm)
 list make_cmatrix3x3_list(int num_items, const cmatrix3x3 *items)
 MAKE_LIST(cmatrix3x32scm)
 
-#define NO_CONVERSION  
+#define NO_CONVERSION
 
 list make_list_list(int num_items, const list *items)
 MAKE_LIST(NO_CONVERSION)
@@ -870,7 +870,7 @@ boolean object_is_member(char *type_name, object o)
 static SCM object_property_value(object o, char *property_name)
 {
   return(gh_call2(gh_lookup("object-property-value"),
-		  o, 
+		  o,
 		  gh_symbol2scm(property_name)));
 }
 

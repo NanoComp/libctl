@@ -1,4 +1,4 @@
-/* libctl: flexible Guile-based control files for scientific software 
+/* libctl: flexible Guile-based control files for scientific software
  * Copyright (C) 1998-2014 Massachusetts Institute of Technology and Steven G. Johnson
  *
  * This file may be used without restriction.  It is in the public
@@ -8,7 +8,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * Steven G. Johnson can be contacted at stevenj@alum.mit.edu.
  */
 
@@ -54,7 +54,7 @@ int libctl_quiet = 0;
    Also return, in spec_file_loaded, whether we have loaded
    the specifications file due to a command-line arg.  Also return,
    in continue_run, whether or not to continue the run.  */
-int handle_args(int argc, char *argv[], 
+int handle_args(int argc, char *argv[],
 		boolean *spec_file_loaded, boolean *continue_run)
 {
      int i;
@@ -196,16 +196,16 @@ void main_entry(
 
 #ifdef HAVE_NLOPT
   /* Export the nlopt minimization routine, if available: */
-  gh_new_procedure ("nlopt-minimize", (SCM (*)(void)) nlopt_minimize_scm, 
+  gh_new_procedure ("nlopt-minimize", (SCM (*)(void)) nlopt_minimize_scm,
 		    8, 0, 1);
 #endif
 
   /* Export the adaptive integration routines: */
-  gh_new_procedure ("adaptive-integration", 
+  gh_new_procedure ("adaptive-integration",
 		    (SCM (*)(void)) adaptive_integration_scm, 6, 0, 0);
 
 #ifdef CTL_HAS_COMPLEX_INTEGRATION
-  gh_new_procedure ("cadaptive-integration", 
+  gh_new_procedure ("cadaptive-integration",
 		    (SCM (*)(void)) cadaptive_integration_scm, 6, 0, 0);
 #endif
 
@@ -256,7 +256,7 @@ void main_entry(
   for (; i < argc; ++i) {
     if (strchr(argv[i],'=')) {
       char *eq;
-      char *definestr = (char*) malloc(sizeof(char) * (strlen("(define ") + 
+      char *definestr = (char*) malloc(sizeof(char) * (strlen("(define ") +
 						       strlen(argv[i]) + 2));
       if (!definestr) {
 	   fprintf(stderr, __FILE__ ": out of memory!\n");

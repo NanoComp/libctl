@@ -82,7 +82,7 @@ geometric_object random_object(void)
 			    random_unit_vector3(), myurand(0.5,1.5));
 	      break;
 	 case 3:
-	      o = make_block(m, c, 
+	      o = make_block(m, c,
 #if 1
 			     random_unit_vector3(),
 			     random_unit_vector3(),
@@ -97,7 +97,7 @@ geometric_object random_object(void)
 					  myurand(0.5,1.5)));
 	      break;
 	 case 4:
-	      o = make_ellipsoid(m, c, 
+	      o = make_ellipsoid(m, c,
 				 random_unit_vector3(),
 				 random_unit_vector3(),
 				 random_unit_vector3(),
@@ -231,7 +231,7 @@ static void test_overlap(double tol,
 	  exit(1);
      }
      else
-	  printf("Got %dd overlap %g vs. %g with tol = %e\n", 
+	  printf("Got %dd overlap %g vs. %g with tol = %e\n",
 		 dim,olap,olap0,tol);
      geometric_object_destroy(o);
 }
@@ -258,7 +258,7 @@ int main(void)
 		       ellipsoid_overlap_with_object,
 		       simple_ellip_overlap);
      }
-     
+
      return 0;
 }
 

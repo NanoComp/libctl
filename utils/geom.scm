@@ -1,4 +1,4 @@
-; libctl: flexible Guile-based control files for scientific software 
+; libctl: flexible Guile-based control files for scientific software
 ; Copyright (C) 1998-2014 Massachusetts Institute of Technology and Steven G. Johnson
 ;
 ; This library is free software; you can redistribute it and/or
@@ -10,7 +10,7 @@
 ; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 ; Lesser General Public License for more details.
-; 
+;
 ; You should have received a copy of the GNU Lesser General Public
 ; License along with this library; if not, write to the
 ; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
@@ -59,7 +59,7 @@
 
 (define-class cone cylinder
   (define-property radius2 0 'number))
-	       
+
 (define-class wedge cylinder
   (define-property wedge-angle (* 8 (atan 1)) 'number)
   (define-property wedge-start (vector3 1 0 0) 'vector3)
@@ -74,10 +74,10 @@
 	    (s (object-property-value object 'start))
 	    (e1 (object-property-value object 'e1)))
 	(vector3-cross a e1)))))
-	       
+
 (define-class sphere geometric-object
   (define-property radius no-default 'number non-negative?))
-	       
+
 (define-class block geometric-object
   (define-post-processed-property e1 (vector3 1 0 0) 'vector3 unit-vector3)
   (define-post-processed-property e2 (vector3 0 1 0) 'vector3 unit-vector3)
@@ -167,7 +167,7 @@
 	(u2 (if (>= (length usize) 2) (list-ref usize 1) 1))
 	(u3 (if (>= (length usize) 3) (list-ref usize 2) 1))
 	(s (object-property-value lat 'size)))
-    (let ((b1 (lat->lattice (vector3 u1 0 0))) 
+    (let ((b1 (lat->lattice (vector3 u1 0 0)))
 	  (b2 (lat->lattice (vector3 0 u2 0)))
 	  (b3 (lat->lattice (vector3 0 0 u3)))
 	  (n1 (ceiling (/ (vector3-x s) u1)))
@@ -246,8 +246,8 @@
   (if (vector3? x)
       (matrix3x3*
        (object-property-value geometry-lattice 'basis) x)
-      (matrix3x3* 
-       (matrix3x3* 
+      (matrix3x3*
+       (matrix3x3*
 	(object-property-value geometry-lattice 'basis) x)
        (matrix3x3-inverse (object-property-value geometry-lattice 'basis)))))
 
@@ -255,7 +255,7 @@
   (if (vector3? x)
       (matrix3x3*
        (matrix3x3-inverse (object-property-value geometry-lattice 'basis)) x)
-      (matrix3x3* 
+      (matrix3x3*
        (matrix3x3*
 	(matrix3x3-inverse (object-property-value geometry-lattice 'basis)) x)
        (object-property-value geometry-lattice 'basis))))

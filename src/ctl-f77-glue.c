@@ -1,4 +1,4 @@
-/* libctl: flexible Guile-based control files for scientific software 
+/* libctl: flexible Guile-based control files for scientific software
  * Copyright (C) 1998-2014 Massachusetts Institute of Technology and Steven G. Johnson
  *
  * This library is free software; you can redistribute it and/or
@@ -10,7 +10,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
@@ -40,7 +40,7 @@
    this, we require that Fortran callers pass us the length of a
    string as an explicit parameter.  We also have to include ugly
    hacks to accomodate the fact that Cray Fortran compilers pass
-   a data structure instead of a char* for string parameters. 
+   a data structure instead of a char* for string parameters.
 
    4) On some machines, C functions return their results in a way
    that the Fortran compiler can't handle.  To get around this,
@@ -233,7 +233,7 @@ void F77_FUNC(ctlsetstring,CTLSETSTRING)
      (fortran_string identifier, int *length,
       fortran_string value, int *value_length)
 {
-  char *s = fcp2ccp(identifier); 
+  char *s = fcp2ccp(identifier);
   char *v = fcp2ccp(value);
   s[*length] = 0;
   v[*value_length] = 0;
@@ -345,7 +345,7 @@ void F77_FUNC(makeobjectlist,MAKEOBJECTLIST)
 void F77_FUNC(objectismember,OBJECTISMEMBER)
      (fortran_string type_name, int *length, object *o, boolean *result)
 {
-  char *s = fcp2ccp(type_name); s[*length] = 0; 
+  char *s = fcp2ccp(type_name); s[*length] = 0;
   *result = object_is_member(s,*o);
 }
 
@@ -392,7 +392,7 @@ void F77_FUNC(objectobjectproperty,OBJECTOBJECTPROPERTY)
 }
 
 void F77_FUNC(stringobjectproperty,STRINGOBJECTPROPERTY)
-     (object *o, fortran_string property_name, int *length, 
+     (object *o, fortran_string property_name, int *length,
       fortran_string result, int *result_length)
 {
   char *r;
