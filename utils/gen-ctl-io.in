@@ -24,6 +24,7 @@ code=false
 header=false
 cxx=false
 swig=false
+c_only=false
 output_file=""
 
 while test $# -ge 1; do
@@ -33,6 +34,7 @@ while test $# -ge 1; do
         --code) code=true; header=false; swig=false ;;
         --header) header=true; code=false; swig=false ;;
         --swig) swig=true; header=false; code=false ;;
+        --c-only) c_only=true ;;
         *) break;;
     esac
     shift
@@ -117,7 +119,7 @@ fi
 echo >> $output_file
 
 (@GUILE@ -l $libctl_dir/base/include.scm \
-      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (set"'!'" cxx $cxx) (include "'"'"$spec_file"'"'") (output-header)" >> $output_file) || ok=no
+      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (set"'!'" cxx $cxx) (include "'"'"$spec_file"'"'") (set! ctl-io-c-only? $c_only) (output-header)" >> $output_file) || ok=no
 
 if test $ok = no; then rm -f $output_file; exit 1; fi
 
@@ -170,7 +172,7 @@ using namespace ctlio;
 EOF
 
 (@GUILE@ -l $libctl_dir/base/include.scm \
-      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (set"'!'" cxx $cxx) (include "'"'"$spec_file"'"'") (output-source)" >> $output_file) || ok=no
+      -c "(include "'"'"$libctl_dir/base/ctl.scm"'"'") (include "'"'"$libctl_dir/utils/ctl-io.scm"'"'") (set"'!'" cxx $cxx) (include "'"'"$spec_file"'"'") (set! ctl-io-c-only? $c_only) (output-source)" >> $output_file) || ok=no
 
 if test $ok = no; then rm -f $output_file; exit 1; fi
 

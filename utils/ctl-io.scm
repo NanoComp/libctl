@@ -852,34 +852,49 @@
 
 ; ***************************************************************************
 
+(define ctl-io-c-only? false)
+
 (define (output-header)
-  (display-c-class-decls)
-  (declare-vars-header)
-  (print "extern int num_read_input_vars;\n")
-  (print "extern int num_write_output_vars;\n\n")
-  (print "extern SCM read_input_vars(void);\n")
-  (print "extern SCM write_output_vars(void);\n")
-  (print "extern SCM destroy_input_vars(void);\n")
-  (print "extern SCM destroy_output_vars(void);\n\n")
-  (output-external-functions-header)
-  (output-class-input-functions-header)
-  (output-class-copy-functions-header)
-  (output-class-equal-functions-header)
-  (output-class-destruction-functions-header)
-)
+  (if ctl-io-c-only?
+      (begin
+        (display-c-class-decls)
+        (declare-vars-header)
+        (output-class-copy-functions-header)
+        (output-class-equal-functions-header)
+	(output-class-destruction-functions-header))
+      (begin
+        (display-c-class-decls)
+        (declare-vars-header)
+        (print "extern int num_read_input_vars;\n")
+        (print "extern int num_write_output_vars;\n\n")
+        (print "extern SCM read_input_vars(void);\n")
+        (print "extern SCM write_output_vars(void);\n")
+        (print "extern SCM destroy_input_vars(void);\n")
+        (print "extern SCM destroy_output_vars(void);\n\n")
+        (output-external-functions-header)
+        (output-class-input-functions-header)
+        (output-class-copy-functions-header)
+        (output-class-equal-functions-header)
+        (output-class-destruction-functions-header))))
 
 (define (output-source)
-  (declare-vars-source)
-  (print
-   "int " (ns0) "num_read_input_vars = 0; /* # calls to read_input_vars */\n"
-   "int " (ns0) "num_write_output_vars = 0; /* # calls to read_input_vars */\n\n")
-  (output-class-input-functions-source)
-  (output-class-copy-functions-source)
-  (output-class-equal-functions-source)
-  (output-class-destruction-functions-source)
-  (input-vars-function)
-  (output-vars-function)
-  (destroy-input-vars-function)
-  (destroy-output-vars-function)
-  (output-external-functions-source))
-
+  (if ctl-io-c-only?
+      (begin
+        (declare-vars-source)
+        (output-class-copy-functions-source)
+        (output-class-equal-functions-source)
+        (output-class-destruction-functions-source))
+      (begin
+        (declare-vars-source)
+        (print
+         "int " (ns0) "num_read_input_vars = 0; /* # calls to read_input_vars */\n"
+         "int " (ns0) "num_write_output_vars = 0; /* # calls to read_input_vars */\n\n")
+        (output-class-input-functions-source)
+        (output-class-copy-functions-source)
+        (output-class-equal-functions-source)
+        (output-class-destruction-functions-source)
+        (input-vars-function)
+        (output-vars-function)
+        (destroy-input-vars-function)
+        (destroy-output-vars-function)
+        (output-external-functions-source))))

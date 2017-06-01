@@ -99,6 +99,18 @@ extern int cmatrix3x3_equal(cmatrix3x3 m1, cmatrix3x3 m2);
 
 /**************************************************************************/
 
+  /* multi-dimensional integration routines */
+
+typedef number (*multivar_func) (integer, number *, void *);
+
+extern number adaptive_integration(multivar_func f, number *xmin, number *xmax,
+				   integer n, void *fdata,
+				   number abstol, number reltol,
+				   integer maxnfe,
+				   number *esterr, integer *errflag);
+
+/**************************************************************************/
+
 #ifdef __cplusplus
 	   }                               /* extern "C" */
 #endif                          /* __cplusplus */

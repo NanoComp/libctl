@@ -45,7 +45,7 @@ GEN_CTL_IO = @GEN_CTL_IO@
 
 # location of libctl headers and library for this project
 LIBCTL_CPPFLAGS = -I$(top_srcdir)/utils -I$(top_builddir)/src
-LIBCTL = $(top_builddir)/src/libctl.la # change to -lctl for your project
+LIBCTL = $(top_builddir)/src/libctl.la $(LIBGUILE) # change to -lctl -lguile for your project
 
 ##############################################################################
 #   don't (normally) edit below except to replace "example" with your name   #

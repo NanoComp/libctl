@@ -22,10 +22,6 @@
 #ifndef GEOM_H
 #define GEOM_H
 
-#ifndef CTL_IO_H
-#  include <ctlgeom-types.h>
-#endif
-
 #ifdef CXX_CTL_IO
 #define MATERIAL_TYPE ctlio::material_type
 #define GEOMETRIC_OBJECT ctlio::geometric_object
@@ -43,6 +39,11 @@ extern "C" {
 #endif                          /* __cplusplus */
 
 /**************************************************************************/
+
+#ifndef CTL_IO_H
+#  include <ctlgeom-types.h>
+extern void display_geometric_object_info(int indentby, geometric_object o);
+#endif
 
 extern void geom_initialize(void);
 extern void geom_fix_object(GEOMETRIC_OBJECT o);

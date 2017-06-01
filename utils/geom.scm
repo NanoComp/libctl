@@ -20,6 +20,8 @@
 
 ; ****************************************************************
 
+(set! ctl-io-c-only? true)
+
 ; hackery to define material-type if it is not defined, required by
 ; the fact that Guile 2.x won't allow us to put define-class inside
 ; an "if" statement.

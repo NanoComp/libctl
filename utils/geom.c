@@ -23,7 +23,9 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "ctl-io.h"
+#ifndef LIBCTLGEOM
+#  include "ctl-io.h"
+#endif
 #include <ctlgeom.h>
 
 #ifdef CXX_CTL_IO
@@ -1887,6 +1889,8 @@ void geom_box_tree_stats(geom_box_tree t, int *depth, int *nobjects)
 
 /**************************************************************************/
 
+#ifndef LIBCTLGEOM
+
 vector3 get_grid_size(void)
 {
      return ctl_convert_vector3_to_c(gh_call0(gh_lookup("get-grid-size")));
@@ -1905,6 +1909,8 @@ void get_grid_size_n(int *nx, int *ny, int *nz)
      *ny = (int) grid_size.y;
      *nz = (int) grid_size.z;
 }
+
+#endif
 
 /**************************************************************************/
 

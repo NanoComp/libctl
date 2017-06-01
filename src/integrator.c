@@ -933,7 +933,7 @@ int main(int argc, char **argv)
 /*************************************************************************/
 /* libctl interface */
 
-#include "ctl.h"
+#include "ctl-math.h"
 
 static int adapt_integrate(integrand f, void *fdata,
 		    unsigned dim, const double *xmin, const double *xmax,
@@ -951,6 +951,10 @@ number adaptive_integration(multivar_func f, number *xmin, number *xmax,
 				maxnfe, abstol, reltol, &val, esterr);
      return val;
 }
+
+#ifndef LIBCTLGEOM
+
+#include "ctl.h"
 
 /* from subplex.c */
 extern number f_scm_wrapper(integer n, number *x, void *f_scm_p);
@@ -1005,5 +1009,7 @@ SCM adaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
      return gh_cons(ctl_convert_number_to_scm(integral),
 		    ctl_convert_number_to_scm(abstol));
 }
+
+#endif /* !LIBCTLGEOM */
 
 #endif

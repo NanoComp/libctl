@@ -63,6 +63,9 @@ AC_SUBST(GUILE)
 # seems to be needed on ubuntu (issue #1):
 AC_CHECK_LIB(m, sqrt)
 
+noguile_LIBS=$LIBS
+LIBGUILE=""
+
 AC_CHECK_PROG(GUILE_CONFIG, guile-config, guile-config, unknown)
 if test "x$GUILE_CONFIG" = "xunknown"; then
 	AC_CHECK_LIB(readline, readline)
@@ -71,12 +74,14 @@ if test "x$GUILE_CONFIG" = "xunknown"; then
 	AC_CHECK_LIB(guile, gh_eval_str, [ok=yes],
 	             [AC_CHECK_LIB(guile, scm_eval_string, [ok=yes])])
         if test $ok = yes; then
+           LIBGUILE="-lguile -ldl -lreadline"
 	   LIBS="-lguile $LIBS"
 	   AC_DEFINE(HAVE_LIBGUILE, 1, [Define if we have -lguile])
 	fi
 else
 	CPPFLAGS="$CPPFLAGS `$GUILE_CONFIG compile`"
-	LIBS="$LIBS `$GUILE_CONFIG link`"
+        LIBGUILE=`$GUILE_CONFIG link`
+	LIBS="$LIBS $LIBGUILE"
 fi
 
 AC_MSG_CHECKING([if linking to guile works])
@@ -85,6 +90,7 @@ AC_TRY_LINK_FUNC(gh_enter, AC_MSG_RESULT(yes),
        [AC_MSG_RESULT(no)
         AC_MSG_ERROR(Guile could not be found)])])
 AC_CHECK_HEADERS([libguile.h guile/gh.h])
+AC_SUBST(LIBGUILE)
 
 ###########################################################################
 
@@ -179,6 +185,8 @@ int main (int argc, char *argv[])
 }
 ], [AC_DEFINE(GH_LOOKUP_OK, 1, [Define if gh_lookup works])], ok=no, ok=no)
 AC_MSG_RESULT($ok)
+
+LIBS=$noguile_LIBS
 
 ###########################################################################
 
