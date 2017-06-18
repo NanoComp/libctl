@@ -125,6 +125,9 @@ extern void get_grid_size_n(int *nx, int *ny, int *nz);
 GEOMETRIC_OBJECT make_geometric_object(MATERIAL_TYPE material, vector3 center);
 GEOMETRIC_OBJECT make_cylinder(MATERIAL_TYPE material, vector3 center,
 			       number radius, number height, vector3 axis);
+GEOMETRIC_OBJECT make_wedge(MATERIAL_TYPE material, vector3 center,
+                            number radius, number height, vector3 axis,
+                            number wedge_angle, vector3 wedge_start);
 GEOMETRIC_OBJECT make_cone(MATERIAL_TYPE material, vector3 center,
 			   number radius, number height, vector3 axis,
 			   number radius2);
