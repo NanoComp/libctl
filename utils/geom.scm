@@ -73,7 +73,6 @@
   (define-derived-property e2 'vector3
     (lambda (object)
       (let ((a (object-property-value object 'axis))
-	    (s (object-property-value object 'start))
 	    (e1 (object-property-value object 'e1)))
 	(vector3-cross a e1)))))
 
