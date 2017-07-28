@@ -1,3 +1,4 @@
+[![Latest Docs](https://readthedocs.org/projects/pip/badge/?version=latest)](http://libctl.readthedocs.io/en/latest/)
 [![Build Status](https://travis-ci.org/stevengj/libctl.svg?branch=master)](https://travis-ci.org/stevengj/libctl)
 
 This is libctl, a [Guile](http://www.gnu.org/software/guile/)-based library for supporting flexible control
