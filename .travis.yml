@@ -18,7 +18,7 @@ matrix:
     - os: osx
       install:
         - brew update
-        - brew install guile autoconf automake libtool
+        - brew install guile
       script:
         - sh autogen.sh --prefix=`pwd`/.local
         - make && make check && make install
