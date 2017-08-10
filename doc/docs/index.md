@@ -1,5 +1,3 @@
-![libctl-logo.png](/img/libctl-logo.png)
-
 Welcome to the manual for **libctl**, a Guile-based library implementing flexible control files for scientific simulations! This documentation is divided into the following sections, which you should read roughly in order if you are new to libctl:
 
 -   [Introduction](/Libctl_Introduction) — The introductory section describes the motivation, history, and high-level structure of libctl.
