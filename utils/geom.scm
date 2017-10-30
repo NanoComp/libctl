@@ -22,16 +22,7 @@
 
 (if (defined? 'ctl-io-c-only?) (set! ctl-io-c-only? true))
 
-; hackery to define material-type if it is not defined, required by
-; the fact that Guile 2.x won't allow us to put define-class inside
-; an "if" statement.
-(define-class mt-hack no-parent
-  (define-property data no-default 'SCM)) ; generic user-defined data
-(set! class-list (cdr class-list)) ; delete mt-hack from list
-(set! mt-hack (cons 'material-type (cdr mt-hack))) ; rename to material-type
-(if (not (defined? 'material-type))
-    (set! class-list (cons mt-hack class-list)))
-(define material-type (if (defined? 'material-type) material-type mt-hack))
+(define MATERIAL-TYPE (if (defined? 'material-type) 'material-type 'SCM))
 
 ; A default material so that we don't have to specify a material for
 ; an object when we just care about its geometry.  If material-type is
@@ -39,13 +30,15 @@
 ; interpret this as equating to default-material (below).  However, we
 ; only define this default if (make material-type) works, i.e. if
 ; defaults exist for all properties (if any) of material-type.
-(define nothing (if (for-all? (class-properties-all material-type)
-			      property-has-default?)
-		    (make material-type)
-		    no-default))
+(define nothing (if (eq? MATERIAL-TYPE 'SCM)
+                    '()
+                    (if (for-all? (class-properties-all material-type)
+                                  property-has-default?)
+                        (make material-type)
+                        no-default)))
 
 (define-class geometric-object no-parent
-  (define-property material nothing 'material-type)
+  (define-property material nothing MATERIAL-TYPE)
   (define-property center no-default 'vector3))
 
 (define-class compound-geometric-object geometric-object
@@ -189,7 +182,7 @@
 ; ****************************************************************
 
 (define-input-var dimensions 3 'integer)
-(define-input-var default-material nothing 'material-type)
+(define-input-var default-material nothing MATERIAL-TYPE)
 (define-input-var geometry-center (vector3 0) 'vector3)
 (define-input-var geometry-lattice (make lattice) 'lattice)
 (define-input-var geometry '() (make-list-type 'geometric-object))
@@ -205,7 +198,7 @@
   'boolean 'vector3 'geometric-object)
 
 ; (define-external-function material-of-point true false
-;   'material-type 'vector3)
+;   MATERIAL-TYPE 'vector3)
 
 (define-external-function display-geometric-object-info false false
   no-return-value 'integer 'geometric-object)

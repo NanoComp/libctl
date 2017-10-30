@@ -25,6 +25,9 @@
 
 #ifndef LIBCTLGEOM
 #  include "ctl-io.h"
+#else
+#  define material_type void*
+   static void material_type_copy(void **src, void **dest) { *dest = *src; }
 #endif
 #include <ctlgeom.h>
 

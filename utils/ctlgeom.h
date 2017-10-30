@@ -23,15 +23,20 @@
 #define GEOM_H
 
 #ifdef CXX_CTL_IO
-#define MATERIAL_TYPE ctlio::material_type
-#define GEOMETRIC_OBJECT ctlio::geometric_object
-#define GEOMETRIC_OBJECT_LIST ctlio::geometric_object_list
-#define LATTICE ctlio::lattice
+#  define MATERIAL_TYPE ctlio::material_type
+#  define GEOMETRIC_OBJECT ctlio::geometric_object
+#  define GEOMETRIC_OBJECT_LIST ctlio::geometric_object_list
+#  define LATTICE ctlio::lattice
 #else
-#define MATERIAL_TYPE material_type
-#define GEOMETRIC_OBJECT geometric_object
-#define GEOMETRIC_OBJECT_LIST geometric_object_list
-#define LATTICE lattice
+#  define MATERIAL_TYPE material_type
+#  define GEOMETRIC_OBJECT geometric_object
+#  define GEOMETRIC_OBJECT_LIST geometric_object_list
+#  define LATTICE lattice
+#endif
+
+#ifndef CTL_IO_H /* for libctlgeom */
+#  undef MATERIAL_TYPE
+#  define MATERIAL_TYPE void*
 #endif
 
 #ifdef __cplusplus

@@ -4,7 +4,7 @@
  initialized from Scheme. */
 
 integer dimensions = 3;
-material_type default_material = { 0 };
+void *default_material = NULL;
 vector3 geometry_center = { 0, 0, 0 };
 lattice geometry_lattice = { { 1,0,0 },
 			     { 0,1,0 },
