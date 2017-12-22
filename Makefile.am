@@ -1,4 +1,7 @@
-SUBDIRS = src utils examples
+SUBDIRS = utils
+if WITH_GUILE
+SUBDIRS += src examples
+endif
 EXTRA_DIST = COPYRIGHT doc base README.md
 ACLOCAL_AMFLAGS = -I m4
 

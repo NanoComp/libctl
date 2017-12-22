@@ -54,9 +54,15 @@ AC_HEADER_STDC
 
 # Find Guile library, flags, etcetera:
 
-AC_CHECK_PROG(GUILE, guile, guile, unknown)
-if test x"$guile_ok" = xunknown; then
-	AC_MSG_ERROR([could not find guile program; check your PATH])
+AC_ARG_WITH(guile, [AC_HELP_STRING([--without-mpi],[disable use of Guile])],
+                   with_guile=$withval, with_guile=yes)
+
+if test x"$with_guile" = xyes; then
+	AC_CHECK_PROG(GUILE, guile, guile, unknown)
+	if test x"$guile_ok" = xunknown; then
+		AC_MSG_WARN([could not find guile program; check your PATH ... disabling guile])
+		with_guile=no
+	fi
 fi
 AC_SUBST(GUILE)
 
@@ -66,35 +72,48 @@ AC_CHECK_LIB(m, sqrt)
 noguile_LIBS=$LIBS
 LIBGUILE=""
 
-AC_CHECK_PROG(GUILE_CONFIG, guile-config, guile-config, unknown)
-if test "x$GUILE_CONFIG" = "xunknown"; then
-	AC_CHECK_LIB(readline, readline)
-	AC_CHECK_LIB(dl, dlopen)
-	ok=no
-	AC_CHECK_LIB(guile, gh_eval_str, [ok=yes],
-	             [AC_CHECK_LIB(guile, scm_eval_string, [ok=yes])])
+if test x"$with_guile" = xyes; then
+	AC_CHECK_PROG(GUILE_CONFIG, guile-config, guile-config, unknown)
+	if test "x$GUILE_CONFIG" = "xunknown"; then
+		AC_CHECK_LIB(readline, readline)
+		AC_CHECK_LIB(dl, dlopen)
+		ok=no
+		AC_CHECK_LIB(guile, gh_eval_str, [ok=yes],
+		             [AC_CHECK_LIB(guile, scm_eval_string, [ok=yes])])
         if test $ok = yes; then
            LIBGUILE="-lguile -ldl -lreadline"
-	   LIBS="-lguile $LIBS"
-	   AC_DEFINE(HAVE_LIBGUILE, 1, [Define if we have -lguile])
-	fi
-else
-	CPPFLAGS="$CPPFLAGS `$GUILE_CONFIG compile`"
+		   LIBS="-lguile $LIBS"
+		   AC_DEFINE(HAVE_LIBGUILE, 1, [Define if we have -lguile])
+	    else
+		   with_guile=no
+		fi
+	else
+		CPPFLAGS="$CPPFLAGS `$GUILE_CONFIG compile`"
         LIBGUILE=`$GUILE_CONFIG link`
-	LIBS="$LIBS $LIBGUILE"
+		LIBS="$LIBS $LIBGUILE"
+	fi
 fi
 
-AC_MSG_CHECKING([if linking to guile works])
-AC_TRY_LINK_FUNC(gh_enter, AC_MSG_RESULT(yes),
-   [AC_TRY_LINK_FUNC(scm_boot_guile, AC_MSG_RESULT(yes),
-       [AC_MSG_RESULT(no)
-        AC_MSG_ERROR(Guile could not be found)])])
-AC_CHECK_HEADERS([libguile.h guile/gh.h])
+
+if test x"$with_guile" = xyes; then
+	AC_MSG_CHECKING([if linking to guile works])
+	AC_TRY_LINK_FUNC(gh_enter, AC_MSG_RESULT(yes),
+	   [AC_TRY_LINK_FUNC(scm_boot_guile, AC_MSG_RESULT(yes),
+	       [AC_MSG_RESULT(no)
+	        AC_MSG_ERROR(Guile linking failed)])])
+	AC_CHECK_HEADERS([libguile.h guile/gh.h])
+fi
+
 AC_SUBST(LIBGUILE)
+AM_CONDITIONAL(WITH_GUILE, test "x$with_guile" != xno)
+
+echo "######################### $with_guile ##############################"
 
 ###########################################################################
 
 # Checks for Guile features:
+
+if test x"$with_guile" = xyes; then
 
 AC_MSG_CHECKING([for modern non-gh interface])
 ok=yes
@@ -185,6 +204,8 @@ int main (int argc, char *argv[])
 }
 ], [AC_DEFINE(GH_LOOKUP_OK, 1, [Define if gh_lookup works])], ok=no, ok=no)
 AC_MSG_RESULT($ok)
+
+fi # with_guile
 
 LIBS=$noguile_LIBS
 
