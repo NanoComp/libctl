@@ -1,0 +1,162 @@
+---
+# Installation
+---
+
+The main effort in installing libctl lies in installing the various prerequisite packages. This requires some understanding of how to install software on Unix systems.
+
+[TOC]
+
+Installation on Linux
+-------------------------
+
+For most [Linux distributions](https://en.wikipedia.org/wiki/Linux_distribution), there should be precompiled packages for most of libctl's prerequisites below, and we *highly* recommend installing those prerequisites using the available packages for your system whenever possible. Using precompiled packages means that you don't have to worry about how to install things manually. You are using packages which have already been tweaked to work well with your system, and usually your packages will be automatically upgraded when you upgrade the rest of your system.
+
+Guile is available as a precompiled package. One thing to be careful of is that many distributions split packages into two parts: one main package for the libraries and programs, and a **devel** package for [header files](https://en.wikipedia.org/wiki/Header_file) and other things needed to compile software using those libraries. You will need to install **both**. So, for example, you will probably need both a `guile` package (probably installed by default) and a `guile-dev` or `guile-devel` package (probably *not* installed by default).
+
+The easiest installation is on [Ubuntu](https://en.wikipedia.org/wiki/Ubuntu_(operating_system)) which has precompiled packages for libctl:
+
+```sh
+apt-get install libctl-dev
+```
+
+Gzipped tarballs of stable versions of the source are available on the [releases page](https://github.com/stevengj/libctl/releases).
+
+Installation on macOS 
+-----------------------
+
+Since [macOS](https://en.wikipedia.org/wiki/macOS) is, at its heart, a Unix system, one can, in principle compile and install libctl and all its prerequisites just as on any other Unix system. However, this process is much easier using the [Homebrew](https://en.wikipedia.org/wiki/Homebrew_(package_management_software)) package to install most of the prerequisites, since it will handle dependencies and other details for you. You will need [administrator privileges](http://support.apple.com/kb/PH3920) on your Mac.
+
+The first steps are:
+
+-   Install [Xcode](https://en.wikipedia.org/wiki/Xcode), the development/compiler package from Apple, free from the [Apple Xcode web page](https://developer.apple.com/xcode/).
+-   Install Homebrew: download from the [Homebrew site](http://brew.sh/) and follow the instructions there.
+-   Run the following commands in the terminal to compile and install the prerequisites. This may take a while to complete because it will install lots of other stuff first
+
+```sh
+brew doctor
+brew install guile
+```
+
+Now, install libctl from source.
+
+```sh
+./configure && make && make install
+```
+
+Unix Installation Basics
+------------------------
+
+### Installation Paths
+
+First, let's review some important information about installing software on Unix systems, especially in regards to installing software in non-standard locations. None of these issues are specific to libctl, but they've caused a lot of confusion among users.
+
+Most of the software below, including libctl, installs under `/usr/local` by default. That is, libraries go in `/usr/local/lib`, programs in `/usr/local/bin`, etc. If you don't have `root` privileges on your machine, you may need to install somewhere else, e.g. under `$HOME/install` (the `install/` subdirectory of your home directory). Most of the programs below use a GNU-style `configure` script, which means that all you would do to install there would be:
+
+```sh
+ ./configure --prefix=$HOME/install
+```
+
+when configuring the program. The directories `$HOME/install/lib` etc. are created automatically as needed.
+
+#### Paths for Configuring
+
+There are two further complications. First, if you install dependencies in a non-standard location like `$HOME/install/lib`, you will need to tell the compilers where to find the libraries and header files that you installed. You do this by passing two variables to `./configure`:
+
+```bash
+./configure LDFLAGS="-L$HOME/install/lib" CPPFLAGS="-I$HOME/install/include"   ...other flags...
+```
+
+Of course, substitute whatever installation directory you used. You may need to include multiple `-L` and `-I` flags separated by spaces if your machine has stuff installed in several non-standard locations.
+
+You might also need to update your `PATH` so that you can run the executables; e.g. if we installed in our home directory as described above, we would do:
+
+```bash
+export PATH="$HOME/install/bin:$PATH"
+```
+
+#### Paths for Running (Shared Libraries)
+
+Second, many of the packages installed below (e.g. Guile) are installed as shared libraries. You need to make sure that your runtime linker knows where to find these shared libraries. The bad news is that every operating system does this in a slightly different way.
+If you installed all of your libraries in a standard location on your operating system (e.g. `/usr/lib`), then the runtime linker will look there already and you don't need to do anything.  Otherwise, if you compile things like `libctl` and install them into a "nonstandard" location (e.g. in your home directory), you will need to tell the runtime linker where to find them.
+
+There are several ways to do this.  Suppose that you installed libraries into the directory `/foo/lib`.   The most robust option is probably to include this path in the linker flags (`LD_LIBRARY_FLAGS` above):
+
+```bash
+./configure LDFLAGS="-L$HOME/install/lib -Wl,-rpath,$HOME/install/lib"   ...other flags...
+```
+
+There are also some other ways.  If you use Linux, have superuser privileges, and are installing in a system-wide location (not your home directory!), you can add the library directory to `/etc/ld.so.conf` and run `/sbin/ldconfig`.
+
+On many systems, you can also specify directories to the runtime linker via the `LD_LIBRARY_PATH` environment variable.   In particular, by `export LD_LIBRARY_PATH="$HOME/install/lib:$LD_LIBRARY_PATH"`; you can add this to your `.profile` file (depending on your shell) to make it run every time you run your shell.   (On MacOS, a security feature called [System Integrity Protection](https://en.wikipedia.org/wiki/System_Integrity_Protection) causes the value of `LD_LIBRARY_PATH` to be ignored, so using environment variables won't work there.)
+
+### Picking a Compiler
+
+It is often important to be consistent about which compiler you employ. This is especially true for C++ software. To specify a particular C compiler `foo`, configure with `./configure CC=foo`; to specify a particular C++ compiler `foo++`, configure with `./configure CXX=foo++`; to specify a particular Fortran compiler `foo90`, configure with `./configure F77=foo90`.
+
+### Linux and BSD Binary Packages
+
+If you are installing on your personal Linux or BSD machine, then precompiled binary packages are likely to be available for many of these packages, and may even have been included with your system. On Debian systems, the packages are in `.deb` format and the built-in `apt-get` program can fetch them from a central repository. On Red Hat, SuSE, and most other Linux-based systems, binary packages are in RPM format.  OpenBSD has its "ports" system, and so on.
+
+**Do not compile something from source if an official binary package is available.**  For one thing, you're just creating pain for yourself.  Worse, the binary package may already be installed, in which case installing a different version from source will just cause trouble.
+
+One thing to watch out for is that libraries like LAPACK, Guile, HDF5, etcetera, will often come split up into two or more packages: e.g. a `guile` package and a `guile-devel` package. You need to install **both** of these to compile software using the library.
+
+Guile
+-----
+
+Guile is an extension/scripting language implementation based on Scheme, and we use it to provide a rich, fully-programmable user interface with minimal effort. It's free, of course, and you can download it from the [Guile homepage](http://www.gnu.org/software/guile/). Guile is typically included with Linux systems.
+
+- **Important:** Most Linux distributions come with Guile already installed. You can check by seeing whether you can run `guile --version` from the command line. In that case, do **not** install your own version of Guile from source &mdash; having two versions of Guile on the same system will cause problems. However, by default most distributions install only the Guile libraries and not the programming headers &mdash; to compile libctl, you should install the **guile-devel** or **guile-dev** package.
+
+### Building From Source
+
+Here we provide instructions for building libctl from source on Ubuntu 16.04.
+
+```bash
+#!/bin/bash
+
+set -e
+
+RPATH_FLAGS="-Wl,-rpath,/usr/local/lib"
+MY_LDFLAGS="-L/usr/local/lib ${RPATH_FLAGS}"
+MY_CPPFLAGS="-I/usr/local/include"
+
+sudo apt-get update
+sudo apt-get -y install     \
+    git                     \
+    guile-2.0-dev           \
+
+mkdir -p ~/install
+
+cd ~/install
+git clone https://github.com/stevengj/libctl.git
+cd libctl/
+sh autogen.sh --enable-shared
+make && sudo make install
+```
+
+Libctl for Developers
+-------------------
+
+If you want to modify the libctl source code, you will want to have a number of additional packages, most importantly:
+
+-   The [Git](https://git-scm.com/) version-control system.
+
+Once you have Git, you can grab the latest development version of libctl with:
+
+```sh
+ git clone https://github.com/stevengj/libctl.git
+```
+
+This gives you a fresh, up-to-date libctl repository in a directory `libctl`. See [git-scm.com](https://git-scm.com/) for more information on using Git; perhaps the most useful command is `git pull`, which you can execute periodically to get any new updates to the development version.
+
+Git will give you an absolutely minimal set of sources; to create a usable libctl directory, you should run:
+
+```sh
+sh autogen.sh
+make
+```
+
+in the `libctl` directory. And subsequently, if you are editing the sources you should include `--enable-maintainer-mode` whenever you reconfigure. To do this, however, you will need a number of additional packages beyond those listed above:
+
+-   GNU [autoconf](https://www.gnu.org/software/autoconf/autoconf.html), [automake](https://www.gnu.org/software/automake/), and [libtool](https://www.gnu.org/software/libtool/libtool.html) &mdash; these are used to create the Makefiles and configure scripts, and to build shared libraries.
