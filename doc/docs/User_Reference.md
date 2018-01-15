@@ -71,7 +71,7 @@ Complex Numbers
 
 Scheme includes full support for complex numbers and arithmetic; all of the ordinary operations (`+`, `*`, `sqrt`, etcetera) just work. For the same reason, you can freely use complex numbers in libctl's vector and matrix functions, below.
 
-To specify a complex number *a*+*b*i, you simply use the syntax `a+bi` if *a* and *b* are constants, and `(make-rectangular a b)` otherwise. You can also specify numbers in "polar" format a\*e<sup><small>ib</small></sup> by the syntax `a@b` or `(make-polar a b)`.
+To specify a complex number *a*+*b*i, you simply use the syntax `a+bi` if *a* and *b* are constants, and `(make-rectangular a b)` otherwise. You can also specify numbers in polar format a\*e<sup><small>ib</small></sup> by the syntax `a@b` or `(make-polar a b)`.
 
 There are a few special functions provided by Scheme to manipulate complex numbers. `(real-part z)` and `(imag-part z)` return the real and imaginary parts of `z`, respectively. `(magnitude z)` returns the absolute value and `(angle z)` returns the phase angle. libctl also provides a `(conj z)` function, below, to return the complex conjugate.
 
@@ -306,7 +306,7 @@ As `find-root`, but `function` should return a `cons` pair of (*function-value .
 (deriv2 function x [dx tolerance])
 ```
 
-Compute the numerical derivative of the given `function` at `x` to within *at best* the specified fractional `tolerance` (defaulting to the best achievable tolerance), using Ridder's method of polynomial extrapolation. `dx` should be a *maximum* displacement in `x` for derivative evaluation; the `function` should change by a significant amount (much larger than the numerical precision) over `dx`. `dx` defaults to 1% of `x` or `0.01`, whichever is larger.
+Compute the numerical derivative of the given `function` at `x` to within *at best* the specified fractional `tolerance` (defaulting to the best achievable tolerance), using Ridder's method of polynomial extrapolation. `dx` should be a *maximum* displacement in `x` for derivative evaluation; the `function` should change by a significant amount (much larger than the numerical precision) over `dx`. `dx` defaults to 1% of `x` or 0.01, whichever is larger.
 
 If the return value of `derivative` is assigned to a variable `result`, then `(derivative-df result)` and `(derivative-df-err result)` give the derivative of the function and an estimate of the numerical error in the derivative, respectively.
 

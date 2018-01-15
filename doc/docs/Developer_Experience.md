@@ -215,10 +215,8 @@ Often, after each run, you will simply want to (re)allocate and assign the outpu
 
 ```
 if (num_write_output_vars > 0)
-     destroy_output_vars();
-```
-
-```
+	destroy_output_vars();
+	
 /* ... allocate & assign the output variables ... */
 ```
 
@@ -250,7 +248,7 @@ Writing your Program
 
 Once the specifications have been written, you have to do very little to support them in your program.
 
-First, you need to generate C code to import/export the input/output variables from/to Guile. This is done automatically by the `gen-ctl-io` script in the `utils/` directory (installed into a `bin` directory by `make` `install`):
+First, you need to generate C code to import/export the input/output variables from/to Guile. This is done automatically by the `gen-ctl-io` script in the `utils/` directory (installed into a `bin` directory by `make install`):
 
 `gen-ctl-io --code specifications-file`
 `gen-ctl-io --header specifications-file`
@@ -263,4 +261,4 @@ For maximum convenience, if you are wisely using GNU autoconf, you should also c
 
 You then merely need to write the functions that you are exporting (see above for how to export functions). This will usually include, at least, a `run` function (see above).
 
-The default `main.c` handles a couple of additional command-line options, including `--verbose` (or `-v`), which sets a global variable `verbose` to 1 (it is otherwise ). You can access this variable (it is intended to enable verbose output in programs) by declaring the global "`extern` `int` `verbose;`" in your program.
+The default `main.c` handles a couple of additional command-line options, including `--verbose` (or `-v`), which sets a global variable `verbose` to 1 (it is otherwise 0). You can access this variable (it is intended to enable verbose output in programs) by declaring the global `extern int verbose` in your program.

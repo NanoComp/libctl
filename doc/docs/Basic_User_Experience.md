@@ -9,7 +9,7 @@ The ctl syntax for all programs using libctl is similar, although the specific p
 A Fictitious Example
 --------------------
 
-For example, suppose that the simulation solves a one-dimensional differential equation and requires an input called "grid-size" specifying the number of grid points used in the discretization of the problem. We might specify this in a ctl file by the statement:
+For example, suppose that the simulation solves a one-dimensional (1d) differential equation and requires an input called "grid-size" specifying the number of grid points used in the discretization of the problem. We might specify this in a ctl file by the statement:
 
 ```scm
 (set! grid-size 128)
