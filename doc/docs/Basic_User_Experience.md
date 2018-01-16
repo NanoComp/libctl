@@ -21,7 +21,7 @@ All input variable settings can follow the format `(set! variable value)`. The p
 (set-param! grid-size 128)
 ```
 
-which works exactly like `set!` except that now `grid-size` can be overridden from the command-line. For this reason, `set-param!` (a libctl extension to Scheme) is usually preferred. See also [Command-line parameters](Advanced_User_Experience#command-line-parameters).
+which works exactly like `set!` except that now `grid-size` can be overridden from the command-line. For this reason, `set-param!` (a libctl extension to Scheme) is usually preferred. See also [Command-Line Parameters](Advanced_User_Experience#command-line-parameters).
 
 Settings of input variables can appear in any order in the file. They can even be omitted completely in many cases, and a reasonable default will be used. Variables can be of many different types, including integers, real numbers, boolean values (`true` and `false`), strings, 3-vectors, and lists. Here is how we might set some parameters of various types:
 
