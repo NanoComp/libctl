@@ -1,13 +1,16 @@
 # Libctl Release Notes
 
-## libctl 3.3
+## libctl 4.0
 
 To be released in January 2018.
 
-* Migrate docs to github/markdown/readthedocs.
-
 * Building `--without-guile` is now possible to build only `libctlgeom`,
   which no longer depends on Guile.
+
+* In libctlgeom, material is no represented by a `void*` rather than
+  by a `struct` wrapping a `void*`.
+
+* Migrate docs to github/markdown/readthedocs.
 
 ## libctl 3.2.2
 
