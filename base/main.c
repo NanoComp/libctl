@@ -131,10 +131,14 @@ static int exists(const char *fname)
 static char *make_name(const char *for_dir, const char *for_base)
 {
      char *dir0, *dir, *base0, *base, *name = 0;
+     size_t ndir;
      dir0 = (char *) malloc(sizeof(char) * (strlen(for_dir) + 1));
      base0 = (char *) malloc(sizeof(char) * (strlen(for_base) + 1));
      strcpy(dir0, for_dir); dir = dirname(dir0);
-     if (strlen(dir)) {
+     ndir = strlen(dir);
+     if (ndir > 0) {
+       if (ndir > 5 && !strcmp(".libs", dir+ndir-5))
+          dir[ndir-5] = 0; /* ignore ".libs" directory suffix from libtool */
 	  strcpy(base0, for_base); base = basename(base0);
 	  name = (char *) malloc(sizeof(char) * (strlen(dir) + 1 +
 						 strlen(base) + 1));
@@ -180,6 +184,9 @@ void main_entry(
   int i;
   boolean spec_file_loaded, continue_run;
   SCM interactive;
+#ifdef HAVE_NO_GH
+  (void) main_entry_data; /* unused */
+#endif
 
   /* Notify Guile of functions that we are making callable from Scheme.
      These are defined in the specifications file, from which the
