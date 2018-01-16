@@ -2,7 +2,7 @@ SUBDIRS = utils
 if WITH_GUILE
 SUBDIRS += src examples
 endif
-EXTRA_DIST = COPYRIGHT doc base README.md
+EXTRA_DIST = COPYRIGHT doc base README.md NEWS.md
 ACLOCAL_AMFLAGS = -I m4
 
 BASE_SCM = base/class.scm base/ctl.scm base/extern-funcs.scm		\
