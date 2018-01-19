@@ -4,6 +4,8 @@
 
 The main effort in installing libctl lies in installing the prerequisite packages. This requires some understanding of how to install software on Unix systems.
 
+The official releases of Libctl can be found on the [releases page on github](https://github.com/stevengj/libctl/releases), and the changes in each version are summarized in the [NEWS file](https://github.com/stevengj/libctl/blob/master/NEWS.md).
+
 [TOC]
 
 Installation on Linux
@@ -98,9 +100,9 @@ sudo apt-get -y install git guile-2.0-dev
 mkdir -p ~/install
 
 cd ~/install
-wget https://github.com/stevengj/libctl/files/1323238/libctl-3.2.2.tar.gz
-tar xvzf libctl-3.2.2.tar.gz
-cd libctl-3.2.2/
+wget https://github.com/stevengj/libctl/releases/download/v4.0.0/libctl-4.0.0.tar.gz
+tar xvzf libctl-4.0.0.tar.gz
+cd libctl-4.0.0/
 ./configure --enable-shared LDFLAGS="-L/usr/local/lib -Wl,-rpath,/usr/local/lib"
 make && sudo make install
 ```
