@@ -4,17 +4,19 @@
 This is libctl, a [Guile](http://www.gnu.org/software/guile/)-based library for supporting flexible control
 files in scientific simulations.
 
-To install libctl, one normally only needs to do:
+The official released versions of Libctl can be found in the [releases page](https://github.com/stevengj/libctl/releases).  See the [Installation section of the manual](http://libctl.readthedocs.io/en/latest/Installation/) for more information, but to install libctl from an official release, one normally only needs to do:
 
     ./configure
     make
     make install
 
 Files are installed under `/usr/local` by default, but this can be
-changed by passing `--prefix=<dir>` to `configure`.
+changed by passing `--prefix=<dir>` to `configure`.  (To build from a
+git clone, you first need to run the `autogen.sh` script.)
 
-Documentation can be found in [ReadTheDocs](https://libctl.readthedocs.io) or in the `doc/` directory, and an example
-program in the `examples/ directory`.  The main source code for libctl
+Documentation can be found in [the Libctl
+manual](https://libctl.readthedocs.io), and an example program is
+located in the `examples/ directory`.  The main source code for libctl
 is in the `base/` and `utils/` directories.
 
 In `utils/geom.*`, you can find specification files and functions for
