@@ -2,7 +2,7 @@
 
 ## libctl 4.0
 
-To be released in January 2018.
+1/18/2018
 
 * Building `--without-guile` is now possible to build only `libctlgeom`,
   which no longer depends on Guile.
