@@ -2,8 +2,7 @@
 [![Build Status](https://travis-ci.org/stevengj/libctl.svg?branch=master)](https://travis-ci.org/stevengj/libctl)
 
 This is libctl, a [Guile](http://www.gnu.org/software/guile/)-based library for supporting flexible control
-files in scientific simulations.  libctl was written by Steven G. Johnson,
-and its home page is: http://ab-initio.mit.edu/libctl
+files in scientific simulations.
 
 To install libctl, one normally only needs to do:
 
@@ -14,7 +13,7 @@ To install libctl, one normally only needs to do:
 Files are installed under `/usr/local` by default, but this can be
 changed by passing `--prefix=<dir>` to `configure`.
 
-Documentation can be found [in the libctl manual online](http://ab-initio.mit.edu/wiki/index.php/Libctl_manual) or in the `doc/` directory, and an example
+Documentation can be found in [ReadTheDocs](https://libctl.readthedocs.io) or in the `doc/` directory, and an example
 program in the `examples/ directory`.  The main source code for libctl
 is in the `base/` and `utils/` directories.
 

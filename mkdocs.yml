@@ -27,13 +27,13 @@ extra_javascript:
  - 'js/extra.js'
 
 pages:
-- Libctl Overview: index.md
-- Libctl Manual:
-    - Introduction: Libctl_Introduction.md
-    - Basic user experience: Libctl_Basic_User_Experience.md
-    - Advanced user experience: Libctl_Advanced_User_Experience.md
-    - Developer experience: Libctl_Developer_Experience.md
-    - User reference: Libctl_User_Reference.md
-    - Guile and scheme links: Guile_and_Scheme_links.md
-- License and copyright: Libctl_License_and_Copyright.md
-- Release notes: Libctl_release_notes.md
+- Overview: index.md
+- Introduction: Introduction.md
+- Installation: Installation.md
+- Basic User Experience: Basic_User_Experience.md
+- Advanced User Experience: Advanced_User_Experience.md
+- Developer Experience: Developer_Experience.md
+- User Reference: User_Reference.md
+- Guile and Scheme Information: Guile_and_Scheme_Information.md
+- License and Copyright: License_and_Copyright.md
+- Release Notes: Release_Notes.md
