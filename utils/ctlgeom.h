@@ -145,6 +145,17 @@ GEOMETRIC_OBJECT make_ellipsoid(MATERIAL_TYPE material, vector3 center,
 				vector3 e1, vector3 e2, vector3 e3,
 				vector3 size);
 
+// routines in prism.c
+GEOMETRIC_OBJECT make_prism(MATERIAL_TYPE material,
+			    vector3 *vertices, int num_vertices,
+			    double height, vector3 axis);
+
+void get_prism_bounding_box(prism *prsm, geom_box *box);
+int intersect_line_with_prism(vector3 p, vector3 d, prism *prsm, double **sarray);
+boolean point_in_prism(vector3 p, prism *prsm);
+vector3 normal_to_prism(vector3 p, prism *prsm);
+void display_prism_info(int indentby, prism *prsm);
+
 
 /**************************************************************************/
 

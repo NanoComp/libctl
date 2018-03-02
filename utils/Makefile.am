@@ -6,7 +6,7 @@ noinst_PROGRAMS = geomtst
 
 EXTRA_DIST = gen-ctl-io.in README geom.scm geom-ctl-io-defaults.c nlopt.c
 
-libctlgeom_la_SOURCES = geom.c $(top_srcdir)/src/ctl-math.c $(top_srcdir)/src/integrator.c geom-ctl-io.c ctlgeom-types.h
+libctlgeom_la_SOURCES = geom.c $(top_srcdir)/src/ctl-math.c $(top_srcdir)/src/integrator.c geom-ctl-io.c prism.c ctlgeom-types.h
 libctlgeom_la_LDFLAGS = -version-info @SHARED_VERSION_INFO@
 libctlgeom_la_CPPFLAGS = -DLIBCTLGEOM
 
@@ -38,6 +38,11 @@ geom-ctl-io.c: ctl-io.c
 	sed 's,ctl-io\.h,ctlgeom-types.h,;s,/.* Input variables .*/,@#include "geom-ctl-io-defaults.c"@#if 0@,;s,/.* Output variables .*/,#endif@,' ctl-io.c | tr '@' '\n' > $@
 
 endif
+
+check_PROGRAMS = test-prism
+
+test_prism_SOURCES = test-prism.c
+test_prism_LDADD   = libctlgeom.la
 
 clean-local:
 	rm -f ctl-io.[ch] nlopt-constants.scm

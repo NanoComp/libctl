@@ -21,6 +21,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 
 #ifndef LIBCTLGEOM
@@ -59,6 +60,7 @@ using namespace ctlio;
 #endif
 
 #define K_PI 3.14159265358979323846
+#define CHECK(cond, s) if (!(cond)){fprintf(stderr,s "\n");exit(EXIT_FAILURE);}
 
 /**************************************************************************/
 
@@ -122,6 +124,10 @@ void geom_fix_object(geometric_object o)
 	      m.c2 = o.subclass.block_data->e3;
 	      o.subclass.block_data->projection_matrix = matrix3x3_inverse(m);
 	      break;
+	 }
+	 case GEOM PRISM:
+	 {    
+	      // FIXME not really sure what to do here
 	 }
 	 case GEOM COMPOUND_GEOMETRIC_OBJECT:
 	 {
@@ -204,6 +210,19 @@ void geom_initialize(void)
      geometry.num_items = 0;
      geometry.items = 0;
 }
+
+/**************************************************************************/
+/* like intersect_line_with_object, but allows for arbitrarily many       */
+/* intersections (not just 2) to accommodate non-star-shaped objects.     */
+/* if svalues is nonzero, it points on return to a newly allocated buffer */
+/* that must be free()d by the caller.                                    */
+/**************************************************************************/
+#if HAVE_PRISM
+int intersect_line_with_prism(vector3 p, vector3 d, prism *prsm,
+			      double **svalues)
+{
+}
+#endif
 
 /**************************************************************************/
 
@@ -297,6 +316,10 @@ boolean point_in_fixed_pobjectp(vector3 p, geometric_object *o)
 	}
       }
     }
+  case GEOM PRISM:
+    {
+      return point_in_prism(r, o->subclass.prism_data);
+    }
   case GEOM COMPOUND_GEOMETRIC_OBJECT:
     {
 	 int i;
@@ -348,6 +371,8 @@ vector3 to_geom_object_coords(vector3 p, geometric_object o)
       if (size.z != 0.0) proj.z /= size.z;
       return vector3_plus(half, proj);
     }
+/* case GEOM PRISM:
+    NOT YET IMPLEMENTED */
   }
 }
 
@@ -378,6 +403,8 @@ vector3 from_geom_object_coords(vector3 p, geometric_object o)
 		     vector3_scale(size.z * p.z, o.subclass.block_data->e3))
 		));
     }
+/* case GEOM PRISM:
+    NOT YET IMPLEMENTED */
   }
 }
 
@@ -448,7 +475,11 @@ vector3 normal_to_fixed_object(vector3 p, geometric_object o)
 	  return matrix3x3_transpose_vector3_mult(
 	       o.subclass.block_data->projection_matrix, proj);
 	}
-      }
+      } // switch
+    } // case GEOM BLOCK
+  case GEOM PRISM:
+    { 
+      return normal_to_prism(r, o.subclass.prism_data);
     }
   default:
        return r;
@@ -641,6 +672,9 @@ void CTLIO display_geometric_object_info(int indentby, geometric_object o)
 		       break;
 	      }
 	      break;
+	 case GEOM PRISM:
+	      printf("prism");
+	      break;
 	 case GEOM COMPOUND_GEOMETRIC_OBJECT:
 	      printf("compound object");
 	      break;
@@ -685,6 +719,9 @@ void CTLIO display_geometric_object_info(int indentby, geometric_object o)
 		     o.subclass.block_data->e3.x,
                      o.subclass.block_data->e3.y,
                      o.subclass.block_data->e3.z);
+	      break;
+	 case GEOM PRISM:
+	      display_prism_info(indentby, o.subclass.prism_data);
 	      break;
 	 case GEOM COMPOUND_GEOMETRIC_OBJECT:
 	 {
@@ -734,7 +771,7 @@ int intersect_line_with_object(vector3 p, vector3 d, geometric_object o,
 		   s[1] = (b2 - discrim) / a;
 		   return 2;
 	      }
-	 }
+	 } // case GEOM SPHERE
 	 case GEOM CYLINDER: {
 	      vector3 dm = matrix3x3_vector3_mult(geometry_lattice.metric, d);
 	      vector3 pm = matrix3x3_vector3_mult(geometry_lattice.metric, p);
@@ -796,7 +833,7 @@ int intersect_line_with_object(vector3 p, vector3 d, geometric_object o,
 	      }
 	      if (ret == 2 && s[0] == s[1]) ret = 1;
 	      return ret;
-	 }
+	 } // case GEOM CYLINDER
 	 case GEOM BLOCK:
 	 {
 	      vector3 dproj = matrix3x3_vector3_mult(o.subclass.block_data->projection_matrix, d);
@@ -867,7 +904,15 @@ int intersect_line_with_object(vector3 p, vector3 d, geometric_object o,
 		       }
 		  }
 	      }
-	 }
+	 } // case GEOM BLOCK
+	 case GEOM PRISM:
+	 { double *sprism=0;
+           int n=intersect_line_with_prism(p, d, o.subclass.prism_data, &sprism);
+           CHECK( n<=2, "more than 2 intersections in intersect_line_with_object");
+           memcpy(s, sprism, n*sizeof(double));
+           if (n>0) free(sprism);
+           return n;
+	 } // case GEOM PRISM
 	 default:
 	      return 0;
      }
@@ -1140,6 +1185,11 @@ void geom_get_bounding_box(geometric_object o, geom_box *box)
 	        vector3_plus(corner, vector3_plus(s1, vector3_plus(s2, s3))));
 	      break;
 	 }
+	 case GEOM PRISM:
+           get_prism_bounding_box(o.subclass.prism_data, box);
+           box->low=vector3_plus(box->low,o.center);
+           box->high=vector3_plus(box->high,o.center);
+           break;
 	 case GEOM COMPOUND_GEOMETRIC_OBJECT:
 	 {
 	      int i;
@@ -1410,8 +1460,6 @@ static int object_in_box(geometric_object o, vector3 shiftby,
      geom_box_shift(obj_b, shiftby);
      return geom_boxes_intersect(obj_b, b);
 }
-
-#define CHECK(cond, s) if (!(cond)){fprintf(stderr,s "\n");exit(EXIT_FAILURE);}
 
 static geom_box_tree new_geom_box_tree(void)
 {
