@@ -230,7 +230,7 @@ int intersect_line_with_prism(vector3 p, vector3 d, prism *prsm, double **sarray
 }
 
 vector3 normal_to_prism(vector3 p, prism *prsm)
-{
+{ // not implemented yet
 }
 
 /***************************************************************/
