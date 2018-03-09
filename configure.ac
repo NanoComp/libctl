@@ -54,7 +54,7 @@ AC_HEADER_STDC
 
 # Find Guile library, flags, etcetera:
 
-AC_ARG_WITH(guile, [AC_HELP_STRING([--without-mpi],[disable use of Guile])],
+AC_ARG_WITH(guile, [AC_HELP_STRING([--without-guile],[disable use of Guile])],
                    with_guile=$withval, with_guile=yes)
 
 if test x"$with_guile" = xyes; then
