@@ -129,6 +129,7 @@ void geom_fix_object(geometric_object o)
 	 {    
 	      // FIXME not really sure what to do here
 	 }
+	 break;
 	 case GEOM COMPOUND_GEOMETRIC_OBJECT:
 	 {
 	      int i;
@@ -210,19 +211,6 @@ void geom_initialize(void)
      geometry.num_items = 0;
      geometry.items = 0;
 }
-
-/**************************************************************************/
-/* like intersect_line_with_object, but allows for arbitrarily many       */
-/* intersections (not just 2) to accommodate non-star-shaped objects.     */
-/* if svalues is nonzero, it points on return to a newly allocated buffer */
-/* that must be free()d by the caller.                                    */
-/**************************************************************************/
-#if HAVE_PRISM
-int intersect_line_with_prism(vector3 p, vector3 d, prism *prsm,
-			      double **svalues)
-{
-}
-#endif
 
 /**************************************************************************/
 
@@ -318,7 +306,7 @@ boolean point_in_fixed_pobjectp(vector3 p, geometric_object *o)
     }
   case GEOM PRISM:
     {
-      return point_in_prism(r, o->subclass.prism_data);
+      return point_in_prism(o->subclass.prism_data, p);
     }
   case GEOM COMPOUND_GEOMETRIC_OBJECT:
     {
@@ -479,7 +467,7 @@ vector3 normal_to_fixed_object(vector3 p, geometric_object o)
     } // case GEOM BLOCK
   case GEOM PRISM:
     { 
-      return normal_to_prism(r, o.subclass.prism_data);
+      return normal_to_prism(o.subclass.prism_data, r);
     }
   default:
        return r;
@@ -907,7 +895,7 @@ int intersect_line_with_object(vector3 p, vector3 d, geometric_object o,
 	 } // case GEOM BLOCK
 	 case GEOM PRISM:
 	 { double *sprism=0;
-           int n=intersect_line_with_prism(p, d, o.subclass.prism_data, &sprism);
+           int n=intersect_line_with_prism(o.subclass.prism_data, p, d, &sprism);
            CHECK( n<=2, "more than 2 intersections in intersect_line_with_object");
            memcpy(s, sprism, n*sizeof(double));
            if (n>0) free(sprism);
@@ -1186,10 +1174,10 @@ void geom_get_bounding_box(geometric_object o, geom_box *box)
 	      break;
 	 }
 	 case GEOM PRISM:
+	 {
            get_prism_bounding_box(o.subclass.prism_data, box);
-           box->low=vector3_plus(box->low,o.center);
-           box->high=vector3_plus(box->high,o.center);
            break;
+	 }
 	 case GEOM COMPOUND_GEOMETRIC_OBJECT:
 	 {
 	      int i;

@@ -70,6 +70,22 @@ using namespace ctlio;
 #define CHECK(cond, s) if (!(cond)){fprintf(stderr,s "\n");exit(EXIT_FAILURE);}
 
 /***************************************************************/
+/* given coordinates of a point in the prism coordinate system,*/
+/* return cartesian coordinates of that point                  */
+/***************************************************************/
+vector3 prism_coordinate_p2c(prism *prsm, vector3 vp)
+{ return vector3_plus(prsm->centroid, matrix3x3_vector3_mult(prsm->m_p2c,vp)); }
+
+vector3 prism_vector_p2c(prism *prsm, vector3 vp)
+{ return matrix3x3_vector3_mult(prsm->m_p2c, vp); }
+
+vector3 prism_coordinate_c2p(prism *prsm, vector3 vc)
+{ return matrix3x3_vector3_mult(prsm->m_c2p, vector3_minus(vc,prsm->centroid)); }
+
+vector3 prism_vector_c2p(prism *prsm, vector3 vc)
+{ return matrix3x3_vector3_mult(prsm->m_c2p, vc); }
+
+/***************************************************************/
 /***************************************************************/
 /***************************************************************/
 void get_prism_bounding_box(prism *prsm, geom_box *box)
@@ -77,13 +93,11 @@ void get_prism_bounding_box(prism *prsm, geom_box *box)
   vector3 *vertices = prsm->vertices.items;
   int num_vertices  = prsm->vertices.num_items;
   double height     = prsm->height;
-  vector3 z0        = {0.0, 0.0, 1.0};
-  vector3 axis      = matrix3x3_vector3_mult(prsm->m_c2p,z0);
 
   // set x,y coordinates of low, high to bounding box 
   // of prism base polygon (in prism coordinate system)
-  vector3 low       = vertices[0];
-  vector3 high      = vertices[0];
+  vector3 low      = vertices[0];
+  vector3 high     = vertices[0];
   for(int nv=1; nv<num_vertices; nv++)
    { low.x  = fmin(low.x, vertices[nv].x);
      low.y  = fmin(low.y, vertices[nv].y);
@@ -93,13 +107,12 @@ void get_prism_bounding_box(prism *prsm, geom_box *box)
 
   // set z coordinates of low, high to upper and lower 
   // prism surfaces (in prism coordinate system)
-  low.z  = -0.5*height;
-  high.z = +0.5*height;
+  low.z  = 0.0;
+  high.z = height;
   
   // convert from prism coordinates to cartesian coordinates
-  matrix3x3 m_p2c = matrix3x3_inverse(prsm->m_c2p);
-  box->low = matrix3x3_vector3_mult(m_p2c, low);
-  box->high = matrix3x3_vector3_mult(m_p2c, high);
+  box->low  = prism_coordinate_p2c(prsm, low);
+  box->high = prism_coordinate_p2c(prsm, high);
 }
 
 /***************************************************************/
@@ -112,8 +125,8 @@ void get_prism_bounding_box(prism *prsm, geom_box *box)
 boolean intersect_line_with_segment(double px, double py, double dx, double dy,
                                     vector3 v1, vector3 v2, double *s)
 {
-  double ax = v1.x,         ay  = v1.y; 
-  double bx = v2.x-v1.x,    by  = v2.y-v1.y;
+  double ax   = v1.x,       ay  = v1.y; 
+  double bx   = v2.x-v1.x,  by  = v2.y-v1.y;
   double M00  = dx,         M10 = dy;
   double M01  = -1.0*bx,    M11 = -1.0*by;
   double RHSx = ax - px,    RHSy = ay - py;
@@ -123,6 +136,22 @@ boolean intersect_line_with_segment(double px, double py, double dx, double dy,
    return 0;
 
   double t = (M00*RHSy-M10*RHSx)/DetM;
+/*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
+double ss = (M11*RHSx-M01*RHSy)/DetM;
+char *str=getenv("PRISM_RAYS");
+if (str&&str[0]=='1')
+{
+FILE *f=fopen("/tmp/prism_rays","a");
+fprintf(f,"#(px,py)=(%e,%e) (dx,dy)=(%e,%e) t=%e s=%e (%s)\n",px,py,dx,dy,t,ss,(t<0.0||t>1.0) ? "no" : "yes");
+fprintf(f,"%e %e %e %e \n",px,py,dx,dy);
+fprintf(f,"%e %e %e %e \n",px+ss*dx,py+ss*dy,dx,dy); 
+fprintf(f,"\n");
+fprintf(f,"%e %e %e %e \n",px,py,dx,dy);
+fprintf(f,"%e %e %e %e \n",ax+t*bx,ay+t*by,dx,dy); 
+fprintf(f,"\n");
+fclose(f);
+}
+/*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
   if (t<0.0 || t>1.0) // intersection of lines does not lie between vertices
    return 0;
 
@@ -136,7 +165,7 @@ boolean intersect_ray_with_segment(double px, double py, double dx, double dy,
 {
   double ss;
   int status=intersect_line_with_segment(px,py,dx,dy,v1,v2,&ss);
-  if (status==0 && ss<0.0)
+  if (status==0 || ss<0.0)
    return 0;
   if (s) *s=ss;
   return 1;
@@ -155,8 +184,8 @@ boolean point_in_polygon(double px, double py, vector3 *vertices, int num_vertic
   int num_side_intersections=0;
   for(int nv=0; nv<num_vertices; nv++)
    num_side_intersections
-    +=intersect_ray_with_segment(px, py, dx, dy, 
-                                 vertices[nv], vertices[(nv+1)%num_vertices], 
+    +=intersect_ray_with_segment(px, py, dx, dy,
+                                 vertices[nv], vertices[(nv+1)%num_vertices],
                                  0);
   return num_side_intersections%2;
 }
@@ -167,7 +196,7 @@ boolean point_in_polygon(double px, double py, vector3 *vertices, int num_vertic
 /* if **sarray is non-null, on return it points to a newly     */
 /* allocated array of length equal to the return value.        */
 /***************************************************************/
-int intersect_line_with_prism(vector3 p, vector3 d, prism *prsm, double **sarray)
+int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double **sarray)
 {
   int num_vertices  = prsm->vertices.num_items;
   vector3 *vertices = prsm->vertices.items;
@@ -175,14 +204,16 @@ int intersect_line_with_prism(vector3 p, vector3 d, prism *prsm, double **sarray
   
   // get coords of p (line origin) and components of d (line slope)
   // in prism coordinate system
-  matrix3x3 m_c2p = prsm->m_c2p;
-  vector3 p_prsm  = matrix3x3_vector3_mult(m_c2p, p);
-  vector3 d_prsm  = matrix3x3_vector3_mult(m_c2p, d);
+  vector3 p_prsm  = prism_coordinate_c2p(prsm,p);
+  vector3 d_prsm  = prism_vector_c2p(prsm,d);
 
-  int num_intersections=0;
-  double *svalues=0;
+  // use length of first edge as a length scale for judging
+  // lengths to be small or large
+  double length_scale = vector3_norm(vector3_minus(vertices[1], vertices[0]));
 
   // identify intersections of line with all prism side surfaces
+  int num_intersections=0;
+  double *svalues=0;
   for(int nv=0; nv<num_vertices; nv++)
    { 
      int nvp1 = nv+1; if (nvp1==num_vertices) nvp1=0;
@@ -200,7 +231,7 @@ int intersect_line_with_prism(vector3 p, vector3 d, prism *prsm, double **sarray
      // the z-axis extrusion of the edge, and determine whether this point lies 
      // inside or outside the height of the prism.
      double z_intersect = p_prsm.z + s*d_prsm.z;
-     if ( height>0.0 && (fabs(z_intersect) > 0.5*height ) )
+     if ( (z_intersect < -1.0e-7*length_scale) || (z_intersect>(1 + 1.0e-7)*length_scale) )
       continue;
 
      num_intersections++;
@@ -229,7 +260,7 @@ int intersect_line_with_prism(vector3 p, vector3 d, prism *prsm, double **sarray
 
 }
 
-vector3 normal_to_prism(vector3 p, prism *prsm)
+vector3 normal_to_prism(prism *prsm, vector3 p)
 { // not implemented yet
 }
 
@@ -257,15 +288,15 @@ void display_prism_info(int indentby, prism *prsm)
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-boolean point_in_prism(vector3 p, prism *prsm)
+boolean point_in_prism(prism *prsm, vector3 xc)
 { 
   vector3 *vertices = prsm->vertices.items;
   int num_vertices  = prsm->vertices.num_items;
   double height     = prsm->height;
-  vector3 p_prsm    = matrix3x3_vector3_mult(prsm->m_c2p, p);
-  if ( fabs(p_prsm.z) > 0.5*prsm->height)
+  vector3 xp        = prism_coordinate_c2p(prsm, xc);
+  if ( fabs(xp.z) > 0.5*prsm->height)
    return 0;
-  return point_in_polygon(p_prsm.x, p_prsm.y, vertices, num_vertices);
+  return point_in_polygon(xp.x, xp.y, vertices, num_vertices);
 }
 
 /***************************************************************/
@@ -303,7 +334,7 @@ GEOMETRIC_OBJECT make_prism(MATERIAL_TYPE material,
    centroid = vector3_plus(centroid, vertices[nv]);
   centroid = vector3_scale(1.0/((double)num_vertices), centroid);
 
-  // make sure all vertices lie in a plane and that plane is normal to axis
+  // make sure all vertices lie in a plane normal to the given axis
   vector3 zhat = unit_vector3(axis);
   for(int nv=0; nv<num_vertices; nv++)
    { int nvp1 = (nv+1) % num_vertices;
@@ -313,57 +344,40 @@ GEOMETRIC_OBJECT make_prism(MATERIAL_TYPE material,
           || vector3_nearly_equal(zhat, vector3_scale(-1.0,zhatp))
         );
      CHECK(axis_normal, "axis not normal to vertex plane in make_prism");
-   };
+   }
 
   // compute rotation matrix that operates on a vector of cartesian coordinates
   // to yield the coordinates of the same point in the prism coordinate system.
   // the prism coordinate system is a right-handed coordinate system
   // in which the prism lies in the xy plane (extrusion axis is the z-axis) 
-  // with centroid at the origin and the first vertex lying on the positive x-axis.
- // vector3 xhat = unit_vector3(vector3_minus(vertices[0],centroid));
-  vector3 xhat = unit_vector3(vector3_minus(vertices[1],vertices[0]));
-  vector3 yhat = unit_vector3(vector3_cross(zhat,xhat));
-
-  matrix3x3 m_p2c;
-  m_p2c.c0 = xhat;
-  m_p2c.c1 = yhat;
-  m_p2c.c2 = zhat;
+  // with centroid at the origin and the first edge lying on the positive x-axis.
+  // note: the prism *centroid* is the center of mass of the planar vertex polygon,
+  //       i.e. it is a point lying on the bottom surface of the prism.
+  //       This is the origin of coordinates in the prism system.
+  //       The *center* of the geometric object is the center of mass of the 
+  //       3D prism. So center = centroid + 0.5*zHat.
+  vector3 xhat    = unit_vector3(vector3_minus(vertices[1],vertices[0]));
+  vector3 yhat    = unit_vector3(vector3_cross(zhat,xhat));
+  matrix3x3 m_p2c = {xhat, yhat, zhat };
   matrix3x3 m_c2p = matrix3x3_inverse(m_p2c);
 
-  // compute the matrix that operates on a vector of lattice coordinates
-  // to yield a vector of cartesian coordinates
-#if 0 
-//FIXME I don't understand what is happening here, but I think
-//it's only necessary for non-square lattices
-  matrix3x3 m_c2l;
-  vector3 x0 = {1.0, 0.0, 0.0};
-  vector3 y0 = {0.0, 1.0, 0.0};
-  vector3 z0 = {0.0, 0.0, 1.0};
-  lattice_normalize(&x0);
-  lattice_normalize(&y0);
-  lattice_normalize(&z0);
-  m_c2l.c0 = x0;
-  m_c2l.c1 = y0;
-  m_c2l.c2 = z0;
-  matrix3x3 m_l2c = matrix3x3_inverse(m_c2l);
-#endif
-
-  //
   prism *prsm = MALLOC1(prism);
   CHECK(prsm, "out of memory");
-  prsm->height             = height;
-  prsm->m_c2p              = m_c2p;
+  prsm->centroid  = centroid;
+  prsm->height    = height;
+  prsm->m_p2c     = m_p2c;
+  prsm->m_c2p     = m_c2p;
 
   // note that the vertices stored in the prism_data structure
   // are the vertices in the *prism* coordinate system, which means
-  // their z-coordinates are all identical and in principle need not
+  // their z-coordinates are all zero and in principle need not
   // be stored
   prsm->vertices.num_items = num_vertices;
   prsm->vertices.items     = (vector3 *)malloc(num_vertices*sizeof(vector3));
   for(int nv=0; nv<num_vertices; nv++)
-   prsm->vertices.items[nv]
-    =matrix3x3_vector3_mult(m_c2p, vector3_minus(vertices[nv],centroid));
-
+   prsm->vertices.items[nv] = prism_coordinate_c2p(prsm,vertices[nv]);
+ 
+  // note the center and centroid are different!
   vector3 center = vector3_plus(centroid, vector3_scale(0.5*height,zhat) );
   geometric_object o=make_geometric_object(material, center);
   o.which_subclass=GEOM PRISM;

@@ -150,10 +150,14 @@ GEOMETRIC_OBJECT make_prism(MATERIAL_TYPE material,
 			    vector3 *vertices, int num_vertices,
 			    double height, vector3 axis);
 
+vector3 prism_coordinate_p2c(prism *prsm, vector3 vp);
+vector3 prism_coordinate_c2p(prism *prsm, vector3 vc);
+vector3 prism_vector_p2c(prism *prsm, vector3 vp);
+vector3 prism_vector_c2p(prism *prsm, vector3 vc);
 void get_prism_bounding_box(prism *prsm, geom_box *box);
-int intersect_line_with_prism(vector3 p, vector3 d, prism *prsm, double **sarray);
-boolean point_in_prism(vector3 p, prism *prsm);
-vector3 normal_to_prism(vector3 p, prism *prsm);
+int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double **sarray);
+boolean point_in_prism(prism *prsm, vector3 p);
+vector3 normal_to_prism(prism *prsm, vector3 p);
 void display_prism_info(int indentby, prism *prsm);
 
 
