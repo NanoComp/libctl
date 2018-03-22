@@ -14,6 +14,10 @@
 #define NUMPTS   10000
 #define NUMLINES 1000
 
+#define LX 0.5
+#define LY 1.0
+#define LZ 1.5
+
 static vector3 make_vector3(double x, double y, double z)
 {
   vector3 v;
@@ -75,10 +79,10 @@ void prism2gnuplot(prism *prsm, char *filename)
   FILE *f=fopen(filename,"w");
   for(int nv=0; nv<num_vertices; nv++)
    {  
-     vector3 vap = vertices[nv]; vap.z = -0.5*height;
-     vector3 vbp = vertices[nv]; vbp.z = +0.5*height;
-     vector3 vcp = vertices[(nv+1)%num_vertices]; vcp.z = +0.5*height;
-     vector3 vdp = vertices[(nv+1)%num_vertices]; vdp.z = -0.5*height;
+     vector3 vap = vertices[nv]; vap.z = 0.0;
+     vector3 vbp = vertices[nv]; vbp.z = height;
+     vector3 vcp = vertices[(nv+1)%num_vertices]; vcp.z = height;
+     vector3 vdp = vertices[(nv+1)%num_vertices]; vdp.z = 0.0;
      vector3 vac = prism_coordinate_p2c(prsm,vap);
      vector3 vbc = prism_coordinate_p2c(prsm,vbp);
      vector3 vcc = prism_coordinate_p2c(prsm,vcp);
@@ -135,20 +139,20 @@ int unit_test1()
   vector3 xhat = make_vector3(1,0,0);
   vector3 yhat = make_vector3(0,1,0);
   vector3 zhat = make_vector3(0,0,1);
-  vector3 size = make_vector3(0.5,1.0,1.5);
+  vector3 size = make_vector3(LX,LY,LZ);
   geometric_object the_block = make_block(m, c, xhat, yhat, zhat, size);
 
   vector3 v[4];
-  v[0].x=-0.25; v[0].y=-0.5; v[0].z=-0.75;
-  v[1].x=+0.25; v[1].y=-0.5; v[1].z=-0.75;
-  v[2].x=+0.25; v[2].y=+0.5; v[2].z=-0.75;
-  v[3].x=-0.25; v[3].y=+0.5; v[3].z=-0.75;
-  geometric_object the_prism=make_prism(m, v, 4, 1.5, zhat);
+  v[0].x=-0.5*LX; v[0].y=-0.5*LY; v[0].z=-0.5*LZ;
+  v[1].x=+0.5*LX; v[1].y=-0.5*LY; v[1].z=-0.5*LZ;
+  v[2].x=+0.5*LX; v[2].y=+0.5*LY; v[2].z=-0.5*LZ;
+  v[3].x=-0.5*LX; v[3].y=+0.5*LY; v[3].z=-0.5*LZ;
+  geometric_object the_prism=make_prism(m, v, 4, LZ, zhat);
 
   int num_failed=0;
   vector3 min_corner = vector3_scale(-1.0, size);
   vector3 max_corner = vector3_scale(+1.0, size);
-  FILE *f=fopen("/tmp/test-prism.out","w");
+  FILE *f=fopen("/tmp/test-prism.points","w");
   for(int n=0; n<NUMPTS; n++)
    { 
      vector3 p = random_point(min_corner, max_corner);
@@ -177,21 +181,21 @@ int unit_test2()
   vector3 xhat = make_vector3(1,0,0);
   vector3 yhat = make_vector3(0,1,0);
   vector3 zhat = make_vector3(0,0,1);
-  vector3 size = make_vector3(0.5,1.0,1.5);
+  vector3 size = make_vector3(LX,LY,LZ);
   geometric_object the_block = make_block(m, c, xhat, yhat, zhat, size);
 
   vector3 v[4];
-  v[0].x=-0.25; v[0].y=-0.5; v[0].z=-0.75;
-  v[1].x=+0.25; v[1].y=-0.5; v[1].z=-0.75;
-  v[2].x=+0.25; v[2].y=+0.5; v[2].z=-0.75;
-  v[3].x=-0.25; v[3].y=+0.5; v[3].z=-0.75;
-  geometric_object the_prism=make_prism(m, v, 4, 1.5, zhat);
+  v[0].x=-0.5*LX; v[0].y=-0.5*LY; v[0].z=-0.5*LZ;
+  v[1].x=+0.5*LX; v[1].y=-0.5*LY; v[1].z=-0.5*LZ;
+  v[2].x=+0.5*LX; v[2].y=+0.5*LY; v[2].z=-0.5*LZ;
+  v[3].x=-0.5*LX; v[3].y=+0.5*LY; v[3].z=-0.5*LZ;
+  geometric_object the_prism=make_prism(m, v, 4, LZ, zhat);
 
   int num_failed=0;
   vector3 min_corner = vector3_scale(-1.0, size);
   vector3 max_corner = vector3_scale(+1.0, size);
-  FILE *f=fopen("/tmp/test-prism.out","w");
-  for(int n=0; n<NUMPTS; n++)
+  FILE *f=fopen("/tmp/test-prism.lines","w");
+  for(int n=0; n<NUMLINES; n++)
    { 
      // randomly generated base point within enlarged bounding box
      vector3 p = random_point(min_corner, max_corner);
@@ -209,6 +213,13 @@ int unit_test2()
 
      double s_prism[2];
      int ns_prism=intersect_line_with_object(p, d, the_prism, s_prism);
+
+     // if there are 2 s-values they may be reported in different orders
+     // so sort them before comparing
+     if (ns_block==2 && s_block[0]>s_block[1])
+      { double s=s_block[0]; s_block[0]=s_block[1]; s_block[1]=s; }
+     if (ns_prism==2 && s_prism[0]>s_prism[1])
+      { double s=s_prism[0]; s_prism[0]=s_prism[1]; s_prism[1]=s; }
 
      int match = (ns_block==ns_prism) ? 1 : 0;
      for(int n=0; match==1 && n<ns_block; n++)
@@ -268,8 +279,9 @@ int main(int argc, char *argv[])
   int num_vertices=0;
   char *vertexfile=0, *pointfile=0;
   vector3 zhat={0,0,1};
-  double height=1.0;
+  double height=1.5;
   vector3 test_point={0,0,0}; int have_test_point=0;
+  vector3 test_dir={0,0,0};   int have_test_dir=0;
   for(int narg=1; narg<argc-1; narg++)
    { if (!strcmp(argv[narg],"--vertexfile"))
       vertexfile=argv[++narg];
@@ -286,6 +298,14 @@ int main(int argc, char *argv[])
         sscanf(argv[narg+2],"%le",&(test_point.y));
         sscanf(argv[narg+3],"%le",&(test_point.z));
         have_test_point=1;
+        narg+=3;
+      }
+     else if (!strcmp(argv[narg],"--dir"))
+      { if (narg+3>=argc) usage("too few arguments to --dir");
+        sscanf(argv[narg+1],"%le",&(test_dir.x));
+        sscanf(argv[narg+2],"%le",&(test_dir.y));
+        sscanf(argv[narg+3],"%le",&(test_dir.z));
+        have_test_dir=1;
         narg+=3;
       }
      else if (!strcmp(argv[narg],"--height"))
@@ -402,9 +422,6 @@ int main(int argc, char *argv[])
         if (++NumPoints == NUMPTS ) Done=1;
       }
 
-     // vector3 vp=prism_coordinate_c2p(prsm,v);
-     // vp.z=0;
-     // if (point_in_polygon(vp.x,vp.y,prsm->vertices.items,num_vertices))
      if (point_in_objectp(v,the_prism))
       { fprintf(gpfile1,"%e %e %e\n",v.x,v.y,v.z);
         fprintf(ppfile1,"SP(%e,%e,%e) {0};\n",v.x,v.y,v.z);
@@ -414,6 +431,32 @@ int main(int argc, char *argv[])
       { fprintf(gpfile2,"%e %e %e\n",v.x,v.y,v.z);
         fprintf(ppfile2,"SP(%e,%e,%e) {0};\n",v.x,v.y,v.z);
         if (have_test_point) printf("Point not in object.\n");
+      }
+
+     if (have_test_dir)
+      { 
+#if 0
+        double s_block[2];
+        int ns_block=intersect_line_with_object(v, test_dir, the_block, s_block);
+        FILE *f=fopen("/tmp/test-prism.blocklines","w");
+        for(int ns=0; ns<s_block; ns++)
+         { vector3 vs = vector3_plus(v, vector3_scale(s_block[ns], test_dir));
+           fprintf(f,"%e %e %e \n",v.x,v.y,v.z);
+           fprintf(f,"%e %e %e \n",vs.x,vs.y,vs.z);
+           fprintf(f,"\n\n");
+         };
+        fclose(f);
+#endif
+        double *s_prism;
+        int ns_prism=intersect_line_with_prism(prsm, v, test_dir, &s_prism);
+        f=fopen("/tmp/test-prism.prismlines","w");
+        for(int ns=0; ns<ns_prism; ns++)
+         { vector3 vs = vector3_plus(v, vector3_scale(s_prism[ns], test_dir));
+           fprintf(f,"%e %e %e %e \n",v.x,v.y,v.z,s_prism[ns]);
+           fprintf(f,"%e %e %e %e \n",vs.x,vs.y,vs.z,s_prism[ns]);
+           fprintf(f,"\n\n");
+         };
+        fclose(f);
       }
    }
   fprintf(ppfile1,"};\n");

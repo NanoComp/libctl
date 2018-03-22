@@ -136,26 +136,11 @@ boolean intersect_line_with_segment(double px, double py, double dx, double dy,
    return 0;
 
   double t = (M00*RHSy-M10*RHSx)/DetM;
-/*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
-double ss = (M11*RHSx-M01*RHSy)/DetM;
-char *str=getenv("PRISM_RAYS");
-if (str&&str[0]=='1')
-{
-FILE *f=fopen("/tmp/prism_rays","a");
-fprintf(f,"#(px,py)=(%e,%e) (dx,dy)=(%e,%e) t=%e s=%e (%s)\n",px,py,dx,dy,t,ss,(t<0.0||t>1.0) ? "no" : "yes");
-fprintf(f,"%e %e %e %e \n",px,py,dx,dy);
-fprintf(f,"%e %e %e %e \n",px+ss*dx,py+ss*dy,dx,dy); 
-fprintf(f,"\n");
-fprintf(f,"%e %e %e %e \n",px,py,dx,dy);
-fprintf(f,"%e %e %e %e \n",ax+t*bx,ay+t*by,dx,dy); 
-fprintf(f,"\n");
-fclose(f);
-}
-/*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
+  if (s) *s = (M11*RHSx-M01*RHSy)/DetM;
+
   if (t<0.0 || t>1.0) // intersection of lines does not lie between vertices
    return 0;
 
-  if (s) *s = (M11*RHSx-M01*RHSy)/DetM;
   return 1;
 }
 
@@ -231,7 +216,10 @@ int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double **sarray
      // the z-axis extrusion of the edge, and determine whether this point lies 
      // inside or outside the height of the prism.
      double z_intersect = p_prsm.z + s*d_prsm.z;
-     if ( (z_intersect < -1.0e-7*length_scale) || (z_intersect>(1 + 1.0e-7)*length_scale) )
+     double AbsTol = 1.0e-7*length_scale;
+     double z_min  = 0.0    - AbsTol;
+     double z_max  = height + AbsTol;
+     if ( (z_intersect<z_min) || (z_intersect>z_max) )
       continue;
 
      num_intersections++;
@@ -242,10 +230,11 @@ int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double **sarray
    };
 
   // identify intersections of line with prism top and bottom surfaces
-  double dz=d_prsm.z;
-  if (dz > 1.0e-10*vector3_norm(d_prsm))
-   for(double sign=-1.0; sign<=1.01; sign+=2.0)
-    { double s = (p_prsm.z - sign*0.5*height)/dz;
+  double dz = d_prsm.z;
+  if ( fabs(dz) > 1.0e-7*vector3_norm(d_prsm))
+   for(int LowerUpper=0; LowerUpper<2; LowerUpper++)
+    { double z0    = LowerUpper ? height : 0.0;
+      double s     = (z0 - p_prsm.z)/dz;
       if (!point_in_polygon(p_prsm.x + s*d_prsm.x, p_prsm.y+s*d_prsm.y, vertices, num_vertices))
        continue;
       num_intersections++;
@@ -260,9 +249,101 @@ int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double **sarray
 
 }
 
-vector3 normal_to_prism(prism *prsm, vector3 p)
-{ // not implemented yet
+/***************************************************************/
+/***************************************************************/
+/***************************************************************/
+boolean point_in_prism(prism *prsm, vector3 xc)
+{ 
+  vector3 *vertices = prsm->vertices.items;
+  int num_vertices  = prsm->vertices.num_items;
+  double height     = prsm->height;
+  vector3 xp        = prism_coordinate_c2p(prsm, xc);
+  if ( xp.z<0.0 || xp.z>prsm->height)
+   return 0;
+  return point_in_polygon(xp.x, xp.y, vertices, num_vertices);
 }
+
+/***************************************************************/
+/* compute the minimum-length vector from p to the plane       */
+/* containing o (origin) and spanned by basis vectors v1,v2    */
+/* algorithm: solve the 3x3 system p-s*v3 = o + t*v1 + u*v2    */
+/* where v3 = v1 x v2 and s,t,u are unknowns                   */
+/***************************************************************/
+vector3 normal_to_plane(vector3 o, vector3 v1, vector3 v2, vector3 p)
+{
+  vector3 RHS = vector3_minus(p,o);
+
+  // handle the degenerate-to-2D case
+  if ( (fabs(v1.z) + fabs(v2.z)) < 2.0e-7 && fabs(RHS.z)<1.0e-7 )
+   { vector3 zhat={0,0,1};
+     vector3 v3 = vector3_cross(zhat, v1);
+     double M00  = v1.x;     double M10  = v3.x;
+     double M01  = v1.y;     double M11  = v3.y;
+     double DetM = M00*M11 - M01*M10;
+     if ( fabs(DetM) < 1.0e-10 )
+      return vector3_scale(0.0, v3);
+     // double t = (M00*RHSy-M10*RHSx)/DetM;
+     double s= (M11*RHS.x-M01*RHS.y)/DetM;
+     return vector3_scale(-1.0*s,v3);
+   }
+
+  vector3 v3 = vector3_cross(v1, v2);
+  matrix3x3 M;
+  M.c0 = v1;
+  M.c1 = v2;
+  M.c2 = vector3_scale(-1.0, v3);
+  vector3 tus = matrix3x3_vector3_mult(matrix3x3_inverse(M),RHS);
+  return vector3_scale(-1.0*tus.z, v3);
+}
+
+/***************************************************************/
+/* find the face of the prism for which the normal distance    */
+/* from x to the plane of that face is the shortest, then      */
+/* return the normal vector to that plane.                     */
+/***************************************************************/
+vector3 normal_to_prism(prism *prsm, vector3 xc)
+{
+  vector3 centroid  = prsm->centroid;
+  double height     = prsm->height;
+  vector3 *vertices = prsm->vertices.items;
+  int num_vertices  = prsm->vertices.num_items;
+
+  vector3 xp   = prism_coordinate_c2p(prsm, xc);
+  vector3 axis = {0,0,0}; axis.z=height;
+ 
+  vector3 retval;
+  double min_distance;
+  // side walls
+  for(int nv=0; nv<num_vertices; nv++)
+   { int nvp1 = ( nv==(num_vertices-1) ? 0 : nv+1 );
+     vector3 v1 = vector3_minus(vertices[nvp1],vertices[nv]);
+     vector3 v2 = axis;
+     vector3 v3 = normal_to_plane(vertices[nv], v1, v2, xp);
+     double distance = vector3_norm(v3);
+     if (nv==0 || distance < min_distance)
+      { min_distance = distance;
+        retval = v3;
+      };
+   }
+
+  // roof and ceiling
+  for(int UpperLower=0; UpperLower<2; UpperLower++)
+   { vector3 zhat={0,0,1.0};
+     vector3 v1 = vector3_minus(vertices[1],vertices[0]);
+     vector3 v2 = vector3_cross(zhat,v1);
+     vector3 o  = centroid;
+     if (UpperLower) o.z = height;
+     vector3 v3 = normal_to_plane(o, v1, v2, xp);
+     double distance = vector3_norm(v3);
+     if (distance < min_distance)
+      { min_distance = distance;
+        retval = v3;
+      }
+   }
+
+  return prism_vector_p2c(prsm, retval);
+}
+
 
 /***************************************************************/
 /***************************************************************/
@@ -283,20 +364,6 @@ void display_prism_info(int indentby, prism *prsm)
      printf("%*s     {%e,%e,%e}\n",indentby,"",v.x,v.y,v.z);
    };
 
-}
-
-/***************************************************************/
-/***************************************************************/
-/***************************************************************/
-boolean point_in_prism(prism *prsm, vector3 xc)
-{ 
-  vector3 *vertices = prsm->vertices.items;
-  int num_vertices  = prsm->vertices.num_items;
-  double height     = prsm->height;
-  vector3 xp        = prism_coordinate_c2p(prsm, xc);
-  if ( fabs(xp.z) > 0.5*prsm->height)
-   return 0;
-  return point_in_polygon(xp.x, xp.y, vertices, num_vertices);
 }
 
 /***************************************************************/

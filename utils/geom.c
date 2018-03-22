@@ -467,7 +467,7 @@ vector3 normal_to_fixed_object(vector3 p, geometric_object o)
     } // case GEOM BLOCK
   case GEOM PRISM:
     { 
-      return normal_to_prism(o.subclass.prism_data, r);
+      return normal_to_prism(o.subclass.prism_data, p);
     }
   default:
        return r;
@@ -736,6 +736,7 @@ void CTLIO display_geometric_object_info(int indentby, geometric_object o)
 int intersect_line_with_object(vector3 p, vector3 d, geometric_object o,
 			       double s[2])
 {
+     vector3 p0=p;
      p = vector3_minus(p, o.center);
      s[0] = s[1] = 0;
      switch (o.which_subclass) {
@@ -895,7 +896,9 @@ int intersect_line_with_object(vector3 p, vector3 d, geometric_object o,
 	 } // case GEOM BLOCK
 	 case GEOM PRISM:
 	 { double *sprism=0;
-           int n=intersect_line_with_prism(o.subclass.prism_data, p, d, &sprism);
+           int n=intersect_line_with_prism(o.subclass.prism_data, p0, d, &sprism);
+if (n>2)
+ printf("--point %e %e %e --dir %e %e %e\n",p0.x,p0.y,p0.z,d.x,d.y,d.z);
            CHECK( n<=2, "more than 2 intersections in intersect_line_with_object");
            memcpy(s, sprism, n*sizeof(double));
            if (n>0) free(sprism);
