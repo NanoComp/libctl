@@ -175,12 +175,36 @@ boolean point_in_polygon(double px, double py, vector3 *vertices, int num_vertic
   return num_side_intersections%2;
 }
 
+void add_to_list(double s, double *slist, int length)
+{
+  switch(length) 
+   { case 0: 
+       slist[0] = s;
+       break;
+     case 1: 
+       if (s>=slist[0])
+        slist[1]=s;
+       else
+        { slist[1]=slist[0]; slist[0]=s; }
+       break;
+     default:
+       if (s<slist[0])
+        { slist[1]=slist[0]; slist[0]=s; }
+       else if (s<slist[1])
+        slist[1]=s;
+       break;
+   }
+     
+}
+
 /***************************************************************/
 /* return the number of intersections of prism surfaces with   */
 /* the line segment p + s*d , a<s<b.                           */
 /***************************************************************/
 double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, double a, double b)
 {
+  if (b<a) 
+   { double temp=a; a=b; b=temp; }
   int num_vertices  = prsm->vertices.num_items;
   vector3 *vertices = prsm->vertices.items;
   double height     = prsm->height;
@@ -196,10 +220,8 @@ double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, doub
 
   // identify s-values s0, s1, ... of line-segment intersections
   // with all prism side surfaces.
-  // measure[0] = (s_2-s_1) + (s_4-s_3) + ...
-  // measure[1] = (s_1-s_0) + (s_3-s_2) + ...
+  double slist[2];
   int num_intersections=0;
-  double last_s, measure[2]={0.0,0.0};
   for(int nv=0; nv<num_vertices; nv++)
    { 
      int nvp1 = nv+1; if (nvp1==num_vertices) nvp1=0;
@@ -228,10 +250,7 @@ double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, doub
      if (s<a || s>b)
       continue;
 
-     if (num_intersections>0)
-      measure[num_intersections%2] += s-last_s;
-     num_intersections++;
-     last_s=s;
+     add_to_list(s, slist, num_intersections++);
    };
 
   // identify intersections of line with prism top and bottom surfaces
@@ -245,14 +264,16 @@ double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, doub
       if (!point_in_polygon(p_prsm.x + s*d_prsm.x, p_prsm.y+s*d_prsm.y, vertices, num_vertices))
        continue;
 
-      if (num_intersections>0)
-       measure[num_intersections%2] += s-last_s;
-      num_intersections++;
-      last_s=s;
+     add_to_list(s, slist, num_intersections++);
     }
 
-  //if (num_intersections%2)  // point lies inside object
-  return 0.0;
+  if (num_intersections==0)
+   return 0.0;
+  if (num_intersections%2)  // point lies inside object
+   return slist[0]-a;
+  else                      
+   return slist[1]-slist[0];
+
 }
 
 /***************************************************************/

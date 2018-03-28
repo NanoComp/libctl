@@ -171,8 +171,8 @@ int unit_test1()
 /************************************************************************/
 /* second unit test: create the same parallelepiped in two ways, as a   */
 /*            block and as a prism, then check intersections of 1000    */
-/*            randomly generated lines with the objects and confirm the */
-/*            results agree.                                            */
+/*            randomly generated line segments with the objects and     */
+/*            confirm that the results agree.                           */
 /************************************************************************/
 int unit_test2()
 {
@@ -208,24 +208,14 @@ int unit_test2()
      d.y = SinTheta*sin(Phi);
      d.z = CosTheta;
 
-     double s_block[2];
-     int ns_block=intersect_line_with_object(p, d, the_block, s_block);
+     // randomly generated endpoints of line segment
+     double a = myurand(-1.0, 1.0);
+     double b = a + myurand(-1.0, 1.0);
 
-     double s_prism[2];
-     int ns_prism=intersect_line_with_object(p, d, the_prism, s_prism);
+     double l_block=intersect_line_segment_with_object(p, d, the_block, a, b);
+     double l_prism=intersect_line_segment_with_object(p, d, the_prism, a, b);
 
-     // if there are 2 s-values they may be reported in different orders
-     // so sort them before comparing
-     if (ns_block==2 && s_block[0]>s_block[1])
-      { double s=s_block[0]; s_block[0]=s_block[1]; s_block[1]=s; }
-     if (ns_prism==2 && s_prism[0]>s_prism[1])
-      { double s=s_prism[0]; s_prism[0]=s_prism[1]; s_prism[1]=s; }
-
-     int match = (ns_block==ns_prism) ? 1 : 0;
-     for(int n=0; match==1 && n<ns_block; n++)
-      if ( fabs(s_block[n] - s_prism[n]) > 1.0e-7 )
-       match=0;
-
+     int match = fabs(l_block - l_prism) > 1.0e-7;
      if (match==0)
       num_failed++;
    }
@@ -247,6 +237,7 @@ void print_usage(char *msg, int print_usage)
      printf("\n");
      printf(" --point      x y z\n");
      printf(" --pointfile  MyPointFile\n");
+     printf(" --lineseg    dx dy dz a b\n");
    };
   exit(1);
 }
@@ -278,18 +269,19 @@ int main(int argc, char *argv[])
   vector3 *vertices=0;
   int num_vertices=0;
   char *vertexfile=0, *pointfile=0;
-  vector3 zhat={0,0,1};
+  vector3 axis={0,0,1};
   double height=1.5;
   vector3 test_point={0,0,0}; int have_test_point=0;
-  vector3 test_dir={0,0,0};   int have_test_dir=0;
+  vector3 test_dir={0,0,0};   int have_test_lineseg=0;
+  double test_a, test_b;
   for(int narg=1; narg<argc-1; narg++)
    { if (!strcmp(argv[narg],"--vertexfile"))
       vertexfile=argv[++narg];
      else if (!strcmp(argv[narg],"--axis"))
       { if (narg+3>=argc) usage("too few arguments to --axis");
-        sscanf(argv[narg+1],"%le",&(zhat.x));
-        sscanf(argv[narg+2],"%le",&(zhat.y));
-        sscanf(argv[narg+3],"%le",&(zhat.z));
+        sscanf(argv[narg+1],"%le",&(axis.x));
+        sscanf(argv[narg+2],"%le",&(axis.y));
+        sscanf(argv[narg+3],"%le",&(axis.z));
         narg+=3;
       }
      else if (!strcmp(argv[narg],"--point"))
@@ -300,13 +292,15 @@ int main(int argc, char *argv[])
         have_test_point=1;
         narg+=3;
       }
-     else if (!strcmp(argv[narg],"--dir"))
-      { if (narg+3>=argc) usage("too few arguments to --dir");
+     else if (!strcmp(argv[narg],"--lineseg"))
+      { if (narg+5>=argc) usage("too few arguments to --lineseg");
         sscanf(argv[narg+1],"%le",&(test_dir.x));
         sscanf(argv[narg+2],"%le",&(test_dir.y));
         sscanf(argv[narg+3],"%le",&(test_dir.z));
-        have_test_dir=1;
-        narg+=3;
+        sscanf(argv[narg+4],"%le",&(test_a));
+        sscanf(argv[narg+5],"%le",&(test_b));
+        have_test_lineseg=1;
+        narg+=5;
       }
      else if (!strcmp(argv[narg],"--height"))
       sscanf(argv[++narg],"%le",&height);
@@ -336,11 +330,10 @@ int main(int argc, char *argv[])
    };
   fclose(f);
 
-  geometric_object the_prism=make_prism(NULL, vertices, num_vertices, height, zhat);
+  geometric_object the_prism=make_prism(NULL, vertices, num_vertices, height, axis);
   prism *prsm=the_prism.subclass.prism_data;
   prism2gmsh(prsm, "test-prism.geo");
   prism2gnuplot(prsm, "test-prism.gp");
-
 
   /***************************************************************/
   /* read points from file or generate random points and check   */
@@ -390,6 +383,14 @@ int main(int argc, char *argv[])
   box.high = vector3_plus(box.high,delta);
   box.low  = vector3_minus(box.low,delta);
 
+  void* m = NULL;
+  vector3 c = { 0, 0, 0 };
+  vector3 xhat = make_vector3(1,0,0);
+  vector3 yhat = make_vector3(0,1,0);
+  vector3 zhat = make_vector3(0,0,1);
+  vector3 size = make_vector3(LX,LY,LZ);
+  geometric_object the_block = make_block(m, c, xhat, yhat, zhat, size);
+
   f = (pointfile ? fopen(pointfile,"r") : 0);
 
   FILE *gpfile1  = fopen("test-prism.in.gp","w");
@@ -433,29 +434,17 @@ int main(int argc, char *argv[])
         if (have_test_point) printf("Point not in object.\n");
       }
 
-     if (have_test_dir)
+     if (have_test_lineseg)
       { 
-#if 0
-        double s_block[2];
-        int ns_block=intersect_line_with_object(v, test_dir, the_block, s_block);
-        FILE *f=fopen("/tmp/test-prism.blocklines","w");
-        for(int ns=0; ns<s_block; ns++)
-         { vector3 vs = vector3_plus(v, vector3_scale(s_block[ns], test_dir));
-           fprintf(f,"%e %e %e \n",v.x,v.y,v.z);
-           fprintf(f,"%e %e %e \n",vs.x,vs.y,vs.z);
-           fprintf(f,"\n\n");
-         };
-        fclose(f);
-#endif
-        double *s_prism;
-        int ns_prism=intersect_line_with_prism(prsm, v, test_dir, &s_prism);
-        f=fopen("/tmp/test-prism.prismlines","w");
-        for(int ns=0; ns<ns_prism; ns++)
-         { vector3 vs = vector3_plus(v, vector3_scale(s_prism[ns], test_dir));
-           fprintf(f,"%e %e %e %e \n",v.x,v.y,v.z,s_prism[ns]);
-           fprintf(f,"%e %e %e %e \n",vs.x,vs.y,vs.z,s_prism[ns]);
-           fprintf(f,"\n\n");
-         };
+        double l_block=intersect_line_segment_with_object(v, test_dir, the_block, test_a, test_b);
+        double l_prism=intersect_line_segment_with_object(v, test_dir, the_prism, test_a, test_b);
+        printf("l_block: %e\n",l_block);
+        printf("l_prism: %e\n",l_prism);
+        FILE *f=fopen("/tmp/test-prism.linesegs","a");
+        fprintf(f,"# l_{block,prism}={%e,%e}\n",l_block,l_prism);
+        fprintf(f,"%e %e %e \n", v.x+test_a*test_dir.x, v.y+test_a*test_dir.y, v.z+test_a*test_dir.z);
+        fprintf(f,"%e %e %e \n", v.x+test_b*test_dir.x, v.y+test_b*test_dir.y, v.z+test_b*test_dir.z);
+        fprintf(f,"\n\n");
         fclose(f);
       }
    }
