@@ -69,6 +69,9 @@ extern vector3 normal_to_object(vector3 p, GEOMETRIC_OBJECT o);
 extern vector3 normal_to_fixed_object(vector3 p, GEOMETRIC_OBJECT o);
 extern int intersect_line_with_object(vector3 p, vector3 d, GEOMETRIC_OBJECT o,
 				      double s[2]);
+extern double intersect_line_segment_with_object(vector3 p, vector3 d,
+                                                 GEOMETRIC_OBJECT o,
+                                                 double a, double b);
 extern MATERIAL_TYPE material_of_point_inobject(vector3 p, boolean *inobject);
 extern MATERIAL_TYPE material_of_point_inobject0(
      GEOMETRIC_OBJECT_LIST geometry, vector3 p, boolean *inobject);

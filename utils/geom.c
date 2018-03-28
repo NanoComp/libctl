@@ -62,6 +62,9 @@ using namespace ctlio;
 #define K_PI 3.14159265358979323846
 #define CHECK(cond, s) if (!(cond)){fprintf(stderr,s "\n");exit(EXIT_FAILURE);}
 
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+
 /**************************************************************************/
 
 /* If v is a vector in the lattice basis, normalize v so that
@@ -894,19 +897,31 @@ int intersect_line_with_object(vector3 p, vector3 d, geometric_object o,
 		  }
 	      }
 	 } // case GEOM BLOCK
-	 case GEOM PRISM:
-	 { double *sprism=0;
-           int n=intersect_line_with_prism(o.subclass.prism_data, p0, d, &sprism);
-if (n>2)
- printf("--point %e %e %e --dir %e %e %e\n",p0.x,p0.y,p0.z,d.x,d.y,d.z);
-           CHECK( n<=2, "more than 2 intersections in intersect_line_with_object");
-           memcpy(s, sprism, n*sizeof(double));
-           if (n>0) free(sprism);
-           return n;
-	 } // case GEOM PRISM
+
 	 default:
 	      return 0;
      }
+}
+
+/* Compute the intersections with o of a line along p+s*d in the interval s in [a,b], returning
+    the length of the s intersection in this interval.  (Note: o must not be a compound object.) */
+double intersect_line_segment_with_object(vector3 p, vector3 d, geometric_object o, double a, double b)
+{
+  if (o.which_subclass==GEOM PRISM)
+   { 
+     return intersect_line_segment_with_prism(o.subclass.prism_data, p, d, a, b);
+   }
+  else
+   { double s[2];
+     if (2 == intersect_line_with_object(p, d, o, s)) 
+      { double ds = (s[0] < s[1] ? MIN(s[1],b) - MAX(s[0],a)
+	           	         : MIN(s[0],b) - MAX(s[1],a)
+                    );
+	return (ds > 0 ? ds : 0.0);
+      }
+     else 
+      return 0.0;
+   }
 }
 
 /**************************************************************************/
@@ -961,9 +976,6 @@ matrix3x3 CTLIO square_basis(matrix3x3 basis, vector3 size)
 /**************************************************************************/
 
 /* geom_box utilities: */
-
-#define MAX(a,b) ((a) > (b) ? (a) : (b))
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
 static void geom_box_union(geom_box *bu,
 			   const geom_box *b1, const geom_box *b2)
 {
@@ -1264,13 +1276,7 @@ static double overlap_integrand(integer ndim, number *x, void *data_)
 	  a0 = data->c0 - w; b0 = data->c0 + w;
      }
 
-     if (2 == intersect_line_with_object(p, data->dir, data->o, s)) {
-	  double ds = (s[0] < s[1]
-		       ? MIN(s[1],b0) - MAX(s[0],a0)
-		       : MIN(s[0],b0) - MAX(s[1],a0));
-	  return (ds > 0 ? ds * scale_result : 0.0);
-     }
-     return 0.0;
+    return intersect_line_segment_with_object(p, data->dir, data->o, a0, b0) * scale_result;
 }
 
 number overlap_with_object(geom_box b, int is_ellipsoid, geometric_object o,

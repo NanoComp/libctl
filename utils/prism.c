@@ -176,12 +176,10 @@ boolean point_in_polygon(double px, double py, vector3 *vertices, int num_vertic
 }
 
 /***************************************************************/
-/* return the number of intersections of the line p + s*d with */
-/* surfaces of the prism.                                      */
-/* if **sarray is non-null, on return it points to a newly     */
-/* allocated array of length equal to the return value.        */
+/* return the number of intersections of prism surfaces with   */
+/* the line segment p + s*d , a<s<b.                           */
 /***************************************************************/
-int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double **sarray)
+double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, double a, double b)
 {
   int num_vertices  = prsm->vertices.num_items;
   vector3 *vertices = prsm->vertices.items;
@@ -196,9 +194,12 @@ int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double **sarray
   // lengths to be small or large
   double length_scale = vector3_norm(vector3_minus(vertices[1], vertices[0]));
 
-  // identify intersections of line with all prism side surfaces
+  // identify s-values s0, s1, ... of line-segment intersections
+  // with all prism side surfaces.
+  // measure[0] = (s_2-s_1) + (s_4-s_3) + ...
+  // measure[1] = (s_1-s_0) + (s_3-s_2) + ...
   int num_intersections=0;
-  double *svalues=0;
+  double last_s, measure[2]={0.0,0.0};
   for(int nv=0; nv<num_vertices; nv++)
    { 
      int nvp1 = nv+1; if (nvp1==num_vertices) nvp1=0;
@@ -222,11 +223,15 @@ int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double **sarray
      if ( (z_intersect<z_min) || (z_intersect>z_max) )
       continue;
 
+     // Now we know the line p+s*d intersects the prism...does it do so
+     // within the range of the specified line segment?
+     if (s<a || s>b)
+      continue;
+
+     if (num_intersections>0)
+      measure[num_intersections%2] += s-last_s;
      num_intersections++;
-     if (sarray)
-      { svalues = (double *)realloc(svalues, num_intersections*sizeof(double));
-        svalues[num_intersections-1] = s;
-      };
+     last_s=s;
    };
 
   // identify intersections of line with prism top and bottom surfaces
@@ -235,18 +240,19 @@ int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double **sarray
    for(int LowerUpper=0; LowerUpper<2; LowerUpper++)
     { double z0    = LowerUpper ? height : 0.0;
       double s     = (z0 - p_prsm.z)/dz;
+      if (s<a || s>b) 
+       continue;
       if (!point_in_polygon(p_prsm.x + s*d_prsm.x, p_prsm.y+s*d_prsm.y, vertices, num_vertices))
        continue;
+
+      if (num_intersections>0)
+       measure[num_intersections%2] += s-last_s;
       num_intersections++;
-      if (sarray)
-       { svalues = (double *)realloc(svalues, num_intersections*sizeof(double));
-         svalues[num_intersections-1] = s;
-       };
-    };
+      last_s=s;
+    }
 
-  if (sarray) *sarray=svalues;
-  return num_intersections;
-
+  //if (num_intersections%2)  // point lies inside object
+  return 0.0;
 }
 
 /***************************************************************/
