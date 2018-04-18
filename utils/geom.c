@@ -1467,7 +1467,7 @@ static void find_best_partition(int nobjects, const geom_box_object *objects,
 	low end of an object. */
 
      for (i = 0; i < nobjects; ++i) {
-	  cur_partition = VEC_I(objects[i].box.high, divide_axis) + SMALL;
+         cur_partition = VEC_I(objects[i].box.high, divide_axis) * (1 + SMALL);
 	  cur_n1 = cur_n2 = 0;
 	  for (j = 0; j < nobjects; ++j) {
 	       if (VEC_I(objects[j].box.low, divide_axis) <= cur_partition)
@@ -1483,7 +1483,7 @@ static void find_best_partition(int nobjects, const geom_box_object *objects,
 	  }
      }
      for (i = 0; i < nobjects; ++i) {
-	  cur_partition = VEC_I(objects[i].box.low, divide_axis) - SMALL;
+         cur_partition = VEC_I(objects[i].box.low, divide_axis) * (1 - SMALL);
 	  cur_n1 = cur_n2 = 0;
 	  for (j = 0; j < nobjects; ++j) {
 	       if (VEC_I(objects[j].box.low, divide_axis) <= cur_partition)
