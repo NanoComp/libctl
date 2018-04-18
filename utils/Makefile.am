@@ -8,10 +8,11 @@ EXTRA_DIST = gen-ctl-io.in README geom.scm geom-ctl-io-defaults.c nlopt.c
 
 libctlgeom_la_SOURCES = geom.c $(top_srcdir)/src/ctl-math.c $(top_srcdir)/src/integrator.c geom-ctl-io.c ctlgeom-types.h
 libctlgeom_la_LDFLAGS = -version-info @SHARED_VERSION_INFO@
-libctlgeom_la_CPPFLAGS = -DLIBCTLGEOM
+libctlgeom_la_CPPFLAGS = -DLIBCTLGEOM -I$(top_srcdir)/src
 
 geomtst_SOURCES = geomtst.c
 geomtst_LDADD = libctlgeom.la
+geomtst_CPPFLAGS = -I$(top_srcdir)/src
 
 dist_man_MANS = gen-ctl-io.1
 
@@ -40,4 +41,4 @@ geom-ctl-io.c: ctl-io.c
 endif
 
 clean-local:
-	rm -f ctl-io.[ch] nlopt-constants.scm
+	rm -f ctl-io.[ch] nlopt-constants.scm ctlgeom-types.h geom-ctl-io.c
