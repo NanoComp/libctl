@@ -21,6 +21,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
 
 #include "ctl.h"
 #include "config.h"
@@ -178,10 +179,12 @@ void F77_FUNC(ctlgetstring,CTLGETSTRING)
 {
   char *r;
   char *s = fcp2ccp(identifier); s[*length] = 0;
+  int len;
   r = ctl_get_string(s);
   strncpy(fcp2ccp(result), r, *result_length);
-  if (*result_length < strlen(r))
-    *result_length = strlen(r);
+  len = (int) strlen(r);
+  if (*result_length < len)
+    *result_length = len;
   free(r);
 }
 
@@ -289,10 +292,12 @@ void F77_FUNC(stringlistref,STRINGLISTREF)
      (list *l, int *index, fortran_string value, int *value_length)
 {
   char *v;
+  int len;
   v = string_list_ref(*l, *index);
   strncpy(fcp2ccp(value), v, *value_length);
-  if (*value_length < strlen(v))
-    *value_length = strlen(v);
+  len = (int) strlen(v);
+  if (*value_length < len)
+    *value_length = len;
   free(v);
 }
 
@@ -397,10 +402,12 @@ void F77_FUNC(stringobjectproperty,STRINGOBJECTPROPERTY)
 {
   char *r;
   char *s = fcp2ccp(property_name); s[*length] = 0;
+  int len;
   r = string_object_property(*o,s);
   strncpy(fcp2ccp(result), r, *result_length);
-  if (*result_length < strlen(r))
-    *result_length = strlen(r);
+  len = (int) strlen(r);
+  if (*result_length < len)
+    *result_length = len;
   free(r);
 }
 

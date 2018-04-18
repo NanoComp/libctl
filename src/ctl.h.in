@@ -120,7 +120,7 @@ typedef SCM object;
 #  endif
 #endif
 
-extern void ctl_include(char *filename);
+extern void ctl_include(const char *filename);
 extern char *ctl_fix_path(const char *path);
 
 /**************************************************************************/
@@ -195,33 +195,33 @@ extern SCM cmatrix3x32scm(cmatrix3x3 m);
 
   /* variable get/set functions */
 
-extern integer ctl_get_integer(char *identifier);
-extern number ctl_get_number(char *identifier);
-extern cnumber ctl_get_cnumber(char *identifier);
-extern boolean ctl_get_boolean(char *identifier);
-extern char* ctl_get_string(char *identifier);
-extern vector3 ctl_get_vector3(char *identifier);
-extern matrix3x3 ctl_get_matrix3x3(char *identifier);
-extern cvector3 ctl_get_cvector3(char *identifier);
-extern cmatrix3x3 ctl_get_cmatrix3x3(char *identifier);
-extern list ctl_get_list(char *identifier);
-extern object ctl_get_object(char *identifier);
-extern function ctl_get_function(char *identifier);
-extern SCM ctl_get_SCM(char *identifier);
+extern integer ctl_get_integer(const char *identifier);
+extern number ctl_get_number(const char *identifier);
+extern cnumber ctl_get_cnumber(const char *identifier);
+extern boolean ctl_get_boolean(const char *identifier);
+extern char* ctl_get_string(const char *identifier);
+extern vector3 ctl_get_vector3(const char *identifier);
+extern matrix3x3 ctl_get_matrix3x3(const char *identifier);
+extern cvector3 ctl_get_cvector3(const char *identifier);
+extern cmatrix3x3 ctl_get_cmatrix3x3(const char *identifier);
+extern list ctl_get_list(const char *identifier);
+extern object ctl_get_object(const char *identifier);
+extern function ctl_get_function(const char *identifier);
+extern SCM ctl_get_SCM(const char *identifier);
 
-extern void ctl_set_integer(char *identifier, integer value);
-extern void ctl_set_number(char *identifier, number value);
-extern void ctl_set_cnumber(char *identifier, cnumber value);
-extern void ctl_set_boolean(char *identifier, boolean value);
-extern void ctl_set_string(char *identifier, char *value);
-extern void ctl_set_vector3(char *identifier, vector3 value);
-extern void ctl_set_matrix3x3(char *identifier, matrix3x3 value);
-extern void ctl_set_cvector3(char *identifier, cvector3 value);
-extern void ctl_set_cmatrix3x3(char *identifier, cmatrix3x3 value);
-extern void ctl_set_list(char *identifier, list value);
-extern void ctl_set_object(char *identifier, object value);
-extern void ctl_set_function(char *identifier, function value);
-extern void ctl_set_SCM(char *identifier, SCM value);
+extern void ctl_set_integer(const char *identifier, integer value);
+extern void ctl_set_number(const char *identifier, number value);
+extern void ctl_set_cnumber(const char *identifier, cnumber value);
+extern void ctl_set_boolean(const char *identifier, boolean value);
+extern void ctl_set_string(const char *identifier, const char *value);
+extern void ctl_set_vector3(const char *identifier, vector3 value);
+extern void ctl_set_matrix3x3(const char *identifier, matrix3x3 value);
+extern void ctl_set_cvector3(const char *identifier, cvector3 value);
+extern void ctl_set_cmatrix3x3(const char *identifier, cmatrix3x3 value);
+extern void ctl_set_list(const char *identifier, list value);
+extern void ctl_set_object(const char *identifier, object value);
+extern void ctl_set_function(const char *identifier, function value);
+extern void ctl_set_SCM(const char *identifier, SCM value);
 
 /**************************************************************************/
 
@@ -264,21 +264,21 @@ extern list make_SCM_list(int num_items, const function *items);
 
   /* object properties */
 
-boolean object_is_member(char *type_name, object o);
+boolean object_is_member(const char *type_name, object o);
 
-extern integer integer_object_property(object o, char *property_name);
-extern number number_object_property(object o, char *property_name);
-extern cnumber cnumber_object_property(object o, char *property_name);
-extern boolean boolean_object_property(object o, char *property_name);
-extern char* string_object_property(object o, char *property_name);
-extern vector3 vector3_object_property(object o, char *property_name);
-extern matrix3x3 matrix3x3_object_property(object o, char *property_name);
-extern cvector3 cvector3_object_property(object o, char *property_name);
-extern cmatrix3x3 cmatrix3x3_object_property(object o, char *property_name);
-extern list list_object_property(object o, char *property_name);
-extern object object_object_property(object o, char *property_name);
-extern function function_object_property(object o, char *property_name);
-extern SCM SCM_object_property(object o, char *property_name);
+extern integer integer_object_property(object o, const char *property_name);
+extern number number_object_property(object o, const char *property_name);
+extern cnumber cnumber_object_property(object o, const char *property_name);
+extern boolean boolean_object_property(object o, const char *property_name);
+extern char* string_object_property(object o, const char *property_name);
+extern vector3 vector3_object_property(object o, const char *property_name);
+extern matrix3x3 matrix3x3_object_property(object o, const char *property_name);
+extern cvector3 cvector3_object_property(object o, const char *property_name);
+extern cmatrix3x3 cmatrix3x3_object_property(object o, const char *property_name);
+extern list list_object_property(object o, const char *property_name);
+extern object object_object_property(object o, const char *property_name);
+extern function function_object_property(object o, const char *property_name);
+extern SCM SCM_object_property(object o, const char *property_name);
 
 /**************************************************************************/
 
