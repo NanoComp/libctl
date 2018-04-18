@@ -1,5 +1,15 @@
 # Libctl Release Notes
 
+## libctl 4.0.1
+
+4/18/2018
+
+* Changed header file to use `const char *` rather than `char *`
+  for constant string arguments, since C++ deprecated passing
+  literal strings to `char *` arguments.
+
+* Various minor build and compilation improvements.
+
 ## libctl 4.0
 
 1/18/2018
