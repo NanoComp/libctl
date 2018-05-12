@@ -107,8 +107,6 @@ fi
 AC_SUBST(LIBGUILE)
 AM_CONDITIONAL(WITH_GUILE, test "x$with_guile" != xno)
 
-echo "######################### $with_guile ##############################"
-
 ###########################################################################
 
 # Checks for Guile features:
