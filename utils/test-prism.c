@@ -324,7 +324,7 @@ int main(int argc, char *argv[])
   /* process arguments *******************************************/
   /***************************************************************/
   char *vertexfile=0;
-  vector3 zhat={0,0,1};
+  vector3 axis={0,0,1};
   double height=1.5;
   vector3 test_point={0,0,0};
   vector3 test_dir={0,0,1};

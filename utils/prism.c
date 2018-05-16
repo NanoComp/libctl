@@ -237,8 +237,6 @@ int insert_s_in_list(double s, double slist[2], int length)
 /***************************************************************/
 int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double slist[2])
 {
-  if (b<a) 
-   { double temp=a; a=b; b=temp; }
   int num_vertices  = prsm->vertices.num_items;
   vector3 *vertices = prsm->vertices.items;
   double height     = prsm->height;
