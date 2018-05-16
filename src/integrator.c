@@ -495,6 +495,8 @@ static unsigned rule15gauss_evalError(rule *r, integrand f, void *fdata,
      double result_asc, mean, err;
      unsigned j;
 
+     (void) r; /* unused */
+
      for (j = 0; j < (n - 1) / 2; ++j) {
 	  int j2 = 2*j + 1;
 	  double x, f1, f2, fsum, w = halfwidth * xgk[j2];

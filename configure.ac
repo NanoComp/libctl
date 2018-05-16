@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT(libctl, 4.0.0, stevenj@alum.mit.edu)
+AC_INIT(libctl, 4.0.1, stevenj@alum.mit.edu)
 AC_CONFIG_SRCDIR([src/ctl.c])
 AC_CONFIG_HEADERS([config.h src/ctl.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -106,8 +106,6 @@ fi
 
 AC_SUBST(LIBGUILE)
 AM_CONDITIONAL(WITH_GUILE, test "x$with_guile" != xno)
-
-echo "######################### $with_guile ##############################"
 
 ###########################################################################
 

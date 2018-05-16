@@ -76,7 +76,7 @@ static SCM list_ref(list l, int index)
    from include.scm, or defaults to gh_load if this function isn't
    defined. */
 
-void ctl_include(char *filename)
+void ctl_include(const char *filename)
 {
   SCM include_proc = gh_lookup("include");
   if (include_proc == SCM_UNDEFINED)
@@ -239,67 +239,67 @@ SCM cmatrix3x32scm(cmatrix3x3 m)
 
 /**** Getters ****/
 
-integer ctl_get_integer(char *identifier)
+integer ctl_get_integer(const char *identifier)
 {
   return(ctl_convert_integer_to_c(gh_lookup(identifier)));
 }
 
-number ctl_get_number(char *identifier)
+number ctl_get_number(const char *identifier)
 {
   return(ctl_convert_number_to_c(gh_lookup(identifier)));
 }
 
-cnumber ctl_get_cnumber(char *identifier)
+cnumber ctl_get_cnumber(const char *identifier)
 {
   return(scm2cnumber(gh_lookup(identifier)));
 }
 
-boolean ctl_get_boolean(char *identifier)
+boolean ctl_get_boolean(const char *identifier)
 {
   return(ctl_convert_boolean_to_c(gh_lookup(identifier)));
 }
 
-char* ctl_get_string(char *identifier)
+char* ctl_get_string(const char *identifier)
 {
   return(ctl_convert_string_to_c(gh_lookup(identifier)));
 }
 
-vector3 ctl_get_vector3(char *identifier)
+vector3 ctl_get_vector3(const char *identifier)
 {
   return(scm2vector3(gh_lookup(identifier)));
 }
 
-matrix3x3 ctl_get_matrix3x3(char *identifier)
+matrix3x3 ctl_get_matrix3x3(const char *identifier)
 {
   return(scm2matrix3x3(gh_lookup(identifier)));
 }
 
-cvector3 ctl_get_cvector3(char *identifier)
+cvector3 ctl_get_cvector3(const char *identifier)
 {
   return(scm2cvector3(gh_lookup(identifier)));
 }
 
-cmatrix3x3 ctl_get_cmatrix3x3(char *identifier)
+cmatrix3x3 ctl_get_cmatrix3x3(const char *identifier)
 {
   return(scm2cmatrix3x3(gh_lookup(identifier)));
 }
 
-list ctl_get_list(char *identifier)
+list ctl_get_list(const char *identifier)
 {
   return(gh_lookup(identifier));
 }
 
-object ctl_get_object(char *identifier)
+object ctl_get_object(const char *identifier)
 {
   return(gh_lookup(identifier));
 }
 
-function ctl_get_function(char *identifier)
+function ctl_get_function(const char *identifier)
 {
   return(gh_lookup(identifier));
 }
 
-SCM ctl_get_SCM(char *identifier)
+SCM ctl_get_SCM(const char *identifier)
 {
   return(gh_lookup(identifier));
 }
@@ -333,7 +333,7 @@ SCM ctl_get_SCM(char *identifier)
 #endif
 
 #ifdef USE_MY_SYMBOL_SET_X
-static SCM my_symbol_set_x(char *name, SCM v)
+static SCM my_symbol_set_x(const char *name, SCM v)
 {
      /* code swiped from scm_symbol_value0 and scm_symbol_set_x */
      SCM symbol = scm_intern_obarray_soft(name, strlen (name), scm_symhash, 0);
@@ -347,7 +347,7 @@ static SCM my_symbol_set_x(char *name, SCM v)
 }
 #endif
 
-static void set_value(char *identifier, SCM value)
+static void set_value(const char *identifier, SCM value)
 {
 #if defined(USE_SCM_SYMBOL_SET_X)   /* worked in Guile 1.1, 1.2 */
      scm_symbol_set_x(SCM_BOOL_F, gh_symbol2scm(identifier), value);
@@ -358,67 +358,67 @@ static void set_value(char *identifier, SCM value)
 #endif
 }
 
-void ctl_set_integer(char *identifier, integer value)
+void ctl_set_integer(const char *identifier, integer value)
 {
   set_value(identifier, ctl_convert_integer_to_scm(value));
 }
 
-void ctl_set_number(char *identifier, number value)
+void ctl_set_number(const char *identifier, number value)
 {
   set_value(identifier, ctl_convert_number_to_scm(value));
 }
 
-void ctl_set_cnumber(char *identifier, cnumber value)
+void ctl_set_cnumber(const char *identifier, cnumber value)
 {
   set_value(identifier, cnumber2scm(value));
 }
 
-void ctl_set_boolean(char *identifier, boolean value)
+void ctl_set_boolean(const char *identifier, boolean value)
 {
   set_value(identifier, ctl_convert_boolean_to_scm(value));
 }
 
-void ctl_set_string(char *identifier, char *value)
+void ctl_set_string(const char *identifier, const char *value)
 {
   set_value(identifier, ctl_convert_string_to_scm(value));
 }
 
-void ctl_set_vector3(char *identifier, vector3 value)
+void ctl_set_vector3(const char *identifier, vector3 value)
 {
   set_value(identifier, vector32scm(value));
 }
 
-void ctl_set_matrix3x3(char *identifier, matrix3x3 value)
+void ctl_set_matrix3x3(const char *identifier, matrix3x3 value)
 {
   set_value(identifier, matrix3x32scm(value));
 }
 
-void ctl_set_cvector3(char *identifier, cvector3 value)
+void ctl_set_cvector3(const char *identifier, cvector3 value)
 {
   set_value(identifier, cvector32scm(value));
 }
 
-void ctl_set_cmatrix3x3(char *identifier, cmatrix3x3 value)
+void ctl_set_cmatrix3x3(const char *identifier, cmatrix3x3 value)
 {
   set_value(identifier, cmatrix3x32scm(value));
 }
 
-void ctl_set_list(char *identifier, list value)
+void ctl_set_list(const char *identifier, list value)
 {
   set_value(identifier, value);
 }
 
-void ctl_set_object(char *identifier, object value)
+void ctl_set_object(const char *identifier, object value)
 {
   set_value(identifier, value);
 }
 
-void ctl_set_function(char *identifier, function value)
+void ctl_set_function(const char *identifier, function value)
 {
   set_value(identifier, value);
 }
 
-void ctl_set_SCM(char *identifier, SCM value)
+void ctl_set_SCM(const char *identifier, SCM value)
 {
   set_value(identifier, value);
 }
@@ -574,81 +574,81 @@ MAKE_LIST(NO_CONVERSION)
 
 /* object properties */
 
-boolean object_is_member(char *type_name, object o)
+boolean object_is_member(const char *type_name, object o)
 {
   return(SCM_BOOL_F != gh_call2(gh_lookup("object-member?"),
 				gh_symbol2scm(type_name),
 				o));
 }
 
-static SCM object_property_value(object o, char *property_name)
+static SCM object_property_value(object o, const char *property_name)
 {
   return(gh_call2(gh_lookup("object-property-value"),
 		  o,
 		  gh_symbol2scm(property_name)));
 }
 
-integer integer_object_property(object o, char *property_name)
+integer integer_object_property(object o, const char *property_name)
 {
   return(ctl_convert_integer_to_c(object_property_value(o,property_name)));
 }
 
-number number_object_property(object o, char *property_name)
+number number_object_property(object o, const char *property_name)
 {
   return(ctl_convert_number_to_c(object_property_value(o,property_name)));
 }
 
-cnumber cnumber_object_property(object o, char *property_name)
+cnumber cnumber_object_property(object o, const char *property_name)
 {
   return(scm2cnumber(object_property_value(o,property_name)));
 }
 
-boolean boolean_object_property(object o, char *property_name)
+boolean boolean_object_property(object o, const char *property_name)
 {
   return(SCM_BOOL_F != object_property_value(o,property_name));
 }
 
-char* string_object_property(object o, char *property_name)
+char* string_object_property(object o, const char *property_name)
 {
   return(ctl_convert_string_to_c(object_property_value(o,property_name)));
 }
 
-vector3 vector3_object_property(object o, char *property_name)
+vector3 vector3_object_property(object o, const char *property_name)
 {
   return(scm2vector3(object_property_value(o,property_name)));
 }
 
-matrix3x3 matrix3x3_object_property(object o, char *property_name)
+matrix3x3 matrix3x3_object_property(object o, const char *property_name)
 {
   return(scm2matrix3x3(object_property_value(o,property_name)));
 }
 
-cvector3 cvector3_object_property(object o, char *property_name)
+cvector3 cvector3_object_property(object o, const char *property_name)
 {
   return(scm2cvector3(object_property_value(o,property_name)));
 }
 
-cmatrix3x3 cmatrix3x3_object_property(object o, char *property_name)
+cmatrix3x3 cmatrix3x3_object_property(object o, const char *property_name)
 {
   return(scm2cmatrix3x3(object_property_value(o,property_name)));
 }
 
-list list_object_property(object o, char *property_name)
+list list_object_property(object o, const char *property_name)
 {
   return(object_property_value(o,property_name));
 }
 
-object object_object_property(object o, char *property_name)
+object object_object_property(object o, const char *property_name)
 {
   return(object_property_value(o,property_name));
 }
 
-function function_object_property(object o, char *property_name)
+function function_object_property(object o, const char *property_name)
 {
   return(object_property_value(o,property_name));
 }
 
-SCM SCM_object_property(object o, char *property_name)
+SCM SCM_object_property(object o, const char *property_name)
 {
   return(object_property_value(o,property_name));
 }

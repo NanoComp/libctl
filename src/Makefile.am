@@ -1,7 +1,10 @@
 
 EXTRA_DIST = ctl.h.in
 
+if WITH_GUILE
 lib_LTLIBRARIES = libctl.la
+endif
+
 include_HEADERS = ctl-math.h
 nodist_include_HEADERS = ctl.h
 

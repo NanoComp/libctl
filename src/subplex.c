@@ -1028,6 +1028,8 @@ static int start_(integer *n, doublereal *x, doublereal *step,
     s_offset = 1 + s_dim1 * 1;
     s -= s_offset;
 
+    (void)n; /* unused */
+
     /* Function Body */
     i__1 = *ns;
     for (i__ = 1; i__ <= i__1; ++i__) {
