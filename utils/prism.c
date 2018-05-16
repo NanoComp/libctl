@@ -174,6 +174,28 @@ boolean point_in_polygon(double px, double py, vector3 *vertices, int num_vertic
   return num_side_intersections%2;
 }
 
+void add_to_list(double s, double *slist, int length)
+{
+  switch(length) 
+   { case 0: 
+       slist[0] = s;
+       break;
+     case 1: 
+       if (s>=slist[0])
+        slist[1]=s;
+       else
+        { slist[1]=slist[0]; slist[0]=s; }
+       break;
+     default:
+       if (s<slist[0])
+        { slist[1]=slist[0]; slist[0]=s; }
+       else if (s<slist[1])
+        slist[1]=s;
+       break;
+   }
+     
+}
+
 /***************************************************************/
 /* return 1 or 0 if xc lies inside or outside the prism        */
 /***************************************************************/
@@ -215,6 +237,8 @@ int insert_s_in_list(double s, double slist[2], int length)
 /***************************************************************/
 int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double slist[2])
 {
+  if (b<a) 
+   { double temp=a; a=b; b=temp; }
   int num_vertices  = prsm->vertices.num_items;
   vector3 *vertices = prsm->vertices.items;
   double height     = prsm->height;
@@ -268,7 +292,6 @@ int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double slist[2]
        continue;
       num_intersections=insert_s_in_list(s,slist,num_intersections);
     }
-
   return num_intersections;
 }
 

@@ -299,7 +299,7 @@ void print_usage(char *msg, int print_usage)
      printf(" --dir        x y z\n");
      printf(" --a          a\n");
      printf(" --b          b\n");
-   };
+   }
   exit(1);
 }
 
@@ -335,9 +335,9 @@ int main(int argc, char *argv[])
       vertexfile=argv[++narg];
      else if (!strcmp(argv[narg],"--axis"))
       { if (narg+3>=argc) usage("too few arguments to --axis");
-        sscanf(argv[narg+1],"%le",&(zhat.x));
-        sscanf(argv[narg+2],"%le",&(zhat.y));
-        sscanf(argv[narg+3],"%le",&(zhat.z));
+        sscanf(argv[narg+1],"%le",&(axis.x));
+        sscanf(argv[narg+2],"%le",&(axis.y));
+        sscanf(argv[narg+3],"%le",&(axis.z));
         narg+=3;
       }
      else if (!strcmp(argv[narg],"--point"))
@@ -348,7 +348,7 @@ int main(int argc, char *argv[])
         narg+=3;
       }
      else if (!strcmp(argv[narg],"--dir"))
-      { if (narg+3>=argc) usage("too few arguments to --dir");
+      { if (narg+5>=argc) usage("too few arguments to --lineseg");
         sscanf(argv[narg+1],"%le",&(test_dir.x));
         sscanf(argv[narg+2],"%le",&(test_dir.y));
         sscanf(argv[narg+3],"%le",&(test_dir.z));
@@ -387,7 +387,7 @@ int main(int argc, char *argv[])
    }
   fclose(f);
 
-  geometric_object the_prism=make_prism(NULL, vertices, num_vertices, height, zhat);
+  geometric_object the_prism=make_prism(NULL, vertices, num_vertices, height, axis);
   prism *prsm=the_prism.subclass.prism_data;
   prism2gmsh(prsm, "test-prism.pp");
   prism2gnuplot(prsm, "test-prism.gp");
