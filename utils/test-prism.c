@@ -1,5 +1,27 @@
+/* libctl: flexible Guile-based control files for scientific software
+ * Copyright (C) 1998-2014 Massachusetts Institute of Technology and Steven G. Johnson
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+ * Boston, MA  02111-1307, USA.
+ *
+ * Steven G. Johnson can be contacted at stevenj@alum.mit.edu.
+ */
+
 /************************************************************************/
 /* test-prism.c: unit test for prisms in libctlgeom                     */
+/* homer reid 5/2018                                                    */
 /************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,47 +47,38 @@ static vector3 make_vector3(double x, double y, double z)
   return v;
 }
 
-boolean point_in_polygon(double px, double py, vector3 *vertices, int num_vertices);
-
 /************************************************************************/
 /* return a uniform random number in [a,b] */
 /************************************************************************/
-static double myurand(double a, double b)
-{
-  return a + (b-a)*(rand()/((double)RAND_MAX));
-}
+static double urand(double a, double b)
+{ return a + (b-a)*(rand()/((double)RAND_MAX)); }
 
-static double mydrand() 
-{ return myurand(0.0,1.0); }
+static double drand() 
+{ return urand(0.0,1.0); }
 
 /************************************************************************/
-/* return a random unit vector, uniformly distributed over a parallelepiped */
+/* random point uniformly distributed over a parallelepiped             */
 /************************************************************************/
 vector3 random_point(vector3 min_corner, vector3 max_corner)
-{ return make_vector3( myurand(min_corner.x, max_corner.x),
-                       myurand(min_corner.y, max_corner.y),
-                       myurand(min_corner.z, max_corner.z)
+{ return make_vector3( urand(min_corner.x, max_corner.x),
+                       urand(min_corner.y, max_corner.y),
+                       urand(min_corner.z, max_corner.z)
                      );
 }
 
 /************************************************************************/
-/* return a random unit vector, uniformly distributed over a sphere */
+/* random unit vector uniformly distributed over a sphere               */
 /************************************************************************/
 vector3 random_unit_vector3(void)
 {
-     double z, t, r;
-     vector3 v;
-
-     z = 2*mydrand() - 1;
-     t = 2*K_PI*mydrand();
-     r = sqrt(1 - z*z);
-     v.x = r * cos(t);
-     v.y = r * sin(t);
-     v.z = z;
-     return v;
+  double z   = urand(-1.0,1.0);
+  double rho = sqrt(1 - z*z);
+  double phi = urand(0.0, 2.0*K_PI);
+  return make_vector3( rho*cos(phi), rho*sin(phi), z );
 }
 
 /***************************************************************/
+/* write prism vertices and edges to text file.                */
 /* after running this routine to produce a file named MyFile,  */
 /* the prism may be plotted in gnuplot like this:              */
 /* gnuplot> splot 'MyFile' u 1:2:3 w lp pt 7 ps 1              */
@@ -77,7 +90,8 @@ void prism2gnuplot(prism *prsm, char *filename)
   double height     = prsm->height;
 
   FILE *f=fopen(filename,"w");
-  for(int nv=0; nv<num_vertices; nv++)
+  int nv;
+  for(nv=0; nv<num_vertices; nv++)
    {  
      vector3 vap = vertices[nv]; vap.z = 0.0;
      vector3 vbp = vertices[nv]; vbp.z = height;
@@ -94,12 +108,12 @@ void prism2gnuplot(prism *prsm, char *filename)
      fprintf(f,"%e %e %e %e %e %e \n",vdc.x,vdc.y,vdc.z,vdp.x,vdp.y,vdp.z);
      fprintf(f,"%e %e %e %e %e %e \n",vac.x,vac.y,vac.z,vap.x,vap.y,vap.z);
      fprintf(f,"\n\n");
-   };
+   }
   fclose(f);
 }
 
 /***************************************************************/
-/***************************************************************/
+/* write prism vertices and edges to GMSH geometry (.geo) file */
 /***************************************************************/
 void prism2gmsh(prism *prsm, char *filename)
 { 
@@ -110,15 +124,16 @@ void prism2gmsh(prism *prsm, char *filename)
   vector3 axis      = vector3_scale(height, zhat);
 
   FILE *f=fopen(filename,"w");
-  for(int nv=0; nv<num_vertices; nv++)
+  int nv;
+  for(nv=0; nv<num_vertices; nv++)
    { vector3 vp=vertices[nv];
      vector3 vc=prism_coordinate_p2c(prsm, vp);
      fprintf(f,"Point(%i)={%e, %e, %e};\n",nv,vc.x,vc.y,vc.z);
    }
-  for(int nv=0; nv<num_vertices; nv++)
+  for(nv=0; nv<num_vertices; nv++)
    fprintf(f,"Line(%i)={%i, %i};\n",nv,nv,(nv+1)%num_vertices);
   fprintf(f,"Line Loop(0)={0");
-  for(int nv=1; nv<num_vertices; nv++)
+  for(nv=1; nv<num_vertices; nv++)
    fprintf(f,",%i",nv);
   fprintf(f,"};\n");
   fprintf(f,"Plane Surface(0)={0};\n");
@@ -127,54 +142,118 @@ void prism2gmsh(prism *prsm, char *filename)
   
 }
 
+/* "standardize" a vector for vector comparisons up to normalization and sign flip */
+double sgn(double x) { return x>=0.0 ? 1.0 : -1.0; }
+
+vector3 standardize(vector3 v)
+{ vector3 sv=unit_vector3(v);
+  double sign = (sv.z!=0.0 ? sgn(sv.z) : sv.y!=0.0 ? sgn(sv.y) : sgn(sv.x));
+  return vector3_scale(sign,sv);
+}
+
 /************************************************************************/
-/* first unit test: create the same parallelepiped in two ways, as a    */
-/*            block and as a prism, then check inclusion of 10000       */
-/*            randomly generated points and confirm the results agree.  */
+/* first unit test: check inclusion of randomly-generated points        */
 /************************************************************************/
-int unit_test1()
+int test_point_inclusion(geometric_object the_block, geometric_object the_prism,
+                         int num_tests, int write_log)
 {
-  void* m = NULL;
-  vector3 c = { 0, 0, 0 };
-  vector3 xhat = make_vector3(1,0,0);
-  vector3 yhat = make_vector3(0,1,0);
-  vector3 zhat = make_vector3(0,0,1);
-  vector3 size = make_vector3(LX,LY,LZ);
-  geometric_object the_block = make_block(m, c, xhat, yhat, zhat, size);
-
-  vector3 v[4];
-  v[0].x=-0.5*LX; v[0].y=-0.5*LY; v[0].z=-0.5*LZ;
-  v[1].x=+0.5*LX; v[1].y=-0.5*LY; v[1].z=-0.5*LZ;
-  v[2].x=+0.5*LX; v[2].y=+0.5*LY; v[2].z=-0.5*LZ;
-  v[3].x=-0.5*LX; v[3].y=+0.5*LY; v[3].z=-0.5*LZ;
-  geometric_object the_prism=make_prism(m, v, 4, LZ, zhat);
-
-  int num_failed=0;
+  vector3 size = the_block.subclass.block_data->size;
   vector3 min_corner = vector3_scale(-1.0, size);
   vector3 max_corner = vector3_scale(+1.0, size);
-  FILE *f=fopen("/tmp/test-prism.points","w");
-  for(int n=0; n<NUMPTS; n++)
+  FILE *f = write_log ? fopen("/tmp/test-prism.points","w") : 0;
+  int num_failed=0;
+  int n;
+  for(n=0; n<num_tests; n++)
    { 
      vector3 p = random_point(min_corner, max_corner);
      boolean in_block=point_in_objectp(p,the_block);
      boolean in_prism=point_in_objectp(p,the_prism);
      if (in_block!=in_prism)
       num_failed++;
-     fprintf(f,"%i %i %e %e %e \n",in_block,in_prism,p.x,p.y,p.z);
-   };
-  fclose(f);
+     if (f) fprintf(f,"%i %i %e %e %e \n",in_block,in_prism,p.x,p.y,p.z);
+   }
+  if (f) fclose(f);
   
-  printf("%i/%i points failed\n",num_failed,NUMPTS);
+  printf("point inclusion: %i/%i points failed\n",num_failed,num_tests);
   return num_failed;
 }
 
 /************************************************************************/
-/* second unit test: create the same parallelepiped in two ways, as a   */
-/*            block and as a prism, then check intersections of 1000    */
-/*            randomly generated lines with the objects and confirm the */
-/*            results agree.                                            */
+/* second unit test: check calculation of normals to objects            */
 /************************************************************************/
-int unit_test2()
+int test_normal_to_object(geometric_object the_block, geometric_object the_prism,
+                          int num_tests, int write_log)
+{
+  vector3 size = the_block.subclass.block_data->size;
+  vector3 min_corner = vector3_scale(-1.0, size);
+  vector3 max_corner = vector3_scale(+1.0, size);
+  FILE *f = write_log ? fopen("/tmp/test-prism.normals","w") : 0;
+
+  int num_failed=0;
+  int n;
+  for(n=0; n<num_tests; n++)
+   { 
+     // randomly generated base point within enlarged bounding box
+     vector3 p = random_point(min_corner, max_corner);
+
+     vector3 nhat_block=standardize(normal_to_object(p, the_block));
+     vector3 nhat_prism=standardize(normal_to_object(p, the_prism));
+     if (!vector3_nearly_equal(nhat_block, nhat_prism))
+      num_failed++;
+
+     if (f)
+      fprintf(f,"%e %e %e %e %e %e %e %e %e %i\n\n\n",p.x,p.y,p.z,
+                 nhat_block.x,nhat_block.y,nhat_block.z,
+                 nhat_prism.x,nhat_prism.y,nhat_prism.z,
+                 vector3_nearly_equal(nhat_block,nhat_prism));
+   }
+  if (f) fclose(f);
+  
+  printf("%i/%i normals failed\n",num_failed,num_tests);
+  return num_failed;
+}
+
+/************************************************************************/
+/* third unit test: check-line segment intersections                   */
+/************************************************************************/
+int test_line_segment_intersection(geometric_object the_block, geometric_object the_prism,
+                                   int num_tests, int write_log)
+{
+  vector3 size = the_block.subclass.block_data->size;
+  vector3 min_corner = vector3_scale(-1.0, size);
+  vector3 max_corner = vector3_scale(+1.0, size);
+  FILE *f = write_log ? fopen("/tmp/test-prism.segments","w") : 0;
+
+  int num_failed=0;
+  int n;
+  for(n=0; n<num_tests; n++)
+   { 
+     // randomly generated base point within enlarged bounding box
+     vector3 p = random_point(min_corner, max_corner);
+     vector3 d = random_unit_vector3();
+     double a  = urand(0.0,1.0);
+     double b  = urand(0.0,1.0);
+
+     double sblock = intersect_line_segment_with_object(p, d, the_block, a, b);
+     double sprism = intersect_line_segment_with_object(p, d, the_prism, a, b);
+     if ( fabs(sblock-sprism) > 1.0e-6*fmax(fabs(sblock),fabs(sprism)) )
+      num_failed++;
+
+     if (f)
+      fprintf(f," %e %e %s\n",sblock,sprism,fabs(sblock-sprism) > 1.0e-6*fmax(fabs(sblock),fabs(sprism)) ? "fail" : "success");
+   }
+  if (f) fclose(f);
+  
+  printf("%i/%i segments failed\n",num_failed,num_tests);
+  return num_failed;
+}
+
+/***************************************************************/
+/* unit tests: create the same parallelepiped two ways (as a   */
+/* block and as a prism) and verify that geometric primitives  */
+/* give identical results                                      */
+/***************************************************************/
+int run_unit_tests()
 {
   void* m = NULL;
   vector3 c = { 0, 0, 0 };
@@ -184,57 +263,28 @@ int unit_test2()
   vector3 size = make_vector3(LX,LY,LZ);
   geometric_object the_block = make_block(m, c, xhat, yhat, zhat, size);
 
-  vector3 v[4];
+  vector3 v[4]; 
   v[0].x=-0.5*LX; v[0].y=-0.5*LY; v[0].z=-0.5*LZ;
   v[1].x=+0.5*LX; v[1].y=-0.5*LY; v[1].z=-0.5*LZ;
   v[2].x=+0.5*LX; v[2].y=+0.5*LY; v[2].z=-0.5*LZ;
   v[3].x=-0.5*LX; v[3].y=+0.5*LY; v[3].z=-0.5*LZ;
   geometric_object the_prism=make_prism(m, v, 4, LZ, zhat);
 
-  int num_failed=0;
-  vector3 min_corner = vector3_scale(-1.0, size);
-  vector3 max_corner = vector3_scale(+1.0, size);
-  FILE *f=fopen("/tmp/test-prism.lines","w");
-  for(int n=0; n<NUMLINES; n++)
-   { 
-     // randomly generated base point within enlarged bounding box
-     vector3 p = random_point(min_corner, max_corner);
-     // randomly generated 3D unit vector 
-     double CosTheta = myurand(-1.0, 1.0);
-     double SinTheta = sqrt(1.0-CosTheta*CosTheta);
-     double Phi      = myurand(0.0, 2.0*K_PI);
-     vector3 d;
-     d.x = SinTheta*cos(Phi);
-     d.y = SinTheta*sin(Phi);
-     d.z = CosTheta;
+  int write_log=0;
 
-     double s_block[2];
-     int ns_block=intersect_line_with_object(p, d, the_block, s_block);
+  if (write_log)
+   prism2gnuplot(the_prism.subclass.prism_data, "/tmp/test-prism.prism");
 
-     double s_prism[2];
-     int ns_prism=intersect_line_with_object(p, d, the_prism, s_prism);
+  int num_failed_1 = test_point_inclusion(the_block, the_prism, NUMPTS, write_log);
+  int num_failed_2 = test_normal_to_object(the_block, the_prism, NUMLINES, write_log);
+  int num_failed_3 = test_line_segment_intersection(the_block, the_prism, NUMLINES, write_log);
 
-     // if there are 2 s-values they may be reported in different orders
-     // so sort them before comparing
-     if (ns_block==2 && s_block[0]>s_block[1])
-      { double s=s_block[0]; s_block[0]=s_block[1]; s_block[1]=s; }
-     if (ns_prism==2 && s_prism[0]>s_prism[1])
-      { double s=s_prism[0]; s_prism[0]=s_prism[1]; s_prism[1]=s; }
-
-     int match = (ns_block==ns_prism) ? 1 : 0;
-     for(int n=0; match==1 && n<ns_block; n++)
-      if ( fabs(s_block[n] - s_prism[n]) > 1.0e-7 )
-       match=0;
-
-     if (match==0)
-      num_failed++;
-   }
-  fclose(f);
-  
-  printf("%i/%i lines failed\n",num_failed,NUMLINES);
-  return num_failed;
+  return num_failed_1 + num_failed_2 + num_failed_3;
 }
 
+/***************************************************************/
+/***************************************************************/
+/***************************************************************/
 void print_usage(char *msg, int print_usage)
 { 
   if (!msg)
@@ -246,7 +296,9 @@ void print_usage(char *msg, int print_usage)
      printf(" --axis       x y z\n");
      printf("\n");
      printf(" --point      x y z\n");
-     printf(" --pointfile  MyPointFile\n");
+     printf(" --dir        x y z\n");
+     printf(" --a          a\n");
+     printf(" --b          b\n");
    };
   exit(1);
 }
@@ -266,23 +318,19 @@ int main(int argc, char *argv[])
   geom_initialize();
 
   if (argc<=1) // if no arguments, run unit tests
-   { 
-     int num_failed_1 = unit_test1();
-     int num_failed_2 = unit_test2();
-     return num_failed_1 + num_failed_2;
-   }
+   return run_unit_tests();
 
   /***************************************************************/
   /* process arguments *******************************************/
   /***************************************************************/
-  vector3 *vertices=0;
-  int num_vertices=0;
-  char *vertexfile=0, *pointfile=0;
+  char *vertexfile=0;
   vector3 zhat={0,0,1};
   double height=1.5;
-  vector3 test_point={0,0,0}; int have_test_point=0;
-  vector3 test_dir={0,0,0};   int have_test_dir=0;
-  for(int narg=1; narg<argc-1; narg++)
+  vector3 test_point={0,0,0};
+  vector3 test_dir={0,0,1};
+  double a = 0.2, b=0.3; 
+  int narg;
+  for(narg=1; narg<argc-1; narg++)
    { if (!strcmp(argv[narg],"--vertexfile"))
       vertexfile=argv[++narg];
      else if (!strcmp(argv[narg],"--axis"))
@@ -297,7 +345,6 @@ int main(int argc, char *argv[])
         sscanf(argv[narg+1],"%le",&(test_point.x));
         sscanf(argv[narg+2],"%le",&(test_point.y));
         sscanf(argv[narg+3],"%le",&(test_point.z));
-        have_test_point=1;
         narg+=3;
       }
      else if (!strcmp(argv[narg],"--dir"))
@@ -305,20 +352,24 @@ int main(int argc, char *argv[])
         sscanf(argv[narg+1],"%le",&(test_dir.x));
         sscanf(argv[narg+2],"%le",&(test_dir.y));
         sscanf(argv[narg+3],"%le",&(test_dir.z));
-        have_test_dir=1;
         narg+=3;
       }
      else if (!strcmp(argv[narg],"--height"))
       sscanf(argv[++narg],"%le",&height);
-     else if (!strcmp(argv[narg],"--pointfile"))
-      pointfile=argv[++narg];
+     else if (!strcmp(argv[narg],"--a"))
+      sscanf(argv[++narg],"%le",&a);
+     else if (!strcmp(argv[narg],"--b"))
+      sscanf(argv[++narg],"%le",&b);
      else 
       usage("unknown argument");
    }
+  if (!vertexfile) usage("no --vertexfile specified");
 
   /***************************************************************/
-  /* read vertices from file and create prism ********************/
+  /* read vertices from vertex file and create prism *************/
   /***************************************************************/
+  vector3 *vertices=0;
+  int num_vertices=0;
   FILE *f=fopen(vertexfile,"r");
   if (!f) usage("could not open vertexfile");
   char Line[100];
@@ -333,136 +384,27 @@ int main(int argc, char *argv[])
       }
      vertices = (vector3 *)realloc(vertices, num_vertices*sizeof(vector3));
      vertices[num_vertices-1]=v;
-   };
+   }
   fclose(f);
 
   geometric_object the_prism=make_prism(NULL, vertices, num_vertices, height, zhat);
   prism *prsm=the_prism.subclass.prism_data;
-  prism2gmsh(prsm, "test-prism.geo");
+  prism2gmsh(prsm, "test-prism.pp");
   prism2gnuplot(prsm, "test-prism.gp");
-
+  printf("Wrote prism description to GNUPLOT file test-prism.gp.\n");
+  printf("Wrote prism description to GMSH file test-prism.geo.\n");
 
   /***************************************************************/
-  /* read points from file or generate random points and check   */
-  /* inclusion                                                   */
+  /* test point inclusion, normal to object, and line-segment    */
+  /* intersection with specified data                            */
   /***************************************************************/
-  geom_box box;
-  get_prism_bounding_box(prsm, &box);
-  f=fopen("prism-box.gp","w");
-  fprintf(f,"%e %e %e \n",box.low.x,box.low.y,box.low.z);
-  fprintf(f,"%e %e %e \n",box.high.x,box.low.y,box.low.z);
-  fprintf(f,"%e %e %e \n",box.high.x,box.high.y,box.low.z);
-  fprintf(f,"%e %e %e \n",box.low.x,box.high.y,box.low.z);
-  fprintf(f,"\n\n");
-
-  fprintf(f,"%e %e %e \n",box.low.x,box.low.y,box.high.z);
-  fprintf(f,"%e %e %e \n",box.high.x,box.low.y,box.high.z);
-  fprintf(f,"%e %e %e \n",box.high.x,box.high.y,box.high.z);
-  fprintf(f,"%e %e %e \n",box.low.x,box.high.y,box.high.z);
-  fprintf(f,"\n\n");
-
-  fprintf(f,"%e %e %e \n",box.low.x,box.low.y,box.low.z);
-  fprintf(f,"%e %e %e \n",box.high.x,box.low.y,box.low.z);
-  fprintf(f,"%e %e %e \n",box.high.x,box.low.y,box.high.z);
-  fprintf(f,"%e %e %e \n",box.low.x,box.low.y,box.high.z);
-  fprintf(f,"\n\n");
-
-  fprintf(f,"%e %e %e \n",box.low.x,box.high.y,box.low.z);
-  fprintf(f,"%e %e %e \n",box.high.x,box.high.y,box.low.z);
-  fprintf(f,"%e %e %e \n",box.high.x,box.high.y,box.high.z);
-  fprintf(f,"%e %e %e \n",box.low.x,box.high.y,box.high.z);
-  fprintf(f,"\n\n");
-
-  fprintf(f,"%e %e %e \n",box.low.x,box.low.y,box.low.z);
-  fprintf(f,"%e %e %e \n",box.low.x,box.high.y,box.low.z);
-  fprintf(f,"%e %e %e \n",box.low.x,box.high.y,box.high.z);
-  fprintf(f,"%e %e %e \n",box.low.x,box.low.y,box.high.z);
-  fprintf(f,"\n\n");
-
-  fprintf(f,"%e %e %e \n",box.high.x,box.low.y,box.low.z);
-  fprintf(f,"%e %e %e \n",box.high.x,box.high.y,box.low.z);
-  fprintf(f,"%e %e %e \n",box.high.x,box.high.y,box.high.z);
-  fprintf(f,"%e %e %e \n",box.high.x,box.low.y,box.high.z);
-  fprintf(f,"\n\n");
-  fclose(f);
-
-  vector3 delta = vector3_minus(box.high, box.low);
-  box.high = vector3_plus(box.high,delta);
-  box.low  = vector3_minus(box.low,delta);
-
-  f = (pointfile ? fopen(pointfile,"r") : 0);
-
-  FILE *gpfile1  = fopen("test-prism.in.gp","w");
-  FILE *gpfile2  = fopen("test-prism.out.gp","w");
-  FILE *ppfile1  = fopen("test-prism.in.pp","w");
-  FILE *ppfile2  = fopen("test-prism.out.pp","w");
-  fprintf(ppfile1,"View \"Points inside prism\" {\n");
-  fprintf(ppfile2,"View \"Points outside prism\" {\n");
-  int Done=0;
-  int NumPoints=0;
-  while(!Done)
-   {  
-     vector3 v;
-     if (f)
-      { char Line[100];
-        NumPoints++;
-        if (fgets(Line,100,f))
-         sscanf(Line,"%le %le %le\n",&(v.x),&(v.y),&(v.z));
-        else
-         Done=1;
-      }
-     else if (have_test_point)
-      { v=test_point;
-        Done=1;
-      }
-     else
-      { v.x = myurand(box.low.x, box.high.x);
-        v.y = myurand(box.low.y, box.high.y);
-        v.z = myurand(box.low.z, box.high.z);
-        if (++NumPoints == NUMPTS ) Done=1;
-      }
-
-     if (point_in_objectp(v,the_prism))
-      { fprintf(gpfile1,"%e %e %e\n",v.x,v.y,v.z);
-        fprintf(ppfile1,"SP(%e,%e,%e) {0};\n",v.x,v.y,v.z);
-        if (have_test_point) printf("Point in object.\n");
-      }
-     else
-      { fprintf(gpfile2,"%e %e %e\n",v.x,v.y,v.z);
-        fprintf(ppfile2,"SP(%e,%e,%e) {0};\n",v.x,v.y,v.z);
-        if (have_test_point) printf("Point not in object.\n");
-      }
-
-     if (have_test_dir)
-      { 
-#if 0
-        double s_block[2];
-        int ns_block=intersect_line_with_object(v, test_dir, the_block, s_block);
-        FILE *f=fopen("/tmp/test-prism.blocklines","w");
-        for(int ns=0; ns<s_block; ns++)
-         { vector3 vs = vector3_plus(v, vector3_scale(s_block[ns], test_dir));
-           fprintf(f,"%e %e %e \n",v.x,v.y,v.z);
-           fprintf(f,"%e %e %e \n",vs.x,vs.y,vs.z);
-           fprintf(f,"\n\n");
-         };
-        fclose(f);
-#endif
-        double *s_prism;
-        int ns_prism=intersect_line_with_prism(prsm, v, test_dir, &s_prism);
-        f=fopen("/tmp/test-prism.prismlines","w");
-        for(int ns=0; ns<ns_prism; ns++)
-         { vector3 vs = vector3_plus(v, vector3_scale(s_prism[ns], test_dir));
-           fprintf(f,"%e %e %e %e \n",v.x,v.y,v.z,s_prism[ns]);
-           fprintf(f,"%e %e %e %e \n",vs.x,vs.y,vs.z,s_prism[ns]);
-           fprintf(f,"\n\n");
-         };
-        fclose(f);
-      }
-   }
-  fprintf(ppfile1,"};\n");
-  fprintf(ppfile2,"};\n");
-  fclose(gpfile1);
-  fclose(gpfile2);
-  fclose(ppfile1);
-  fclose(ppfile2);
+  boolean in_prism=point_in_objectp(test_point,the_prism);
+  vector3 nhat=normal_to_object(test_point, the_prism);
+  double s= intersect_line_segment_with_object(test_point, test_dir, the_prism, a, b);
+  printf("point {%e,%e,%e}: \n",test_point.x,test_point.y,test_point.z);
+  printf(" %s prism\n", in_prism ? "in" : "not in");
+  printf(" normal to prism: {%e,%e,%e}\n",nhat.x,nhat.y,nhat.z);
+  printf(" intersection with line segment {%e,%e,%e} + (%e,%e)*{%e,%e,%e}: %s\n",
+           test_point.x, test_point.y, test_point.z, 
+           a,b,test_dir.x, test_dir.y, test_dir.z,s);
 }

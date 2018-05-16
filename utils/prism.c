@@ -20,17 +20,24 @@
  */
 
 /*
- * prism.c -- geometry routines for prisms
- *            a prism is a planar polygon, consisting of any
- *            number of user-specified vertices, extruded
- *            through a given thickness (the "height") in the
- *            direction of a given axis.
+ * prism.c -- geometry routines for prisms.
+ * a prism is a planar polygon, consisting of 3 or more user-specified
+ * vertices, extruded through a given thickness (the "height") in the
+ * direction of a given axis.
+ * most calculations are done in the "prism coordinate system",
+ * in which the prism floor lies in the XY plane with centroid
+ * at the origin and the prism axis is the positive Z-axis.
+ * homer reid 4/2018 
  */
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 
+/*--------------------------------------------------------------*/
+/* repeat some definitions from geom.c that are needed here too;*/
+/* can these be moved to ctlgeom.h?                             */
+/*--------------------------------------------------------------*/
 #ifndef LIBCTLGEOM
 #  include "ctl-io.h"
 #else
@@ -40,18 +47,10 @@
 #include <ctlgeom.h>
 
 #ifdef CXX_CTL_IO
-using namespace ctlio;
-#  define CTLIO ctlio::
+   using namespace ctlio;
 #  define GEOM geometric_object::
-#  define BLK block::
-#  define CYL cylinder::
-#  define MAT material_type::
 #else
-#  define CTLIO
 #  define GEOM
-#  define BLK
-#  define CYL
-#  define MAT
 #endif
 
 #ifdef __cplusplus
@@ -66,7 +65,6 @@ using namespace ctlio;
 #  define FREE1(p) free(p)
 #endif
 
-#define K_PI 3.14159265358979323846
 #define CHECK(cond, s) if (!(cond)){fprintf(stderr,s "\n");exit(EXIT_FAILURE);}
 
 /***************************************************************/
@@ -96,9 +94,9 @@ void get_prism_bounding_box(prism *prsm, geom_box *box)
 
   // set x,y coordinates of low, high to bounding box 
   // of prism base polygon (in prism coordinate system)
-  vector3 low      = vertices[0];
-  vector3 high     = vertices[0];
-  for(int nv=1; nv<num_vertices; nv++)
+  vector3 low=vertices[0], high=vertices[0];
+  int nv;
+  for(nv=1; nv<num_vertices; nv++)
    { low.x  = fmin(low.x, vertices[nv].x);
      low.y  = fmin(low.y, vertices[nv].y);
      high.x = fmax(high.x, vertices[nv].x);
@@ -167,7 +165,8 @@ boolean point_in_polygon(double px, double py, vector3 *vertices, int num_vertic
 {
   double dx=0.0, dy=-1.0;
   int num_side_intersections=0;
-  for(int nv=0; nv<num_vertices; nv++)
+  int nv;
+  for(nv=0; nv<num_vertices; nv++)
    num_side_intersections
     +=intersect_ray_with_segment(px, py, dx, dy,
                                  vertices[nv], vertices[(nv+1)%num_vertices],
@@ -176,10 +175,45 @@ boolean point_in_polygon(double px, double py, vector3 *vertices, int num_vertic
 }
 
 /***************************************************************/
-/* return the number of intersections of prism surfaces with   */
-/* the line segment p + s*d , a<s<b.                           */
+/* return 1 or 0 if xc lies inside or outside the prism        */
 /***************************************************************/
-double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, double a, double b)
+boolean point_in_prism(prism *prsm, vector3 xc)
+{ 
+  vector3 *vertices = prsm->vertices.items;
+  int num_vertices  = prsm->vertices.num_items;
+  double height     = prsm->height;
+  vector3 xp        = prism_coordinate_c2p(prsm, xc);
+  if ( xp.z<0.0 || xp.z>prsm->height)
+   return 0;
+  return point_in_polygon(xp.x, xp.y, vertices, num_vertices);
+}
+
+/***************************************************************/
+/* insert s into slist, which is sorted in increasing order    */
+/* has maximum length 2                                        */
+/***************************************************************/
+int insert_s_in_list(double s, double slist[2], int length)
+{
+  if (length==0) 
+   { slist[0]=s; 
+     return 1;
+   }
+  if ( s < slist[0] )
+   { slist[1]=slist[0];
+     slist[0]=s;
+   }
+  else if (length==1 || s < slist[1] )
+   slist[1]=s;
+
+  return 2;
+}
+
+/***************************************************************/
+/* compute all values of s at which the line p+s*d intersects  */
+/* a prism face, retaining the first two entries in a list     */
+/* of s values sorted in increasing order m                    */
+/***************************************************************/
+int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double slist[2])
 {
   int num_vertices  = prsm->vertices.num_items;
   vector3 *vertices = prsm->vertices.items;
@@ -194,13 +228,10 @@ double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, doub
   // lengths to be small or large
   double length_scale = vector3_norm(vector3_minus(vertices[1], vertices[0]));
 
-  // identify s-values s0, s1, ... of line-segment intersections
-  // with all prism side surfaces.
-  // measure[0] = (s_2-s_1) + (s_4-s_3) + ...
-  // measure[1] = (s_1-s_0) + (s_3-s_2) + ...
+  // identify intersections with prism side faces 
   int num_intersections=0;
-  double last_s, measure[2]={0.0,0.0};
-  for(int nv=0; nv<num_vertices; nv++)
+  int nv;
+  for(nv=0; nv<num_vertices; nv++)
    { 
      int nvp1 = nv+1; if (nvp1==num_vertices) nvp1=0;
 
@@ -223,50 +254,34 @@ double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, doub
      if ( (z_intersect<z_min) || (z_intersect>z_max) )
       continue;
 
-     // Now we know the line p+s*d intersects the prism...does it do so
-     // within the range of the specified line segment?
-     if (s<a || s>b)
-      continue;
+     num_intersections=insert_s_in_list(s, slist, num_intersections);
+   }
 
-     if (num_intersections>0)
-      measure[num_intersections%2] += s-last_s;
-     num_intersections++;
-     last_s=s;
-   };
-
-  // identify intersections of line with prism top and bottom surfaces
+  // identify intersections with prism ceiling and floor faces
   double dz = d_prsm.z;
+  int LowerUpper;
   if ( fabs(dz) > 1.0e-7*vector3_norm(d_prsm))
-   for(int LowerUpper=0; LowerUpper<2; LowerUpper++)
+   for(LowerUpper=0; LowerUpper<2; LowerUpper++)
     { double z0    = LowerUpper ? height : 0.0;
       double s     = (z0 - p_prsm.z)/dz;
-      if (s<a || s>b) 
-       continue;
       if (!point_in_polygon(p_prsm.x + s*d_prsm.x, p_prsm.y+s*d_prsm.y, vertices, num_vertices))
        continue;
-
-      if (num_intersections>0)
-       measure[num_intersections%2] += s-last_s;
-      num_intersections++;
-      last_s=s;
+      num_intersections=insert_s_in_list(s,slist,num_intersections);
     }
 
-  //if (num_intersections%2)  // point lies inside object
-  return 0.0;
+  return num_intersections;
 }
 
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-boolean point_in_prism(prism *prsm, vector3 xc)
-{ 
-  vector3 *vertices = prsm->vertices.items;
-  int num_vertices  = prsm->vertices.num_items;
-  double height     = prsm->height;
-  vector3 xp        = prism_coordinate_c2p(prsm, xc);
-  if ( xp.z<0.0 || xp.z>prsm->height)
-   return 0;
-  return point_in_polygon(xp.x, xp.y, vertices, num_vertices);
+double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, double a, double b)
+{
+  double slist[2]={0.0, 0.0};
+  if (2!=intersect_line_with_prism(prsm, p, d, slist))
+   return 0.0;
+  double ds = fmin(slist[1],b) - fmax(slist[0],a);
+  return ds > 0.0 ? ds : 0.0;
 }
 
 /***************************************************************/
@@ -319,8 +334,10 @@ vector3 normal_to_prism(prism *prsm, vector3 xc)
  
   vector3 retval;
   double min_distance;
+
   // side walls
-  for(int nv=0; nv<num_vertices; nv++)
+  int nv;
+  for(nv=0; nv<num_vertices; nv++)
    { int nvp1 = ( nv==(num_vertices-1) ? 0 : nv+1 );
      vector3 v1 = vector3_minus(vertices[nvp1],vertices[nv]);
      vector3 v2 = axis;
@@ -329,15 +346,16 @@ vector3 normal_to_prism(prism *prsm, vector3 xc)
      if (nv==0 || distance < min_distance)
       { min_distance = distance;
         retval = v3;
-      };
+      }
    }
 
-  // roof and ceiling
-  for(int UpperLower=0; UpperLower<2; UpperLower++)
+  // floor and ceiling
+  int UpperLower;
+  for(UpperLower=0; UpperLower<2; UpperLower++)
    { vector3 zhat={0,0,1.0};
      vector3 v1 = vector3_minus(vertices[1],vertices[0]);
      vector3 v2 = vector3_cross(zhat,v1);
-     vector3 o  = centroid;
+     vector3 o  = {0,0,0};
      if (UpperLower) o.z = height;
      vector3 v3 = normal_to_plane(o, v1, v2, xp);
      double distance = vector3_norm(v3);
@@ -365,7 +383,8 @@ void display_prism_info(int indentby, prism *prsm)
   printf("%*s     height %g, axis (%g,%g,%g), %i vertices:\n", indentby, "",
           height, axis.x, axis.y, axis.z, num_vertices);
   matrix3x3 m_p2c = matrix3x3_inverse(prsm->m_c2p);
-  for(int nv=0; nv<num_vertices; nv++)
+  int nv;
+  for(nv=0; nv<num_vertices; nv++)
    { vector3 v = matrix3x3_vector3_mult(m_p2c, vertices[nv]);
      printf("%*s     {%e,%e,%e}\n",indentby,"",v.x,v.y,v.z);
    };
@@ -396,20 +415,21 @@ vector3 triangle_normal(vector3 v1, vector3 v2, vector3 v3)
 /***************************************************************/
 /***************************************************************/
 GEOMETRIC_OBJECT make_prism(MATERIAL_TYPE material,
-			    vector3 *vertices, int num_vertices,
+			    const vector3 *vertices, int num_vertices,
 			    double height, vector3 axis)
 {
   CHECK(num_vertices>=3, "fewer than 3 vertices in make_prism");
    
   // compute centroid of vertices
   vector3 centroid = {0.0, 0.0, 0.0};
-  for(int nv=0; nv<num_vertices; nv++)
+  int nv;
+  for(nv=0; nv<num_vertices; nv++)
    centroid = vector3_plus(centroid, vertices[nv]);
   centroid = vector3_scale(1.0/((double)num_vertices), centroid);
 
   // make sure all vertices lie in a plane normal to the given axis
   vector3 zhat = unit_vector3(axis);
-  for(int nv=0; nv<num_vertices; nv++)
+  for(nv=0; nv<num_vertices; nv++)
    { int nvp1 = (nv+1) % num_vertices;
      vector3 zhatp = triangle_normal(centroid,vertices[nv],vertices[nvp1]);
      boolean axis_normal 
@@ -422,7 +442,7 @@ GEOMETRIC_OBJECT make_prism(MATERIAL_TYPE material,
   // compute rotation matrix that operates on a vector of cartesian coordinates
   // to yield the coordinates of the same point in the prism coordinate system.
   // the prism coordinate system is a right-handed coordinate system
-  // in which the prism lies in the xy plane (extrusion axis is the z-axis) 
+  // in which the prism lies in the xy plane (extrusion axis is the positive z-axis)
   // with centroid at the origin and the first edge lying on the positive x-axis.
   // note: the prism *centroid* is the center of mass of the planar vertex polygon,
   //       i.e. it is a point lying on the bottom surface of the prism.
@@ -443,11 +463,10 @@ GEOMETRIC_OBJECT make_prism(MATERIAL_TYPE material,
 
   // note that the vertices stored in the prism_data structure
   // are the vertices in the *prism* coordinate system, which means
-  // their z-coordinates are all zero and in principle need not
-  // be stored
+  // their z-coordinates are all zero and in principle need not be stored
   prsm->vertices.num_items = num_vertices;
   prsm->vertices.items     = (vector3 *)malloc(num_vertices*sizeof(vector3));
-  for(int nv=0; nv<num_vertices; nv++)
+  for(nv=0; nv<num_vertices; nv++)
    prsm->vertices.items[nv] = prism_coordinate_c2p(prsm,vertices[nv]);
  
   // note the center and centroid are different!

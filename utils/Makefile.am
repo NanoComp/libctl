@@ -13,6 +13,13 @@ libctlgeom_la_CPPFLAGS = -DLIBCTLGEOM
 geomtst_SOURCES = geomtst.c
 geomtst_LDADD = libctlgeom.la
 
+check_PROGRAMS = test-prism
+
+test_prism_SOURCES = test-prism.c
+test_prism_LDADD   = libctlgeom.la
+
+TESTS = test-prism
+
 dist_man_MANS = gen-ctl-io.1
 
 BUILT_SOURCES = gen-ctl-io geom-ctl-io.c ctlgeom-types.h nlopt-constants.scm
@@ -38,11 +45,6 @@ geom-ctl-io.c: ctl-io.c
 	sed 's,ctl-io\.h,ctlgeom-types.h,;s,/.* Input variables .*/,@#include "geom-ctl-io-defaults.c"@#if 0@,;s,/.* Output variables .*/,#endif@,' ctl-io.c | tr '@' '\n' > $@
 
 endif
-
-check_PROGRAMS = test-prism
-
-test_prism_SOURCES = test-prism.c
-test_prism_LDADD   = libctlgeom.la
 
 clean-local:
 	rm -f ctl-io.[ch] nlopt-constants.scm
