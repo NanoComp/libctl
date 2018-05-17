@@ -66,16 +66,14 @@ using namespace ctlio;
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 
 // forward declarations of prism-related routines, at the bottom of this file
-vector3 prism_vector_p2c(prism *prsm, vector3 vp);
-vector3 prism_vector_c2p(prism *prsm, vector3 vc);
-void get_prism_bounding_box(prism *prsm, geom_box *box);
-double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, double a, double b);
-boolean point_in_polygon(double px, double py, vector3 *vertices, int num_vertices);
-boolean point_in_prism(prism *prsm, vector3 p);
-vector3 normal_to_prism(prism *prsm, vector3 p);
-void display_prism_info(int indentby, prism *prsm);
-
-
+static vector3 prism_vector_p2c(prism *prsm, vector3 vp);
+static vector3 prism_vector_c2p(prism *prsm, vector3 vc);
+static void get_prism_bounding_box(prism *prsm, geom_box *box);
+static double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, double a, double b);
+static boolean point_in_polygon(double px, double py, vector3 *vertices, int num_vertices);
+static boolean point_in_prism(prism *prsm, vector3 p);
+static vector3 normal_to_prism(prism *prsm, vector3 p);
+static void display_prism_info(int indentby, prism *prsm);
 /**************************************************************************/
 
 /* If v is a vector in the lattice basis, normalize v so that
@@ -2433,9 +2431,9 @@ void display_prism_info(int indentby, prism *prsm)
 /***************************************************************/
 // like vector3_equal but tolerant of small floating-point discrepancies
 /***************************************************************/
-int vector3_nearly_equal(vector3 v1, vector3 v2)
+int vector3_nearly_equal(vector3 v1, vector3 v2, double tolerance)
 {
-  return (vector3_norm( vector3_minus(v1,v2) ) < 1.0e-7*vector3_norm(v1));
+  return (vector3_norm( vector3_minus(v1,v2) ) <= tolerance*vector3_norm(v1));
 }
 
 /***************************************************************/
@@ -2468,12 +2466,13 @@ GEOMETRIC_OBJECT make_prism(MATERIAL_TYPE material,
 
   // make sure all vertices lie in a plane normal to the given axis
   vector3 zhat = unit_vector3(axis);
+  double tolerance=1.0e-6;
   for(nv=0; nv<num_vertices; nv++)
    { int nvp1 = (nv+1) % num_vertices;
      vector3 zhatp = triangle_normal(centroid,vertices[nv],vertices[nvp1]);
      boolean axis_normal 
-      = (    vector3_nearly_equal(zhat, zhatp) 
-          || vector3_nearly_equal(zhat, vector3_scale(-1.0,zhatp))
+      = (    vector3_nearly_equal(zhat, zhatp, tolerance)
+          || vector3_nearly_equal(zhat, vector3_scale(-1.0,zhatp), tolerance)
         );
      CHECK(axis_normal, "axis not normal to vertex plane in make_prism");
    }

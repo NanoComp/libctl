@@ -147,11 +147,12 @@ GEOMETRIC_OBJECT make_block(MATERIAL_TYPE material, vector3 center,
 GEOMETRIC_OBJECT make_ellipsoid(MATERIAL_TYPE material, vector3 center,
 				vector3 e1, vector3 e2, vector3 e3,
 				vector3 size);
-
-// routines in prism.c
 GEOMETRIC_OBJECT make_prism(MATERIAL_TYPE material,
 			    const vector3 *vertices, int num_vertices,
 			    double height, vector3 axis);
+
+int vector3_nearly_equal(vector3 v1, vector3 v2, double tolerance);
+
 /**************************************************************************/
 
 #ifdef __cplusplus

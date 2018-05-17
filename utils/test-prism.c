@@ -40,8 +40,9 @@
 #define LY 1.0
 #define LZ 1.5
 
-// routine defined in geom.c
-int vector3_nearly_equal(vector3 v1, vector3 v2);
+// routine from geom.c that rotates the coordinate of a point
+// from the prism coordinate system to the cartesian coordinate system
+vector3 prism_coordinate_p2c(prism *prsm, vector3 vp);
 
 static vector3 make_vector3(double x, double y, double z)
 {
@@ -194,6 +195,7 @@ int test_normal_to_object(geometric_object the_block, geometric_object the_prism
 
   int num_failed=0;
   int n;
+  double tolerance=1.0e-6;
   for(n=0; n<num_tests; n++)
    { 
      // randomly generated base point within enlarged bounding box
@@ -201,14 +203,14 @@ int test_normal_to_object(geometric_object the_block, geometric_object the_prism
 
      vector3 nhat_block=standardize(normal_to_object(p, the_block));
      vector3 nhat_prism=standardize(normal_to_object(p, the_prism));
-     if (!vector3_nearly_equal(nhat_block, nhat_prism))
+     if (!vector3_nearly_equal(nhat_block, nhat_prism, tolerance))
       num_failed++;
 
      if (f)
       fprintf(f,"%e %e %e %e %e %e %e %e %e %i\n\n\n",p.x,p.y,p.z,
                  nhat_block.x,nhat_block.y,nhat_block.z,
                  nhat_prism.x,nhat_prism.y,nhat_prism.z,
-                 vector3_nearly_equal(nhat_block,nhat_prism));
+                 vector3_nearly_equal(nhat_block,nhat_prism,tolerance));
    }
   if (f) fclose(f);
   
