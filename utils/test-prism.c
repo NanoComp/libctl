@@ -40,6 +40,9 @@
 #define LY 1.0
 #define LZ 1.5
 
+// routine defined in geom.c
+int vector3_nearly_equal(vector3 v1, vector3 v2);
+
 static vector3 make_vector3(double x, double y, double z)
 {
   vector3 v;
@@ -404,7 +407,7 @@ int main(int argc, char *argv[])
   printf("point {%e,%e,%e}: \n",test_point.x,test_point.y,test_point.z);
   printf(" %s prism\n", in_prism ? "in" : "not in");
   printf(" normal to prism: {%e,%e,%e}\n",nhat.x,nhat.y,nhat.z);
-  printf(" intersection with line segment {%e,%e,%e} + (%e,%e)*{%e,%e,%e}: %s\n",
+  printf(" intersection with line segment {%e,%e,%e} + (%e,%e)*{%e,%e,%e}: %e\n",
            test_point.x, test_point.y, test_point.z, 
            a,b,test_dir.x, test_dir.y, test_dir.z,s);
 }

@@ -57,7 +57,7 @@ CTL_DEFS = -DCTL_SCM='"'$(LIBCTL_DIR)/base/ctl.scm'"' \
     -DVERSION_STRING='"'$(VERSION_STRING)'"'
 
 example_SOURCES = $(MY_SOURCES)
-nodist_example_SOURCES = main.c geom.c prism.c ctl-io.h ctl-io.c
+nodist_example_SOURCES = main.c geom.c ctl-io.h ctl-io.c
 BUILT_SOURCES = $(nodist_example_SOURCES)
 example_LDADD = $(MY_LIBS) $(LIBCTL)
 example_LDFLAGS = $(MY_LDFLAGS)
@@ -68,9 +68,6 @@ main.c: $(LIBCTL_DIR)/base/main.c
 
 geom.c: $(LIBCTL_DIR)/utils/geom.c
 	cp -f $(LIBCTL_DIR)/utils/geom.c $@
-
-prism.c: $(LIBCTL_DIR)/utils/prism.c
-	 cp -f $(LIBCTL_DIR)/utils/prism.c $@
 
 ctl-io.c: $(SPECIFICATION_FILE) $(LIBCTL_DIR)/utils/geom.scm $(GEN_CTL_IO)
 	$(GEN_CTL_IO) --code -o $@ $(SPECIFICATION_FILE) $(LIBCTL_DIR)

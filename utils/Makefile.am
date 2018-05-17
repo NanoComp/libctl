@@ -6,7 +6,7 @@ noinst_PROGRAMS = geomtst
 
 EXTRA_DIST = gen-ctl-io.in README geom.scm geom-ctl-io-defaults.c nlopt.c
 
-libctlgeom_la_SOURCES = geom.c $(top_srcdir)/src/ctl-math.c $(top_srcdir)/src/integrator.c geom-ctl-io.c prism.c ctlgeom-types.h
+libctlgeom_la_SOURCES = geom.c $(top_srcdir)/src/ctl-math.c $(top_srcdir)/src/integrator.c geom-ctl-io.c ctlgeom-types.h
 libctlgeom_la_LDFLAGS = -version-info @SHARED_VERSION_INFO@
 libctlgeom_la_CPPFLAGS = -DLIBCTLGEOM -I$(top_srcdir)/src
 
