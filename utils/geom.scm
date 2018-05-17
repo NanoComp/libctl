@@ -85,6 +85,17 @@
 	(object-property-value object 'e2)
 	(object-property-value object 'e3))))))
 
+(define identity_matrix (matrix3x3 (vector3 1 0 0) 
+                                   (vector3 0 1 0) 
+                                   (vector3 0 0 1)))
+
+(define-class prism geometric-object
+  (define-property vertices '() (make-list-type 'vector3))
+  (define-property centroid (vector3 0 0 0) 'vector3)
+  (define-property height 0 'number)
+  (define-property m_c2p identity_matrix 'matrix3x3)
+  (define-property m_p2c identity_matrix 'matrix3x3))
+
 (define-class ellipsoid block
   (define-derived-property inverse-semi-axes 'vector3
     (lambda (object)

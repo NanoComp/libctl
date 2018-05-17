@@ -69,6 +69,9 @@ extern vector3 normal_to_object(vector3 p, GEOMETRIC_OBJECT o);
 extern vector3 normal_to_fixed_object(vector3 p, GEOMETRIC_OBJECT o);
 extern int intersect_line_with_object(vector3 p, vector3 d, GEOMETRIC_OBJECT o,
 				      double s[2]);
+extern double intersect_line_segment_with_object(vector3 p, vector3 d,
+                                                 GEOMETRIC_OBJECT o,
+                                                 double a, double b);
 extern MATERIAL_TYPE material_of_point_inobject(vector3 p, boolean *inobject);
 extern MATERIAL_TYPE material_of_point_inobject0(
      GEOMETRIC_OBJECT_LIST geometry, vector3 p, boolean *inobject);
@@ -144,7 +147,11 @@ GEOMETRIC_OBJECT make_block(MATERIAL_TYPE material, vector3 center,
 GEOMETRIC_OBJECT make_ellipsoid(MATERIAL_TYPE material, vector3 center,
 				vector3 e1, vector3 e2, vector3 e3,
 				vector3 size);
+GEOMETRIC_OBJECT make_prism(MATERIAL_TYPE material,
+			    const vector3 *vertices, int num_vertices,
+			    double height, vector3 axis);
 
+int vector3_nearly_equal(vector3 v1, vector3 v2, double tolerance);
 
 /**************************************************************************/
 

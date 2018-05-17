@@ -14,6 +14,13 @@ geomtst_SOURCES = geomtst.c
 geomtst_LDADD = libctlgeom.la
 geomtst_CPPFLAGS = -I$(top_srcdir)/src
 
+check_PROGRAMS = test-prism
+
+test_prism_SOURCES = test-prism.c
+test_prism_LDADD   = libctlgeom.la
+
+TESTS = test-prism
+
 dist_man_MANS = gen-ctl-io.1
 
 BUILT_SOURCES = gen-ctl-io geom-ctl-io.c ctlgeom-types.h nlopt-constants.scm
