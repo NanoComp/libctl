@@ -33,13 +33,6 @@
 
 #define K_PI 3.141592653589793238462643383279502884197
 
-#define NUMPTS   10000
-#define NUMLINES 1000
-
-#define LX 0.5
-#define LY 1.0
-#define LZ 1.5
-
 // routine from geom.c that rotates the coordinate of a point
 // from the prism coordinate system to the cartesian coordinate system
 vector3 prism_coordinate_p2c(prism *prsm, vector3 vp);
@@ -63,22 +56,69 @@ static double drand()
 /************************************************************************/
 /* random point uniformly distributed over a parallelepiped             */
 /************************************************************************/
-vector3 random_point(vector3 min_corner, vector3 max_corner)
-{ return make_vector3( urand(min_corner.x, max_corner.x),
+vector3 random_point_in_box(vector3 min_corner, vector3 max_corner)
+{ 
+  return make_vector3( urand(min_corner.x, max_corner.x),
                        urand(min_corner.y, max_corner.y),
                        urand(min_corner.z, max_corner.z)
                      );
 }
 
 /************************************************************************/
-/* random unit vector uniformly distributed over a sphere               */
+/* random point uniformly distributed over a planar polygon             */
+/*  (all z coordinates are 0)                                           */
 /************************************************************************/
-vector3 random_unit_vector3(void)
+vector3 random_point_in_polygon(vector3 *vertices, int num_vertices)
 {
-  double z   = urand(-1.0,1.0);
-  double rho = sqrt(1 - z*z);
-  double phi = urand(0.0, 2.0*K_PI);
-  return make_vector3( rho*cos(phi), rho*sin(phi), z );
+  // randomly choose a vertex and generate random point within the triangle 
+  // formed by that vertex, the next vertex, and the centroid
+  int which_vertex = rand() % num_vertices;
+  vector3 v0 = {0,0,0}; 
+  vector3 v1 = vertices[which_vertex];
+  vector3 v2 = vertices[(which_vertex+1)%num_vertices];
+  double xi = urand(0.0,1.0), eta = urand(0.0,1.0-xi);
+  return vector3_plus( vector3_scale(xi,  vector3_minus(v1,v0)),
+                       vector3_scale(eta, vector3_minus(v2,v0))
+                     );
+}
+
+
+/************************************************************************/
+/* random point uniformly distributed over the surface of a prism       */
+/************************************************************************/
+vector3 random_point_on_prism(geometric_object o)
+{
+  prism *prsm       = o.subclass.prism_data;
+  vector3 *vertices = prsm->vertices.items;
+  int num_vertices  = prsm->vertices.num_items;
+  double height     = prsm->height;
+
+  // choose a face
+  int num_faces     = num_vertices + 2;
+  int which_face    = rand() % num_faces;
+  if ( which_face < num_vertices ) // side face
+   { vector3 min_corner = vertices[which_face];
+     vector3 max_corner = vertices[ (which_face+1)%num_vertices ];
+     max_corner.z = height;
+     return random_point_in_box( prism_coordinate_p2c(prsm, min_corner),
+                                 prism_coordinate_p2c(prsm, max_corner) );
+   }
+  else // floor or ceiling
+   { 
+     vector3 p = random_point_in_polygon(vertices, num_vertices);
+     if (which_face==num_faces-1) p.z=height; 
+     return prism_coordinate_p2c(prsm, p);
+   }
+}
+
+/************************************************************************/
+/* random unit vector with direction uniformly distributed over unit sphere*/
+/************************************************************************/
+vector3 random_unit_vector3()
+{
+  double cos_theta=urand(0.0,1.0), sin_theta=sqrt(1.0-cos_theta*cos_theta);
+  double phi=urand(0.0,2.0*K_PI);
+  return make_vector3(sin_theta*cos(phi), sin_theta*sin(phi), cos_theta);
 }
 
 /***************************************************************/
@@ -169,7 +209,7 @@ int test_point_inclusion(geometric_object the_block, geometric_object the_prism,
   int n;
   for(n=0; n<num_tests; n++)
    { 
-     vector3 p = random_point(min_corner, max_corner);
+     vector3 p = random_point_in_box(min_corner, max_corner);
      boolean in_block=point_in_objectp(p,the_block);
      boolean in_prism=point_in_objectp(p,the_prism);
      if (in_block!=in_prism)
@@ -185,6 +225,7 @@ int test_point_inclusion(geometric_object the_block, geometric_object the_prism,
 /************************************************************************/
 /* second unit test: check calculation of normals to objects            */
 /************************************************************************/
+#define PFACE 0.1
 int test_normal_to_object(geometric_object the_block, geometric_object the_prism,
                           int num_tests, int write_log)
 {
@@ -194,13 +235,18 @@ int test_normal_to_object(geometric_object the_block, geometric_object the_prism
   FILE *f = write_log ? fopen("/tmp/test-prism.normals","w") : 0;
 
   int num_failed=0;
-  int n;
   double tolerance=1.0e-6;
+
+  int n;
   for(n=0; n<num_tests; n++)
    { 
-     // randomly generated base point within enlarged bounding box
-     vector3 p = random_point(min_corner, max_corner);
-
+     // with probability PFACE, generate random base point lying on one
+     //  of the 6 faces of the prism.
+     // with probability 1-PFACE, generate random base point lying in the
+     //  extended volume (2x volume of block)
+     vector3 p = ( urand(0.0,1.0) < PFACE) ? random_point_on_prism(the_prism)
+                                           : random_point_in_box(min_corner, max_corner);
+      
      vector3 nhat_block=standardize(normal_to_object(p, the_block));
      vector3 nhat_prism=standardize(normal_to_object(p, the_prism));
      if (!vector3_nearly_equal(nhat_block, nhat_prism, tolerance))
@@ -234,7 +280,7 @@ int test_line_segment_intersection(geometric_object the_block, geometric_object 
   for(n=0; n<num_tests; n++)
    { 
      // randomly generated base point within enlarged bounding box
-     vector3 p = random_point(min_corner, max_corner);
+     vector3 p = random_point_in_box(min_corner, max_corner);
      vector3 d = random_unit_vector3();
      double a  = urand(0.0,1.0);
      double b  = urand(0.0,1.0);
@@ -258,6 +304,13 @@ int test_line_segment_intersection(geometric_object the_block, geometric_object 
 /* block and as a prism) and verify that geometric primitives  */
 /* give identical results                                      */
 /***************************************************************/
+#define NUMPTS   10000
+#define NUMLINES 1000
+
+#define LX 0.5
+#define LY 1.0
+#define LZ 1.5
+
 int run_unit_tests()
 {
   void* m = NULL;
@@ -266,16 +319,18 @@ int run_unit_tests()
   vector3 yhat = make_vector3(0,1,0);
   vector3 zhat = make_vector3(0,0,1);
   vector3 size = make_vector3(LX,LY,LZ);
-  geometric_object the_block = make_block(m, c, xhat, yhat, zhat, size);
 
   vector3 v[4]; 
   v[0].x=-0.5*LX; v[0].y=-0.5*LY; v[0].z=-0.5*LZ;
   v[1].x=+0.5*LX; v[1].y=-0.5*LY; v[1].z=-0.5*LZ;
   v[2].x=+0.5*LX; v[2].y=+0.5*LY; v[2].z=-0.5*LZ;
   v[3].x=-0.5*LX; v[3].y=+0.5*LY; v[3].z=-0.5*LZ;
+
+  geometric_object the_block = make_block(m, c, xhat, yhat, zhat, size);
   geometric_object the_prism=make_prism(m, v, 4, LZ, zhat);
 
-  int write_log=0;
+  char *s=getenv("LIBCTL_TEST_PRISM_LOG");
+  int write_log = (s && s[0]=='1') ? 1 : 0;
 
   if (write_log)
    prism2gnuplot(the_prism.subclass.prism_data, "/tmp/test-prism.prism");
