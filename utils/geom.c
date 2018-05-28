@@ -2190,28 +2190,6 @@ boolean point_in_polygon(double px, double py, vector3 *vertices, int num_vertic
   return num_side_intersections%2;
 }
 
-void add_to_list(double s, double *slist, int length)
-{
-  switch(length) 
-   { case 0: 
-       slist[0] = s;
-       break;
-     case 1: 
-       if (s>=slist[0])
-        slist[1]=s;
-       else
-        { slist[1]=slist[0]; slist[0]=s; }
-       break;
-     default:
-       if (s<slist[0])
-        { slist[1]=slist[0]; slist[0]=s; }
-       else if (s<slist[1])
-        slist[1]=s;
-       break;
-   }
-     
-}
-
 /***************************************************************/
 /* return 1 or 0 if xc lies inside or outside the prism        */
 /***************************************************************/
@@ -2322,36 +2300,25 @@ double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, doub
 }
 
 /***************************************************************/
-/* compute the minimum-length vector from p to the plane       */
+/* compute the minimum distance from p to the plane            */
 /* containing o (origin) and spanned by basis vectors v1,v2    */
 /* algorithm: solve the 3x3 system p-s*v3 = o + t*v1 + u*v2    */
-/* where v3 = v1 x v2 and s,t,u are unknowns                   */
+/* where v3 = v1 x v2 and s,t,u are unknowns.                  */
+/* return value is unit normal vector to plane and *s is such  */
+/* that p-(*s)*v3 lies in the plane                            */
 /***************************************************************/
-vector3 normal_to_plane(vector3 o, vector3 v1, vector3 v2, vector3 p)
+vector3 normal_to_plane(vector3 o, vector3 v1, vector3 v2, vector3 p, double *s)
 {
-  vector3 RHS = vector3_minus(p,o);
-
-  // handle the degenerate-to-2D case
-  if ( (fabs(v1.z) + fabs(v2.z)) < 2.0e-7 && fabs(RHS.z)<1.0e-7 )
-   { vector3 zhat={0,0,1};
-     vector3 v3 = vector3_cross(zhat, v1);
-     double M00  = v1.x;     double M10  = v3.x;
-     double M01  = v1.y;     double M11  = v3.y;
-     double DetM = M00*M11 - M01*M10;
-     if ( fabs(DetM) < 1.0e-10 )
-      return vector3_scale(0.0, v3);
-     // double t = (M00*RHSy-M10*RHSx)/DetM;
-     double s= (M11*RHS.x-M01*RHS.y)/DetM;
-     return vector3_scale(-1.0*s,v3);
-   }
-
-  vector3 v3 = vector3_cross(v1, v2);
+  vector3 v3 = unit_vector3(vector3_cross(v1, v2));
+  CHECK( (vector3_norm(v3)>1.0e-6), "degenerate plane in normal_to_plane" );
   matrix3x3 M;
   M.c0 = v1;
   M.c1 = v2;
-  M.c2 = vector3_scale(-1.0, v3);
-  vector3 tus = matrix3x3_vector3_mult(matrix3x3_inverse(M),RHS);
-  return vector3_scale(-1.0*tus.z, v3);
+  M.c2 = v3;
+  vector3 RHS = vector3_minus(p,o);
+  vector3 tus = matrix3x3_vector3_mult(matrix3x3_inverse(M),RHS); // "t, u, s"
+  *s = tus.z;
+  return v3;
 }
 
 /***************************************************************/
@@ -2370,19 +2337,21 @@ vector3 normal_to_prism(prism *prsm, vector3 xc)
   vector3 axis = {0,0,0}; axis.z=height;
  
   vector3 retval;
-  double min_distance;
+  double min_distance=HUGE_VAL;
 
   // side walls
-  int nv;
-  for(nv=0; nv<num_vertices; nv++)
-   { int nvp1 = ( nv==(num_vertices-1) ? 0 : nv+1 );
-     vector3 v1 = vector3_minus(vertices[nvp1],vertices[nv]);
-     vector3 v2 = axis;
-     vector3 v3 = normal_to_plane(vertices[nv], v1, v2, xp);
-     double distance = vector3_norm(v3);
-     if (nv==0 || distance < min_distance)
-      { min_distance = distance;
-        retval = v3;
+  if (height>0.0)
+   { int nv;
+     for(nv=0; nv<num_vertices; nv++)
+      { int nvp1 = ( nv==(num_vertices-1) ? 0 : nv+1 );
+        vector3 v1 = vector3_minus(vertices[nvp1],vertices[nv]);
+        vector3 v2 = axis;
+        double s;
+        vector3 v3 = normal_to_plane(vertices[nv], v1, v2, xp, &s);
+        if (fabs(s) < min_distance)
+         { min_distance = fabs(s);
+           retval = v3;
+         }
       }
    }
 
@@ -2394,10 +2363,10 @@ vector3 normal_to_prism(prism *prsm, vector3 xc)
      vector3 v2 = vector3_cross(zhat,v1);
      vector3 o  = {0,0,0};
      if (UpperLower) o.z = height;
-     vector3 v3 = normal_to_plane(o, v1, v2, xp);
-     double distance = vector3_norm(v3);
-     if (distance < min_distance)
-      { min_distance = distance;
+     double s;
+     vector3 v3 = normal_to_plane(o, v1, v2, xp, &s);
+     if (fabs(s) < min_distance)
+      { min_distance = fabs(s);
         retval = v3;
       }
    }
