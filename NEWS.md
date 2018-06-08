@@ -1,5 +1,11 @@
 # Libctl Release Notes
 
+## libctl 4.1
+
+6/7/2018
+
+* New "prism" geometric-object type for polygonal prisms (#13).
+
 ## libctl 4.0.1
 
 4/18/2018
