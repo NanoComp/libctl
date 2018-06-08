@@ -18,6 +18,7 @@ check_PROGRAMS = test-prism
 
 test_prism_SOURCES = test-prism.c
 test_prism_LDADD   = libctlgeom.la
+test_prism_CPPFLAGS = -I$(top_srcdir)/src
 
 TESTS = test-prism
 
