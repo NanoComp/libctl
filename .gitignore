@@ -10,6 +10,8 @@
 *.dSYM
 *.zip
 *.native
+*.log
+*.trs
 _build
 
 # autotools stuff
@@ -35,6 +37,7 @@ depcomp
 missing
 py-compile
 compile
+test-driver
 
 # other generated files
 example.scm
@@ -49,3 +52,4 @@ ctlgeom-types.h
 geom-ctl-io.c
 geomtst
 nlopt-constants.scm
+utils/test-prism
