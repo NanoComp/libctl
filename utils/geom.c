@@ -2108,25 +2108,22 @@ void get_prism_bounding_box(prism *prsm, geom_box *box)
   int num_vertices  = prsm->vertices.num_items;
   double height     = prsm->height;
 
-  // set x,y coordinates of low, high to bounding box
-  // of prism base polygon (in prism coordinate system)
-  vector3 low=vertices[0], high=vertices[0];
-  int nv;
-  for(nv=1; nv<num_vertices; nv++)
-   { low.x  = fmin(low.x, vertices[nv].x);
-     low.y  = fmin(low.y, vertices[nv].y);
-     high.x = fmax(high.x, vertices[nv].x);
-     high.y = fmax(high.y, vertices[nv].y);
-   };
+  box->low = box->high = prism_coordinate_p2c(prsm, vertices[0]);
+  int nv, fc;
+  for(nv=0; nv<num_vertices; nv++)
+   for(fc=0; fc<2; fc++) // 'floor,ceiling'
+   { vector3 vp = vertices[nv];
+     if (fc==1) vp.z=height;
+     vector3 vc = prism_coordinate_p2c(prsm, vp);
 
-  // set z coordinates of low, high to upper and lower
-  // prism surfaces (in prism coordinate system)
-  low.z  = 0.0;
-  high.z = height;
+     box->low.x  = fmin(box->low.x, vc.x);
+     box->low.y  = fmin(box->low.y, vc.y);
+     box->low.z  = fmin(box->low.z, vc.z);
 
-  // convert from prism coordinates to cartesian coordinates
-  box->low  = prism_coordinate_p2c(prsm, low);
-  box->high = prism_coordinate_p2c(prsm, high);
+     box->high.x  = fmax(box->high.x, vc.x);
+     box->high.y  = fmax(box->high.y, vc.y);
+     box->high.z  = fmax(box->high.z, vc.z);
+   }
 }
 
 /***************************************************************/
