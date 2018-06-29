@@ -1,5 +1,13 @@
 # Libctl Release Notes
 
+## libctl 4.1.1
+
+6/29/2018
+
+* Bug fix in prism bounding boxes (#17).
+
+* Build fix for systems with an old `ctlgeom.h` file installed (#16).
+
 ## libctl 4.1
 
 6/7/2018
