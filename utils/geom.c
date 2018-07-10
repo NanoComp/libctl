@@ -2149,10 +2149,14 @@ boolean intersect_line_with_segment(double px, double py, double dx, double dy,
   double t = (M00*RHSy-M10*RHSx)/DetM;
   if (s) *s = (M11*RHSx-M01*RHSy)/DetM;
 
-  if (t<0.0 || t>1.0) // intersection of lines does not lie between vertices
-   return 0;
-
-  return 1;
+  // the plumb line intersects the segment if 0<=t<=1, with t==0,1
+  // corresponding to the endpoints; for our purposes we count
+  // the intersection if the plumb line runs through the t==0 vertex, but
+  // NOT the t==1 vertex, to avoid double-counting for complete polygons.
+#define DELTAT 1.0e-6
+#define TMIN (0.0)
+#define TMAX (1.0-DELTAT)
+  return ( ( t<TMIN || t>TMAX ) ? 0 : 1 );
 }
 
 // like the previous routine, but only count intersections if s>=0
