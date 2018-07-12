@@ -2301,26 +2301,84 @@ double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, doub
 }
 
 /***************************************************************/
-/* compute the minimum distance from p to the plane            */
-/* containing o (origin) and spanned by basis vectors v1,v2    */
-/* algorithm: solve the 3x3 system p-s*v3 = o + t*v1 + u*v2    */
-/* where v3 = v1 x v2 and s,t,u are unknowns.                  */
-/* return value is unit normal vector to plane and *s is such  */
-/* that p-(*s)*v3 lies in the plane                            */
+/* compute the minimum distance from a 3D point p to the       */
+/* line segment with endpoints v1,v2.                          */
+/* algorithm: let pLine = v1 + d*(v2-v1) be the point on the   */
+/* line closest to p; d is defined by minimizing |p-pLine|^2.  */
+/* --> |p-v1|^2 + d^2 |v2-v1|^2 - 2*d*dot(p-v1,v2-v1) = min    */
+/* -->            2d  |v2-v1|^2 -   2*dot(p-v1,v2-v1) = 0      */
+/* --> d = dot(p-v1,v2-v1) / |v2-v1|^2                         */
 /***************************************************************/
-vector3 normal_to_plane(vector3 o, vector3 v1, vector3 v2, vector3 p, double *s)
+double min_distance_to_line_segment(vector3 p, vector3 v1, vector3 v2)
+{ vector3 v2mv1 = vector3_minus(v2,v1);
+  vector3  pmv1 = vector3_minus(p,v1);
+  double d = vector3_dot(v2mv1,pmv1) / vector3_dot(v2mv1,v2mv1);
+  if (d<0.0) d=0.0; // if pProj lies outside the line segment,
+  if (d>1.0) d=1.0; //  displace it to whichever vertex is closer
+  vector3 pLine = vector3_plus(v1, vector3_scale(d,v2mv1));
+  return vector3_norm(vector3_minus(p,pLine));
+}
+
+/***************************************************************/
+/* compute the minimum distance from a 3D point p to the       */
+/* planar quadrilateral with vertices {o, o+l1, o+l2, o+l1+l2} */
+/*  (if quadrilateral==1)                                      */
+/* or the planar triangle with vertices {o, o+l1, o+l2}        */
+/*  (if quadrilateral==0).                                     */
+/* algorithm:                                                  */
+/*  (A) solve a 3x3 system to compute the projection of p into */
+/*      the plane of the triangle/quadrilateral (call it pPlane)*/
+/*         pPlane = p-s*l3 = o + t*l1 + u*l2                   */
+/*      where l3 is the normal to the surface and s,t,u are    */
+/*      unknowns.                                              */
+/*  (B) if pPlane lies within the triangle/quadrilateral, the  */
+/*      minimum distance is simply s.                          */
+/*  (C) otherwise compute the minimum distance d from pProj    */
+/*      to any edge of the triangle/quadrilateral and set      */
+/*      minimum_distance = sqrt(s^2 + d^2).                    */
+/* return value is normal to plane.                            */
+/***************************************************************/
+vector3 normal_to_plane(vector3 o, vector3 l1, vector3 l2, vector3 p,
+                        int quadrilateral, double *min_distance)
 {
-  vector3 v3 = unit_vector3(vector3_cross(v1, v2));
-  CHECK( (vector3_norm(v3)>1.0e-6), "degenerate plane in normal_to_plane" );
+  vector3 l3 = unit_vector3(vector3_cross(l1, l2));
+  CHECK( (vector3_norm(l3)>1.0e-6), "degenerate plane in normal_to_plane" );
   matrix3x3 M;
-  M.c0 = v1;
-  M.c1 = v2;
-  M.c2 = v3;
+  M.c0 = l1;
+  M.c1 = l2;
+  M.c2 = l3;
   vector3 RHS = vector3_minus(p,o);
   vector3 tus = matrix3x3_vector3_mult(matrix3x3_inverse(M),RHS); // "t, u, s"
-  *s = tus.z;
-  return v3;
+  double t=tus.x, u=tus.y, s = tus.z;
+  int inside = ( ( 0.0<=t && t<=1.0 && 0.0<=u && u<=1.0 ) ? 1 : 0 );
+  if (!quadrilateral && (t+u)>1.0) inside=0; // need (t+u)<1 for triangle interior
+  double d=0.0;
+  if(inside==0)
+   { vector3 pPlane = vector3_minus(p, vector3_scale(s,l3) );
+     vector3 v01 = vector3_plus(o,l1);
+     vector3 v10 = vector3_plus(o,l2);
+     d=min_distance_to_line_segment(pPlane, o, v01);
+     d=fmin(d,min_distance_to_line_segment(pPlane,   o, v10));
+     if (quadrilateral)
+      { vector3 v11 = vector3_plus(v01,l2);
+        d=fmin(d,min_distance_to_line_segment(pPlane, v01, v11));
+        d=fmin(d,min_distance_to_line_segment(pPlane, v11, v10));
+      }
+     else
+      d=fmin(d,min_distance_to_line_segment(pPlane, v01, v10));
+   }
+  *min_distance=sqrt(s*s+d*d);
+  return l3;
 }
+
+vector3 normal_to_quadrilateral(vector3 o, vector3 v1, vector3 v2, vector3 p,
+                                double *min_distance)
+{ return normal_to_plane(o,v1,v2,p,1,min_distance); }
+
+vector3 normal_to_triangle(vector3 o, vector3 v1, vector3 v2, vector3 p,
+                           double *min_distance)
+{ return normal_to_plane(o,v1,v2,p,0,min_distance); }
+
 
 /***************************************************************/
 /* find the face of the prism for which the normal distance    */
@@ -2335,43 +2393,41 @@ vector3 normal_to_prism(prism *prsm, vector3 xc)
   int num_vertices  = prsm->vertices.num_items;
 
   vector3 xp   = prism_coordinate_c2p(prsm, xc);
-  vector3 axis = {0,0,0}; axis.z=height;
+  vector3 zhat = {0,0,1.0}, axis=vector3_scale(height, zhat);
+  if (height==0.0)
+   return prism_vector_p2c(prsm, zhat);
 
   vector3 retval;
   double min_distance=HUGE_VAL;
+  int nv;
+  for(nv=0; nv<num_vertices; nv++)
+   { 
+     int nvp1 = ( nv==(num_vertices-1) ? 0 : nv+1 );
+     double s;
 
-  // side walls
-  if (height>0.0)
-   { int nv;
-     for(nv=0; nv<num_vertices; nv++)
-      { int nvp1 = ( nv==(num_vertices-1) ? 0 : nv+1 );
-        vector3 v1 = vector3_minus(vertices[nvp1],vertices[nv]);
-        vector3 v2 = axis;
-        double s;
-        vector3 v3 = normal_to_plane(vertices[nv], v1, v2, xp, &s);
+     // quadrilateral side wall
+     vector3 v1 = vector3_minus(vertices[nvp1],vertices[nv]);
+     vector3 v2 = axis;
+     vector3 v3 = normal_to_quadrilateral(vertices[nv], v1, v2, xp, &s);
+     if (fabs(s) < min_distance)
+      { min_distance = fabs(s);
+        retval = v3;
+      }
+
+     // triangles on floor and ceiling
+     int fc; // 'floor/ceiling'
+     for(fc=0; fc<2; fc++)
+      { 
+        vector3 v0 = {0.0, 0.0, 0.0}; if (fc==1) v0.z=height;
+        vector3 v1 = vertices[nv];
+        vector3 v2 = vertices[nvp1];
+        vector3 v3 = normal_to_triangle(v0, v1, v2, xp, &s);
         if (fabs(s) < min_distance)
          { min_distance = fabs(s);
            retval = v3;
          }
       }
    }
-
-  // floor and ceiling
-  int UpperLower;
-  for(UpperLower=0; UpperLower<2; UpperLower++)
-   { vector3 zhat={0,0,1.0};
-     vector3 v1 = vector3_minus(vertices[1],vertices[0]);
-     vector3 v2 = vector3_cross(zhat,v1);
-     vector3 o  = {0,0,0};
-     if (UpperLower) o.z = height;
-     double s;
-     vector3 v3 = normal_to_plane(o, v1, v2, xp, &s);
-     if (fabs(s) < min_distance)
-      { min_distance = fabs(s);
-        retval = v3;
-      }
-   }
-
   return prism_vector_p2c(prsm, retval);
 }
 
