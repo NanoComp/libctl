@@ -469,6 +469,9 @@ int main(int argc, char *argv[])
   prism *prsm=the_prism.subclass.prism_data;
   prism2gmsh(prsm, "test-prism.pp");
   prism2gnuplot(prsm, "test-prism.gp");
+  f=fopen("test-point.gp","w");
+  fprintf(f,"%e %e %e\n",test_point.x,test_point.y,test_point.z);
+  fclose(f);
   printf("Wrote prism description to GNUPLOT file test-prism.gp.\n");
   printf("Wrote prism description to GMSH file test-prism.geo.\n");
 
