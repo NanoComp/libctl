@@ -2153,10 +2153,7 @@ boolean intersect_line_with_segment(double px, double py, double dx, double dy,
   // corresponding to the endpoints; for our purposes we count
   // the intersection if the plumb line runs through the t==0 vertex, but
   // NOT the t==1 vertex, to avoid double-counting for complete polygons.
-#define DELTAT 1.0e-6
-#define TMIN (0.0)
-#define TMAX (1.0-DELTAT)
-  return ( ( t<TMIN || t>TMAX ) ? 0 : 1 );
+  return t < 0 || ((float)t) >= 1 ? 0 : 1;
 }
 
 // like the previous routine, but only count intersections if s>=0
@@ -2344,7 +2341,7 @@ vector3 normal_to_plane(vector3 p, vector3 o, vector3 v1, vector3 v2,
   M.c2 = v3;
   vector3 RHS = vector3_minus(p,o);
   vector3 tus = matrix3x3_vector3_mult(matrix3x3_inverse(M),RHS); // "t, u, s"
-  double t=tus.x, u=tus.y;
+  float t=tus.x, u=tus.y;
   *s = tus.z;
   if (in_quadrilateral)
    *in_quadrilateral = ( ( 0.0<=t && t<=1.0 && 0.0<=u && u<=1.0 ) ? 1 : 0 );
