@@ -2202,26 +2202,6 @@ boolean point_in_prism(prism *prsm, vector3 xc)
   return point_in_polygon(xp.x, xp.y, vertices, num_vertices);
 }
 
-/***************************************************************/
-/* insert s into slist, which is sorted in increasing order    */
-/* of |s-s_0| and has maximum length 2                         */
-/***************************************************************/
-int insert_s_in_list(double s, double s0, double slist[2], int length)
-{
-  if (length==0)
-   { slist[0]=s;
-     return 1;
-   }
-  if ( fabs(s-s0) < fabs(slist[0]-s0) )
-   { slist[1]=slist[0];
-     slist[0]=s;
-   }
-  else if (length==1 || (fabs(s-s0) < fabs(slist[1]-s0)) )
-   slist[1]=s;
-
-  return 2;
-}
-
 // comparator for qsort
 static int dcmp(const void *pd1, const void *pd2)
 { double d1=*((double *)pd1), d2=*((double *)pd2); 
