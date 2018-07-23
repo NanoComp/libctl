@@ -69,7 +69,7 @@ using namespace ctlio;
 static vector3 prism_vector_p2c(prism *prsm, vector3 vp);
 static vector3 prism_vector_c2p(prism *prsm, vector3 vc);
 static void get_prism_bounding_box(prism *prsm, geom_box *box);
-static double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, double a, double b);
+double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, double a, double b);
 static boolean point_in_polygon(double px, double py, vector3 *vertices, int num_vertices);
 static boolean point_in_prism(prism *prsm, vector3 p);
 static vector3 normal_to_prism(prism *prsm, vector3 p);
@@ -2222,13 +2222,21 @@ int insert_s_in_list(double s, double s0, double slist[2], int length)
   return 2;
 }
 
+// comparator for qsort
+static int dcmp(const void *pd1, const void *pd2)
+{ double d1=*((double *)pd1), d2=*((double *)pd2); 
+  return (d1<d2) ? -1.0 : (d1>d2) ? 1.0 : 0.0;
+}
+
 /***************************************************************/
 /* compute all values of s at which the line p+s*d intersects  */
-/* a prism face, retaining the first two entries in a list     */
-/* of s values sorted in increasing order of distance to s0.   */
+/* a prism face.                                               */
+/* slist is a caller-allocated buffer with enough room for     */
+/* at least num_vertices+2 doubles. on return it contains      */
+/* the intersection s-values sorted in ascending order.        */
+/* the return value is the number of intersections.            */
 /***************************************************************/
-int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double slist[2],
-                              double smin, double smax, double s0)
+int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double *slist)
 {
   int num_vertices  = prsm->vertices.num_items;
   vector3 *vertices = prsm->vertices.items;
@@ -2258,8 +2266,6 @@ int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double slist[2]
                                       vertices[nv], vertices[nvp1], &s)
         ) continue;
 
-     if ( s<smin || s>smax ) continue;
-
      // OK, we know the XY-plane projection of the line intersects the polygon edge;
      // now go back to 3D, ask for the z-coordinate at which the line intersects
      // the z-axis extrusion of the edge, and determine whether this point lies
@@ -2271,7 +2277,7 @@ int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double slist[2]
      if ( (z_intersect<z_min) || (z_intersect>z_max) )
       continue;
 
-     num_intersections=insert_s_in_list(s, s0, slist, num_intersections);
+     slist[num_intersections++]=s;
    }
 
   // identify intersections with prism ceiling and floor faces
@@ -2281,11 +2287,12 @@ int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double slist[2]
    for(LowerUpper=0; LowerUpper<2; LowerUpper++)
     { double z0    = LowerUpper ? height : 0.0;
       double s     = (z0 - p_prsm.z)/dz;
-      if ( s<smin || s>smax) continue;
       if (!point_in_polygon(p_prsm.x + s*d_prsm.x, p_prsm.y+s*d_prsm.y, vertices, num_vertices))
        continue;
-      num_intersections=insert_s_in_list(s,s0,slist,num_intersections);
+      slist[num_intersections++]=s;
     }
+
+  qsort((void *)slist,num_intersections,sizeof(double),dcmp);
   return num_intersections;
 }
 
@@ -2294,25 +2301,33 @@ int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double slist[2]
 /***************************************************************/
 double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, double a, double b)
 {
-  boolean a_inside = point_in_prism(prsm, vector3_plus(p, vector3_scale(a,d)));
-  boolean b_inside = point_in_prism(prsm, vector3_plus(p, vector3_scale(b,d)));
+  double *slist = (double *)malloc( (2+prsm->vertices.num_items)*sizeof(double) );
+  int num_intersections=intersect_line_with_prism(prsm, p, d, slist);
 
-  // case with segment endpoints both inside or both outside is easy
-  if (a_inside==b_inside) 
-   return a_inside ? fabs(b-a) : 0.0;
+  // na=smallest index such that slist[na] > a
+  int na=-1;
+  int ns;
+  for(ns=0; na==-1 && ns<num_intersections; ns++)
+   if (slist[ns]>a)
+    na=ns;
 
-  double slist[2];
-  if (a_inside==1 && b_inside==0)
-   { int ns=intersect_line_with_prism(prsm, p, d, slist, a, b, a);
-     CHECK(ns>0, "internal error 1 in ilsw_prism")
-     return slist[0]-a;
+  if (na==-1)
+   { free(slist);
+     return 0.0;
    }
-  else // if (a_inside==0 && b_inside==1)
-   { int ns=intersect_line_with_prism(prsm, p, d, slist, a, b, b);
-     CHECK(ns>0, "internal error 2 in ilsw_prism")
-     return b-slist[0];
+
+  int inside = ( (na%2)==0 ? 0 : 1);
+  double last_s=a;
+  double ds=0.0;
+  for(ns=na; ns<num_intersections; ns++)
+   { double this_s = fmin(b,slist[ns]);
+     if (inside) ds += (this_s-last_s);
+     if (b<slist[ns]) break;
+     inside = (1-inside);
+     last_s = this_s;
    }
-  return 0.0; // never get here
+  free(slist);
+  return ds;
 }
 
 /***************************************************************/
