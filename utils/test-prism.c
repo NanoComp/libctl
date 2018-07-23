@@ -40,6 +40,33 @@ double min_distance_to_line_segment(vector3 p, vector3 v1, vector3 v2);
 // from the prism coordinate system to the cartesian coordinate system
 vector3 prism_coordinate_p2c(prism *prsm, vector3 vp);
 
+/***************************************************************/
+/***************************************************************/
+/***************************************************************/
+void my_get_prism_bounding_box(prism *prsm, geom_box *box)
+{
+  vector3 *vertices = prsm->vertices.items;
+  int num_vertices  = prsm->vertices.num_items;
+  double height     = prsm->height;
+
+  box->low = box->high = prism_coordinate_p2c(prsm, vertices[0]);
+  int nv, fc;
+  for(nv=0; nv<num_vertices; nv++)
+   for(fc=0; fc<2; fc++) // 'floor,ceiling'
+   { vector3 vp = vertices[nv];
+     if (fc==1) vp.z=height;
+     vector3 vc = prism_coordinate_p2c(prsm, vp);
+
+     box->low.x  = fmin(box->low.x, vc.x);
+     box->low.y  = fmin(box->low.y, vc.y);
+     box->low.z  = fmin(box->low.z, vc.z);
+
+     box->high.x  = fmax(box->high.x, vc.x);
+     box->high.y  = fmax(box->high.y, vc.y);
+     box->high.z  = fmax(box->high.z, vc.z);
+   }
+}
+
 static vector3 make_vector3(double x, double y, double z)
 {
   vector3 v;
@@ -426,7 +453,7 @@ int main(int argc, char *argv[])
         narg+=6;
       }
      else if (!strcmp(argv[narg],"--dir"))
-      { if (narg+5>=argc) usage("too few arguments to --lineseg");
+      { if (narg+3>=argc) usage("too few arguments to --lineseg");
         sscanf(argv[narg+1],"%le",&(test_dir.x));
         sscanf(argv[narg+2],"%le",&(test_dir.y));
         sscanf(argv[narg+3],"%le",&(test_dir.z));
@@ -474,6 +501,22 @@ int main(int argc, char *argv[])
   fclose(f);
   printf("Wrote prism description to GNUPLOT file test-prism.gp.\n");
   printf("Wrote prism description to GMSH file test-prism.geo.\n");
+
+  geom_box prism_box;
+  my_get_prism_bounding_box(prsm, &prism_box);
+  f=fopen("test-prism-bb.gp","w");
+  fprintf(f,"%e %e %e\n",prism_box.low.x, prism_box.low.y, prism_box.low.z);
+  fprintf(f,"%e %e %e\n",prism_box.high.x, prism_box.low.y, prism_box.low.z);
+  fprintf(f,"%e %e %e\n",prism_box.high.x, prism_box.high.y, prism_box.low.z);
+  fprintf(f,"%e %e %e\n",prism_box.low.x, prism_box.high.y, prism_box.low.z);
+  fprintf(f,"%e %e %e\n\n\n",prism_box.low.x, prism_box.low.y, prism_box.low.z);
+
+  fprintf(f,"%e %e %e\n",prism_box.low.x, prism_box.low.y, prism_box.high.z);
+  fprintf(f,"%e %e %e\n",prism_box.high.x, prism_box.low.y, prism_box.high.z);
+  fprintf(f,"%e %e %e\n",prism_box.high.x, prism_box.high.y, prism_box.high.z);
+  fprintf(f,"%e %e %e\n",prism_box.low.x, prism_box.high.y, prism_box.high.z);
+  fprintf(f,"%e %e %e\n\n\n",prism_box.low.x, prism_box.low.y, prism_box.high.z);
+  printf("Wrote bounding box to GNUPLOT file test-prism-bb.gp.\n");
 
   /***************************************************************/
   /* test point inclusion, normal to object, and line-segment    */
