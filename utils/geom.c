@@ -69,7 +69,7 @@ using namespace ctlio;
 static vector3 prism_vector_p2c(prism *prsm, vector3 vp);
 static vector3 prism_vector_c2p(prism *prsm, vector3 vc);
 static void get_prism_bounding_box(prism *prsm, geom_box *box);
-double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, double a, double b);
+static double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, double a, double b);
 static boolean point_in_polygon(double px, double py, vector3 *vertices, int num_vertices);
 static boolean point_in_prism(prism *prsm, vector3 p);
 static vector3 normal_to_prism(prism *prsm, vector3 p);
@@ -2307,7 +2307,7 @@ double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, doub
      last_s = this_s;
    }
   free(slist);
-  return ds;
+  return ds > 0.0 ? ds : 0.0;
 }
 
 /***************************************************************/

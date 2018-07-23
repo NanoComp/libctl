@@ -321,7 +321,18 @@ int test_line_segment_intersection(geometric_object the_block, geometric_object 
       num_failed++;
 
      if (f)
-      fprintf(f," %e %e %s\n",sblock,sprism,fabs(sblock-sprism) > 1.0e-6*fmax(fabs(sblock),fabs(sprism)) ? "fail" : "success");
+      { 
+        int success = fabs(sblock-sprism) <= 1.0e-6*fmax(fabs(sblock),fabs(sprism));
+        fprintf(f," %e %e %s\n",sblock,sprism,success  ?  "success" : "fail");
+        if (success==0)
+         { fprintf(f,"#%e %e %e %e %e %e %e %e\n",p.x,p.y,p.z,d.x,d.y,d.z,a,b);
+           fprintf(f,"%e %e %e\n%e %e %e\n%e %e %e\n",
+                      p.x,p.y,p.z,
+                      p.x+a*d.x,p.y+a*d.y,p.z+a*d.z,
+                      p.x+b*d.x,p.y+b*d.y,p.z+b*d.z);
+         }
+        fprintf(f,"\n");
+      }
    }
   if (f) fclose(f);
   
