@@ -2202,32 +2202,21 @@ boolean point_in_prism(prism *prsm, vector3 xc)
   return point_in_polygon(xp.x, xp.y, vertices, num_vertices);
 }
 
-/***************************************************************/
-/* insert s into slist, which is sorted in increasing order    */
-/* has maximum length 2                                        */
-/***************************************************************/
-int insert_s_in_list(double s, double slist[2], int length)
-{
-  if (length==0)
-   { slist[0]=s;
-     return 1;
-   }
-  if ( s < slist[0] )
-   { slist[1]=slist[0];
-     slist[0]=s;
-   }
-  else if (length==1 || s < slist[1] )
-   slist[1]=s;
-
-  return 2;
+// comparator for qsort
+static int dcmp(const void *pd1, const void *pd2)
+{ double d1=*((double *)pd1), d2=*((double *)pd2); 
+  return (d1<d2) ? -1.0 : (d1>d2) ? 1.0 : 0.0;
 }
 
 /***************************************************************/
 /* compute all values of s at which the line p+s*d intersects  */
-/* a prism face, retaining the first two entries in a list     */
-/* of s values sorted in increasing order m                    */
+/* a prism face.                                               */
+/* slist is a caller-allocated buffer with enough room for     */
+/* at least num_vertices+2 doubles. on return it contains      */
+/* the intersection s-values sorted in ascending order.        */
+/* the return value is the number of intersections.            */
 /***************************************************************/
-int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double slist[2])
+int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double *slist)
 {
   int num_vertices  = prsm->vertices.num_items;
   vector3 *vertices = prsm->vertices.items;
@@ -2268,7 +2257,7 @@ int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double slist[2]
      if ( (z_intersect<z_min) || (z_intersect>z_max) )
       continue;
 
-     num_intersections=insert_s_in_list(s, slist, num_intersections);
+     slist[num_intersections++]=s;
    }
 
   // identify intersections with prism ceiling and floor faces
@@ -2280,8 +2269,10 @@ int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double slist[2]
       double s     = (z0 - p_prsm.z)/dz;
       if (!point_in_polygon(p_prsm.x + s*d_prsm.x, p_prsm.y+s*d_prsm.y, vertices, num_vertices))
        continue;
-      num_intersections=insert_s_in_list(s,slist,num_intersections);
+      slist[num_intersections++]=s;
     }
+
+  qsort((void *)slist,num_intersections,sizeof(double),dcmp);
   return num_intersections;
 }
 
@@ -2290,10 +2281,32 @@ int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double slist[2]
 /***************************************************************/
 double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, double a, double b)
 {
-  double slist[2]={0.0, 0.0};
-  if (2!=intersect_line_with_prism(prsm, p, d, slist))
-   return 0.0;
-  double ds = fmin(slist[1],b) - fmax(slist[0],a);
+  double *slist = (double *)malloc( (2+prsm->vertices.num_items)*sizeof(double) );
+  int num_intersections=intersect_line_with_prism(prsm, p, d, slist);
+
+  // na=smallest index such that slist[na] > a
+  int na=-1;
+  int ns;
+  for(ns=0; na==-1 && ns<num_intersections; ns++)
+   if (slist[ns]>a)
+    na=ns;
+
+  if (na==-1)
+   { free(slist);
+     return 0.0;
+   }
+
+  int inside = ( (na%2)==0 ? 0 : 1);
+  double last_s=a;
+  double ds=0.0;
+  for(ns=na; ns<num_intersections; ns++)
+   { double this_s = fmin(b,slist[ns]);
+     if (inside) ds += (this_s-last_s);
+     if (b<slist[ns]) break;
+     inside = (1-inside);
+     last_s = this_s;
+   }
+  free(slist);
   return ds > 0.0 ? ds : 0.0;
 }
 
@@ -2318,22 +2331,23 @@ double min_distance_to_line_segment(vector3 p, vector3 v1, vector3 v2)
 
 /***************************************************************/
 /* compute the projection of a 3D point p into the plane       */
-/* containing the three points {o, o+v1, o+v2}.                */
+/* that contains the three points {o, o+v1, o+v2} and has      */
+/* normal vector v3.                                           */
 /* algorithm: solve a 3x3 system to compute the projection of  */
 /*            p into the plane (call it pPlane)                */
 /*                pPlane = p-s*v3 = o + t*v1 + u*v2            */
 /*            where v3 is the normal to the plane and s,t,u    */
 /*            are unknowns.                                    */
-/* on return, s is the normal distance. the return value is    */
-/* the normal vector to the plane.                             */
-/* if in_quadrilateral is non-null it is set to 1 or 0         */
-/* according as pPlane does or does not lie in the             */
+/* the return value is the value of s (where pPlane = p-s*v3), */
+/* i.e. the minimum distance from p to the plane.              */
+/* if in_quadrilateral is non-null it is set to 0              */
+/* or 1 according as pPlane does or does not lie in the        */
 /* quadrilateral with vertices (o, o+v1, o+v2, o+v1+v2).       */
 /***************************************************************/
-vector3 normal_to_plane(vector3 p, vector3 o, vector3 v1, vector3 v2,
-                        double *s, int *in_quadrilateral)
+double normal_distance_to_plane(vector3 p,
+                                vector3 o, vector3 v1, vector3 v2, vector3 v3,
+                                int *in_quadrilateral)
 {
-  vector3 v3 = unit_vector3(vector3_cross(v1, v2));
   CHECK( (vector3_norm(v3)>1.0e-6), "degenerate plane in project_point_into_plane" );
   matrix3x3 M;
   M.c0 = v1;
@@ -2341,54 +2355,78 @@ vector3 normal_to_plane(vector3 p, vector3 o, vector3 v1, vector3 v2,
   M.c2 = v3;
   vector3 RHS = vector3_minus(p,o);
   vector3 tus = matrix3x3_vector3_mult(matrix3x3_inverse(M),RHS); // "t, u, s"
-  float t=tus.x, u=tus.y;
-  *s = tus.z;
+  float t=tus.x, u=tus.y, s=tus.z;
   if (in_quadrilateral)
    *in_quadrilateral = ( ( 0.0<=t && t<=1.0 && 0.0<=u && u<=1.0 ) ? 1 : 0 );
-  return v3;
+  return s;
 }
 
-vector3 normal_to_quadrilateral(vector3 p, vector3 o, vector3 v1, vector3 v2,
-                                double *min_distance)
+// like normal_distance_to_plane, but if pPlane (projection of point into plane)
+// lies outside the quadrilateral {o,o+v1,o+v2,o+v1+v2} then take into account
+// the in-plane distance from pPlane to the quadrilateral
+double min_distance_to_quadrilateral(vector3 p,
+                                     vector3 o, vector3 v1, vector3 v2, vector3 v3)
 { 
-  double s, d=0.0;
   int inside;
-  vector3 v3=normal_to_plane(p, o, v1, v2, &s, &inside);
-  if(inside==0)
-   { vector3 pPlane = vector3_minus(p, vector3_scale(s,v3) );
-     vector3 p01 = vector3_plus(o,v1);
-     vector3 p10 = vector3_plus(o,v2);
-     vector3 p11 = vector3_plus(p01,v2);
-     d=       min_distance_to_line_segment(pPlane,   o, p01);
-     d=fmin(d,min_distance_to_line_segment(pPlane,   o, p10));
-     d=fmin(d,min_distance_to_line_segment(pPlane, p01, p11));
-     d=fmin(d,min_distance_to_line_segment(pPlane, p11, p10));
-   }
-  *min_distance=sqrt(s*s+d*d);
-  return v3;
-}
-
-vector3 normal_to_prism_roof_or_ceiling(vector3 p, vector3 *vertices, int num_vertices,
-                                        double height, double *min_distance)
-{
-  vector3 o = {0.0,0.0,0.0}; o.z=height;
-  double s;
-  vector3 v3 = normal_to_plane(p, o, vertices[0], vertices[1], &s, 0);
+  double s=normal_distance_to_plane(p, o, v1, v2, v3, &inside);
+  if(inside==1)
+   return s;
   vector3 pPlane = vector3_minus(p, vector3_scale(s,v3) );
-
-  double d = 0.0;
-  if (point_in_polygon(pPlane.x,pPlane.y,vertices,num_vertices)==0)
-   { int nv;
-     d=min_distance_to_line_segment(pPlane,vertices[0],vertices[1] );
-     for(nv=0; nv<num_vertices; nv++)
-      { int nvp1 = (nv+1) % num_vertices;
-        d=fmin(d,min_distance_to_line_segment(pPlane,vertices[nv],vertices[nvp1])); 
-      }
-   }
-  *min_distance = sqrt(s*s+d*d);
-  return v3;
+  vector3 p01    = vector3_plus(o,v1);
+  vector3 p10    = vector3_plus(o,v2);
+  vector3 p11    = vector3_plus(p01,v2);
+  double d =         min_distance_to_line_segment(pPlane,   o, p01)  ;
+         d = fmin(d, min_distance_to_line_segment(pPlane,   o, p10) );
+         d = fmin(d, min_distance_to_line_segment(pPlane, p01, p11) );
+         d = fmin(d, min_distance_to_line_segment(pPlane, p11, p10) );
+  return sqrt(s*s+d*d);
 }
 
+double min_distance_to_prism_roof_or_ceiling(vector3 p,
+                                             vector3 *vertices, int num_vertices,
+                                             double height)
+{
+  vector3 o  = {0.0,0.0,0.0}; o.z=height;
+  vector3 v3 = {0,0,1.0};
+  double s = normal_distance_to_plane(p,o,vertices[0],vertices[1],v3,0);
+  vector3 pPlane = vector3_minus(p, vector3_scale(s,v3) );
+  if (point_in_polygon(pPlane.x,pPlane.y,vertices,num_vertices)==1)
+   return s;
+
+  int nv;
+  double d=min_distance_to_line_segment(pPlane,vertices[0],vertices[1] );
+  for(nv=1; nv<num_vertices; nv++)
+   d=fmin(d,min_distance_to_line_segment(pPlane,vertices[nv],vertices[(nv+1)%num_vertices]));
+  return sqrt(s*s+d*d);
+}
+
+void GPPoint(FILE *f, vector3 v, prism *prsm)
+{ if (prsm)
+   v = prism_coordinate_p2c(prsm, v);
+  fprintf(f,"%e %e %e \n\n\n",v.x,v.y,v.z); }
+
+void GPLine(FILE *f, vector3 v, vector3 l, prism *prsm)
+{ if (prsm)
+   { v = prism_coordinate_p2c(prsm, v);
+     l = prism_vector_p2c(prsm, l);
+   }
+  fprintf(f,"%e %e %e \n",v.x,v.y,v.z);
+  fprintf(f,"%e %e %e \n\n\n",v.x+l.x,v.y+l.y,v.z+l.z);
+}
+
+void GPQuad(FILE *f, vector3 v, vector3 l1, vector3 l2, prism *prsm)
+{ 
+  if (prsm)
+   { v  = prism_coordinate_p2c(prsm, v);
+     l1 = prism_vector_p2c(prsm, l1);
+     l2 = prism_vector_p2c(prsm, l2);
+   }
+  fprintf(f,"%e %e %e \n",v.x,v.y,v.z);
+  fprintf(f,"%e %e %e \n",v.x+l1.x,v.y+l1.y,v.z+l1.z);
+  fprintf(f,"%e %e %e \n",v.x+l1.x+l2.x,v.y+l1.y+l2.y,v.z+l1.z+l2.z);
+  fprintf(f,"%e %e %e \n",v.x+l2.x,v.y+l2.y,v.z+l2.z);
+  fprintf(f,"%e %e %e \n\n\n",v.x,v.y,v.z);
+}
 
 /***************************************************************/
 /* find the face of the prism for which the normal distance    */
@@ -2414,11 +2452,11 @@ vector3 normal_to_prism(prism *prsm, vector3 xc)
   for(nv=0; nv<num_vertices; nv++)
    { 
      int nvp1 = ( nv==(num_vertices-1) ? 0 : nv+1 );
-     double s;
      vector3 v0 = vertices[nv];
      vector3 v1 = vector3_minus(vertices[nvp1],vertices[nv]);
      vector3 v2 = axis;
-     vector3 v3 = normal_to_quadrilateral(xp, v0, v1, v2, &s);
+     vector3 v3 = unit_vector3(vector3_cross(v1, v2));
+     double s   = min_distance_to_quadrilateral(xp, v0, v1, v2, v3);
      if (fabs(s) < min_distance)
       { min_distance = fabs(s);
         retval = v3;
@@ -2427,12 +2465,11 @@ vector3 normal_to_prism(prism *prsm, vector3 xc)
 
   int fc; // 'floor / ceiling'
   for(fc=0; fc<2; fc++)
-   { double s;
-     vector3 v3 = normal_to_prism_roof_or_ceiling(xp, vertices, num_vertices,
-                                                  fc==0 ? 0.0 : height, &s);
+   { double s=min_distance_to_prism_roof_or_ceiling(xp, vertices, num_vertices,
+                                                    fc==0 ? 0.0 : height);
      if (fabs(s) < min_distance)
       { min_distance = fabs(s);
-        retval = v3;
+        retval = zhat;
       }
    }
   return prism_vector_p2c(prsm, retval);
