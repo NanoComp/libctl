@@ -2281,7 +2281,7 @@ int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double *slist)
 /***************************************************************/
 double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, double a, double b)
 {
-  double *slist = (double *)malloc( (2+prsm->vertices.num_items)*sizeof(double) );
+  double *slist=prsm->workspace.items;
   int num_intersections=intersect_line_with_prism(prsm, p, d, slist);
 
   // na=smallest index such that slist[na] > a
@@ -2292,9 +2292,7 @@ double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, doub
     na=ns;
 
   if (na==-1)
-   { free(slist);
-     return 0.0;
-   }
+   return 0.0;
 
   int inside = ( (na%2)==0 ? 0 : 1);
   double last_s=a;
@@ -2306,7 +2304,6 @@ double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, doub
      inside = (1-inside);
      last_s = this_s;
    }
-  free(slist);
   return ds > 0.0 ? ds : 0.0;
 }
 
@@ -2576,6 +2573,11 @@ geometric_object make_prism(material_type material,
   prsm->vertices.items     = (vector3 *)malloc(num_vertices*sizeof(vector3));
   for(nv=0; nv<num_vertices; nv++)
    prsm->vertices.items[nv] = prism_coordinate_c2p(prsm,vertices[nv]);
+
+  // workspace is an internally-stored double-valued array of length num_vertices+2
+  // that is used by some geometry routines
+  prsm->workspace.num_items = num_vertices+2;
+  prsm->workspace.items     = (double *)malloc( (num_vertices+2)*sizeof(double) );
 
   // note the center and centroid are different!
   vector3 center = vector3_plus(centroid, vector3_scale(0.5*height,zhat) );
