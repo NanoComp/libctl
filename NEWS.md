@@ -1,5 +1,12 @@
 # Libctl Release Notes
 
+## libctl 4.1.2
+
+7/27/2018
+
+* Bug fix in prism subpixel averaging (#19 and #20), thanks to
+  @DerekK88 for the bug report.
+
 ## libctl 4.1.1
 
 6/29/2018
