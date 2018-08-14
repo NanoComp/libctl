@@ -33,6 +33,7 @@
 
 vector3 normal_to_plane(vector3 o, vector3 v1, vector3 v2, vector3 p, double *min_distance);
 double min_distance_to_line_segment(vector3 p, vector3 v1, vector3 v2);
+boolean point_in_or_on_prism(prism *prsm, vector3 xc, boolean include_boundaries);
 
 #define K_PI 3.141592653589793238462643383279502884197
 
@@ -235,20 +236,32 @@ int test_point_inclusion(geometric_object the_block, geometric_object the_prism,
   vector3 min_corner = vector3_scale(-1.0, size);
   vector3 max_corner = vector3_scale(+1.0, size);
   FILE *f = write_log ? fopen("/tmp/test-prism.points","w") : 0;
-  int num_failed=0;
-  int n;
+  int num_failed=0, num_adjusted=0, n;
   for(n=0; n<num_tests; n++)
    { 
      vector3 p = random_point_in_box(min_corner, max_corner);
      boolean in_block=point_in_objectp(p,the_block);
      boolean in_prism=point_in_objectp(p,the_prism);
+
      if (in_block!=in_prism)
-      num_failed++;
-     if (f) fprintf(f,"%i %i %e %e %e \n",in_block,in_prism,p.x,p.y,p.z);
+      { 
+        // retry with boundary exclusion/inclusion reversed
+        boolean libctl_include_boundaries=1;
+        char *s=getenv("LIBCTL_EXCLUDE_BOUNDARIES");
+        if (s && s[0]=='1') libctl_include_boundaries=0;
+        in_prism=point_in_or_on_prism(the_prism.subclass.prism_data,p,1-libctl_include_boundaries);
+        if (in_block==in_prism)
+         num_adjusted++;
+      }
+
+     if (in_block!=in_prism)
+      { num_failed++;
+        if (f) fprintf(f,"%i %i %e %e %e \n",in_block,in_prism,p.x,p.y,p.z);
+      }
    }
   if (f) fclose(f);
   
-  printf("point inclusion: %i/%i points failed\n",num_failed,num_tests);
+  printf("point inclusion: %i/%i points failed (%i adjusted)\n",num_failed,num_tests,num_adjusted);
   return num_failed;
 }
 
