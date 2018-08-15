@@ -2127,14 +2127,30 @@ void get_prism_bounding_box(prism *prsm, geom_box *box)
 }
 
 /***************************************************************/
-/* find the value of s at which the line p+s*d intersects the  */
-/* line segment connecting v1 to v2 (in 2 dimensions)          */
+/* given 2D points p,v1,v2 and a 2D direction vector d,        */
+/* determine whether or not the line p + s*d intersects the    */
+/* line segment v1--v2.                                        */
 /* algorithm: solve the 2x2 linear system p+s*d = a+t*b        */
 /* where s,t are scalars and p,d,a,b are 2-vectors with        */
-/* a=v1, b=v2-v1                                               */
+/* a=v1, b=v2-v1. intersection then corresponds to 0 <= t < 1. */
+/* return values:                                              */
+/*  ** case 1: d is not parallel to v1--v2 **                  */
+/*  NON_INTERSECTING test negative                             */
+/*      INTERSECTING test positive                             */
+/*  ** case 2: d is parallel to v1--v2 **                      */
+/*  IN_SEGMENT       p lies on line segment v1--v2             */
+/*  ON_RAY           p does not lie on v1--v2, but there is a  */
+/*                    *positive* value of s such that p+s*d    */
+/*                    lies on v1--v2                           */
+/* NON_INTERSECTING  neither of the above                      */
 /***************************************************************/
-boolean intersect_line_with_segment(double px, double py, double dx, double dy,
-                                    vector3 v1, vector3 v2, double *s)
+#define THRESH 1.0e-5
+#define NON_INTERSECTING 0
+#define INTERSECTING     1
+#define IN_SEGMENT       2
+#define ON_RAY           3
+int intersect_line_with_segment(double px, double py, double dx, double dy,
+                                vector3 v1, vector3 v2, double *s)
 {
   double ax   = v1.x,       ay  = v1.y;
   double bx   = v2.x-v1.x,  by  = v2.y-v1.y;
@@ -2143,17 +2159,32 @@ boolean intersect_line_with_segment(double px, double py, double dx, double dy,
   double RHSx = ax - px,    RHSy = ay - py;
   double DetM = M00*M11 - M01*M10;
   double L2 = bx*bx + by*by; // squared length of edge
-  if ( fabs(DetM) < 1.0e-10*L2 ) // d zero or nearly parallel to edge-->no intersection
-   return 0;
+  if ( fabs(DetM) < 1.0e-10*L2 )
+   { // d zero or nearly parallel to edge
+     double pmv1x = px-v1.x, pmv1y = py-v1.y, npmv1 = sqrt(pmv1x*pmv1x + pmv1y*pmv1y);
+     double pmv2x = px-v2.x, pmv2y = py-v2.y, npmv2 = sqrt(pmv2x*pmv2x + pmv2y*pmv2y);
+     double dot   = pmv1x*pmv2x + pmv1y*pmv2y;
+     if ( fabs(dot) < (1.0-THRESH)*npmv1*npmv2 )
+      return NON_INTERSECTING;
+     else if (dot<0.0)
+      { *s=0.0;
+        return IN_SEGMENT;
+      }
+     else if ( (dx*pmv1x + dy*pmv1y) < 0.0 )
+      { *s = fmin(npmv1, npmv2) / sqrt(dx*dx + dy*dy);
+        return ON_RAY;
+      }
+     return NON_INTERSECTING;
+   }
 
-  double t = (M00*RHSy-M10*RHSx)/DetM;
+  float t = (M00*RHSy-M10*RHSx)/DetM;
   if (s) *s = (M11*RHSx-M01*RHSy)/DetM;
 
   // the plumb line intersects the segment if 0<=t<=1, with t==0,1
   // corresponding to the endpoints; for our purposes we count
   // the intersection if the plumb line runs through the t==0 vertex, but
   // NOT the t==1 vertex, to avoid double-counting for complete polygons.
-  return t < 0 || ((float)t) >= 1 ? 0 : 1;
+  return ( t<-THRESH || t>=(1-THRESH) ) ? NON_INTERSECTING : INTERSECTING;
 }
 
 // like the previous routine, but only count intersections if s>=0
@@ -2162,10 +2193,10 @@ boolean intersect_ray_with_segment(double px, double py, double dx, double dy,
 {
   double ss;
   int status=intersect_line_with_segment(px,py,dx,dy,v1,v2,&ss);
-  if (status==0 || ss<0.0)
-   return 0;
+  if (status==INTERSECTING && ss<0.0)
+   return NON_INTERSECTING;
   if (s) *s=ss;
-  return 1;
+  return status;
 }
 
 /***************************************************************/
@@ -2175,23 +2206,41 @@ boolean intersect_ray_with_segment(double px, double py, double dx, double dy,
 /* p to infinity and count the number of edges intersected;    */
 /* point lies in polygon iff this is number is odd.            */
 /***************************************************************/
-boolean point_in_polygon(double px, double py, vector3 *vertices, int num_vertices)
+boolean point_in_or_on_polygon(double px, double py,
+                               vector3 *vertices, int num_vertices,
+                               boolean include_boundaries)
 {
   double dx=0.0, dy=-1.0;
-  int num_side_intersections=0;
-  int nv;
+  int nv, edges_crossed=0;
   for(nv=0; nv<num_vertices; nv++)
-   num_side_intersections
-    +=intersect_ray_with_segment(px, py, dx, dy,
-                                 vertices[nv], vertices[(nv+1)%num_vertices],
-                                 0);
-  return num_side_intersections%2;
+   { int status = intersect_ray_with_segment(px, py, dx, dy,
+                                             vertices[nv], vertices[(nv+1)%num_vertices], 0);
+     if (status==IN_SEGMENT)
+      return include_boundaries;
+     else if (status==INTERSECTING) 
+      edges_crossed++;
+     else if (status==ON_RAY)
+      { vector3 vm1 = vertices[ (nv==0 ? num_vertices-1 : nv-1) ];
+        vector3 v   = vertices[ nv ];
+        vector3 vp1 = vertices[ (nv+1) % num_vertices ];
+        vector3 vp2 = vertices[ (nv+2) % num_vertices ];
+        int last_status = intersect_ray_with_segment(px, py, dx, dy, vm1, v, 0);
+        if (last_status==INTERSECTING) edges_crossed--;
+        int next_status = intersect_ray_with_segment(px, py, dx, dy, vp1, vp2, 0);
+        if (next_status==INTERSECTING) edges_crossed--;
+      }
+   }
+  return (edges_crossed % 2);
 }
+
+boolean point_in_polygon(double px, double py,
+                         vector3 *vertices, int num_vertices)
+{ return point_in_or_on_polygon(px, py, vertices, num_vertices, 1); }
 
 /***************************************************************/
 /* return 1 or 0 if xc lies inside or outside the prism        */
 /***************************************************************/
-boolean point_in_prism(prism *prsm, vector3 xc)
+boolean point_in_or_on_prism(prism *prsm, vector3 xc, boolean include_boundaries)
 {
   vector3 *vertices = prsm->vertices.items;
   int num_vertices  = prsm->vertices.num_items;
@@ -2199,8 +2248,24 @@ boolean point_in_prism(prism *prsm, vector3 xc)
   vector3 xp        = prism_coordinate_c2p(prsm, xc);
   if ( xp.z<0.0 || xp.z>prsm->height)
    return 0;
-  return point_in_polygon(xp.x, xp.y, vertices, num_vertices);
+  return point_in_or_on_polygon(xp.x, xp.y, vertices, num_vertices, include_boundaries);
 }
+
+boolean point_in_prism(prism *prsm, vector3 xc)
+{
+  // by default, points on polygon edges are considered to lie inside the
+  // polygon; this can be reversed by setting the environment variable
+  // LIBCTL_EXCLUDE_BOUNDARIES=1
+  static boolean include_boundaries=1, init=0;
+  if (init==0)
+   { init=1;
+     char *s=getenv("LIBCTL_EXCLUDE_BOUNDARIES");
+     if (s && s[0]=='1') include_boundaries=0;
+   }
+
+  return point_in_or_on_prism(prsm, xc, include_boundaries);
+}
+
 
 // comparator for qsort
 static int dcmp(const void *pd1, const void *pd2)
@@ -2242,9 +2307,9 @@ int intersect_line_with_prism(prism *prsm, vector3 p, vector3 d, double *slist)
      // intersection of the XY-plane projection of the line with the
      // polygon edge between vertices (nv,nv+1).
      double s;
-     if (!intersect_line_with_segment(p_prsm.x, p_prsm.y, d_prsm.x, d_prsm.y,
-                                      vertices[nv], vertices[nvp1], &s)
-        ) continue;
+     int status=intersect_line_with_segment(p_prsm.x, p_prsm.y, d_prsm.x, d_prsm.y,
+                                            vertices[nv], vertices[nvp1], &s);
+     if (status==NON_INTERSECTING || status==ON_RAY) continue;
 
      // OK, we know the XY-plane projection of the line intersects the polygon edge;
      // now go back to 3D, ask for the z-coordinate at which the line intersects
@@ -2397,6 +2462,8 @@ double min_distance_to_prism_roof_or_ceiling(vector3 p,
   return sqrt(s*s+d*d);
 }
 
+/* utility routines for writing points, lines, quadrilaterals */
+/*  to text files for viewing in e.g. gnuplot                 */
 void GPPoint(FILE *f, vector3 v, prism *prsm)
 { if (prsm)
    v = prism_coordinate_p2c(prsm, v);
@@ -2492,8 +2559,7 @@ void display_prism_info(int indentby, prism *prsm)
   for(nv=0; nv<num_vertices; nv++)
    { vector3 v = matrix3x3_vector3_mult(m_p2c, vertices[nv]);
      printf("%*s     {%e,%e,%e}\n",indentby,"",v.x,v.y,v.z);
-   };
-
+   }
 }
 
 /***************************************************************/
