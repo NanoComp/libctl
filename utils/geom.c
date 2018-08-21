@@ -2558,7 +2558,7 @@ void display_prism_info(int indentby, prism *prsm)
   int nv;
   for(nv=0; nv<num_vertices; nv++)
    { vector3 v = matrix3x3_vector3_mult(m_p2c, vertices[nv]);
-     printf("%*s     {%g,%g,%g}\n",indentby,"",v.x,v.y,v.z);
+     printf("%*s     (%g,%g,%g)\n",indentby,"",v.x,v.y,v.z);
    }
 }
 
