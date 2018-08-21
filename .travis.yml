@@ -23,3 +23,7 @@ matrix:
         - sh autogen.sh --prefix=`pwd`/.local
         - make && make check && make install
         - rm -rf * ~/.local
+
+after_script:
+  - PRISM_LOG=${TRAVIS_BUILD_DIR}/utils/test-prism.log
+  - if [[ -e ${PRISM_LOG} ]]; then cat ${PRISM_LOG}; fi
