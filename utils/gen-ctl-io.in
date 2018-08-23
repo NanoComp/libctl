@@ -202,26 +202,26 @@ EOF
 
 /******* SWIG type-conversion mappings for basic libctl types *******/
 
-%typemap(guile,in) vector3 { \$1 = ctl_convert_vector3_to_c(\$input); }
-%typemap(guile,out) vector3 { \$result = ctl_convert_vector3_to_scm(\$1); }
+%typemap(in) vector3 { \$1 = ctl_convert_vector3_to_c(\$input); }
+%typemap(out) vector3 { \$result = ctl_convert_vector3_to_scm(\$1); }
 
-%typemap(guile,in) matrix3x3 { \$1 = ctl_convert_matrix3x3_to_c(\$input); }
-%typemap(guile,out) matrix3x3 { \$result = ctl_convert_matrix3x3_to_scm(\$1); }
+%typemap(in) matrix3x3 { \$1 = ctl_convert_matrix3x3_to_c(\$input); }
+%typemap(out) matrix3x3 { \$result = ctl_convert_matrix3x3_to_scm(\$1); }
 
-%typemap(guile,in) cvector3 { \$1 = ctl_convert_cvector3_to_c(\$input); }
-%typemap(guile,out) cvector3 { \$result = ctl_convert_cvector3_to_scm(\$1); }
+%typemap(in) cvector3 { \$1 = ctl_convert_cvector3_to_c(\$input); }
+%typemap(out) cvector3 { \$result = ctl_convert_cvector3_to_scm(\$1); }
 
-%typemap(guile,in) cmatrix3x3 { \$1 = ctl_convert_cmatrix3x3_to_c(\$input); }
-%typemap(guile,out) cmatrix3x3 { \$result = ctl_convert_cmatrix3x3_to_scm(\$1); }
+%typemap(in) cmatrix3x3 { \$1 = ctl_convert_cmatrix3x3_to_c(\$input); }
+%typemap(out) cmatrix3x3 { \$result = ctl_convert_cmatrix3x3_to_scm(\$1); }
 
-%typemap(guile,in) cnumber { \$1 = ctl_convert_cnumber_to_c(\$input); }
-%typemap(guile,out) cnumber { \$result = ctl_convert_cnumber_to_scm(\$1); }
+%typemap(in) cnumber { \$1 = ctl_convert_cnumber_to_c(\$input); }
+%typemap(out) cnumber { \$result = ctl_convert_cnumber_to_scm(\$1); }
 
-%typemap(guile,in) function { \$1 = ctl_convert_function_to_c(\$input); }
-%typemap(guile,out) function { \$result = ctl_convert_function_to_scm(\$1); }
+%typemap(in) function { \$1 = ctl_convert_function_to_c(\$input); }
+%typemap(out) function { \$result = ctl_convert_function_to_scm(\$1); }
 
-%typemap(guile,in) object { \$1 = ctl_convert_object_to_c(\$input); }
-%typemap(guile,out) object { \$result = ctl_convert_object_to_scm(\$1); }
+%typemap(in) object { \$1 = ctl_convert_object_to_c(\$input); }
+%typemap(out) object { \$result = ctl_convert_object_to_scm(\$1); }
 
 EOF
 
