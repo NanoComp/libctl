@@ -820,7 +820,7 @@
 ; ***************************************************************************
 
 (define (swig-type-header type-name)
-  (print "%typemap(guile,in) "
+  (print "%typemap(in) "
 	 (if cxx (string-append namespace "::") "")
 	 (c-type-string type-name) " {\n")
   (if cxx (print "using namespace " namespace ";\n"))
@@ -833,7 +833,7 @@
 			     (get-type-descriptor
 			      (list-el-type-name type-name))))))
       (begin
-	(print "%typemap(guile,out) "
+	(print "%typemap(out) "
 	       (if cxx (string-append namespace "::") "")
 	       (c-type-string type-name) " {\n")
 	(if cxx (print "using namespace " namespace ";\n"))
