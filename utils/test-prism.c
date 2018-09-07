@@ -40,6 +40,41 @@ boolean point_in_or_on_prism(prism *prsm, vector3 xc, boolean include_boundaries
 // routine from geom.c that rotates the coordinate of a point
 // from the prism coordinate system to the cartesian coordinate system
 vector3 prism_coordinate_p2c(prism *prsm, vector3 vp);
+vector3 prism_coordinate_c2p(prism *prsm, vector3 vc);
+vector3 prism_vector_p2c(prism *prsm, vector3 vp);
+vector3 prism_vector_c2p(prism *prsm, vector3 vc);
+
+/***************************************************************/
+/* utility routines for writing points, lines, quadrilaterals  */
+/*  to text files for viewing in e.g. gnuplot                  */
+/***************************************************************/
+void GPPoint(FILE *f, vector3 v, prism *prsm)
+{ if (prsm)
+   v = prism_coordinate_p2c(prsm, v);
+  fprintf(f,"%e %e %e \n\n\n",v.x,v.y,v.z); }
+
+void GPLine(FILE *f, vector3 v, vector3 l, prism *prsm)
+{ if (prsm)
+   { v = prism_coordinate_p2c(prsm, v);
+     l = prism_vector_p2c(prsm, l);
+   }
+  fprintf(f,"%e %e %e \n",v.x,v.y,v.z);
+  fprintf(f,"%e %e %e \n\n\n",v.x+l.x,v.y+l.y,v.z+l.z);
+}
+
+void GPQuad(FILE *f, vector3 v, vector3 l1, vector3 l2, prism *prsm)
+{ 
+  if (prsm)
+   { v  = prism_coordinate_p2c(prsm, v);
+     l1 = prism_vector_p2c(prsm, l1);
+     l2 = prism_vector_p2c(prsm, l2);
+   }
+  fprintf(f,"%e %e %e \n",v.x,v.y,v.z);
+  fprintf(f,"%e %e %e \n",v.x+l1.x,v.y+l1.y,v.z+l1.z);
+  fprintf(f,"%e %e %e \n",v.x+l1.x+l2.x,v.y+l1.y+l2.y,v.z+l1.z+l2.z);
+  fprintf(f,"%e %e %e \n",v.x+l2.x,v.y+l2.y,v.z+l2.z);
+  fprintf(f,"%e %e %e \n\n\n",v.x,v.y,v.z);
+}
 
 /***************************************************************/
 /***************************************************************/
@@ -382,6 +417,17 @@ int run_unit_tests()
 
   geometric_object the_block = make_block(m, c, xhat, yhat, zhat, size);
   geometric_object the_prism=make_prism(m, v, 4, LZ, zhat);
+
+  /***************************************************************/
+  /* with probability P_SHIFT, shift the centers of both block   */
+  /* and prism by a random displacement vector                   */
+  /***************************************************************/
+#define P_SHIFT 0.75
+  if ( urand(0.0,1.0) < P_SHIFT )
+   { vector3 shift    = vector3_scale( urand(0.0,1.0), random_unit_vector3() );
+     the_block.center = vector3_plus(the_block.center, shift);
+     the_prism.center = vector3_plus(the_prism.center, shift);
+   }
 
   char *s=getenv("LIBCTL_TEST_PRISM_LOG");
   int write_log = (s && s[0]=='1') ? 1 : 0;

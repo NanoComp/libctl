@@ -66,8 +66,6 @@ using namespace ctlio;
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 
 // forward declarations of prism-related routines, at the bottom of this file
-static vector3 prism_vector_p2c(prism *prsm, vector3 vp);
-static vector3 prism_vector_c2p(prism *prsm, vector3 vc);
 static void get_prism_bounding_box(prism *prsm, geom_box *box);
 static double intersect_line_segment_with_prism(prism *prsm, vector3 p, vector3 d, double a, double b);
 static boolean point_in_polygon(double px, double py, vector3 *vertices, int num_vertices);
@@ -139,8 +137,14 @@ void geom_fix_object(geometric_object o)
 	 }
 	 case GEOM PRISM:
 	 {
+	      // recompute centroid of prism floor polygon from prism center,
+	      // which may have shifted since prism was initialized
+              prism *prsm    = o.subclass.prism_data;
+              vector3 zhat   = prsm->m_p2c.c2;
+              double height  = prsm->height;
+              prsm->centroid = vector3_plus(o.center, vector3_scale(-0.5*height,zhat));
+	      break;
 	 }
-	 break;
 	 case GEOM COMPOUND_GEOMETRIC_OBJECT:
 	 {
 	      int i;
@@ -2462,36 +2466,6 @@ double min_distance_to_prism_roof_or_ceiling(vector3 p,
   return sqrt(s*s+d*d);
 }
 
-/* utility routines for writing points, lines, quadrilaterals */
-/*  to text files for viewing in e.g. gnuplot                 */
-void GPPoint(FILE *f, vector3 v, prism *prsm)
-{ if (prsm)
-   v = prism_coordinate_p2c(prsm, v);
-  fprintf(f,"%e %e %e \n\n\n",v.x,v.y,v.z); }
-
-void GPLine(FILE *f, vector3 v, vector3 l, prism *prsm)
-{ if (prsm)
-   { v = prism_coordinate_p2c(prsm, v);
-     l = prism_vector_p2c(prsm, l);
-   }
-  fprintf(f,"%e %e %e \n",v.x,v.y,v.z);
-  fprintf(f,"%e %e %e \n\n\n",v.x+l.x,v.y+l.y,v.z+l.z);
-}
-
-void GPQuad(FILE *f, vector3 v, vector3 l1, vector3 l2, prism *prsm)
-{ 
-  if (prsm)
-   { v  = prism_coordinate_p2c(prsm, v);
-     l1 = prism_vector_p2c(prsm, l1);
-     l2 = prism_vector_p2c(prsm, l2);
-   }
-  fprintf(f,"%e %e %e \n",v.x,v.y,v.z);
-  fprintf(f,"%e %e %e \n",v.x+l1.x,v.y+l1.y,v.z+l1.z);
-  fprintf(f,"%e %e %e \n",v.x+l1.x+l2.x,v.y+l1.y+l2.y,v.z+l1.z+l2.z);
-  fprintf(f,"%e %e %e \n",v.x+l2.x,v.y+l2.y,v.z+l2.z);
-  fprintf(f,"%e %e %e \n\n\n",v.x,v.y,v.z);
-}
-
 /***************************************************************/
 /* find the face of the prism for which the normal distance    */
 /* from x to the plane of that face is the shortest, then      */
@@ -2600,13 +2574,13 @@ geometric_object make_prism(material_type material,
 
   // make sure all vertices lie in a plane normal to the given axis
   vector3 zhat = unit_vector3(axis);
-  double tolerance=1.0e-6;
+  double tol=1.0e-6;
   for(nv=0; nv<num_vertices; nv++)
    { int nvp1 = (nv+1) % num_vertices;
      vector3 zhatp = triangle_normal(centroid,vertices[nv],vertices[nvp1]);
      boolean axis_normal
-      = (    vector3_nearly_equal(zhat, zhatp, tolerance)
-          || vector3_nearly_equal(zhat, vector3_scale(-1.0,zhatp), tolerance)
+      = (    vector3_nearly_equal(zhat, zhatp, tol)
+          || vector3_nearly_equal(zhat, vector3_scale(-1.0,zhatp), tol)
         );
      CHECK(axis_normal, "axis not normal to vertex plane in make_prism");
    }
@@ -2615,14 +2589,21 @@ geometric_object make_prism(material_type material,
   // to yield the coordinates of the same point in the prism coordinate system.
   // the prism coordinate system is a right-handed coordinate system
   // in which the prism lies in the xy plane (extrusion axis is the positive z-axis)
-  // with centroid at the origin and the first edge lying on the positive x-axis.
+  // with centroid at the origin.
   // note: the prism *centroid* is the center of mass of the planar vertex polygon,
   //       i.e. it is a point lying on the bottom surface of the prism.
   //       This is the origin of coordinates in the prism system.
   //       The *center* of the geometric object is the center of mass of the
   //       3D prism. So center = centroid + 0.5*zHat.
-  vector3 xhat    = unit_vector3(vector3_minus(vertices[1],vertices[0]));
-  vector3 yhat    = unit_vector3(vector3_cross(zhat,xhat));
+  vector3 x0hat={1.0,0.0,0.0}, y0hat={0.0,1.0,0.0}, z0hat={0.0,0.0,1.0};
+  vector3 xhat, yhat;
+  if      (vector3_nearly_equal(zhat, x0hat, tol)) { xhat=y0hat; yhat=z0hat; }
+  else if (vector3_nearly_equal(zhat, y0hat, tol)) { xhat=z0hat; yhat=x0hat; }
+  else if (vector3_nearly_equal(zhat, z0hat, tol)) { xhat=x0hat; yhat=y0hat; }
+  else
+   { xhat    = unit_vector3(vector3_minus(vertices[1],vertices[0]));
+     yhat    = unit_vector3(vector3_cross(zhat,xhat));
+   }
   matrix3x3 m_p2c = {xhat, yhat, zhat };
   matrix3x3 m_c2p = matrix3x3_inverse(m_p2c);
 
