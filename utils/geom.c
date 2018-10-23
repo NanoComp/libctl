@@ -751,7 +751,6 @@ void CTLIO display_geometric_object_info(int indentby, geometric_object o)
 int intersect_line_with_object(vector3 p, vector3 d, geometric_object o,
 			       double s[2])
 {
-     vector3 p0=p;
      p = vector3_minus(p, o.center);
      s[0] = s[1] = 0;
      switch (o.which_subclass) {
@@ -2473,7 +2472,6 @@ double min_distance_to_prism_roof_or_ceiling(vector3 p,
 /***************************************************************/
 vector3 normal_to_prism(prism *prsm, vector3 xc)
 {
-  vector3 centroid  = prsm->centroid;
   double height     = prsm->height;
   vector3 *vertices = prsm->vertices.items;
   int num_vertices  = prsm->vertices.num_items;
@@ -2486,9 +2484,9 @@ vector3 normal_to_prism(prism *prsm, vector3 xc)
   vector3 retval;
   double min_distance=HUGE_VAL;
   int nv;
-  // consider side walls 
+  // consider side walls
   for(nv=0; nv<num_vertices; nv++)
-   { 
+   {
      int nvp1 = ( nv==(num_vertices-1) ? 0 : nv+1 );
      vector3 v0 = vertices[nv];
      vector3 v1 = vector3_minus(vertices[nvp1],vertices[nv]);
@@ -2524,7 +2522,6 @@ void display_prism_info(int indentby, prism *prsm)
   double height     = prsm->height;
   vector3 z0        = {0.0, 0.0, 1.0};
   vector3 axis      = prism_vector_p2c(prsm,z0);
-  vector3 center    = prism_coordinate_p2c(prsm,vector3_scale(0.5*height,z0));
 
   printf("%*s     height %g, axis (%g,%g,%g), %i vertices:\n",
           indentby, "", height,axis.x,axis.y,axis.z,num_vertices);
