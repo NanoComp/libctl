@@ -195,14 +195,17 @@
 
 (define (make class . property-values)
   (if (list? class)
-      (let ((o
-	     (extend-object
-	      (apply make (cons (class-parent class) property-values))
-	      (class-type-name class)
-	      (map (lambda (property)
-		     (get-property-value property property-values))
-		   (list-transform-negative
-		     (class-properties class) property-derived?)))))
+      (let* ((newprops
+              (map (lambda (property)
+                     (get-property-value property property-values))
+                   (list-transform-negative
+                     (class-properties class) property-derived?)))
+             (o
+              (extend-object
+               (apply make (cons (class-parent class)
+                                 (append newprops property-values)))
+               (class-type-name class)
+               newprops)))
 	(fold-left (lambda (o p)
 		     (modify-object o (derive-property p o)))
 		   o
