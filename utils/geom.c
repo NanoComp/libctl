@@ -1524,35 +1524,35 @@ static void find_best_partition(int nobjects, const geom_box_object *objects,
 
      for (i = 0; i < nobjects; ++i) {
          cur_partition = VEC_I(objects[i].box.high, divide_axis) * (1 + SMALL);
-	  cur_n1 = cur_n2 = 0;
-	  for (j = 0; j < nobjects; ++j) {
-	       if (VEC_I(objects[j].box.low, divide_axis) <= cur_partition)
-		    ++cur_n1;
-	       if (VEC_I(objects[j].box.high, divide_axis) >= cur_partition)
-		    ++cur_n2;
-	  }
-	  CHECK(cur_n1 + cur_n2 >= nobjects, "bug 1 in find_best_partition");
-	  if (MAX(cur_n1, cur_n2) < MAX(*n1, *n2)) {
-	       *best_partition = cur_partition;
-	       *n1 = cur_n1;
-	       *n2 = cur_n2;
-	  }
+         cur_n1 = cur_n2 = 0;
+         for (j = 0; j < nobjects; ++j) {
+             double low = VEC_I(objects[j].box.low, divide_axis);
+             double high = VEC_I(objects[j].box.high, divide_axis);
+             cur_n1 += low <= cur_partition;
+             cur_n2 += high >= cur_partition;
+         }
+         CHECK(cur_n1 + cur_n2 >= nobjects, "assertion failure 1 in find_best_partition");
+         if (MAX(cur_n1, cur_n2) < MAX(*n1, *n2)) {
+             *best_partition = cur_partition;
+             *n1 = cur_n1;
+             *n2 = cur_n2;
+         }
      }
      for (i = 0; i < nobjects; ++i) {
          cur_partition = VEC_I(objects[i].box.low, divide_axis) * (1 - SMALL);
-	  cur_n1 = cur_n2 = 0;
-	  for (j = 0; j < nobjects; ++j) {
-	       if (VEC_I(objects[j].box.low, divide_axis) <= cur_partition)
-		    ++cur_n1;
-	       if (VEC_I(objects[j].box.high, divide_axis) >= cur_partition)
-		    ++cur_n2;
-	  }
-	  CHECK(cur_n1 + cur_n2 >= nobjects, "bug 2 in find_best_partition");
-	  if (MAX(cur_n1, cur_n2) < MAX(*n1, *n2)) {
-	       *best_partition = cur_partition;
-	       *n1 = cur_n1;
-	       *n2 = cur_n2;
-	  }
+         cur_n1 = cur_n2 = 0;
+         for (j = 0; j < nobjects; ++j) {
+             double low = VEC_I(objects[j].box.low, divide_axis);
+             double high = VEC_I(objects[j].box.high, divide_axis);
+             cur_n1 += low <= cur_partition;
+             cur_n2 += high >= cur_partition;
+         }
+         CHECK(cur_n1 + cur_n2 >= nobjects, "assertion failure 2 in find_best_partition");
+         if (MAX(cur_n1, cur_n2) < MAX(*n1, *n2)) {
+             *best_partition = cur_partition;
+             *n1 = cur_n1;
+             *n2 = cur_n2;
+         }
      }
 }
 
