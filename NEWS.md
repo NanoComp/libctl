@@ -1,5 +1,13 @@
 # Libctl Release Notes
 
+## libctl 4.1.4
+
+11/16/18
+
+ * Work around gcc bug (closes #32)
+
+ * Allow subclass properties to override defaults (or lack thereof) in parent class
+
 ## libctl 4.1.3
 
 9/7/2018
