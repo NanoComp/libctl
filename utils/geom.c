@@ -97,7 +97,12 @@ static vector3 cartesian_to_lattice(vector3 v)
 				   v);
 }
 
-/* "Fix" the parameters of the given object to account for the
+/* geom_fix_object is called after an object's externally-configurable parameters
+   have been initialized, but before any actual geometry calculations are done;
+   it is an opportunity to (re)compute internal data fields (such as cached
+   rotation matrices) that depend on externally-configurable parameters.
+   
+   One example: "Fix" the parameters of the given object to account for the
    geometry_lattice basis, which may be non-orthogonal.  In particular,
    this means that the normalization of several unit vectors, such
    as the cylinder or block axes, needs to be changed.
@@ -136,14 +141,9 @@ void geom_fix_object(geometric_object o)
 	      break;
 	 }
 	 case GEOM PRISM:
-	 {
-	      // recompute centroid of prism floor polygon from prism center,
-	      // which may have shifted since prism was initialized
-              prism *prsm    = o.subclass.prism_data;
-              vector3 zhat   = prsm->m_p2c.c2;
-              double height  = prsm->height;
-              prsm->centroid = vector3_plus(o.center, vector3_scale(-0.5*height,zhat));
-	      break;
+	 { 
+              update_prism(o.subclass.prism_data, o.center);
+              break;
 	 }
 	 case GEOM COMPOUND_GEOMETRIC_OBJECT:
 	 {
@@ -2554,6 +2554,18 @@ vector3 triangle_normal(vector3 v1, vector3 v2, vector3 v3)
   double nvnorm=vector3_norm(nv);
  // if (area) *area += 0.5*nvnorm;
   return unit_vector3(nv);
+}
+
+/***************************************************************/
+/***************************************************************/
+/***************************************************************/
+void update_prism(prism *prsm, vector3 center)
+{
+  // recompute centroid of prism floor polygon from prism center,
+  // which may have shifted since prism was initialized
+  vector3 zhat   = prsm->m_p2c.c2;
+  double height  = prsm->height;
+  prsm->centroid = vector3_plus(o.center, vector3_scale(-0.5*height,zhat));
 }
 
 /***************************************************************/
