@@ -41,6 +41,7 @@
   (define-property material nothing MATERIAL-TYPE)
   (define-property center no-default 'vector3))
 
+
 (define-class compound-geometric-object geometric-object
   (define-property component-objects '()
     (make-list-type 'geometric-object)))
@@ -97,27 +98,25 @@
 ;      they should be thought of as having been declared using 
 ;      `define-derived-property` or `define-post-processed-property,`
 ;      except here the code that does the derivation or
-;      post-processing is implemented in C, not scheme.
-;  (b) If 'axis' is left unspecified, it is inferred to be the
-;      normal to the plane of the prism floor, with sign defined
-;      by a right-hand-rule with respect to the first two vertices.
-;  (c) The suffix _p (for "prism") is used to identify variables
+;      post-processing is implemented in C, not scheme.)
+;  (b) The suffix _p (for "prism") is used to identify variables
 ;      that store coordinates of points or components of vectors
 ;      in the prism coordinate system. (The prism coordinate system 
 ;      is defined by the condition that the prism axis is the z-axis 
 ;      and the prism floor lies in the xy plane at z==0.) Variables
 ;      with no suffix refer to quantities in ordinary 3D space.
-;  (d) "centroid" refers to the centroid of the prism floor polygon; this is
+;  (c) "centroid" refers to the centroid of the prism floor polygon; this is
 ;      the origin of the prism coordinate system [i.e. by definition
 ;      we have centroid_p=(0 0 0)].
+;  (d) If 'axis' is left unspecified, it is inferred to be the
+;      normal to the plane of the prism floor, with sign defined
+;      by a right-hand-rule with respect to the first two vertices, i.e.
+;      axis = normal_vector( (v1-centroid) x (v2-centroid) )
 ;  (e) The specification of the prism vertices and height suffices to
 ;      determine the center of the geometric object
-;      (center = centroid + 0.5*height*axis), and the result of
-;      this calculation *overrides* any initialization given for the
-;      `center` field of a prism (which it inherits from geometric-object);
-;      that is, if you say something like 
-;       (make prism ... (center (vector3 x0 y0 z0)) ...)
-;      then the `center` initialization will be quietly *ignored.*
+;      (center = centroid + 0.5*height*axis), so---in contrast to all other
+;      types of geometric-object---there is no need to specify the `center`
+;      field when instantiating a prism.
 (define-class prism geometric-object
 ; fields to be filled in by users
   (define-property vertices '() (make-list-type 'vector3))
@@ -137,7 +136,6 @@
 		  (object-property-value object 'size)))))
 
 ; ****************************************************************
-
 (define-class lattice no-parent
   (define-post-processed-property basis1 (vector3 1 0 0) 'vector3 unit-vector3)
   (define-post-processed-property basis2 (vector3 0 1 0) 'vector3 unit-vector3)
@@ -232,6 +230,10 @@
 (define-input-var geometry-lattice (make lattice) 'lattice)
 (define-input-var geometry '() (make-list-type 'geometric-object))
 (define-input-var ensure-periodicity true 'boolean)
+
+; special vector3 that signifies 'no value specified'
+(define no-val #e1e20)
+(define auto-center (vector3 no-val no-val no-val))
 
 (define-external-function point-in-object? true false
   'boolean 'vector3 'geometric-object)
