@@ -1,5 +1,19 @@
 # Libctl Release Notes
 
+## libctl 4.1.4
+
+11/16/18
+
+ * Work around gcc bug (closes #32).
+
+ * Allow subclass properties to override defaults (or lack thereof) in parent class.
+
+## libctl 4.1.3
+
+9/7/2018
+
+* Improved prism handling of points on prism faces (#23) and various cosmetic improvements (#22, #24, #25).
+
 ## libctl 4.1.2
 
 7/27/2018

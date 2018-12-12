@@ -1535,35 +1535,35 @@ static void find_best_partition(int nobjects, const geom_box_object *objects,
 
      for (i = 0; i < nobjects; ++i) {
          cur_partition = VEC_I(objects[i].box.high, divide_axis) * (1 + SMALL);
-	  cur_n1 = cur_n2 = 0;
-	  for (j = 0; j < nobjects; ++j) {
-	       if (VEC_I(objects[j].box.low, divide_axis) <= cur_partition)
-		    ++cur_n1;
-	       if (VEC_I(objects[j].box.high, divide_axis) >= cur_partition)
-		    ++cur_n2;
-	  }
-	  CHECK(cur_n1 + cur_n2 >= nobjects, "bug 1 in find_best_partition");
-	  if (MAX(cur_n1, cur_n2) < MAX(*n1, *n2)) {
-	       *best_partition = cur_partition;
-	       *n1 = cur_n1;
-	       *n2 = cur_n2;
-	  }
+         cur_n1 = cur_n2 = 0;
+         for (j = 0; j < nobjects; ++j) {
+             double low = VEC_I(objects[j].box.low, divide_axis);
+             double high = VEC_I(objects[j].box.high, divide_axis);
+             cur_n1 += low <= cur_partition;
+             cur_n2 += high >= cur_partition;
+         }
+         CHECK(cur_n1 + cur_n2 >= nobjects, "assertion failure 1 in find_best_partition");
+         if (MAX(cur_n1, cur_n2) < MAX(*n1, *n2)) {
+             *best_partition = cur_partition;
+             *n1 = cur_n1;
+             *n2 = cur_n2;
+         }
      }
      for (i = 0; i < nobjects; ++i) {
          cur_partition = VEC_I(objects[i].box.low, divide_axis) * (1 - SMALL);
-	  cur_n1 = cur_n2 = 0;
-	  for (j = 0; j < nobjects; ++j) {
-	       if (VEC_I(objects[j].box.low, divide_axis) <= cur_partition)
-		    ++cur_n1;
-	       if (VEC_I(objects[j].box.high, divide_axis) >= cur_partition)
-		    ++cur_n2;
-	  }
-	  CHECK(cur_n1 + cur_n2 >= nobjects, "bug 2 in find_best_partition");
-	  if (MAX(cur_n1, cur_n2) < MAX(*n1, *n2)) {
-	       *best_partition = cur_partition;
-	       *n1 = cur_n1;
-	       *n2 = cur_n2;
-	  }
+         cur_n1 = cur_n2 = 0;
+         for (j = 0; j < nobjects; ++j) {
+             double low = VEC_I(objects[j].box.low, divide_axis);
+             double high = VEC_I(objects[j].box.high, divide_axis);
+             cur_n1 += low <= cur_partition;
+             cur_n2 += high >= cur_partition;
+         }
+         CHECK(cur_n1 + cur_n2 >= nobjects, "assertion failure 2 in find_best_partition");
+         if (MAX(cur_n1, cur_n2) < MAX(*n1, *n2)) {
+             *best_partition = cur_partition;
+             *n1 = cur_n1;
+             *n2 = cur_n2;
+         }
      }
 }
 
@@ -2474,9 +2474,9 @@ vector3 normal_to_prism(prism *prsm, vector3 pc)
   vector3 retval;
   double min_distance=HUGE_VAL;
   int nv;
-  // consider side walls 
+  // consider side walls
   for(nv=0; nv<num_vertices; nv++)
-   { 
+   {
      int nvp1 = ( nv==(num_vertices-1) ? 0 : nv+1 );
      vector3 v0p = vps[nv];
      vector3 v1p = vector3_minus(vps[nvp1],vps[nv]);
@@ -2507,7 +2507,6 @@ void get_prism_bounding_box(prism *prsm, geom_box *box)
 {
   vector3 *vertices = prsm->vertices.items;
   int num_vertices  = prsm->vertices.num_items;
-
   box->low = box->high = vertices[0];
   int nv, fc;
   for(nv=0; nv<num_vertices; nv++)
@@ -2675,7 +2674,6 @@ void init_prism(geometric_object *o)
 /***************************************************************/
 /* routines called from C++ or python codes to create prisms   */
 /***************************************************************/
-
 // prism with center determined automatically from vertices, height, and axis
 geometric_object make_prism(material_type material,
 			    const vector3 *vertices, int num_vertices,
