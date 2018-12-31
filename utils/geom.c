@@ -2575,6 +2575,8 @@ geometric_object make_prism(material_type material,
   for(nv=0; nv<num_vertices; nv++)
    { int nvp1 = (nv+1) % num_vertices;
      vector3 zhatp = triangle_normal(centroid,vertices[nv],vertices[nvp1]);
+     if (vector3_norm(zhatp)==0.0) // vertices collinear with centroid
+      continue;
      boolean axis_normal
       = (    vector3_nearly_equal(zhat, zhatp, tol)
           || vector3_nearly_equal(zhat, vector3_scale(-1.0,zhatp), tol)
