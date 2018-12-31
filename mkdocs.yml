@@ -1,6 +1,6 @@
 site_name: libctl Documentation
 site_author: S. G. Johnson et al.
-repo_url: https://github.com/stevengj/libctl/
+repo_url: https://github.com/NanoComp/libctl/
 
 docs_dir: 'doc/docs'
 site_dir: 'doc/site'
