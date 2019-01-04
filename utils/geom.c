@@ -2595,6 +2595,7 @@ void init_prism(geometric_object *o)
   double tol=1.0e-6;
   for(nv=0; nv<num_vertices; nv++)
    { int nvp1 = (nv+1) % num_vertices;
+<<<<<<< HEAD
      vector3 tri_normal = triangle_normal(centroid,vertices[nv],vertices[nvp1]);
      if (nv==0)
       plane_normal=tri_normal;
@@ -2618,6 +2619,14 @@ void init_prism(geometric_object *o)
      boolean axis_normal_to_plane
       = (    vector3_nearly_equal(prsm->axis, plane_normal, tol)
           || vector3_nearly_equal(prsm->axis, vector3_scale(-1.0,plane_normal), tol)
+=======
+     vector3 zhatp = triangle_normal(centroid,vertices[nv],vertices[nvp1]);
+     if (vector3_norm(zhatp)==0.0) // vertices collinear with centroid
+      continue;
+     boolean axis_normal
+      = (    vector3_nearly_equal(zhat, zhatp, tol)
+          || vector3_nearly_equal(zhat, vector3_scale(-1.0,zhatp), tol)
+>>>>>>> prism_vertices_collinear_with_centroid
         );
      CHECK(axis_normal_to_plane, "axis not normal to vertex plane in init_prism");
    }
