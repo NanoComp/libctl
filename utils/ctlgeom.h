@@ -39,6 +39,14 @@
 #  define MATERIAL_TYPE void*
 #endif
 
+/* Where possible (e.g. for gcc >= 3.1), enable a compiler warning
+   for code that uses a deprecated function */
+#if defined(__GNUC__) && (__GNUC__ > 3 || (__GNUC__==3 && __GNUC_MINOR__ > 0))
+#  define CTLGEOM_DEPRECATED __attribute__((deprecated))
+#else
+#  define CTLGEOM_DEPRECATED
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif                          /* __cplusplus */
@@ -51,9 +59,11 @@ extern void display_geometric_object_info(int indentby, geometric_object o);
 #endif
 
 extern void geom_initialize(void);
-extern void geom_fix_object(GEOMETRIC_OBJECT *o);
+extern void geom_fix_object_ptr(GEOMETRIC_OBJECT *o);
+extern void geom_fix_object(GEOMETRIC_OBJECT o) CTLGEOM_DEPRECATED;
 extern void geom_fix_objects(void);
-extern void geom_fix_objects0(GEOMETRIC_OBJECT_LIST geometry);
+extern void geom_fix_objects0(GEOMETRIC_OBJECT_LIST geometry) CTLGEOM_DEPRECATED;
+extern void geom_fix_object_list(GEOMETRIC_OBJECT_LIST geometry);
 extern void geom_fix_lattice(void);
 extern void geom_fix_lattice0(LATTICE *L);
 extern void geom_cartesian_lattice(void);

@@ -1,5 +1,13 @@
 # Libctl Release Notes
 
+## libctl 4.2.0
+
+* Better handling of `center` parameter of prisms, allowing this
+  to be optionally specified (#35).  Deprecates old `geom_fix_object`
+  and `geom_fix_objects0` functions in favor of `geom_fix_object_ptr`
+  and `geom_fix_object_list`.  (In particular, the old `geom_fix_object` routine will not work properly for prisms in
+  which the center was not computed.)
+
 ## libctl 4.1.4
 
 11/16/18
