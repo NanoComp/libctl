@@ -2573,8 +2573,7 @@ vector3 triangle_normal(vector3 v1, vector3 v2, vector3 v3)
 /* to center it at the specified value of o->center.           */
 /***************************************************************/
 // special vector3 that signifies 'no value specified'
-#define NO_VAL 9.2626242106760e302 // random sentinel value, consistent with geom.scm
-vector3 auto_center = { NO_VAL, NO_VAL, NO_VAL };
+vector3 auto_center = { NAN, NAN, NAN };
 void init_prism(geometric_object *o)
 {
   prism *prsm       = o->subclass.prism_data;
@@ -2632,7 +2631,7 @@ void init_prism(geometric_object *o)
   // set it to current_center; otherwise displace the entire prism
   // so that it is centered at the specified center.
   vector3 current_center = vector3_plus(centroid, vector3_scale(0.5*prsm->height,prsm->axis) );
-  if (vector3_equal(o->center, auto_center))
+  if (isnan(o->center.x) && isnan(o->center.y) && isnan(o->center.z)) // center == auto-center
    o->center = current_center;
   else
    { vector3 shift = vector3_minus(o->center, current_center);
