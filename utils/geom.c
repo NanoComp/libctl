@@ -98,11 +98,11 @@ static vector3 cartesian_to_lattice(vector3 v)
 				   v);
 }
 
-/* geom_fix_object is called after an object's externally-configurable parameters
+/* geom_fix_object_ptr is called after an object's externally-configurable parameters
    have been initialized, but before any actual geometry calculations are done;
    it is an opportunity to (re)compute internal data fields (such as cached
    rotation matrices) that depend on externally-configurable parameters.
-   
+
    One example: "Fix" the parameters of the given object to account for the
    geometry_lattice basis, which may be non-orthogonal.  In particular,
    this means that the normalization of several unit vectors, such
@@ -111,7 +111,7 @@ static vector3 cartesian_to_lattice(vector3 v)
    Unfortunately, we can't do this stuff at object-creation time
    in Guile, because the geometry_lattice variable may not have
    been assigned to its final value at that point.  */
-void geom_fix_object(geometric_object *o)
+void geom_fix_object_ptr(geometric_object *o)
 {
      switch(o->which_subclass) {
 	 case GEOM CYLINDER:
@@ -142,7 +142,7 @@ void geom_fix_object(geometric_object *o)
 	      break;
 	 }
 	 case GEOM PRISM:
-	 { 
+	 {
               init_prism(o);
               break;
 	 }
@@ -156,7 +156,7 @@ void geom_fix_object(geometric_object *o)
 		   if (os[i].material.which_subclass == MAT MATERIAL_TYPE_SELF)
 			material_type_copy(&o->material, &os[i].material);
 #endif
-		   geom_fix_object(os + i);
+		   geom_fix_object_ptr(os + i);
 	      }
 	      break;
 	 }
@@ -165,14 +165,25 @@ void geom_fix_object(geometric_object *o)
      }
 }
 
+// deprecated API — doesn't work for prisms
+void geom_fix_object(geometric_object o)
+{
+     geom_fix_object_ptr(&o);
+}
+
 /* fix all objects in the geometry list as described in
    geom_fix_object, above */
-void geom_fix_objects0(geometric_object_list geometry)
+void geom_fix_object_list(geometric_object_list geometry)
 {
      int index;
 
      for (index = 0; index < geometry.num_items; ++index)
-	  geom_fix_object(geometry.items + index);
+	  geom_fix_object_ptr(geometry.items + index);
+}
+
+void geom_fix_objects0(geometric_object_list geometry)
+{
+     geom_fix_object_list(geometry);
 }
 
 void geom_fix_objects(void)
@@ -239,7 +250,7 @@ void geom_initialize(void)
 
 boolean CTLIO point_in_objectp(vector3 p, geometric_object o)
 {
-     geom_fix_object(&o);
+     geom_fix_object_ptr(&o);
      return point_in_fixed_objectp(p, o);
 }
 
@@ -420,7 +431,7 @@ vector3 from_geom_object_coords(vector3 p, geometric_object o)
 
 vector3 CTLIO normal_to_object(vector3 p, geometric_object o)
 {
-     geom_fix_object(&o);
+     geom_fix_object_ptr(&o);
      return normal_to_fixed_object(p, o);
 }
 
@@ -484,7 +495,7 @@ vector3 normal_to_fixed_object(vector3 p, geometric_object o)
 	} // case BLK ELLIPSOID
 
       } // switch (o.subclass.block_data->which_subclass)
-      
+
     } // case GEOM BLOCK
 
   case GEOM PRISM:
@@ -557,7 +568,7 @@ vector3 normal_to_fixed_object(vector3 p, geometric_object o)
 
 boolean CTLIO point_in_periodic_objectp(vector3 p, geometric_object o)
 {
-     geom_fix_object(&o);
+     geom_fix_object_ptr(&o);
      return point_in_periodic_fixed_objectp(p, o);
 }
 
@@ -654,7 +665,7 @@ material_type material_of_point(vector3 p)
 
 void CTLIO display_geometric_object_info(int indentby, geometric_object o)
 {
-     geom_fix_object(&o);
+     geom_fix_object_ptr(&o);
      printf("%*s", indentby, "");
      switch (o.which_subclass) {
 	 case GEOM CYLINDER:
@@ -1081,7 +1092,7 @@ static number compute_dot_cross(vector3 a, vector3 b, vector3 c)
    etcetera.  */
 void geom_get_bounding_box(geometric_object o, geom_box *box)
 {
-     geom_fix_object(&o);
+     geom_fix_object_ptr(&o);
 
      /* initialize to empty box at the center of the object: */
      box->low = box->high = o.center;
@@ -2007,7 +2018,7 @@ geometric_object make_cylinder(material_type material, vector3 center,
      o.subclass.cylinder_data->height = height;
      o.subclass.cylinder_data->axis = axis;
      o.subclass.cylinder_data->which_subclass = CYL CYLINDER_SELF;
-     geom_fix_object(&o);
+     geom_fix_object_ptr(&o);
      return o;
 }
 
@@ -2033,7 +2044,7 @@ geometric_object make_wedge(material_type material, vector3 center,
      CHECK(o.subclass.cylinder_data->subclass.wedge_data, "out of memory");
      o.subclass.cylinder_data->subclass.wedge_data->wedge_angle = wedge_angle;
      o.subclass.cylinder_data->subclass.wedge_data->wedge_start = wedge_start;
-     geom_fix_object(&o);
+     geom_fix_object_ptr(&o);
      return o;
 }
 
@@ -2061,7 +2072,7 @@ geometric_object make_block(material_type material, vector3 center,
      o.subclass.block_data->e3 = e3;
      o.subclass.block_data->size = size;
      o.subclass.block_data->which_subclass = BLK BLOCK_SELF;
-     geom_fix_object(&o);
+     geom_fix_object_ptr(&o);
      return o;
 }
 
@@ -2090,7 +2101,7 @@ geometric_object make_ellipsoid(material_type material, vector3 center,
  * Most calculations are done in the "prism coordinate system",
  * in which the prism floor lies in the XY plane with centroid
  * at the origin and the prism axis is the positive Z-axis.
- * Some variable naming conventions: 
+ * Some variable naming conventions:
  *  -- Suffix 'p' or '_p' on variable names identifies variables
  *     storing coordinates or vector components in the prism system.
  *     Suffix 'c' or '_c' (or no suffix) corresponds to coodinates/components
@@ -2209,7 +2220,7 @@ boolean node_in_or_on_polygon(vector3 q0, vector3 *nodes, int num_nodes,
    { int status = intersect_ray_with_segment(q0, nodes[nn], nodes[(nn+1)%num_nodes], u, 0);
      if (status==IN_SEGMENT)
       return include_boundaries;
-     else if (status==INTERSECTING) 
+     else if (status==INTERSECTING)
       edges_crossed++;
      else if (status==ON_RAY)
       { vector3 nm1 = nodes[ (nn==0 ? num_nodes-1 : nn-1) ];
@@ -2263,7 +2274,7 @@ boolean point_in_prism(prism *prsm, vector3 pc)
 
 // comparator for qsort
 static int dcmp(const void *pd1, const void *pd2)
-{ double d1=*((double *)pd1), d2=*((double *)pd2); 
+{ double d1=*((double *)pd1), d2=*((double *)pd2);
   return (d1<d2) ? -1.0 : (d1>d2) ? 1.0 : 0.0;
 }
 
@@ -2418,7 +2429,7 @@ double normal_distance_to_plane(vector3 p,
 // the in-plane distance from pPlane to the quadrilateral
 double min_distance_to_quadrilateral(vector3 p,
                                      vector3 o, vector3 v1, vector3 v2, vector3 v3)
-{ 
+{
   int inside;
   double s=normal_distance_to_plane(p, o, v1, v2, v3, &inside);
   if(inside==1)
@@ -2511,7 +2522,7 @@ void get_prism_bounding_box(prism *prsm, geom_box *box)
   int nv, fc;
   for(nv=0; nv<num_vertices; nv++)
    for(fc=0; fc<2; fc++) // 'floor,ceiling'
-   { 
+   {
      vector3 v = vertices[nv];
      if (fc==1)
       v = vector3_plus(v, vector3_scale(prsm->height, prsm->axis) );

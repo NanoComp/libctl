@@ -183,7 +183,7 @@ static void test_overlap(double tol,
      geometry_lattice.basis2 = random_unit_vector3();
      geometry_lattice.basis3 = random_unit_vector3();
      geom_fix_lattice();
-     geom_fix_object(&o);
+     geom_fix_object_ptr(&o);
 #endif
 
      b.low = make_vector3(myurand(-1,0), myurand(-1,0), myurand(-1,0));
