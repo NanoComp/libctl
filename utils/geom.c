@@ -467,7 +467,7 @@ vector3 normal_to_fixed_object(vector3 p, geometric_object o)
 	       return matrix3x3_row1(o.subclass.block_data->projection_matrix);
 	  else if (d2 < d3)
 	       return matrix3x3_row2(o.subclass.block_data->projection_matrix);
-	  //else
+	  else
 	       return matrix3x3_row3(o.subclass.block_data->projection_matrix);
 	} // case BLK BLOCK_SELF
 
