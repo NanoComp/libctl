@@ -81,8 +81,8 @@ void GPQuad(FILE *f, vector3 v, vector3 l1, vector3 l2, prism *prsm)
 /***************************************************************/
 void my_get_prism_bounding_box(prism *prsm, geom_box *box)
 {
-  vector3 *vertices = prsm->vertices.items;
-  int num_vertices  = prsm->vertices.num_items;
+  vector3 *vertices = prsm->vertices_p.items;
+  int num_vertices  = prsm->vertices_p.num_items;
   double height     = prsm->height;
 
   box->low = box->high = prism_coordinate_p2c(prsm, vertices[0]);
@@ -155,8 +155,8 @@ vector3 random_point_in_polygon(vector3 *vertices, int num_vertices)
 vector3 random_point_on_prism(geometric_object o)
 {
   prism *prsm       = o.subclass.prism_data;
-  vector3 *vertices = prsm->vertices.items;
-  int num_vertices  = prsm->vertices.num_items;
+  vector3 *vertices = prsm->vertices_p.items;
+  int num_vertices  = prsm->vertices_p.num_items;
   double height     = prsm->height;
 
   // choose a face
@@ -195,8 +195,8 @@ vector3 random_unit_vector3()
 /***************************************************************/
 void prism2gnuplot(prism *prsm, char *filename)
 { 
-  vector3 *vertices = prsm->vertices.items;
-  int num_vertices  = prsm->vertices.num_items;
+  vector3 *vertices = prsm->vertices_p.items;
+  int num_vertices  = prsm->vertices_p.num_items;
   double height     = prsm->height;
 
   FILE *f=fopen(filename,"w");
@@ -227,8 +227,8 @@ void prism2gnuplot(prism *prsm, char *filename)
 /***************************************************************/
 void prism2gmsh(prism *prsm, char *filename)
 { 
-  vector3 *vertices = prsm->vertices.items;
-  int num_vertices  = prsm->vertices.num_items;
+  vector3 *vertices = prsm->vertices_p.items;
+  int num_vertices  = prsm->vertices_p.num_items;
   double height     = prsm->height;
   vector3 zhat      = prsm->m_p2c.c2;
   vector3 axis      = vector3_scale(height, zhat);
@@ -289,10 +289,8 @@ int test_point_inclusion(geometric_object the_block, geometric_object the_prism,
          num_adjusted++;
       }
 
-     if (in_block!=in_prism)
-      { num_failed++;
-        if (f) fprintf(f,"%i %i %e %e %e \n",in_block,in_prism,p.x,p.y,p.z);
-      }
+     if (in_block!=in_prism) num_failed++;
+     if (f) fprintf(f,"%i %i %e %e %e \n",in_block,in_prism,p.x,p.y,p.z);
    }
   if (f) fclose(f);
   

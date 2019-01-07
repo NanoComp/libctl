@@ -41,6 +41,7 @@
   (define-property material nothing MATERIAL-TYPE)
   (define-property center no-default 'vector3))
 
+
 (define-class compound-geometric-object geometric-object
   (define-property component-objects '()
     (make-list-type 'geometric-object)))
@@ -85,14 +86,45 @@
 	(object-property-value object 'e2)
 	(object-property-value object 'e3))))))
 
-(define identity_matrix (matrix3x3 (vector3 1 0 0) 
-                                   (vector3 0 1 0) 
+(define identity_matrix (matrix3x3 (vector3 1 0 0)
+                                   (vector3 0 1 0)
                                    (vector3 0 0 1)))
 
+; some notes regarding prisms:
+;  (a) When instantiating a prism, typically only the
+;      fields `vertices`, `height,` and (optionally) `axis`
+;      will be initialized by the user; all remaining fields are
+;      derived properties that are computed internally. (So, morally
+;      they should be thought of as having been declared using 
+;      `define-derived-property` or `define-post-processed-property,`
+;      except here the code that does the derivation or
+;      post-processing is implemented in C, not scheme.)
+;  (b) The suffix _p (for "prism") is used to identify variables
+;      that store coordinates of points or components of vectors
+;      in the prism coordinate system. (The prism coordinate system 
+;      is defined by the condition that the prism axis is the z-axis 
+;      and the prism floor lies in the xy plane at z==0.) Variables
+;      with no suffix refer to quantities in ordinary 3D space.
+;  (c) "centroid" refers to the centroid of the prism floor polygon; this is
+;      the origin of the prism coordinate system [i.e. by definition
+;      we have centroid_p=(0 0 0)].
+;  (d) If 'axis' is left unspecified, it is inferred to be the
+;      normal to the plane of the prism floor, with sign defined
+;      by a right-hand-rule with respect to the first two vertices, i.e.
+;      axis = normal_vector( (v1-centroid) x (v2-centroid) )
+;  (e) The specification of the prism vertices and height suffices to
+;      determine the center of the geometric object
+;      (center = centroid + 0.5*height*axis), so---in contrast to all other
+;      types of geometric-object---there is no need to specify the `center`
+;      field when instantiating a prism.
 (define-class prism geometric-object
+; fields to be filled in by users
   (define-property vertices '() (make-list-type 'vector3))
-  (define-property centroid (vector3 0 0 0) 'vector3)
   (define-property height 0 'number)
+  (define-property axis (vector3 0 0 0) 'vector3)
+; derived fields computed internally
+  (define-property vertices_p '() (make-list-type 'vector3))
+  (define-property centroid (vector3 0 0 0) 'vector3)
   (define-property workspace '() (make-list-type 'number))
   (define-property m_c2p identity_matrix 'matrix3x3)
   (define-property m_p2c identity_matrix 'matrix3x3))
@@ -104,7 +136,6 @@
 		  (object-property-value object 'size)))))
 
 ; ****************************************************************
-
 (define-class lattice no-parent
   (define-post-processed-property basis1 (vector3 1 0 0) 'vector3 unit-vector3)
   (define-post-processed-property basis2 (vector3 0 1 0) 'vector3 unit-vector3)
@@ -199,6 +230,9 @@
 (define-input-var geometry-lattice (make lattice) 'lattice)
 (define-input-var geometry '() (make-list-type 'geometric-object))
 (define-input-var ensure-periodicity true 'boolean)
+
+; special vector3 that signifies 'no value specified'
+(define auto-center (vector3 (nan) (nan) (nan)))
 
 (define-external-function point-in-object? true false
   'boolean 'vector3 'geometric-object)

@@ -51,7 +51,7 @@ extern void display_geometric_object_info(int indentby, geometric_object o);
 #endif
 
 extern void geom_initialize(void);
-extern void geom_fix_object(GEOMETRIC_OBJECT o);
+extern void geom_fix_object(GEOMETRIC_OBJECT *o);
 extern void geom_fix_objects(void);
 extern void geom_fix_objects0(GEOMETRIC_OBJECT_LIST geometry);
 extern void geom_fix_lattice(void);
@@ -147,9 +147,17 @@ GEOMETRIC_OBJECT make_block(MATERIAL_TYPE material, vector3 center,
 GEOMETRIC_OBJECT make_ellipsoid(MATERIAL_TYPE material, vector3 center,
 				vector3 e1, vector3 e2, vector3 e3,
 				vector3 size);
+
+// prism with `center` field computed automatically from vertices, height, axis
 GEOMETRIC_OBJECT make_prism(MATERIAL_TYPE material,
 			    const vector3 *vertices, int num_vertices,
 			    double height, vector3 axis);
+
+// as make_prism, but with a rigid translation so that the prism is centered at center
+GEOMETRIC_OBJECT make_prism_with_center(MATERIAL_TYPE material, vector3 center,
+                                        const vector3 *vertices, int num_vertices,
+                                        double height, vector3 axis);
+
 
 int vector3_nearly_equal(vector3 v1, vector3 v2, double tolerance);
 
