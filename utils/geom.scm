@@ -232,8 +232,7 @@
 (define-input-var ensure-periodicity true 'boolean)
 
 ; special vector3 that signifies 'no value specified'
-(define no-val 9.2626242106760e302) ; a randomly chosen sentinal value
-(define auto-center (vector3 no-val no-val no-val))
+(define auto-center (vector3 (nan) (nan) (nan)))
 
 (define-external-function point-in-object? true false
   'boolean 'vector3 'geometric-object)
