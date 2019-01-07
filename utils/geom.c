@@ -2573,7 +2573,7 @@ vector3 triangle_normal(vector3 v1, vector3 v2, vector3 v3)
 /* to center it at the specified value of o->center.           */
 /***************************************************************/
 // special vector3 that signifies 'no value specified'
-#define NO_VAL 1.0e20
+#define NO_VAL 9.2626242106760e302 // random sentinel value, consistent with geom.scm
 vector3 auto_center = { NO_VAL, NO_VAL, NO_VAL };
 void init_prism(geometric_object *o)
 {
