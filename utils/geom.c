@@ -188,7 +188,7 @@ void geom_fix_objects0(geometric_object_list geometry)
 
 void geom_fix_objects(void)
 {
-     geom_fix_objects0(geometry);
+     geom_fix_object_list(geometry);
 }
 
 void geom_fix_lattice0(lattice *L)
