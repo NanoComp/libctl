@@ -6,6 +6,8 @@ At their most basic level, **ctl** files are simply a collection of values for p
 
 The ctl syntax for all programs using libctl is similar, although the specific parameters needed will vary. The following examples are given for a fictitious libctl-using program, in order to illustrate its general style.
 
+[TOC]
+
 A Fictitious Example
 --------------------
 
@@ -21,7 +23,7 @@ All input variable settings can follow the format `(set! variable value)`. The p
 (set-param! grid-size 128)
 ```
 
-which works exactly like `set!` except that now `grid-size` can be overridden from the command-line. For this reason, `set-param!` (a libctl extension to Scheme) is usually preferred. See also [Command-Line Parameters](Advanced_User_Experience#command-line-parameters).
+which works exactly like `set!` except that now `grid-size` can be overridden from the command-line. For this reason, `set-param!` (a libctl extension to Scheme) is usually preferred. See also [Command-Line Parameters](Advanced_User_Experience.md#command-line-parameters).
 
 Settings of input variables can appear in any order in the file. They can even be omitted completely in many cases, and a reasonable default will be used. Variables can be of many different types, including integers, real numbers, boolean values (`true` and `false`), strings, 3-vectors, and lists. Here is how we might set some parameters of various types:
 
@@ -91,7 +93,7 @@ What Do I Enter?
 
 Every program will have a different set of variables that it expects you to set, and a different set of classes with different properties. Whatever program you are using should come with documentation saying what it expects.
 
-You can also get the program to print out help by inserting the `(help)` command in your ctl file, or by entering it in [interactive mode](Advanced_User_Experience/#interactive-mode). You can also simply enter the following command in your shell:
+You can also get the program to print out help by inserting the `(help)` command in your ctl file, or by entering it in [interactive mode](Advanced_User_Experience.md#interactive-mode). You can also simply enter the following command in your shell:
 
 `echo "(help)" | program`
 

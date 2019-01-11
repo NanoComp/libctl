@@ -4,7 +4,9 @@
 
 Many more things can be accomplished in a control file besides simply specifying the parameters of a computation, and even that can be done in a more sophisticated way than we have already described. The key to this functionality is the fact that the ctl file is actually written in a full programming language, called Scheme. This language is interpreted and executed at run-time using an interpreter named Guile. The fact that it is a full programming language means that you can do practically anything &mdash; the only limitations are in the degree of interaction supported by the simulation program.
 
-In a [later section](Guile_and_Scheme_Information), we provide links to more information on Scheme and Guile.
+In a [later section](Guile_and_Scheme_Information.md), we provide links to more information on Scheme and Guile.
+
+[TOC]
 
 Interactive Mode
 ----------------

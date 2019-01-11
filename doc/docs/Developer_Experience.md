@@ -8,6 +8,8 @@ In fact, however, using libctl is much easier than writing your program for a tr
 
 The specifications file is written in Scheme, and consists of definitions for the classes and input/output variables the program expects. It may also contain any predefined functions or variables that might be useful in ctl files for the program, and says which functions in your program are callable from the ctl script.
 
+[TOC]
+
 Defining input variables
 ------------------------
 

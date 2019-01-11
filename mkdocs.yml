@@ -1,5 +1,5 @@
 site_name: libctl Documentation
-site_author: S. G. Johnson et al.
+site_author: libctl Developers
 repo_url: https://github.com/NanoComp/libctl/
 
 docs_dir: 'doc/docs'
@@ -26,7 +26,7 @@ pages:
 - Installation: Installation.md
 - Basic User Experience: Basic_User_Experience.md
 - Advanced User Experience: Advanced_User_Experience.md
-- Developer Experience: Developer_Experience.md
 - User Reference: User_Reference.md
+- Developer Experience: Developer_Experience.md
 - Guile and Scheme Information: Guile_and_Scheme_Information.md
 - License and Copyright: License_and_Copyright.md

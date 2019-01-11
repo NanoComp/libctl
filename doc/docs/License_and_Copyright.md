@@ -2,7 +2,7 @@
 # License and Copyright
 ---
 
-libctl is copyright © 1998&mdash;2018, Steven G. Johnson.
+libctl is copyright © 1998&mdash;2019, Steven G. Johnson.
 
 libctl is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 

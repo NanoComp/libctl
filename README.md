@@ -1,10 +1,10 @@
 [![Latest Docs](https://readthedocs.org/projects/pip/badge/?version=latest)](http://libctl.readthedocs.io/en/latest/)
-[![Build Status](https://travis-ci.org/stevengj/libctl.svg?branch=master)](https://travis-ci.org/stevengj/libctl)
+[![Build Status](https://travis-ci.org/NanoComp/libctl.svg?branch=master)](https://travis-ci.org/NanoComp/libctl)
 
 This is libctl, a [Guile](http://www.gnu.org/software/guile/)-based library for supporting flexible control
 files in scientific simulations.
 
-The official released versions of Libctl can be found in the [releases page](https://github.com/stevengj/libctl/releases).  See the [Installation section of the manual](http://libctl.readthedocs.io/en/latest/Installation/) for more information, but to install libctl from an official release, one normally only needs to do:
+The official released versions of Libctl can be found in the [releases page](https://github.com/NanoComp/libctl/releases).  See the [Installation section of the manual](http://libctl.readthedocs.io/en/latest/Installation/) for more information, but to install libctl from an official release, one normally only needs to do:
 
     ./configure
     make

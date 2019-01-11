@@ -68,10 +68,10 @@ In Scheme, we would then use
 
 The variable *foo* would then be a list of numbers '(1 3 12.2 14.5 16 18).
 
-Libctl Tricks Specific to [Meep](index.md) and [MPB](https://mpb.readthedocs.io)
+Libctl Tricks Specific to [Meep](https://meep.readthedocs.io) and [MPB](https://mpb.readthedocs.io)
 --------------------------------------------------------------------------------
 
-[libctl](https://libctl.readthedocs.io) has a couple of built-in functions `arith-sequence` and `interpolate` (see the [User Reference](https://libctl.readthedocs.io/en/latest/Libctl_User_Reference/)) to construct lists of a regular sequence of values, which you can use in conjunction with `map` as above:
+libctl has a couple of built-in functions `arith-sequence` and `interpolate` (see the [User Reference](User_Reference.md)) to construct lists of a regular sequence of values, which you can use in conjunction with `map` as above:
 
 `(map (lambda (x) `*`...do` `stuff` `with` `x...`*`) (arith-sequence x-min dx num-x))`
 

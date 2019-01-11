@@ -10,6 +10,8 @@ Outputs a listing of all the available classes, their properties, default values
 
 Remember, Guile lets you enter expressions and see their values interactively. This is the best way to learn how to use anything that confuses you &mdash; just try it and see how it works.
 
+[TOC]
+
 Basic Scheme Functions
 ----------------------
 

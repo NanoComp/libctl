@@ -4,7 +4,7 @@
 
 The main effort in installing libctl lies in installing the prerequisite packages. This requires some understanding of how to install software on Unix systems.
 
-The official releases of Libctl can be found on the [releases page on github](https://github.com/stevengj/libctl/releases), and the changes in each version are summarized in the [NEWS file](https://github.com/stevengj/libctl/blob/master/NEWS.md).
+The official releases of Libctl can be found on the [releases page on github](https://github.com/NanoComp/libctl/releases), and the changes in each version are summarized in the [NEWS file](https://github.com/NanoComp/libctl/blob/master/NEWS.md).
 
 [TOC]
 
@@ -87,7 +87,7 @@ Guile is an extension/scripting language implementation based on Scheme, and we 
 
 ### Building From Source
 
-Here we provide instructions for building libctl from source on Ubuntu 16.04. Gzipped tarballs of stable versions are available on the [releases page](https://github.com/stevengj/libctl/releases).
+Here we provide instructions for building libctl from source on Ubuntu 16.04. Gzipped tarballs of stable versions are available on the [releases page](https://github.com/NanoComp/libctl/releases).
 
 ```bash
 #!/bin/bash
@@ -100,9 +100,9 @@ sudo apt-get -y install git guile-2.0-dev
 mkdir -p ~/install
 
 cd ~/install
-wget https://github.com/stevengj/libctl/releases/download/v4.0.0/libctl-4.0.0.tar.gz
-tar xvzf libctl-4.0.0.tar.gz
-cd libctl-4.0.0/
+wget https://github.com/NanoComp/libctl/releases/download/v4.2.0/libctl-4.2.0.tar.gz
+tar xvzf libctl-4.2.0.tar.gz
+cd libctl-4.2.0/
 ./configure --enable-shared LDFLAGS="-L/usr/local/lib -Wl,-rpath,/usr/local/lib"
 make && sudo make install
 ```
@@ -117,7 +117,7 @@ If you want to modify the libctl source code, you will want to have a number of 
 Once you have Git, you can grab the latest development version of libctl with:
 
 ```sh
- git clone https://github.com/stevengj/libctl.git
+ git clone https://github.com/NanoComp/libctl.git
 ```
 
 This gives you a fresh, up-to-date libctl repository in a directory `libctl`. See [git-scm.com](https://git-scm.com/) for more information on using Git; perhaps the most useful command is `git pull`, which you can execute periodically to get any new updates to the development version.
