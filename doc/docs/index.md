@@ -12,4 +12,4 @@ Welcome to the manual for **libctl**, a Guile-based library implementing flexibl
 Feedback
 --------
 
-For questions, bug reports, and feature requests, please file a [GitHub issue](https://github.com/stevengj/libctl/issues).
+For questions, bug reports, and feature requests, please file a [GitHub issue](https://github.com/NanoComp/libctl/issues).
