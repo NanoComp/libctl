@@ -1,6 +1,7 @@
 site_name: libctl Documentation
 site_author: libctl Developers
 repo_url: https://github.com/NanoComp/libctl/
+edit_uri: blob/master/doc/docs
 
 docs_dir: 'doc/docs'
 site_dir: 'doc/site'
