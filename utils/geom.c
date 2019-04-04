@@ -19,10 +19,12 @@
  * Steven G. Johnson can be contacted at stevenj@alum.mit.edu.
  */
 
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <stdarg.h>
 
 #ifndef LIBCTLGEOM
 #  include "ctl-io.h"
@@ -74,6 +76,25 @@ static void get_prism_bounding_box(prism *prsm, geom_box *box);
 static void display_prism_info(int indentby, geometric_object *o);
 static void init_prism(geometric_object *o);
 /**************************************************************************/
+
+/* Allows writing to Python's stdout when running from Meep's Python interface */
+void (*ctl_printf_callback)(const char *s) = NULL;
+
+void ctl_printf(const char *fmt, ...)
+{
+  va_list ap;
+  va_start(ap, fmt);
+  if (ctl_printf_callback) {
+    char *s;
+    CHECK(vasprintf(&s, fmt, ap) >= 0, "vasprintf failed");
+    ctl_printf_callback(s);
+    free(s);
+  } else {
+    vprintf(fmt, ap);
+    fflush(stdout);
+  }
+  va_end(ap);
+}
 
 /* If v is a vector in the lattice basis, normalize v so that
    its cartesian length is unity. */
@@ -666,71 +687,71 @@ material_type material_of_point(vector3 p)
 void CTLIO display_geometric_object_info(int indentby, geometric_object o)
 {
      geom_fix_object_ptr(&o);
-     printf("%*s", indentby, "");
+     ctl_printf("%*s", indentby, "");
      switch (o.which_subclass) {
 	 case GEOM CYLINDER:
 	      switch (o.subclass.cylinder_data->which_subclass) {
 		  case CYL WEDGE:
-		       printf("wedge");
+		       ctl_printf("wedge");
 		       break;
 		  case CYL CONE:
-		       printf("cone");
+		       ctl_printf("cone");
 		       break;
 		  case CYL CYLINDER_SELF:
-		       printf("cylinder");
+		       ctl_printf("cylinder");
 		       break;
 	      }
 	      break;
 	 case GEOM SPHERE:
-	      printf("sphere");
+	      ctl_printf("sphere");
 	      break;
 	 case GEOM BLOCK:
 	      switch (o.subclass.block_data->which_subclass) {
 		  case BLK ELLIPSOID:
-		       printf("ellipsoid");
+		       ctl_printf("ellipsoid");
 		       break;
 		  case BLK BLOCK_SELF:
-		       printf("block");
+		       ctl_printf("block");
 		       break;
 	      }
 	      break;
 	 case GEOM PRISM:
-	      printf("prism");
+	      ctl_printf("prism");
 	      break;
 	 case GEOM COMPOUND_GEOMETRIC_OBJECT:
-	      printf("compound object");
+	      ctl_printf("compound object");
 	      break;
 	 default:
-	      printf("geometric object");
+	      ctl_printf("geometric object");
               break;
      }
-     printf(", center = (%g,%g,%g)\n",
+     ctl_printf(", center = (%g,%g,%g)\n",
 	    o.center.x, o.center.y, o.center.z);
      switch (o.which_subclass) {
 	 case GEOM CYLINDER:
-	      printf("%*s     radius %g, height %g, axis (%g, %g, %g)\n",
+	      ctl_printf("%*s     radius %g, height %g, axis (%g, %g, %g)\n",
 		     indentby, "", o.subclass.cylinder_data->radius,
                      o.subclass.cylinder_data->height,
                      o.subclass.cylinder_data->axis.x,
                      o.subclass.cylinder_data->axis.y,
                      o.subclass.cylinder_data->axis.z);
 	      if (o.subclass.cylinder_data->which_subclass == CYL CONE)
-		   printf("%*s     radius2 %g\n", indentby, "",
+		   ctl_printf("%*s     radius2 %g\n", indentby, "",
 		        o.subclass.cylinder_data->subclass.cone_data->radius2);
 	      else if (o.subclass.cylinder_data->which_subclass == CYL WEDGE)
-		   printf("%*s     wedge-theta %g\n", indentby, "",
+		   ctl_printf("%*s     wedge-theta %g\n", indentby, "",
 		        o.subclass.cylinder_data->subclass.wedge_data->wedge_angle);
 	      break;
 	 case GEOM SPHERE:
-              printf("%*s     radius %g\n", indentby, "",
+              ctl_printf("%*s     radius %g\n", indentby, "",
 		     o.subclass.sphere_data->radius);
               break;
 	 case GEOM BLOCK:
-	      printf("%*s     size (%g,%g,%g)\n", indentby, "",
+	      ctl_printf("%*s     size (%g,%g,%g)\n", indentby, "",
 		     o.subclass.block_data->size.x,
                      o.subclass.block_data->size.y,
                      o.subclass.block_data->size.z);
-	      printf("%*s     axes (%g,%g,%g), (%g,%g,%g), (%g,%g,%g)\n",
+	      ctl_printf("%*s     axes (%g,%g,%g), (%g,%g,%g), (%g,%g,%g)\n",
 		     indentby, "",
 		     o.subclass.block_data->e1.x,
                      o.subclass.block_data->e1.y,
@@ -752,7 +773,7 @@ void CTLIO display_geometric_object_info(int indentby, geometric_object o)
 		   ->component_objects.num_items;
 	      geometric_object *os = o.subclass.compound_geometric_object_data
 		   ->component_objects.items;
-	      printf("%*s     %d components:\n", indentby, "", n);
+	      ctl_printf("%*s     %d components:\n", indentby, "", n);
 	      for (i = 0; i < n; ++i)
 		   display_geometric_object_info(indentby + 5, os[i]);
 	      break;
@@ -1926,16 +1947,16 @@ void display_geom_box_tree(int indentby, geom_box_tree t)
 
      if (!t)
 	  return;
-     printf("%*sbox (%g..%g, %g..%g, %g..%g)\n", indentby, "",
+     ctl_printf("%*sbox (%g..%g, %g..%g, %g..%g)\n", indentby, "",
 	    t->b.low.x, t->b.high.x,
 	    t->b.low.y, t->b.high.y,
 	    t->b.low.z, t->b.high.z);
      for (i = 0; i < t->nobjects; ++i) {
-	  printf("%*sbounding box (%g..%g, %g..%g, %g..%g)\n", indentby+5, "",
+	  ctl_printf("%*sbounding box (%g..%g, %g..%g, %g..%g)\n", indentby+5, "",
 		 t->objects[i].box.low.x, t->objects[i].box.high.x,
 		 t->objects[i].box.low.y, t->objects[i].box.high.y,
 		 t->objects[i].box.low.z, t->objects[i].box.high.z);
-	  printf("%*sshift object by (%g, %g, %g)\n", indentby+5, "",
+	  ctl_printf("%*sshift object by (%g, %g, %g)\n", indentby+5, "",
 		 t->objects[i].shiftby.x, t->objects[i].shiftby.y,
 		 t->objects[i].shiftby.z);
 	  display_geometric_object_info(indentby + 5, *t->objects[i].o);
@@ -2547,11 +2568,11 @@ void display_prism_info(int indentby, geometric_object *o)
   vector3 *vs      = prsm->vertices.items;
   int num_vertices = prsm->vertices.num_items;
 
-  printf("%*s     height %g, axis (%g,%g,%g), %i vertices:\n",
+  ctl_printf("%*s     height %g, axis (%g,%g,%g), %i vertices:\n",
           indentby, "",prsm->height,prsm->axis.x,prsm->axis.y,prsm->axis.z,num_vertices);
   int nv;
   for(nv=0; nv<num_vertices; nv++)
-   printf("%*s     (%g,%g,%g)\n",indentby,"",vs[nv].x,vs[nv].y,vs[nv].z);
+   ctl_printf("%*s     (%g,%g,%g)\n",indentby,"",vs[nv].x,vs[nv].y,vs[nv].z);
 }
 
 /***************************************************************/
