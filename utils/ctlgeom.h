@@ -93,6 +93,7 @@ GEOMETRIC_OBJECT object_of_point0(GEOMETRIC_OBJECT_LIST geometry, vector3 p,
 GEOMETRIC_OBJECT object_of_point(vector3 p, vector3 *shiftby);
 vector3 shift_to_unit_cell(vector3 p);
 extern matrix3x3 square_basis(matrix3x3 lattice_basis, vector3 size);
+extern void ctl_printf(const char *fmt, ...);
 
 typedef struct {
      vector3 low, high;
