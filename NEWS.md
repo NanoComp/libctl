@@ -1,6 +1,14 @@
 # Libctl Release Notes
 
+## libctl 4.3.0
+
+4/17/19
+
+* `ctl_printf_callback` so that callers can capture stdout (#39).
+
 ## libctl 4.2.0
+
+1/7/19
 
 * Better handling of `center` parameter of prisms, allowing this
   to be optionally specified (#35).  Deprecates old `geom_fix_object`

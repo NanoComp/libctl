@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT(libctl, 4.2.0, stevenj@alum.mit.edu)
+AC_INIT(libctl, 4.3.0, stevenj@alum.mit.edu)
 AC_CONFIG_SRCDIR([src/ctl.c])
 AC_CONFIG_HEADERS([config.h src/ctl.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -8,7 +8,7 @@ AM_MAINTAINER_MODE
 # Shared-library version number; indicates api compatibility, and is
 # not the same as the "public" version number.  (Don't worry about this
 # except for public releases.)
-SHARED_VERSION_INFO="7:3:0" # CURRENT:REVISION:AGE
+SHARED_VERSION_INFO="8:0:1" # CURRENT:REVISION:AGE
 
 AM_INIT_AUTOMAKE([foreign])
 AC_SUBST(SHARED_VERSION_INFO)
