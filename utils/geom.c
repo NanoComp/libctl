@@ -539,48 +539,22 @@ vector3 normal_to_fixed_object(vector3 p, geometric_object o)
    this easier to do as a macro.  (One could at least wish for
    an easier way to make multi-line macros.)  */
 
-#define LOOP_PERIODIC(shiftby, body) { \
-     switch (dimensions) { \
-	 case 1: \
-	 { \
-	      int iii; \
-	      shiftby.y = shiftby.z = 0; \
-	      for (iii = -1; iii <= 1; ++iii) { \
-		   shiftby.x = iii * geometry_lattice.size.x; \
-		   body; \
-	      } \
-	      break; \
-	 } \
-	 case 2: \
-	 { \
-	      int iii, jjj; \
-	      shiftby.z = 0; \
-	      for (iii = -1; iii <= 1; ++iii) { \
-		   shiftby.x = iii * geometry_lattice.size.x; \
-		   for (jjj = -1; jjj <= 1; ++jjj) { \
-			shiftby.y = jjj * geometry_lattice.size.y; \
-			body; \
-		   } \
-	      } \
-	      break; \
-	 } \
-	 case 3: \
-	 { \
-	      int iii, jjj, kkk; \
-	      for (iii = -1; iii <= 1; ++iii) { \
-		   shiftby.x = iii * geometry_lattice.size.x; \
-		   for (jjj = -1; jjj <= 1; ++jjj) { \
-			shiftby.y = jjj * geometry_lattice.size.y; \
-			for (kkk = -1; kkk <= 1; ++kkk) { \
-			     shiftby.z = kkk * geometry_lattice.size.z; \
-			     body; \
-			} \
-		   } \
-	      } \
-	      break; \
-	 } \
-     } \
-}
+#define LOOP_PERIODIC(shiftby, body) {              \
+  int iii, jjj, kkk;                                \
+  for (iii = -1; iii <= 1; ++iii) {                 \
+    shiftby.x = iii * geometry_lattice.size.x;      \
+    for (jjj = -1; jjj <= 1; ++jjj) {               \
+      shiftby.y = jjj * geometry_lattice.size.y;    \
+      for (kkk = -1; kkk <= 1; ++kkk) {             \
+        shiftby.z = kkk * geometry_lattice.size.z;  \
+        body;                                       \
+        if (geometry_lattice.size.z == 0) break;    \
+      }                                             \
+      if (geometry_lattice.size.y == 0) break;      \
+    }                                               \
+    if (geometry_lattice.size.x == 0) break;        \
+  }                                                 \
+}                                                   \
 
 /**************************************************************************/
 
@@ -1624,7 +1598,8 @@ static void divide_geom_box_tree(geom_box_tree t)
      /* Try partitioning along each dimension, counting the
 	number of objects in the partitioned boxes and finding
 	the best partition. */
-     for (i = 0; i < dimensions; ++i) {
+     for (i = 0; i < 3; ++i) {
+       if (VEC_I(t->b.high, i) == VEC_I(t->b.low, i)) continue; /* skip empty dimensions */
 	  find_best_partition(t->nobjects, t->objects, i, &division_point[i],
 			      &division_nobjects[i][0],
 			      &division_nobjects[i][1]);
