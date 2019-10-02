@@ -1017,6 +1017,47 @@ matrix3x3 CTLIO square_basis(matrix3x3 basis, vector3 size)
 }
 
 /**************************************************************************/
+
+/* compute the 3d volume enclosed by a geometric object o. */
+
+double geom_object_volume(GEOMETRIC_OBJECT o)
+{
+     switch (o.which_subclass) {
+	 case GEOM SPHERE: {
+	     number radius = o.subclass.sphere_data->radius;
+          return (4/3 * K_PI) * radius*radius*radius;
+	 }
+	 case GEOM CYLINDER: {
+	     number height = o.subclass.cylinder_data->height;
+	     number radius = o.subclass.cylinder_data->radius;
+	     number radius2 = o.subclass.cylinder_data->which_subclass == CYL CONE ? o.subclass.cylinder_data->subclass.cone_data->radius2 : radius;
+          double vol = height * (K_PI/3) * (radius*radius + radius*radius2 + radius2*radius2);
+          if (o.subclass.cylinder_data->which_subclass == CYL WEDGE)
+               return vol * fabs(o.subclass.cylinder_data->subclass.wedge_data->wedge_angle) / (2*K_PI);
+          else
+               return vol;
+	 }
+	 case GEOM BLOCK: {
+          vector3 size = o.subclass.block_data->size;
+          double vol = size.x * size.y * size.z * matrix3x3_determinant(geometry_lattice.basis) / matrix3x3_determinant(o.subclass.block_data->projection_matrix);
+          return o.subclass.block_data->which_subclass == BLK BLOCK_SELF ? vol : vol * (K_PI/6);
+	 }
+	 case GEOM PRISM: {
+           vector3_list vertices = o.subclass.prism_data->vertices_p;
+           double area = 0;
+           int i;
+           for (i = 0; i < vertices.num_items; ++i) {
+                int i1 = (i + 1) % vertices.num_items;
+                area += 0.5 * (vertices.items[i1].x - vertices.items[i].x) * (vertices.items[i1].y + vertices.items[i].y);
+           }
+           return fabs(area) * o.subclass.prism_data->height;
+	 }
+	 default:
+	      return 0; /* unsupported object types? */
+     }
+}
+
+/**************************************************************************/
 /**************************************************************************/
 
 		     /* Fast geometry routines */
