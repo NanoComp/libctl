@@ -574,8 +574,11 @@ vector3 normal_to_fixed_object(vector3 p, geometric_object o)
 			for (kkk = -1; kkk <= 1; ++kkk) { \
 			     shiftby.z = kkk * geometry_lattice.size.z; \
 			     body; \
+			     if (geometry_lattice.size.z == 0) break; \
 			} \
+		    if (geometry_lattice.size.y == 0) break; \
 		   } \
+		   if (geometry_lattice.size.x == 0) break; \
 	      } \
 	      break; \
 	 } \
@@ -1625,6 +1628,7 @@ static void divide_geom_box_tree(geom_box_tree t)
 	number of objects in the partitioned boxes and finding
 	the best partition. */
      for (i = 0; i < dimensions; ++i) {
+	  if (VEC_I(t->b.high, i) == VEC_I(t->b.low, i)) continue; /* skip empty dimensions */
 	  find_best_partition(t->nobjects, t->objects, i, &division_point[i],
 			      &division_nobjects[i][0],
 			      &division_nobjects[i][1]);
