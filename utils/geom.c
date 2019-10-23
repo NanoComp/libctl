@@ -1610,7 +1610,7 @@ static void divide_geom_box_tree(geom_box_tree t)
 {
      int division_nobjects[3][2] = {{0,0},{0,0},{0,0}};
      number division_point[3];
-     int best = 0;
+     int best = -1;
      int i, j, n1, n2;
 
      if (!t)
@@ -1632,17 +1632,17 @@ static void divide_geom_box_tree(geom_box_tree t)
 	  find_best_partition(t->nobjects, t->objects, i, &division_point[i],
 			      &division_nobjects[i][0],
 			      &division_nobjects[i][1]);
-	  if (MAX(division_nobjects[i][0], division_nobjects[i][1]) <
+	  if (best < 0 ||
+           MAX(division_nobjects[i][0], division_nobjects[i][1]) <
 	      MAX(division_nobjects[best][0], division_nobjects[best][1]))
 	       best = i;
      }
 
      /* don't do anything if division makes the worst case worse or if
 	it fails to improve the best case: */
-     if (MAX(division_nobjects[best][0], division_nobjects[best][1]) + 1 >
-	 t->nobjects ||
-	 MIN(division_nobjects[best][0], division_nobjects[best][1]) + 1 >=
-         t->nobjects)
+     if (best < 0 ||
+         MAX(division_nobjects[best][0], division_nobjects[best][1]) + 1 > t->nobjects ||
+	    MIN(division_nobjects[best][0], division_nobjects[best][1]) + 1 >= t->nobjects)
 	  return;  /* division didn't help us */
 
      divide_geom_box(&t->b, best, division_point[best], &t->b1, &t->b2);
