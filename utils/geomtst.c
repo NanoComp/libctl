@@ -178,6 +178,27 @@ geometric_object random_object_and_lattice(void)
      return o;
 }
 
+static const char *object_name(geometric_object o)
+{
+     switch (o.which_subclass) {
+	 case CYLINDER:
+	      switch (o.subclass.cylinder_data->which_subclass) {
+		  case WEDGE: return "wedge";
+		  case CONE: return "cone";
+		  case CYLINDER_SELF: return "cylinder";
+	      }
+	 case SPHERE: return "sphere";
+	 case BLOCK:
+	      switch (o.subclass.block_data->which_subclass) {
+		  case ELLIPSOID: return "ellipsoid";
+		  case BLOCK_SELF: return "block";
+	      }
+	 case PRISM: return "prism";
+	 case COMPOUND_GEOMETRIC_OBJECT: return "compound object";
+	 default: return "geometric object";
+     }
+}
+
 void check_overlap(double tol, double olap0, double olap, int dim, geometric_object o, geom_box b)
 {
      if (fabs(olap0 - olap) > 2 * tol * fabs(olap)) {
@@ -198,11 +219,11 @@ void check_overlap(double tol, double olap0, double olap, int dim, geometric_obj
 		  b.low.x, b.low.y, b.low.z,
 		  b.high.x, b.high.y, b.high.z);
 	  display_geometric_object_info(2, o);
-	  exit(1);
+	  /* exit(1); */
      }
      else
-	  printf("Got %dd overlap %g vs. %g with tol = %e\n",
-		 dim,olap,olap0,tol);
+	  printf("Got %s %dd overlap %g vs. %g with tol = %e\n",
+		 object_name(o), dim,olap,olap0,tol);
 }
 
 static void test_overlap(double tol,
@@ -244,7 +265,7 @@ static void test_volume(double tol)
 
      geom_get_bounding_box(o, &b);
      olap1 = box_overlap_with_object(b, o, tol/100, 10000/tol);
-     b.low.x += (1 + 1e-10) * (b.high.x - b.low.x); /* b no longer contains o */
+     b.low.x += 1e-7 * (b.high.x - b.low.x); /* b no longer contains o */
      olap2 = box_overlap_with_object(b, o, tol/100, 10000/tol);
      check_overlap(tol, olap1, olap2, 3, o, b);
      geometric_object_destroy(o);
@@ -263,6 +284,9 @@ int main(void)
 
      geom_initialize();
 
+     printf("**** whole box overlap: ****\n");
+     for (i = 0; i < ntest; ++i)
+          test_volume(tol);
      for (i = 0; i < ntest; ++i) {
           printf("**** box overlap: ****\n");
           test_overlap(tol,
@@ -273,9 +297,6 @@ int main(void)
                     ellipsoid_overlap_with_object,
                     simple_ellip_overlap);
      }
-     printf("**** whole box overlap: ****\n");
-     for (i = 0; i < ntest; ++i)
-          test_volume(tol);
 
      return 0;
 }

@@ -1398,7 +1398,7 @@ number overlap_with_object(geom_box b, int is_ellipsoid, geometric_object o,
          bb.low.x >= b.low.x && bb.high.x <= b.high.x &&
          bb.low.y >= b.low.y && bb.high.y <= b.high.y &&
          bb.low.z >= b.low.z && bb.high.z <= b.high.z)
-       return geom_object_volume(o) / V0; /* o is completely contained within b */
+       return geom_object_volume(o) / (V0 * fabs(matrix3x3_determinant(geometry_lattice.basis))); /* o is completely contained within b */
      geom_box_intersection(&bb, &b, &bb);
      if (bb.low.x > bb.high.x || bb.low.y > bb.high.y || bb.low.z > bb.high.z
 	 || (!empty_x && bb.low.x == bb.high.x)
