@@ -68,6 +68,7 @@ extern void geom_fix_lattice(void);
 extern void geom_fix_lattice0(LATTICE *L);
 extern void geom_cartesian_lattice(void);
 extern void geom_cartesian_lattice0(LATTICE *L);
+extern double geom_object_volume(GEOMETRIC_OBJECT o);
 extern boolean point_in_objectp(vector3 p, GEOMETRIC_OBJECT o);
 extern boolean point_in_periodic_objectp(vector3 p, GEOMETRIC_OBJECT o);
 extern boolean point_in_fixed_objectp(vector3 p, GEOMETRIC_OBJECT o);

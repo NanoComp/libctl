@@ -165,19 +165,9 @@ static double simple_ellip_overlap(geom_box b, geometric_object o, double tol)
      return olap0;
 }
 
-static void test_overlap(double tol,
-			 number (*box_overlap_with_object)
-			 (geom_box b, geometric_object o,
-			  number tol, integer maxeval),
-			 double (*simple_overlap)
-			 (geom_box b, geometric_object o, double tol))
+geometric_object random_object_and_lattice(void)
 {
      geometric_object o = random_object();
-     vector3 dir = random_unit_vector3();
-     geom_box b;
-     double d, olap, olap0;
-     int dim;
-
 #if 1
      geometry_lattice.basis1 = random_unit_vector3();
      geometry_lattice.basis2 = random_unit_vector3();
@@ -185,23 +175,32 @@ static void test_overlap(double tol,
      geom_fix_lattice();
      geom_fix_object_ptr(&o);
 #endif
+     return o;
+}
 
-     b.low = make_vector3(myurand(-1,0), myurand(-1,0), myurand(-1,0));
-     b.high = make_vector3(myurand(0,1), myurand(0,1), myurand(0,1));
+static const char *object_name(geometric_object o)
+{
+     switch (o.which_subclass) {
+	 case CYLINDER:
+	      switch (o.subclass.cylinder_data->which_subclass) {
+		  case WEDGE: return "wedge";
+		  case CONE: return "cone";
+		  case CYLINDER_SELF: return "cylinder";
+	      }
+	 case SPHERE: return "sphere";
+	 case BLOCK:
+	      switch (o.subclass.block_data->which_subclass) {
+		  case ELLIPSOID: return "ellipsoid";
+		  case BLOCK_SELF: return "block";
+	      }
+	 case PRISM: return "prism";
+	 case COMPOUND_GEOMETRIC_OBJECT: return "compound object";
+	 default: return "geometric object";
+     }
+}
 
-     d = find_edge(o, dir, 10, tol);
-     b.low = vector3_plus(b.low, vector3_scale(d, dir));
-     b.high = vector3_plus(b.high, vector3_scale(d, dir));
-
-     dim = rand() % 3 + 1;
-     if (dim < 3)
-	  b.low.z = b.high.z = 0;
-     if (dim < 2)
-	  b.low.y = b.high.y = 0;
-
-     olap = box_overlap_with_object(b, o, tol/100, 10000/tol);
-     olap0 = simple_overlap(b, o, tol/2);
-
+void check_overlap(double tol, double olap0, double olap, int dim, geometric_object o, geom_box b)
+{
      if (fabs(olap0 - olap) > 2 * tol * fabs(olap)) {
 	  fprintf(stderr, "Large error %e in overlap (%g vs. %g) for:\n"
 		  "  lattice = (%g,%g,%g), (%g,%g,%g), (%g,%g,%g)\n"
@@ -220,21 +219,58 @@ static void test_overlap(double tol,
 		  b.low.x, b.low.y, b.low.z,
 		  b.high.x, b.high.y, b.high.z);
 	  display_geometric_object_info(2, o);
-#if 1
-	  while (1) {
-	       tol /= sqrt(2.0);
-	       fprintf(stderr, "olap = %g, olap0 = %g (with tol = %e)\n",
-		       box_overlap_with_object(b, o, tol/100, 10000/tol),
-		       simple_overlap(b, o, tol/2), tol);
-	  }
-#endif
-	  exit(1);
+	  /* exit(1); */
      }
      else
-	  printf("Got %dd overlap %g vs. %g with tol = %e\n",
-		 dim,olap,olap0,tol);
+	  printf("Got %s %dd overlap %g vs. %g with tol = %e\n",
+		 object_name(o), dim,olap,olap0,tol);
+}
+
+static void test_overlap(double tol,
+			 number (*box_overlap_with_object)
+			 (geom_box b, geometric_object o,
+			  number tol, integer maxeval),
+			 double (*simple_overlap)
+			 (geom_box b, geometric_object o, double tol))
+{
+     geometric_object o = random_object_and_lattice();
+     vector3 dir = random_unit_vector3();
+     geom_box b;
+     double d, olap, olap0;
+     int dim;
+
+     b.low = make_vector3(myurand(-1,0), myurand(-1,0), myurand(-1,0));
+     b.high = make_vector3(myurand(0,1), myurand(0,1), myurand(0,1));
+     d = find_edge(o, dir, 10, tol);
+     b.low = vector3_plus(b.low, vector3_scale(d, dir));
+     b.high = vector3_plus(b.high, vector3_scale(d, dir));
+
+     dim = rand() % 3 + 1;
+     if (dim < 3)
+	  b.low.z = b.high.z = 0;
+     if (dim < 2)
+	  b.low.y = b.high.y = 0;
+
+     olap = box_overlap_with_object(b, o, tol/100, 10000/tol);
+     olap0 = simple_overlap(b, o, tol/2);
+     check_overlap(tol, olap0, olap, dim, o, b);
      geometric_object_destroy(o);
 }
+
+static void test_volume(double tol)
+{
+     geometric_object o = random_object_and_lattice();
+     geom_box b;
+     double olap1, olap2;
+
+     geom_get_bounding_box(o, &b);
+     olap1 = box_overlap_with_object(b, o, tol/100, 10000/tol);
+     b.low.x += 1e-7 * (b.high.x - b.low.x); /* b no longer contains o */
+     olap2 = box_overlap_with_object(b, o, tol/100, 10000/tol);
+     check_overlap(tol, olap1, olap2, 3, o, b);
+     geometric_object_destroy(o);
+}
+
 
 /************************************************************************/
 
@@ -248,15 +284,18 @@ int main(void)
 
      geom_initialize();
 
+     printf("**** whole box overlap: ****\n");
+     for (i = 0; i < ntest; ++i)
+          test_volume(tol);
      for (i = 0; i < ntest; ++i) {
-	  printf("**** box overlap: ****\n");
-	  test_overlap(tol,
-		       box_overlap_with_object,
-		       simple_overlap);
-	  printf("**** ellipsoid overlap: ****\n");
-	  test_overlap(tol,
-		       ellipsoid_overlap_with_object,
-		       simple_ellip_overlap);
+          printf("**** box overlap: ****\n");
+          test_overlap(tol,
+                    box_overlap_with_object,
+                    simple_overlap);
+          printf("**** ellipsoid overlap: ****\n");
+          test_overlap(tol,
+                    ellipsoid_overlap_with_object,
+                    simple_ellip_overlap);
      }
 
      return 0;
