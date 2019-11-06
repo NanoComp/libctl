@@ -1395,6 +1395,7 @@ number overlap_with_object(geom_box b, int is_ellipsoid, geometric_object o,
 
      geom_get_bounding_box(o, &bb);
      if (!is_ellipsoid &&
+         !empty_x && !empty_y && !empty_z && /* todo: optimize 1d and 2d cases */
          bb.low.x >= b.low.x && bb.high.x <= b.high.x &&
          bb.low.y >= b.low.y && bb.high.y <= b.high.y &&
          bb.low.z >= b.low.z && bb.high.z <= b.high.z)
