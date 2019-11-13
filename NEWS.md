@@ -1,5 +1,14 @@
 # Libctl Release Notes
 
+## libctl 4.4.0
+
+11/12/19
+
+* `geom_object_volume` function to get the volume of a 3d object
+  (accelerates `box_overlap_with_object` for objects completely within a box) (#45).
+
+* Bugfix to geometry tree search for empty dimensions.
+
 ## libctl 4.3.0
 
 4/17/19
