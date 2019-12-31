@@ -51,7 +51,7 @@
 
 */
 
-typedef double (*integrand) (unsigned ndim, const double *x, void *);
+typedef double (*integrand)(unsigned ndim, const double *x, void *);
 
 /* Integrate the function f from xmin[dim] to xmax[dim], with at most
    maxEval function evaluations (0 for no limit), until the given
@@ -59,119 +59,102 @@ typedef double (*integrand) (unsigned ndim, const double *x, void *);
    and err returns the estimate for the absolute error in val.  The
    return value of the function is 0 on success and non-zero if there
    was an error. */
-static int adapt_integrate(integrand f, void *fdata,
-		    unsigned dim, const double *xmin, const double *xmax,
-		    unsigned maxEval,
-		    double reqAbsError, double reqRelError,
-		    double *val, double *err);
+static int adapt_integrate(integrand f, void *fdata, unsigned dim, const double *xmin,
+                           const double *xmax, unsigned maxEval, double reqAbsError,
+                           double reqRelError, double *val, double *err);
 
 /***************************************************************************/
 /* Basic datatypes */
 
 typedef struct {
-     double val, err;
+  double val, err;
 } esterr;
 
-static double relError(esterr ee)
-{
-     return (ee.val == 0.0 ? HUGE_VAL : fabs(ee.err / ee.val));
-}
+static double relError(esterr ee) { return (ee.val == 0.0 ? HUGE_VAL : fabs(ee.err / ee.val)); }
 
 typedef struct {
-     unsigned dim;
-     double *data;	/* length 2*dim = center followed by half-widths */
-     double vol;	/* cache volume = product of widths */
+  unsigned dim;
+  double *data; /* length 2*dim = center followed by half-widths */
+  double vol;   /* cache volume = product of widths */
 } hypercube;
 
-static double compute_vol(const hypercube *h)
-{
-     unsigned i;
-     double vol = 1;
-     for (i = 0; i < h->dim; ++i)
-	  vol *= 2 * h->data[i + h->dim];
-     return vol;
+static double compute_vol(const hypercube *h) {
+  unsigned i;
+  double vol = 1;
+  for (i = 0; i < h->dim; ++i)
+    vol *= 2 * h->data[i + h->dim];
+  return vol;
 }
 
-static hypercube make_hypercube(unsigned dim, const double *center, const double *halfwidth)
-{
-     unsigned i;
-     hypercube h;
-     h.dim = dim;
-     h.data = (double *) malloc(sizeof(double) * dim * 2);
-     for (i = 0; i < dim; ++i) {
-	  h.data[i] = center[i];
-	  h.data[i + dim] = halfwidth[i];
-     }
-     h.vol = compute_vol(&h);
-     return h;
+static hypercube make_hypercube(unsigned dim, const double *center, const double *halfwidth) {
+  unsigned i;
+  hypercube h;
+  h.dim = dim;
+  h.data = (double *)malloc(sizeof(double) * dim * 2);
+  for (i = 0; i < dim; ++i) {
+    h.data[i] = center[i];
+    h.data[i + dim] = halfwidth[i];
+  }
+  h.vol = compute_vol(&h);
+  return h;
 }
 
-static hypercube make_hypercube_range(unsigned dim, const double *xmin, const double *xmax)
-{
-     hypercube h = make_hypercube(dim, xmin, xmax);
-     unsigned i;
-     for (i = 0; i < dim; ++i) {
-	  h.data[i] = 0.5 * (xmin[i] + xmax[i]);
-	  h.data[i + dim] = 0.5 * (xmax[i] - xmin[i]);
-     }
-     h.vol = compute_vol(&h);
-     return h;
+static hypercube make_hypercube_range(unsigned dim, const double *xmin, const double *xmax) {
+  hypercube h = make_hypercube(dim, xmin, xmax);
+  unsigned i;
+  for (i = 0; i < dim; ++i) {
+    h.data[i] = 0.5 * (xmin[i] + xmax[i]);
+    h.data[i + dim] = 0.5 * (xmax[i] - xmin[i]);
+  }
+  h.vol = compute_vol(&h);
+  return h;
 }
 
-static void destroy_hypercube(hypercube *h)
-{
-     free(h->data);
-     h->dim = 0;
+static void destroy_hypercube(hypercube *h) {
+  free(h->data);
+  h->dim = 0;
 }
 
 typedef struct {
-     hypercube h;
-     esterr ee;
-     unsigned splitDim;
+  hypercube h;
+  esterr ee;
+  unsigned splitDim;
 } region;
 
-static region make_region(const hypercube *h)
-{
-     region R;
-     R.h = make_hypercube(h->dim, h->data, h->data + h->dim);
-     R.splitDim = 0;
-     return R;
+static region make_region(const hypercube *h) {
+  region R;
+  R.h = make_hypercube(h->dim, h->data, h->data + h->dim);
+  R.splitDim = 0;
+  return R;
 }
 
-static void destroy_region(region *R)
-{
-     destroy_hypercube(&R->h);
-}
+static void destroy_region(region *R) { destroy_hypercube(&R->h); }
 
-static void cut_region(region *R, region *R2)
-{
-     unsigned d = R->splitDim, dim = R->h.dim;
-     *R2 = *R;
-     R->h.data[d + dim] *= 0.5;
-     R->h.vol *= 0.5;
-     R2->h = make_hypercube(dim, R->h.data, R->h.data + dim);
-     R->h.data[d] -= R->h.data[d + dim];
-     R2->h.data[d] += R->h.data[d + dim];
+static void cut_region(region *R, region *R2) {
+  unsigned d = R->splitDim, dim = R->h.dim;
+  *R2 = *R;
+  R->h.data[d + dim] *= 0.5;
+  R->h.vol *= 0.5;
+  R2->h = make_hypercube(dim, R->h.data, R->h.data + dim);
+  R->h.data[d] -= R->h.data[d + dim];
+  R2->h.data[d] += R->h.data[d + dim];
 }
 
 typedef struct rule_s {
-     unsigned dim;              /* the dimensionality */
-     unsigned num_points;       /* number of evaluation points */
-     unsigned (*evalError)(struct rule_s *r, integrand f, void *fdata,
-			   const hypercube *h, esterr *ee);
-     void (*destroy)(struct rule_s *r);
+  unsigned dim;        /* the dimensionality */
+  unsigned num_points; /* number of evaluation points */
+  unsigned (*evalError)(struct rule_s *r, integrand f, void *fdata, const hypercube *h, esterr *ee);
+  void (*destroy)(struct rule_s *r);
 } rule;
 
-static void destroy_rule(rule *r)
-{
-     if (r->destroy) r->destroy(r);
-     free(r);
+static void destroy_rule(rule *r) {
+  if (r->destroy) r->destroy(r);
+  free(r);
 }
 
-static region eval_region(region R, integrand f, void *fdata, rule *r)
-{
-     R.splitDim = r->evalError(r, f, fdata, &R.h, &R.ee);
-     return R;
+static region eval_region(region R, integrand f, void *fdata, rule *r) {
+  R.splitDim = r->evalError(r, f, fdata, &R.h, &R.ee);
+  return R;
 }
 
 /***************************************************************************/
@@ -182,43 +165,34 @@ static region eval_region(region R, integrand f, void *fdata, rule *r)
 /* ls0 returns the least-significant 0 bit of n (e.g. it returns
    0 if the LSB is 0, it returns 1 if the 2 LSBs are 01, etcetera). */
 
-#if (defined(__GNUC__) || defined(__ICC)) && (defined(__i386__) || defined (__x86_64__))
+#if (defined(__GNUC__) || defined(__ICC)) && (defined(__i386__) || defined(__x86_64__))
 /* use x86 bit-scan instruction, based on count_trailing_zeros()
    macro in GNU GMP's longlong.h. */
-static unsigned ls0(unsigned n)
-{
-     unsigned count;
-     n = ~n;
-     __asm__("bsfl %1,%0": "=r"(count):"rm"(n));
-     return count;
+static unsigned ls0(unsigned n) {
+  unsigned count;
+  n = ~n;
+  __asm__("bsfl %1,%0" : "=r"(count) : "rm"(n));
+  return count;
 }
 #else
-static unsigned ls0(unsigned n)
-{
-     const unsigned bits[256] = {
-	  0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4,
-	  0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 5,
-	  0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4,
-	  0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 6,
-	  0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4,
-	  0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 5,
-	  0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4,
-	  0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 7,
-	  0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4,
-	  0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 5,
-	  0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4,
-	  0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 6,
-	  0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4,
-	  0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 5,
-	  0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4,
-	  0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 8,
-     };
-     unsigned bit = 0;
-     while ((n & 0xff) == 0xff) {
-	  n >>= 8;
-	  bit += 8;
-     }
-     return bit + bits[n & 0xff];
+static unsigned ls0(unsigned n) {
+  const unsigned bits[256] = {
+      0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0,
+      1, 0, 5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1,
+      0, 2, 0, 1, 0, 6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4, 0, 1, 0, 2, 0, 1, 0,
+      3, 0, 1, 0, 2, 0, 1, 0, 5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4, 0, 1, 0, 2,
+      0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 7, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4, 0,
+      1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1,
+      0, 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0,
+      2, 0, 1, 0, 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 5, 0, 1, 0, 2, 0, 1, 0, 3,
+      0, 1, 0, 2, 0, 1, 0, 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 8,
+  };
+  unsigned bit = 0;
+  while ((n & 0xff) == 0xff) {
+    n >>= 8;
+    bit += 8;
+  }
+  return bit + bits[n & 0xff];
 }
 #endif
 
@@ -228,101 +202,101 @@ static unsigned ls0(unsigned n)
  *  A Gray-code ordering is used to minimize the number of coordinate updates
  *  in p.
  */
-static double evalR_Rfs(integrand f, void *fdata, unsigned dim, double *p, const double *c, const double *r)
-{
-     double sum = 0;
-     unsigned i;
-     unsigned signs = 0; /* 0/1 bit = +/- for corresponding element of r[] */
+static double evalR_Rfs(integrand f, void *fdata, unsigned dim, double *p, const double *c,
+                        const double *r) {
+  double sum = 0;
+  unsigned i;
+  unsigned signs = 0; /* 0/1 bit = +/- for corresponding element of r[] */
 
-     /* We start with the point where r is ADDed in every coordinate
-        (this implies signs=0). */
-     for (i = 0; i < dim; ++i)
-	  p[i] = c[i] + r[i];
+  /* We start with the point where r is ADDed in every coordinate
+     (this implies signs=0). */
+  for (i = 0; i < dim; ++i)
+    p[i] = c[i] + r[i];
 
-     /* Loop through the points in Gray-code ordering */
-     for (i = 0;; ++i) {
-	  unsigned mask, d;
+  /* Loop through the points in Gray-code ordering */
+  for (i = 0;; ++i) {
+    unsigned mask, d;
 
-	  sum += f(dim, p, fdata);
+    sum += f(dim, p, fdata);
 
-	  d = ls0(i);	/* which coordinate to flip */
-	  if (d >= dim)
-	       break;
+    d = ls0(i); /* which coordinate to flip */
+    if (d >= dim) break;
 
-	  /* flip the d-th bit and add/subtract r[d] */
-	  mask = 1U << d;
-	  signs ^= mask;
-	  p[d] = (signs & mask) ? c[d] - r[d] : c[d] + r[d];
-     }
-     return sum;
+    /* flip the d-th bit and add/subtract r[d] */
+    mask = 1U << d;
+    signs ^= mask;
+    p[d] = (signs & mask) ? c[d] - r[d] : c[d] + r[d];
+  }
+  return sum;
 }
 
-static double evalRR0_0fs(integrand f, void *fdata, unsigned dim, double *p, const double *c, const double *r)
-{
-     unsigned i, j;
-     double sum = 0;
+static double evalRR0_0fs(integrand f, void *fdata, unsigned dim, double *p, const double *c,
+                          const double *r) {
+  unsigned i, j;
+  double sum = 0;
 
-     for (i = 0; i < dim - 1; ++i) {
-	  p[i] = c[i] - r[i];
-	  for (j = i + 1; j < dim; ++j) {
-	       p[j] = c[j] - r[j];
-	       sum += f(dim, p, fdata);
-	       p[i] = c[i] + r[i];
-	       sum += f(dim, p, fdata);
-	       p[j] = c[j] + r[j];
-	       sum += f(dim, p, fdata);
-	       p[i] = c[i] - r[i];
-	       sum += f(dim, p, fdata);
+  for (i = 0; i < dim - 1; ++i) {
+    p[i] = c[i] - r[i];
+    for (j = i + 1; j < dim; ++j) {
+      p[j] = c[j] - r[j];
+      sum += f(dim, p, fdata);
+      p[i] = c[i] + r[i];
+      sum += f(dim, p, fdata);
+      p[j] = c[j] + r[j];
+      sum += f(dim, p, fdata);
+      p[i] = c[i] - r[i];
+      sum += f(dim, p, fdata);
 
-	       p[j] = c[j];	/* Done with j -> Restore p[j] */
-	  }
-	  p[i] = c[i];		/* Done with i -> Restore p[i] */
-     }
-     return sum;
+      p[j] = c[j]; /* Done with j -> Restore p[j] */
+    }
+    p[i] = c[i]; /* Done with i -> Restore p[i] */
+  }
+  return sum;
 }
 
-static unsigned evalR0_0fs4d(integrand f, void *fdata, unsigned dim, double *p, const double *c, double *sum0_, const double *r1, double *sum1_, const double *r2, double *sum2_)
-{
-     double maxdiff = 0;
-     unsigned i, dimDiffMax = 0;
-     double sum0, sum1 = 0, sum2 = 0; /* copies for aliasing, performance */
+static unsigned evalR0_0fs4d(integrand f, void *fdata, unsigned dim, double *p, const double *c,
+                             double *sum0_, const double *r1, double *sum1_, const double *r2,
+                             double *sum2_) {
+  double maxdiff = 0;
+  unsigned i, dimDiffMax = 0;
+  double sum0, sum1 = 0, sum2 = 0; /* copies for aliasing, performance */
 
-     double ratio = r1[0] / r2[0];
+  double ratio = r1[0] / r2[0];
 
-     ratio *= ratio;
-     sum0 = f(dim, p, fdata);
+  ratio *= ratio;
+  sum0 = f(dim, p, fdata);
 
-     for (i = 0; i < dim; i++) {
-	  double f1a, f1b, f2a, f2b, diff;
+  for (i = 0; i < dim; i++) {
+    double f1a, f1b, f2a, f2b, diff;
 
-	  p[i] = c[i] - r1[i];
-	  sum1 += (f1a = f(dim, p, fdata));
-	  p[i] = c[i] + r1[i];
-	  sum1 += (f1b = f(dim, p, fdata));
-	  p[i] = c[i] - r2[i];
-	  sum2 += (f2a = f(dim, p, fdata));
-	  p[i] = c[i] + r2[i];
-	  sum2 += (f2b = f(dim, p, fdata));
-	  p[i] = c[i];
+    p[i] = c[i] - r1[i];
+    sum1 += (f1a = f(dim, p, fdata));
+    p[i] = c[i] + r1[i];
+    sum1 += (f1b = f(dim, p, fdata));
+    p[i] = c[i] - r2[i];
+    sum2 += (f2a = f(dim, p, fdata));
+    p[i] = c[i] + r2[i];
+    sum2 += (f2b = f(dim, p, fdata));
+    p[i] = c[i];
 
-	  diff = fabs(f1a + f1b - 2 * sum0 - ratio * (f2a + f2b - 2 * sum0));
+    diff = fabs(f1a + f1b - 2 * sum0 - ratio * (f2a + f2b - 2 * sum0));
 
-	  if (diff > maxdiff) {
-	       maxdiff = diff;
-	       dimDiffMax = i;
-	  }
-     }
+    if (diff > maxdiff) {
+      maxdiff = diff;
+      dimDiffMax = i;
+    }
+  }
 
-     *sum0_ += sum0;
-     *sum1_ += sum1;
-     *sum2_ += sum2;
+  *sum0_ += sum0;
+  *sum1_ += sum1;
+  *sum2_ += sum2;
 
-     return dimDiffMax;
+  return dimDiffMax;
 }
 
 #define num0_0(dim) (1U)
 #define numR0_0fs(dim) (2 * (dim))
-#define numRR0_0fs(dim) (2 * (dim) * (dim-1))
+#define numRR0_0fs(dim) (2 * (dim) * (dim - 1))
 #define numR_Rfs(dim) (1U << (dim))
 
 /***************************************************************************/
@@ -336,224 +310,214 @@ static unsigned evalR0_0fs4d(integrand f, void *fdata, unsigned dim, double *p, 
 */
 
 typedef struct {
-     rule parent;
+  rule parent;
 
-     /* temporary arrays of length dim */
-     double *widthLambda, *widthLambda2, *p;
+  /* temporary arrays of length dim */
+  double *widthLambda, *widthLambda2, *p;
 
-     /* dimension-dependent constants */
-     double weight1, weight3, weight5;
-     double weightE1, weightE3;
+  /* dimension-dependent constants */
+  double weight1, weight3, weight5;
+  double weightE1, weightE3;
 } rule75genzmalik;
 
 #define real(x) ((double)(x))
 #define to_int(n) ((int)(n))
 
-static int isqr(int x)
-{
-     return x * x;
+static int isqr(int x) { return x * x; }
+
+static void destroy_rule75genzmalik(rule *r_) {
+  rule75genzmalik *r = (rule75genzmalik *)r_;
+  free(r->p);
 }
 
-static void destroy_rule75genzmalik(rule *r_)
-{
-     rule75genzmalik *r = (rule75genzmalik *) r_;
-     free(r->p);
+static unsigned rule75genzmalik_evalError(rule *r_, integrand f, void *fdata, const hypercube *h,
+                                          esterr *ee) {
+  /* lambda2 = sqrt(9/70), lambda4 = sqrt(9/10), lambda5 = sqrt(9/19) */
+  const double lambda2 = 0.3585685828003180919906451539079374954541;
+  const double lambda4 = 0.9486832980505137995996680633298155601160;
+  const double lambda5 = 0.6882472016116852977216287342936235251269;
+  const double weight2 = 980. / 6561.;
+  const double weight4 = 200. / 19683.;
+  const double weightE2 = 245. / 486.;
+  const double weightE4 = 25. / 729.;
+
+  rule75genzmalik *r = (rule75genzmalik *)r_;
+  unsigned i, dimDiffMax, dim = r_->dim;
+  double sum1 = 0.0, sum2 = 0.0, sum3 = 0.0, sum4, sum5, result, res5th;
+  const double *center = h->data;
+  const double *halfwidth = h->data + dim;
+
+  for (i = 0; i < dim; ++i)
+    r->p[i] = center[i];
+
+  for (i = 0; i < dim; ++i)
+    r->widthLambda2[i] = halfwidth[i] * lambda2;
+  for (i = 0; i < dim; ++i)
+    r->widthLambda[i] = halfwidth[i] * lambda4;
+
+  /* Evaluate function in the center, in f(lambda2,0,...,0) and
+     f(lambda3=lambda4, 0,...,0).  Estimate dimension with largest error */
+  dimDiffMax = evalR0_0fs4d(f, fdata, dim, r->p, center, &sum1, r->widthLambda2, &sum2,
+                            r->widthLambda, &sum3);
+
+  /* Calculate sum4 for f(lambda4, lambda4, 0, ...,0) */
+  sum4 = evalRR0_0fs(f, fdata, dim, r->p, center, r->widthLambda);
+
+  /* Calculate sum5 for f(lambda5, lambda5, ..., lambda5) */
+  for (i = 0; i < dim; ++i)
+    r->widthLambda[i] = halfwidth[i] * lambda5;
+  sum5 = evalR_Rfs(f, fdata, dim, r->p, center, r->widthLambda);
+
+  /* Calculate fifth and seventh order results */
+
+  result = h->vol * (r->weight1 * sum1 + weight2 * sum2 + r->weight3 * sum3 + weight4 * sum4 +
+                     r->weight5 * sum5);
+  res5th = h->vol * (r->weightE1 * sum1 + weightE2 * sum2 + r->weightE3 * sum3 + weightE4 * sum4);
+
+  ee->val = result;
+  ee->err = fabs(res5th - result);
+
+  return dimDiffMax;
 }
 
-static unsigned rule75genzmalik_evalError(rule *r_, integrand f, void *fdata, const hypercube *h, esterr *ee)
-{
-     /* lambda2 = sqrt(9/70), lambda4 = sqrt(9/10), lambda5 = sqrt(9/19) */
-     const double lambda2 = 0.3585685828003180919906451539079374954541;
-     const double lambda4 = 0.9486832980505137995996680633298155601160;
-     const double lambda5 = 0.6882472016116852977216287342936235251269;
-     const double weight2 = 980. / 6561.;
-     const double weight4 = 200. / 19683.;
-     const double weightE2 = 245. / 486.;
-     const double weightE4 = 25. / 729.;
+static rule *make_rule75genzmalik(unsigned dim) {
+  rule75genzmalik *r;
 
-     rule75genzmalik *r = (rule75genzmalik *) r_;
-     unsigned i, dimDiffMax, dim = r_->dim;
-     double sum1 = 0.0, sum2 = 0.0, sum3 = 0.0, sum4, sum5, result, res5th;
-     const double *center = h->data;
-     const double *halfwidth = h->data + dim;
+  if (dim < 2) return 0; /* this rule does not support 1d integrals */
 
-     for (i = 0; i < dim; ++i)
-	  r->p[i] = center[i];
+  /* Because of the use of a bit-field in evalR_Rfs, we are limited
+     to be < 32 dimensions (or however many bits are in unsigned).
+     This is not a practical limitation...long before you reach
+     32 dimensions, the Genz-Malik cubature becomes excruciatingly
+     slow and is superseded by other methods (e.g. Monte-Carlo). */
+  if (dim >= sizeof(unsigned) * 8) return 0;
 
-     for (i = 0; i < dim; ++i)
-	  r->widthLambda2[i] = halfwidth[i] * lambda2;
-     for (i = 0; i < dim; ++i)
-	  r->widthLambda[i] = halfwidth[i] * lambda4;
+  r = (rule75genzmalik *)malloc(sizeof(rule75genzmalik));
+  r->parent.dim = dim;
 
-     /* Evaluate function in the center, in f(lambda2,0,...,0) and
-        f(lambda3=lambda4, 0,...,0).  Estimate dimension with largest error */
-     dimDiffMax = evalR0_0fs4d(f, fdata, dim, r->p, center, &sum1, r->widthLambda2, &sum2, r->widthLambda, &sum3);
+  r->weight1 = (real(12824 - 9120 * to_int(dim) + 400 * isqr(to_int(dim))) / real(19683));
+  r->weight3 = real(1820 - 400 * to_int(dim)) / real(19683);
+  r->weight5 = real(6859) / real(19683) / real(1U << dim);
+  r->weightE1 = (real(729 - 950 * to_int(dim) + 50 * isqr(to_int(dim))) / real(729));
+  r->weightE3 = real(265 - 100 * to_int(dim)) / real(1458);
 
-     /* Calculate sum4 for f(lambda4, lambda4, 0, ...,0) */
-     sum4 = evalRR0_0fs(f, fdata, dim, r->p, center, r->widthLambda);
+  r->p = (double *)malloc(sizeof(double) * dim * 3);
+  r->widthLambda = r->p + dim;
+  r->widthLambda2 = r->p + 2 * dim;
 
-     /* Calculate sum5 for f(lambda5, lambda5, ..., lambda5) */
-     for (i = 0; i < dim; ++i)
-	  r->widthLambda[i] = halfwidth[i] * lambda5;
-     sum5 = evalR_Rfs(f, fdata, dim, r->p, center, r->widthLambda);
+  r->parent.num_points = num0_0(dim) + 2 * numR0_0fs(dim) + numRR0_0fs(dim) + numR_Rfs(dim);
 
-     /* Calculate fifth and seventh order results */
+  r->parent.evalError = rule75genzmalik_evalError;
+  r->parent.destroy = destroy_rule75genzmalik;
 
-     result = h->vol * (r->weight1 * sum1 + weight2 * sum2 + r->weight3 * sum3 + weight4 * sum4 + r->weight5 * sum5);
-     res5th = h->vol * (r->weightE1 * sum1 + weightE2 * sum2 + r->weightE3 * sum3 + weightE4 * sum4);
-
-     ee->val = result;
-     ee->err = fabs(res5th - result);
-
-     return dimDiffMax;
-}
-
-static rule *make_rule75genzmalik(unsigned dim)
-{
-     rule75genzmalik *r;
-
-     if (dim < 2) return 0; /* this rule does not support 1d integrals */
-
-     /* Because of the use of a bit-field in evalR_Rfs, we are limited
-	to be < 32 dimensions (or however many bits are in unsigned).
-	This is not a practical limitation...long before you reach
-	32 dimensions, the Genz-Malik cubature becomes excruciatingly
-	slow and is superseded by other methods (e.g. Monte-Carlo). */
-     if (dim >= sizeof(unsigned) * 8) return 0;
-
-     r = (rule75genzmalik *) malloc(sizeof(rule75genzmalik));
-     r->parent.dim = dim;
-
-     r->weight1 = (real(12824 - 9120 * to_int(dim) + 400 * isqr(to_int(dim)))
-		   / real(19683));
-     r->weight3 = real(1820 - 400 * to_int(dim)) / real(19683);
-     r->weight5 = real(6859) / real(19683) / real(1U << dim);
-     r->weightE1 = (real(729 - 950 * to_int(dim) + 50 * isqr(to_int(dim)))
-		    / real(729));
-     r->weightE3 = real(265 - 100 * to_int(dim)) / real(1458);
-
-     r->p = (double *) malloc(sizeof(double) * dim * 3);
-     r->widthLambda = r->p + dim;
-     r->widthLambda2 = r->p + 2 * dim;
-
-     r->parent.num_points = num0_0(dim) + 2 * numR0_0fs(dim)
-	  + numRR0_0fs(dim) + numR_Rfs(dim);
-
-     r->parent.evalError = rule75genzmalik_evalError;
-     r->parent.destroy = destroy_rule75genzmalik;
-
-     return (rule *) r;
+  return (rule *)r;
 }
 
 /***************************************************************************/
 /* 1d 15-point Gaussian quadrature rule, based on qk15.c and qk.c in
    GNU GSL (which in turn is based on QUADPACK). */
 
-static unsigned rule15gauss_evalError(rule *r, integrand f, void *fdata,
-				      const hypercube *h, esterr *ee)
-{
-     /* Gauss quadrature weights and kronrod quadrature abscissae and
-	weights as evaluated with 80 decimal digit arithmetic by
-	L. W. Fullerton, Bell Labs, Nov. 1981. */
-     const unsigned n = 8;
-     const double xgk[8] = {  /* abscissae of the 15-point kronrod rule */
-	  0.991455371120812639206854697526329,
-	  0.949107912342758524526189684047851,
-	  0.864864423359769072789712788640926,
-	  0.741531185599394439863864773280788,
-	  0.586087235467691130294144838258730,
-	  0.405845151377397166906606412076961,
-	  0.207784955007898467600689403773245,
-	  0.000000000000000000000000000000000
-	  /* xgk[1], xgk[3], ... abscissae of the 7-point gauss rule.
-	     xgk[0], xgk[2], ... to optimally extend the 7-point gauss rule */
-     };
-     static const double wg[4] = {  /* weights of the 7-point gauss rule */
-	  0.129484966168869693270611432679082,
-	  0.279705391489276667901467771423780,
-	  0.381830050505118944950369775488975,
-	  0.417959183673469387755102040816327
-     };
-     static const double wgk[8] = { /* weights of the 15-point kronrod rule */
-	  0.022935322010529224963732008058970,
-	  0.063092092629978553290700663189204,
-	  0.104790010322250183839876322541518,
-	  0.140653259715525918745189590510238,
-	  0.169004726639267902826583426598550,
-	  0.190350578064785409913256402421014,
-	  0.204432940075298892414161999234649,
-	  0.209482141084727828012999174891714
-     };
+static unsigned rule15gauss_evalError(rule *r, integrand f, void *fdata, const hypercube *h,
+                                      esterr *ee) {
+  /* Gauss quadrature weights and kronrod quadrature abscissae and
+     weights as evaluated with 80 decimal digit arithmetic by
+     L. W. Fullerton, Bell Labs, Nov. 1981. */
+  const unsigned n = 8;
+  const double xgk[8] = {
+      /* abscissae of the 15-point kronrod rule */
+      0.991455371120812639206854697526329,
+      0.949107912342758524526189684047851,
+      0.864864423359769072789712788640926,
+      0.741531185599394439863864773280788,
+      0.586087235467691130294144838258730,
+      0.405845151377397166906606412076961,
+      0.207784955007898467600689403773245,
+      0.000000000000000000000000000000000
+      /* xgk[1], xgk[3], ... abscissae of the 7-point gauss rule.
+         xgk[0], xgk[2], ... to optimally extend the 7-point gauss rule */
+  };
+  static const double wg[4] = {
+      /* weights of the 7-point gauss rule */
+      0.129484966168869693270611432679082, 0.279705391489276667901467771423780,
+      0.381830050505118944950369775488975, 0.417959183673469387755102040816327};
+  static const double wgk[8] = {
+      /* weights of the 15-point kronrod rule */
+      0.022935322010529224963732008058970, 0.063092092629978553290700663189204,
+      0.104790010322250183839876322541518, 0.140653259715525918745189590510238,
+      0.169004726639267902826583426598550, 0.190350578064785409913256402421014,
+      0.204432940075298892414161999234649, 0.209482141084727828012999174891714};
 
-     const double center = h->data[0];
-     const double halfwidth = h->data[1];
-     double fv1[7], fv2[7];
-     const double f_center = f(1, &center, fdata);
-     double result_gauss = f_center * wg[n/2 - 1];
-     double result_kronrod = f_center * wgk[n - 1];
-     double result_abs = fabs(result_kronrod);
-     double result_asc, mean, err;
-     unsigned j;
+  const double center = h->data[0];
+  const double halfwidth = h->data[1];
+  double fv1[7], fv2[7];
+  const double f_center = f(1, &center, fdata);
+  double result_gauss = f_center * wg[n / 2 - 1];
+  double result_kronrod = f_center * wgk[n - 1];
+  double result_abs = fabs(result_kronrod);
+  double result_asc, mean, err;
+  unsigned j;
 
-     (void) r; /* unused */
+  (void)r; /* unused */
 
-     for (j = 0; j < (n - 1) / 2; ++j) {
-	  int j2 = 2*j + 1;
-	  double x, f1, f2, fsum, w = halfwidth * xgk[j2];
-	  x = center - w; fv1[j2] = f1 = f(1, &x, fdata);
-	  x = center + w; fv2[j2] = f2 = f(1, &x, fdata);
-	  fsum = f1 + f2;
-	  result_gauss += wg[j] * fsum;
-	  result_kronrod += wgk[j2] * fsum;
-	  result_abs += wgk[j2] * (fabs(f1) + fabs(f2));
-     }
+  for (j = 0; j < (n - 1) / 2; ++j) {
+    int j2 = 2 * j + 1;
+    double x, f1, f2, fsum, w = halfwidth * xgk[j2];
+    x = center - w;
+    fv1[j2] = f1 = f(1, &x, fdata);
+    x = center + w;
+    fv2[j2] = f2 = f(1, &x, fdata);
+    fsum = f1 + f2;
+    result_gauss += wg[j] * fsum;
+    result_kronrod += wgk[j2] * fsum;
+    result_abs += wgk[j2] * (fabs(f1) + fabs(f2));
+  }
 
-     for (j = 0; j < n/2; ++j) {
-	  int j2 = 2*j;
-	  double x, f1, f2, w = halfwidth * xgk[j2];
-	  x = center - w; fv1[j2] = f1 = f(1, &x, fdata);
-          x = center + w; fv2[j2] = f2 = f(1, &x, fdata);
-          result_kronrod += wgk[j2] * (f1 + f2);
-          result_abs += wgk[j2] * (fabs(f1) + fabs(f2));
-     }
+  for (j = 0; j < n / 2; ++j) {
+    int j2 = 2 * j;
+    double x, f1, f2, w = halfwidth * xgk[j2];
+    x = center - w;
+    fv1[j2] = f1 = f(1, &x, fdata);
+    x = center + w;
+    fv2[j2] = f2 = f(1, &x, fdata);
+    result_kronrod += wgk[j2] * (f1 + f2);
+    result_abs += wgk[j2] * (fabs(f1) + fabs(f2));
+  }
 
-     ee->val = result_kronrod * halfwidth;
+  ee->val = result_kronrod * halfwidth;
 
-     /* compute error estimate: */
-     mean = result_kronrod * 0.5;
-     result_asc = wgk[n - 1] * fabs(f_center - mean);
-     for (j = 0; j < n - 1; ++j)
-	  result_asc += wgk[j] * (fabs(fv1[j]-mean) + fabs(fv2[j]-mean));
-     err = fabs(result_kronrod - result_gauss) * halfwidth;
-     result_abs *= halfwidth;
-     result_asc *= halfwidth;
-     if (result_asc != 0 && err != 0) {
-	  double scale = pow((200 * err / result_asc), 1.5);
-	  if (scale < 1)
-	       err = result_asc * scale;
-	  else
-	       err = result_asc;
-     }
-     if (result_abs > DBL_MIN / (50 * DBL_EPSILON)) {
-	  double min_err = 50 * DBL_EPSILON * result_abs;
-	  if (min_err > err)
-	       err = min_err;
-     }
-     ee->err = err;
+  /* compute error estimate: */
+  mean = result_kronrod * 0.5;
+  result_asc = wgk[n - 1] * fabs(f_center - mean);
+  for (j = 0; j < n - 1; ++j)
+    result_asc += wgk[j] * (fabs(fv1[j] - mean) + fabs(fv2[j] - mean));
+  err = fabs(result_kronrod - result_gauss) * halfwidth;
+  result_abs *= halfwidth;
+  result_asc *= halfwidth;
+  if (result_asc != 0 && err != 0) {
+    double scale = pow((200 * err / result_asc), 1.5);
+    if (scale < 1)
+      err = result_asc * scale;
+    else
+      err = result_asc;
+  }
+  if (result_abs > DBL_MIN / (50 * DBL_EPSILON)) {
+    double min_err = 50 * DBL_EPSILON * result_abs;
+    if (min_err > err) err = min_err;
+  }
+  ee->err = err;
 
-     return 0; /* no choice but to divide 0th dimension */
+  return 0; /* no choice but to divide 0th dimension */
 }
 
-static rule *make_rule15gauss(unsigned dim)
-{
-     rule *r;
-     if (dim != 1) return 0; /* this rule is only for 1d integrals */
-     r = (rule *) malloc(sizeof(rule));
-     r->dim = dim;
-     r->num_points = 15;
-     r->evalError = rule15gauss_evalError;
-     r->destroy = 0;
-     return r;
+static rule *make_rule15gauss(unsigned dim) {
+  rule *r;
+  if (dim != 1) return 0; /* this rule is only for 1d integrals */
+  r = (rule *)malloc(sizeof(rule));
+  r->dim = dim;
+  r->num_points = 15;
+  r->evalError = rule15gauss_evalError;
+  r->destroy = 0;
+  return r;
 }
 
 /***************************************************************************/
@@ -565,166 +529,156 @@ typedef region heap_item;
 #define KEY(hi) ((hi).ee.err)
 
 typedef struct {
-     unsigned n, nalloc;
-     heap_item *items;
-     esterr ee;
+  unsigned n, nalloc;
+  heap_item *items;
+  esterr ee;
 } heap;
 
-static void heap_resize(heap *h, unsigned nalloc)
-{
-     h->nalloc = nalloc;
-     h->items = (heap_item *) realloc(h->items, sizeof(heap_item) * nalloc);
+static void heap_resize(heap *h, unsigned nalloc) {
+  h->nalloc = nalloc;
+  h->items = (heap_item *)realloc(h->items, sizeof(heap_item) * nalloc);
 }
 
-static heap heap_alloc(unsigned nalloc)
-{
-     heap h;
-     h.n = 0;
-     h.nalloc = 0;
-     h.items = 0;
-     h.ee.val = h.ee.err = 0;
-     heap_resize(&h, nalloc);
-     return h;
+static heap heap_alloc(unsigned nalloc) {
+  heap h;
+  h.n = 0;
+  h.nalloc = 0;
+  h.items = 0;
+  h.ee.val = h.ee.err = 0;
+  heap_resize(&h, nalloc);
+  return h;
 }
 
 /* note that heap_free does not deallocate anything referenced by the items */
-static void heap_free(heap *h)
-{
-     h->n = 0;
-     heap_resize(h, 0);
+static void heap_free(heap *h) {
+  h->n = 0;
+  heap_resize(h, 0);
 }
 
-static void heap_push(heap *h, heap_item hi)
-{
-     int insert;
+static void heap_push(heap *h, heap_item hi) {
+  int insert;
 
-     h->ee.val += hi.ee.val;
-     h->ee.err += hi.ee.err;
-     insert = h->n;
-     if (++(h->n) > h->nalloc)
-	  heap_resize(h, h->n * 2);
+  h->ee.val += hi.ee.val;
+  h->ee.err += hi.ee.err;
+  insert = h->n;
+  if (++(h->n) > h->nalloc) heap_resize(h, h->n * 2);
 
-     while (insert) {
-	  int parent = (insert - 1) / 2;
-	  if (KEY(hi) <= KEY(h->items[parent]))
-	       break;
-	  h->items[insert] = h->items[parent];
-	  insert = parent;
-     }
-     h->items[insert] = hi;
+  while (insert) {
+    int parent = (insert - 1) / 2;
+    if (KEY(hi) <= KEY(h->items[parent])) break;
+    h->items[insert] = h->items[parent];
+    insert = parent;
+  }
+  h->items[insert] = hi;
 }
 
-static heap_item heap_pop(heap *h)
-{
-     heap_item ret;
-     int i, n, child;
+static heap_item heap_pop(heap *h) {
+  heap_item ret;
+  int i, n, child;
 
-     if (!(h->n)) {
-	  fprintf(stderr, "attempted to pop an empty heap\n");
-	  exit(EXIT_FAILURE);
-     }
+  if (!(h->n)) {
+    fprintf(stderr, "attempted to pop an empty heap\n");
+    exit(EXIT_FAILURE);
+  }
 
-     ret = h->items[0];
-     h->items[i = 0] = h->items[n = --(h->n)];
-     while ((child = i * 2 + 1) < n) {
-	  int largest;
-	  heap_item swap;
+  ret = h->items[0];
+  h->items[i = 0] = h->items[n = --(h->n)];
+  while ((child = i * 2 + 1) < n) {
+    int largest;
+    heap_item swap;
 
-	  if (KEY(h->items[child]) <= KEY(h->items[i]))
-	       largest = i;
-	  else
-	       largest = child;
-	  if (++child < n && KEY(h->items[largest]) < KEY(h->items[child]))
-	       largest = child;
-	  if (largest == i)
-	       break;
-	  swap = h->items[i];
-	  h->items[i] = h->items[largest];
-	  h->items[i = largest] = swap;
-     }
+    if (KEY(h->items[child]) <= KEY(h->items[i]))
+      largest = i;
+    else
+      largest = child;
+    if (++child < n && KEY(h->items[largest]) < KEY(h->items[child])) largest = child;
+    if (largest == i) break;
+    swap = h->items[i];
+    h->items[i] = h->items[largest];
+    h->items[i = largest] = swap;
+  }
 
-     h->ee.val -= ret.ee.val;
-     h->ee.err -= ret.ee.err;
-     return ret;
+  h->ee.val -= ret.ee.val;
+  h->ee.err -= ret.ee.err;
+  return ret;
 }
 
 /***************************************************************************/
 
 /* adaptive integration, analogous to adaptintegrator.cpp in HIntLib */
 
-static int ruleadapt_integrate(rule *r, integrand f, void *fdata, const hypercube *h, unsigned maxEval, double reqAbsError, double reqRelError, esterr *ee)
-{
-     unsigned maxIter;		/* maximum number of adaptive subdivisions */
-     heap regions;
-     unsigned i;
-     int status = -1; /* = ERROR */
+static int ruleadapt_integrate(rule *r, integrand f, void *fdata, const hypercube *h,
+                               unsigned maxEval, double reqAbsError, double reqRelError,
+                               esterr *ee) {
+  unsigned maxIter; /* maximum number of adaptive subdivisions */
+  heap regions;
+  unsigned i;
+  int status = -1; /* = ERROR */
 
-     if (maxEval) {
-	  if (r->num_points > maxEval)
-	       return status; /* ERROR */
-	  maxIter = (maxEval - r->num_points) / (2 * r->num_points);
-     }
-     else
-	  maxIter = UINT_MAX;
+  if (maxEval) {
+    if (r->num_points > maxEval) return status; /* ERROR */
+    maxIter = (maxEval - r->num_points) / (2 * r->num_points);
+  }
+  else
+    maxIter = UINT_MAX;
 
-     regions = heap_alloc(1);
+  regions = heap_alloc(1);
 
-     heap_push(&regions, eval_region(make_region(h), f, fdata, r));
-     /* another possibility is to specify some non-adaptive subdivisions:
-	if (initialRegions != 1)
-	   partition(h, initialRegions, EQUIDISTANT, &regions, f,fdata, r); */
+  heap_push(&regions, eval_region(make_region(h), f, fdata, r));
+  /* another possibility is to specify some non-adaptive subdivisions:
+     if (initialRegions != 1)
+        partition(h, initialRegions, EQUIDISTANT, &regions, f,fdata, r); */
 
-     for (i = 0; i < maxIter; ++i) {
-	  region R, R2;
-	  if (regions.ee.err <= reqAbsError
-	      || relError(regions.ee) <= reqRelError) {
-	       status = 0; /* converged! */
-	       break;
-	  }
-	  R = heap_pop(&regions); /* get worst region */
-	  cut_region(&R, &R2);
-	  heap_push(&regions, eval_region(R, f, fdata, r));
-	  heap_push(&regions, eval_region(R2, f, fdata, r));
-     }
+  for (i = 0; i < maxIter; ++i) {
+    region R, R2;
+    if (regions.ee.err <= reqAbsError || relError(regions.ee) <= reqRelError) {
+      status = 0; /* converged! */
+      break;
+    }
+    R = heap_pop(&regions); /* get worst region */
+    cut_region(&R, &R2);
+    heap_push(&regions, eval_region(R, f, fdata, r));
+    heap_push(&regions, eval_region(R2, f, fdata, r));
+  }
 
-     ee->val = ee->err = 0;  /* re-sum integral and errors */
-     for (i = 0; i < regions.n; ++i) {
-	  ee->val += regions.items[i].ee.val;
-	  ee->err += regions.items[i].ee.err;
-	  destroy_region(&regions.items[i]);
-     }
-     /* printf("regions.nalloc = %d\n", regions.nalloc); */
-     heap_free(&regions);
+  ee->val = ee->err = 0; /* re-sum integral and errors */
+  for (i = 0; i < regions.n; ++i) {
+    ee->val += regions.items[i].ee.val;
+    ee->err += regions.items[i].ee.err;
+    destroy_region(&regions.items[i]);
+  }
+  /* printf("regions.nalloc = %d\n", regions.nalloc); */
+  heap_free(&regions);
 
-     return status;
+  return status;
 }
 
-static int adapt_integrate(integrand f, void *fdata,
-		    unsigned dim, const double *xmin, const double *xmax,
-		    unsigned maxEval, double reqAbsError, double reqRelError,
-		    double *val, double *err)
-{
-     rule *r;
-     hypercube h;
-     esterr ee;
-     int status;
+static int adapt_integrate(integrand f, void *fdata, unsigned dim, const double *xmin,
+                           const double *xmax, unsigned maxEval, double reqAbsError,
+                           double reqRelError, double *val, double *err) {
+  rule *r;
+  hypercube h;
+  esterr ee;
+  int status;
 
-     if (dim == 0) { /* trivial integration */
-	  *val = f(0, xmin, fdata);
-	  *err = 0;
-	  return 0;
-     }
-     r = dim == 1 ? make_rule15gauss(dim) : make_rule75genzmalik(dim);
-     if (!r) { *val = 0; *err = HUGE_VAL; return -2; /* ERROR */ }
-     h = make_hypercube_range(dim, xmin, xmax);
-     status = ruleadapt_integrate(r, f, fdata, &h,
-				  maxEval, reqAbsError, reqRelError,
-				  &ee);
-     *val = ee.val;
-     *err = ee.err;
-     destroy_hypercube(&h);
-     destroy_rule(r);
-     return status;
+  if (dim == 0) { /* trivial integration */
+    *val = f(0, xmin, fdata);
+    *err = 0;
+    return 0;
+  }
+  r = dim == 1 ? make_rule15gauss(dim) : make_rule75genzmalik(dim);
+  if (!r) {
+    *val = 0;
+    *err = HUGE_VAL;
+    return -2; /* ERROR */
+  }
+  h = make_hypercube_range(dim, xmin, xmax);
+  status = ruleadapt_integrate(r, f, fdata, &h, maxEval, reqAbsError, reqRelError, &ee);
+  *val = ee.val;
+  *err = ee.err;
+  destroy_hypercube(&h);
+  destroy_rule(r);
+  return status;
 }
 
 /***************************************************************************/
@@ -745,189 +699,162 @@ int which_integrand = 0;
 const double radius = 0.50124145262344534123412; /* random */
 
 /* Simple constant function */
-double
-fconst (double x[], size_t dim, void *params)
-{
-  return 1;
-}
+double fconst(double x[], size_t dim, void *params) { return 1; }
 
 /*** f0, f1, f2, and f3 are test functions from the Monte-Carlo
      integration routines in GSL 1.6 (monte/test.c).  Copyright (c)
      1996-2000 Michael Booth, GNU GPL. ****/
 
 /* Simple product function */
-double f0 (unsigned dim, const double *x, void *params)
-{
-     double prod = 1.0;
-     unsigned int i;
-     for (i = 0; i < dim; ++i)
-	  prod *= 2.0 * x[i];
-     return prod;
+double f0(unsigned dim, const double *x, void *params) {
+  double prod = 1.0;
+  unsigned int i;
+  for (i = 0; i < dim; ++i)
+    prod *= 2.0 * x[i];
+  return prod;
 }
 
 /* Gaussian centered at 1/2. */
-double f1 (unsigned dim, const double *x, void *params)
-{
-     double a = *(double *)params;
-     double sum = 0.;
-     unsigned int i;
-     for (i = 0; i < dim; i++) {
-	  double dx = x[i] - 0.5;
-	  sum += dx * dx;
-     }
-     return (pow (M_2_SQRTPI / (2. * a), (double) dim) *
-	     exp (-sum / (a * a)));
+double f1(unsigned dim, const double *x, void *params) {
+  double a = *(double *)params;
+  double sum = 0.;
+  unsigned int i;
+  for (i = 0; i < dim; i++) {
+    double dx = x[i] - 0.5;
+    sum += dx * dx;
+  }
+  return (pow(M_2_SQRTPI / (2. * a), (double)dim) * exp(-sum / (a * a)));
 }
 
 /* double gaussian */
-double f2 (unsigned dim, const double *x, void *params)
-{
-     double a = *(double *)params;
-     double sum1 = 0.;
-     double sum2 = 0.;
-     unsigned int i;
-     for (i = 0; i < dim; i++) {
-	  double dx1 = x[i] - 1. / 3.;
-	  double dx2 = x[i] - 2. / 3.;
-	  sum1 += dx1 * dx1;
-	  sum2 += dx2 * dx2;
-     }
-     return 0.5 * pow (M_2_SQRTPI / (2. * a), dim)
-	  * (exp (-sum1 / (a * a)) + exp (-sum2 / (a * a)));
+double f2(unsigned dim, const double *x, void *params) {
+  double a = *(double *)params;
+  double sum1 = 0.;
+  double sum2 = 0.;
+  unsigned int i;
+  for (i = 0; i < dim; i++) {
+    double dx1 = x[i] - 1. / 3.;
+    double dx2 = x[i] - 2. / 3.;
+    sum1 += dx1 * dx1;
+    sum2 += dx2 * dx2;
+  }
+  return 0.5 * pow(M_2_SQRTPI / (2. * a), dim) * (exp(-sum1 / (a * a)) + exp(-sum2 / (a * a)));
 }
 
 /* Tsuda's example */
-double f3 (unsigned dim, const double *x, void *params)
-{
-     double c = *(double *)params;
-     double prod = 1.;
-     unsigned int i;
-     for (i = 0; i < dim; i++)
-	  prod *= c / (c + 1) * pow((c + 1) / (c + x[i]), 2.0);
-     return prod;
+double f3(unsigned dim, const double *x, void *params) {
+  double c = *(double *)params;
+  double prod = 1.;
+  unsigned int i;
+  for (i = 0; i < dim; i++)
+    prod *= c / (c + 1) * pow((c + 1) / (c + x[i]), 2.0);
+  return prod;
 }
 
 /*** end of GSL test functions ***/
 
-double f_test(unsigned dim, const double *x, void *data)
-{
-     double val;
-     unsigned i;
-     ++count;
-     switch (which_integrand) {
-	 case 0: /* simple smooth (separable) objective: prod. cos(x[i]). */
-	      val = 1;
-	      for (i = 0; i < dim; ++i)
-		   val *= cos(x[i]);
-	      break;
-	 case 1: { /* integral of exp(-x^2), rescaled to (0,infinity) limits */
-	      double scale = 1.0;
-	      val = 0;
-	      for (i = 0; i < dim; ++i) {
-		   double z = (1 - x[i]) / x[i];
-		   val += z * z;
-		   scale *= M_2_SQRTPI / (x[i] * x[i]);
-	      }
-	      val = exp(-val) * scale;
-	      break;
-	 }
-	 case 2: /* discontinuous objective: volume of hypersphere */
-	      val = 0;
-	      for (i = 0; i < dim; ++i)
-		   val += x[i] * x[i];
-	      val = val < radius * radius;
-	      break;
-	 case 3:
-	      val = f0(dim, x, data);
-	      break;
-	 case 4:
-	      val = f1(dim, x, data);
-	      break;
-	 case 5:
-	      val = f2(dim, x, data);
-	      break;
-	 case 6:
-	      val = f3(dim, x, data);
-	      break;
-	 default:
-	      fprintf(stderr, "unknown integrand %d\n", which_integrand);
-	      exit(EXIT_FAILURE);
-     }
-     /* if (count < 100) printf("%d: f(%g, ...) = %g\n", count, x[0], val); */
-     return val;
+double f_test(unsigned dim, const double *x, void *data) {
+  double val;
+  unsigned i;
+  ++count;
+  switch (which_integrand) {
+    case 0: /* simple smooth (separable) objective: prod. cos(x[i]). */
+      val = 1;
+      for (i = 0; i < dim; ++i)
+        val *= cos(x[i]);
+      break;
+    case 1: { /* integral of exp(-x^2), rescaled to (0,infinity) limits */
+      double scale = 1.0;
+      val = 0;
+      for (i = 0; i < dim; ++i) {
+        double z = (1 - x[i]) / x[i];
+        val += z * z;
+        scale *= M_2_SQRTPI / (x[i] * x[i]);
+      }
+      val = exp(-val) * scale;
+      break;
+    }
+    case 2: /* discontinuous objective: volume of hypersphere */
+      val = 0;
+      for (i = 0; i < dim; ++i)
+        val += x[i] * x[i];
+      val = val < radius * radius;
+      break;
+    case 3: val = f0(dim, x, data); break;
+    case 4: val = f1(dim, x, data); break;
+    case 5: val = f2(dim, x, data); break;
+    case 6: val = f3(dim, x, data); break;
+    default: fprintf(stderr, "unknown integrand %d\n", which_integrand); exit(EXIT_FAILURE);
+  }
+  /* if (count < 100) printf("%d: f(%g, ...) = %g\n", count, x[0], val); */
+  return val;
 }
 
 /* surface area of n-dimensional unit hypersphere */
-static double S(unsigned n)
-{
-     double val;
-     int fact = 1;
-     if (n % 2 == 0) { /* n even */
-	  val = 2 * pow(M_PI, n * 0.5);
-	  n = n / 2;
-	  while (n > 1) fact *= (n -= 1);
-	  val /= fact;
-     }
-     else { /* n odd */
-	  val = (1 << (n/2 + 1)) * pow(M_PI, n/2);
-	  while (n > 2) fact *= (n -= 2);
-	  val /= fact;
-     }
-     return val;
+static double S(unsigned n) {
+  double val;
+  int fact = 1;
+  if (n % 2 == 0) { /* n even */
+    val = 2 * pow(M_PI, n * 0.5);
+    n = n / 2;
+    while (n > 1)
+      fact *= (n -= 1);
+    val /= fact;
+  }
+  else { /* n odd */
+    val = (1 << (n / 2 + 1)) * pow(M_PI, n / 2);
+    while (n > 2)
+      fact *= (n -= 2);
+    val /= fact;
+  }
+  return val;
 }
 
 static double exact_integral(unsigned dim, const double *xmax) {
-     unsigned i;
-     double val;
-     switch(which_integrand) {
-	 case 0:
-	      val = 1;
-	      for (i = 0; i < dim; ++i)
-		   val *= sin(xmax[i]);
-	      break;
-	 case 2:
-	      val = dim == 0 ? 1 : S(dim) * pow(radius * 0.5, dim) / dim;
-	      break;
-	 default:
-	      val = 1.0;
-     }
-     return val;
+  unsigned i;
+  double val;
+  switch (which_integrand) {
+    case 0:
+      val = 1;
+      for (i = 0; i < dim; ++i)
+        val *= sin(xmax[i]);
+      break;
+    case 2: val = dim == 0 ? 1 : S(dim) * pow(radius * 0.5, dim) / dim; break;
+    default: val = 1.0;
+  }
+  return val;
 }
 
-int main(int argc, char **argv)
-{
-     double *xmin, *xmax;
-     double tol, val, err;
-     unsigned i, dim, maxEval;
-     double fdata;
+int main(int argc, char **argv) {
+  double *xmin, *xmax;
+  double tol, val, err;
+  unsigned i, dim, maxEval;
+  double fdata;
 
-     dim = argc > 1 ? atoi(argv[1]) : 2;
-     tol = argc > 2 ? atof(argv[2]) : 1e-2;
-     which_integrand = argc > 3 ? atoi(argv[3]) : 0;
-     maxEval = argc > 4 ? atoi(argv[4]) : 0;
+  dim = argc > 1 ? atoi(argv[1]) : 2;
+  tol = argc > 2 ? atof(argv[2]) : 1e-2;
+  which_integrand = argc > 3 ? atoi(argv[3]) : 0;
+  maxEval = argc > 4 ? atoi(argv[4]) : 0;
 
-     fdata = which_integrand == 6 ? (1.0 + sqrt (10.0)) / 9.0 : 0.1;
+  fdata = which_integrand == 6 ? (1.0 + sqrt(10.0)) / 9.0 : 0.1;
 
-     xmin = (double *) malloc(dim * sizeof(double));
-     xmax = (double *) malloc(dim * sizeof(double));
-     for (i = 0; i < dim; ++i) {
-	  xmin[i] = 0;
-	  xmax[i] = 1 + (which_integrand >= 1 ? 0 : 0.4 * sin(i));
-     }
+  xmin = (double *)malloc(dim * sizeof(double));
+  xmax = (double *)malloc(dim * sizeof(double));
+  for (i = 0; i < dim; ++i) {
+    xmin[i] = 0;
+    xmax[i] = 1 + (which_integrand >= 1 ? 0 : 0.4 * sin(i));
+  }
 
-     printf("%u-dim integral, tolerance = %g, integrand = %d\n",
-	    dim, tol, which_integrand);
-     adapt_integrate(f_test, &fdata,
-		     dim, xmin, xmax,
-		     maxEval, 0, tol, &val, &err);
-     printf("integration val = %g, est. err = %g, true err = %g\n",
-	    val, err, fabs(val - exact_integral(dim, xmax)));
-     printf("#evals = %d\n", count);
+  printf("%u-dim integral, tolerance = %g, integrand = %d\n", dim, tol, which_integrand);
+  adapt_integrate(f_test, &fdata, dim, xmin, xmax, maxEval, 0, tol, &val, &err);
+  printf("integration val = %g, est. err = %g, true err = %g\n", val, err,
+         fabs(val - exact_integral(dim, xmax)));
+  printf("#evals = %d\n", count);
 
-     free(xmax);
-     free(xmin);
+  free(xmax);
+  free(xmin);
 
-     return 0;
+  return 0;
 }
 
 #else
@@ -937,21 +864,17 @@ int main(int argc, char **argv)
 
 #include "ctl-math.h"
 
-static int adapt_integrate(integrand f, void *fdata,
-		    unsigned dim, const double *xmin, const double *xmax,
-		    unsigned maxEval,
-		    double reqAbsError, double reqRelError,
-		    double *val, double *err);
+static int adapt_integrate(integrand f, void *fdata, unsigned dim, const double *xmin,
+                           const double *xmax, unsigned maxEval, double reqAbsError,
+                           double reqRelError, double *val, double *err);
 
-number adaptive_integration(multivar_func f, number *xmin, number *xmax,
-			    integer n, void *fdata,
-			    number abstol, number reltol, integer maxnfe,
-			    number *esterr, integer *errflag)
-{
-     double val;
-     *errflag = adapt_integrate((integrand) f, fdata, n, xmin, xmax,
-				maxnfe, abstol, reltol, &val, esterr);
-     return val;
+number adaptive_integration(multivar_func f, number *xmin, number *xmax, integer n, void *fdata,
+                            number abstol, number reltol, integer maxnfe, number *esterr,
+                            integer *errflag) {
+  double val;
+  *errflag =
+      adapt_integrate((integrand)f, fdata, n, xmin, xmax, maxnfe, abstol, reltol, &val, esterr);
+  return val;
 }
 
 #ifndef LIBCTLGEOM
@@ -961,55 +884,46 @@ number adaptive_integration(multivar_func f, number *xmin, number *xmax,
 /* from subplex.c */
 extern number f_scm_wrapper(integer n, number *x, void *f_scm_p);
 
-SCM adaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
-			     SCM abstol_scm, SCM reltol_scm, SCM maxnfe_scm)
-{
-     integer n, maxnfe, errflag, i;
-     number *xmin, *xmax, abstol, reltol, integral;
+SCM adaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm, SCM abstol_scm, SCM reltol_scm,
+                             SCM maxnfe_scm) {
+  integer n, maxnfe, errflag, i;
+  number *xmin, *xmax, abstol, reltol, integral;
 
-     n = list_length(xmin_scm);
-     abstol = fabs(ctl_convert_number_to_c(abstol_scm));
-     reltol = fabs(ctl_convert_number_to_c(reltol_scm));
-     maxnfe = ctl_convert_integer_to_c(maxnfe_scm);
+  n = list_length(xmin_scm);
+  abstol = fabs(ctl_convert_number_to_c(abstol_scm));
+  reltol = fabs(ctl_convert_number_to_c(reltol_scm));
+  maxnfe = ctl_convert_integer_to_c(maxnfe_scm);
 
-     if (list_length(xmax_scm) != n) {
-	  fprintf(stderr, "adaptive_integration: xmin/xmax dimension mismatch\n");
-	  return SCM_UNDEFINED;
-     }
+  if (list_length(xmax_scm) != n) {
+    fprintf(stderr, "adaptive_integration: xmin/xmax dimension mismatch\n");
+    return SCM_UNDEFINED;
+  }
 
-     xmin = (number*) malloc(sizeof(number) * n);
-     xmax = (number*) malloc(sizeof(number) * n);
-     if (!xmin || !xmax) {
-          fprintf(stderr, "adaptive_integration: error, out of memory!\n");
-          exit(EXIT_FAILURE);
-     }
+  xmin = (number *)malloc(sizeof(number) * n);
+  xmax = (number *)malloc(sizeof(number) * n);
+  if (!xmin || !xmax) {
+    fprintf(stderr, "adaptive_integration: error, out of memory!\n");
+    exit(EXIT_FAILURE);
+  }
 
-     for (i = 0; i < n; ++i) {
-	  xmin[i] = number_list_ref(xmin_scm, i);
-	  xmax[i] = number_list_ref(xmax_scm, i);
-     }
+  for (i = 0; i < n; ++i) {
+    xmin[i] = number_list_ref(xmin_scm, i);
+    xmax[i] = number_list_ref(xmax_scm, i);
+  }
 
-     integral = adaptive_integration(f_scm_wrapper, xmin, xmax, n, &f_scm,
-				     abstol, reltol, maxnfe,
-				     &abstol, &errflag);
+  integral = adaptive_integration(f_scm_wrapper, xmin, xmax, n, &f_scm, abstol, reltol, maxnfe,
+                                  &abstol, &errflag);
 
-     free(xmax);
-     free(xmin);
+  free(xmax);
+  free(xmin);
 
-     switch (errflag) {
-	 case 3:
-	      fprintf(stderr, "adaptive_integration: invalid inputs\n");
-	      return SCM_UNDEFINED;
-	 case 1:
-	      fprintf(stderr, "adaptive_integration: maxnfe too small\n");
-	      break;
-	 case 2:
-	      fprintf(stderr, "adaptive_integration: lenwork too small\n");
-	      break;
-     }
+  switch (errflag) {
+    case 3: fprintf(stderr, "adaptive_integration: invalid inputs\n"); return SCM_UNDEFINED;
+    case 1: fprintf(stderr, "adaptive_integration: maxnfe too small\n"); break;
+    case 2: fprintf(stderr, "adaptive_integration: lenwork too small\n"); break;
+  }
 
-     return gh_cons(ctl_convert_number_to_scm(integral),
-		    ctl_convert_number_to_scm(abstol));
+  return gh_cons(ctl_convert_number_to_scm(integral), ctl_convert_number_to_scm(abstol));
 }
 
 #endif /* !LIBCTLGEOM */

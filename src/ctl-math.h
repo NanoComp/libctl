@@ -19,48 +19,58 @@
  * Steven G. Johnson can be contacted at stevenj@alum.mit.edu.
  */
 
- /* just the non-Guile-based vector/matrix math routines in
-    libctl, for use in libctlgeom */
+/* just the non-Guile-based vector/matrix math routines in
+   libctl, for use in libctlgeom */
 
 #ifndef CTL_MATH_H
 #define CTL_MATH_H
 
 #ifdef __cplusplus
 extern "C" {
-#endif                          /* __cplusplus */
+#endif /* __cplusplus */
 
 /**************************************************************************/
 
-  /* Basic types: */
+/* Basic types: */
 
 typedef int integer;
 typedef double number;
-typedef struct { number re, im; } cnumber; /* complex numbers! */
+typedef struct {
+  number re, im;
+} cnumber; /* complex numbers! */
 typedef short boolean;
 typedef char *string;
 
-  /* define vector3 as a structure, not an array, so that it can
-     be a function return value and so that simple assignment works. */
-typedef struct { number x,y,z; } vector3;
+/* define vector3 as a structure, not an array, so that it can
+   be a function return value and so that simple assignment works. */
+typedef struct {
+  number x, y, z;
+} vector3;
 
-  /* similarly for matrix3x3 */
-typedef struct { vector3 c0, c1, c2; /* the columns */ } matrix3x3;
+/* similarly for matrix3x3 */
+typedef struct {
+  vector3 c0, c1, c2; /* the columns */
+} matrix3x3;
 
 /* define complex equivalents: */
-typedef struct { cnumber x,y,z; } cvector3;
-typedef struct { cvector3 c0, c1, c2; /* the columns */ } cmatrix3x3;
+typedef struct {
+  cnumber x, y, z;
+} cvector3;
+typedef struct {
+  cvector3 c0, c1, c2; /* the columns */
+} cmatrix3x3;
 
 /**************************************************************************/
 
-  /* vector3 and matrix3x3 utilities: */
+/* vector3 and matrix3x3 utilities: */
 
-extern number vector3_dot(vector3 v1,vector3 v2);
+extern number vector3_dot(vector3 v1, vector3 v2);
 extern number vector3_norm(vector3 v);
 extern vector3 vector3_scale(number s, vector3 v);
 extern vector3 unit_vector3(vector3 v);
-extern vector3 vector3_cross(vector3 v1,vector3 v2);
-extern vector3 vector3_plus(vector3 v1,vector3 v2);
-extern vector3 vector3_minus(vector3 v1,vector3 v2);
+extern vector3 vector3_cross(vector3 v1, vector3 v2);
+extern vector3 vector3_plus(vector3 v1, vector3 v2);
+extern vector3 vector3_minus(vector3 v1, vector3 v2);
 extern int vector3_equal(vector3 v1, vector3 v2);
 
 extern vector3 matrix3x3_vector3_mult(matrix3x3 m, vector3 v);
@@ -77,7 +87,7 @@ extern vector3 matrix3x3_row3(matrix3x3 m);
 
 /**************************************************************************/
 
-  /* complex number utilities */
+/* complex number utilities */
 
 extern cnumber make_cnumber(number r, number i);
 extern cnumber cnumber_conj(cnumber c);
@@ -93,26 +103,24 @@ extern int cvector3_equal(cvector3 v1, cvector3 v2);
 extern matrix3x3 cmatrix3x3_re(cmatrix3x3 cm);
 extern matrix3x3 cmatrix3x3_im(cmatrix3x3 cm);
 extern cmatrix3x3 make_cmatrix3x3(matrix3x3 mr, matrix3x3 mi);
-cmatrix3x3 make_hermitian_cmatrix3x3(number m00, number m11, number m22,
-                                     cnumber m01, cnumber m02, cnumber m12);
+cmatrix3x3 make_hermitian_cmatrix3x3(number m00, number m11, number m22, cnumber m01, cnumber m02,
+                                     cnumber m12);
 extern int cmatrix3x3_equal(cmatrix3x3 m1, cmatrix3x3 m2);
 
 /**************************************************************************/
 
-  /* multi-dimensional integration routines */
+/* multi-dimensional integration routines */
 
-typedef number (*multivar_func) (integer, number *, void *);
+typedef number (*multivar_func)(integer, number *, void *);
 
-extern number adaptive_integration(multivar_func f, number *xmin, number *xmax,
-				   integer n, void *fdata,
-				   number abstol, number reltol,
-				   integer maxnfe,
-				   number *esterr, integer *errflag);
+extern number adaptive_integration(multivar_func f, number *xmin, number *xmax, integer n,
+                                   void *fdata, number abstol, number reltol, integer maxnfe,
+                                   number *esterr, integer *errflag);
 
 /**************************************************************************/
 
 #ifdef __cplusplus
-	   }                               /* extern "C" */
-#endif                          /* __cplusplus */
+} /* extern "C" */
+#endif /* __cplusplus */
 
 #endif /* CTL_MATH_H */

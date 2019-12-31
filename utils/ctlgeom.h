@@ -23,38 +23,38 @@
 #define GEOM_H
 
 #ifdef CXX_CTL_IO
-#  define MATERIAL_TYPE ctlio::material_type
-#  define GEOMETRIC_OBJECT ctlio::geometric_object
-#  define GEOMETRIC_OBJECT_LIST ctlio::geometric_object_list
-#  define LATTICE ctlio::lattice
+#define MATERIAL_TYPE ctlio::material_type
+#define GEOMETRIC_OBJECT ctlio::geometric_object
+#define GEOMETRIC_OBJECT_LIST ctlio::geometric_object_list
+#define LATTICE ctlio::lattice
 #else
-#  define MATERIAL_TYPE material_type
-#  define GEOMETRIC_OBJECT geometric_object
-#  define GEOMETRIC_OBJECT_LIST geometric_object_list
-#  define LATTICE lattice
+#define MATERIAL_TYPE material_type
+#define GEOMETRIC_OBJECT geometric_object
+#define GEOMETRIC_OBJECT_LIST geometric_object_list
+#define LATTICE lattice
 #endif
 
 #ifndef CTL_IO_H /* for libctlgeom */
-#  undef MATERIAL_TYPE
-#  define MATERIAL_TYPE void*
+#undef MATERIAL_TYPE
+#define MATERIAL_TYPE void *
 #endif
 
 /* Where possible (e.g. for gcc >= 3.1), enable a compiler warning
    for code that uses a deprecated function */
-#if defined(__GNUC__) && (__GNUC__ > 3 || (__GNUC__==3 && __GNUC_MINOR__ > 0))
-#  define CTLGEOM_DEPRECATED __attribute__((deprecated))
+#if defined(__GNUC__) && (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ > 0))
+#define CTLGEOM_DEPRECATED __attribute__((deprecated))
 #else
-#  define CTLGEOM_DEPRECATED
+#define CTLGEOM_DEPRECATED
 #endif
 
 #ifdef __cplusplus
 extern "C" {
-#endif                          /* __cplusplus */
+#endif /* __cplusplus */
 
 /**************************************************************************/
 
 #ifndef CTL_IO_H
-#  include <ctlgeom-types.h>
+#include <ctlgeom-types.h>
 extern void display_geometric_object_info(int indentby, geometric_object o);
 #endif
 
@@ -78,19 +78,15 @@ extern vector3 to_geom_object_coords(vector3 p, GEOMETRIC_OBJECT o);
 extern vector3 from_geom_object_coords(vector3 p, GEOMETRIC_OBJECT o);
 extern vector3 normal_to_object(vector3 p, GEOMETRIC_OBJECT o);
 extern vector3 normal_to_fixed_object(vector3 p, GEOMETRIC_OBJECT o);
-extern int intersect_line_with_object(vector3 p, vector3 d, GEOMETRIC_OBJECT o,
-				      double s[2]);
-extern double intersect_line_segment_with_object(vector3 p, vector3 d,
-                                                 GEOMETRIC_OBJECT o,
-                                                 double a, double b);
+extern int intersect_line_with_object(vector3 p, vector3 d, GEOMETRIC_OBJECT o, double s[2]);
+extern double intersect_line_segment_with_object(vector3 p, vector3 d, GEOMETRIC_OBJECT o, double a,
+                                                 double b);
 extern MATERIAL_TYPE material_of_point_inobject(vector3 p, boolean *inobject);
-extern MATERIAL_TYPE material_of_point_inobject0(
-     GEOMETRIC_OBJECT_LIST geometry, vector3 p, boolean *inobject);
+extern MATERIAL_TYPE material_of_point_inobject0(GEOMETRIC_OBJECT_LIST geometry, vector3 p,
+                                                 boolean *inobject);
 extern MATERIAL_TYPE material_of_point(vector3 p);
-extern MATERIAL_TYPE material_of_point0(GEOMETRIC_OBJECT_LIST geometry,
-					vector3 p);
-GEOMETRIC_OBJECT object_of_point0(GEOMETRIC_OBJECT_LIST geometry, vector3 p,
-				   vector3 *shiftby);
+extern MATERIAL_TYPE material_of_point0(GEOMETRIC_OBJECT_LIST geometry, vector3 p);
+GEOMETRIC_OBJECT object_of_point0(GEOMETRIC_OBJECT_LIST geometry, vector3 p, vector3 *shiftby);
 GEOMETRIC_OBJECT object_of_point(vector3 p, vector3 *shiftby);
 vector3 shift_to_unit_cell(vector3 p);
 extern matrix3x3 square_basis(matrix3x3 lattice_basis, vector3 size);
@@ -98,86 +94,79 @@ extern void ctl_printf(const char *fmt, ...);
 extern void (*ctl_printf_callback)(const char *s);
 
 typedef struct {
-     vector3 low, high;
+  vector3 low, high;
 } geom_box;
 
 typedef struct {
-     geom_box box;
-     const GEOMETRIC_OBJECT *o;
-     vector3 shiftby;
-     int precedence;
+  geom_box box;
+  const GEOMETRIC_OBJECT *o;
+  vector3 shiftby;
+  int precedence;
 } geom_box_object;
 
 typedef struct geom_box_tree_struct {
-     geom_box b, b1, b2;
-     struct geom_box_tree_struct *t1, *t2;
-     int nobjects;
-     geom_box_object *objects;
-} *geom_box_tree;
+  geom_box b, b1, b2;
+  struct geom_box_tree_struct *t1, *t2;
+  int nobjects;
+  geom_box_object *objects;
+} * geom_box_tree;
 
 extern void destroy_geom_box_tree(geom_box_tree t);
 extern geom_box_tree create_geom_box_tree(void);
-extern geom_box_tree create_geom_box_tree0(GEOMETRIC_OBJECT_LIST geometry,
-					   geom_box b0);
+extern geom_box_tree create_geom_box_tree0(GEOMETRIC_OBJECT_LIST geometry, geom_box b0);
 extern geom_box_tree restrict_geom_box_tree(geom_box_tree, const geom_box *);
 extern geom_box_tree geom_tree_search(vector3 p, geom_box_tree t, int *oindex);
 extern geom_box_tree geom_tree_search_next(vector3 p, geom_box_tree t, int *oindex);
-extern MATERIAL_TYPE material_of_point_in_tree_inobject(vector3 p, geom_box_tree t, boolean *inobject);
+extern MATERIAL_TYPE material_of_point_in_tree_inobject(vector3 p, geom_box_tree t,
+                                                        boolean *inobject);
 extern MATERIAL_TYPE material_of_point_in_tree(vector3 p, geom_box_tree t);
-extern MATERIAL_TYPE material_of_unshifted_point_in_tree_inobject(vector3 p, geom_box_tree t, boolean *inobject);
-const GEOMETRIC_OBJECT *object_of_point_in_tree(vector3 p, geom_box_tree t,
-						vector3 *shiftby,
-						int *precedence);
+extern MATERIAL_TYPE material_of_unshifted_point_in_tree_inobject(vector3 p, geom_box_tree t,
+                                                                  boolean *inobject);
+const GEOMETRIC_OBJECT *object_of_point_in_tree(vector3 p, geom_box_tree t, vector3 *shiftby,
+                                                int *precedence);
 extern vector3 to_geom_box_coords(vector3 p, geom_box_object *gbo);
 extern void display_geom_box_tree(int indentby, geom_box_tree t);
 extern void geom_box_tree_stats(geom_box_tree t, int *depth, int *nobjects);
 
 extern void geom_get_bounding_box(GEOMETRIC_OBJECT o, geom_box *box);
 extern number box_overlap_with_object(geom_box b, GEOMETRIC_OBJECT o, number tol, integer maxeval);
-extern number ellipsoid_overlap_with_object(geom_box b, GEOMETRIC_OBJECT o, number tol, integer maxeval);
-extern number range_overlap_with_object(vector3 low, vector3 high,
-					GEOMETRIC_OBJECT o, number tol,
-					integer maxeval);
+extern number ellipsoid_overlap_with_object(geom_box b, GEOMETRIC_OBJECT o, number tol,
+                                            integer maxeval);
+extern number range_overlap_with_object(vector3 low, vector3 high, GEOMETRIC_OBJECT o, number tol,
+                                        integer maxeval);
 
 extern vector3 get_grid_size(void);
 extern vector3 get_resolution(void);
 extern void get_grid_size_n(int *nx, int *ny, int *nz);
 
 GEOMETRIC_OBJECT make_geometric_object(MATERIAL_TYPE material, vector3 center);
-GEOMETRIC_OBJECT make_cylinder(MATERIAL_TYPE material, vector3 center,
-			       number radius, number height, vector3 axis);
-GEOMETRIC_OBJECT make_wedge(MATERIAL_TYPE material, vector3 center,
-                            number radius, number height, vector3 axis,
-                            number wedge_angle, vector3 wedge_start);
-GEOMETRIC_OBJECT make_cone(MATERIAL_TYPE material, vector3 center,
-			   number radius, number height, vector3 axis,
-			   number radius2);
-GEOMETRIC_OBJECT make_sphere(MATERIAL_TYPE material, vector3 center,
-			     number radius);
-GEOMETRIC_OBJECT make_block(MATERIAL_TYPE material, vector3 center,
-			    vector3 e1, vector3 e2, vector3 e3,
-			    vector3 size);
-GEOMETRIC_OBJECT make_ellipsoid(MATERIAL_TYPE material, vector3 center,
-				vector3 e1, vector3 e2, vector3 e3,
-				vector3 size);
+GEOMETRIC_OBJECT make_cylinder(MATERIAL_TYPE material, vector3 center, number radius, number height,
+                               vector3 axis);
+GEOMETRIC_OBJECT make_wedge(MATERIAL_TYPE material, vector3 center, number radius, number height,
+                            vector3 axis, number wedge_angle, vector3 wedge_start);
+GEOMETRIC_OBJECT make_cone(MATERIAL_TYPE material, vector3 center, number radius, number height,
+                           vector3 axis, number radius2);
+GEOMETRIC_OBJECT make_sphere(MATERIAL_TYPE material, vector3 center, number radius);
+GEOMETRIC_OBJECT make_block(MATERIAL_TYPE material, vector3 center, vector3 e1, vector3 e2,
+                            vector3 e3, vector3 size);
+GEOMETRIC_OBJECT make_ellipsoid(MATERIAL_TYPE material, vector3 center, vector3 e1, vector3 e2,
+                                vector3 e3, vector3 size);
 
 // prism with `center` field computed automatically from vertices, height, axis
-GEOMETRIC_OBJECT make_prism(MATERIAL_TYPE material,
-			    const vector3 *vertices, int num_vertices,
-			    double height, vector3 axis);
+GEOMETRIC_OBJECT make_prism(MATERIAL_TYPE material, const vector3 *vertices, int num_vertices,
+                            double height, vector3 axis);
 
 // as make_prism, but with a rigid translation so that the prism is centered at center
 GEOMETRIC_OBJECT make_prism_with_center(MATERIAL_TYPE material, vector3 center,
-                                        const vector3 *vertices, int num_vertices,
-                                        double height, vector3 axis);
-
+                                        const vector3 *vertices, int num_vertices, double height,
+                                        vector3 axis);
 
 int vector3_nearly_equal(vector3 v1, vector3 v2, double tolerance);
 
 /**************************************************************************/
 
 #ifdef __cplusplus
-}                               /* extern "C" */
-#endif                          /* __cplusplus */
+} /* extern "C" */
+#endif /* __cplusplus */
 
 #endif /* GEOM_H */
