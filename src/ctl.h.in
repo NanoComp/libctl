@@ -24,16 +24,16 @@
 
 #undef HAVE_NO_GH
 #ifdef HAVE_NO_GH
-#  include <libguile.h>
+#include <libguile.h>
 #else
-#  include <guile/gh.h>
+#include <guile/gh.h>
 #endif
 
 #include "ctl-math.h"
 
 #ifdef __cplusplus
 extern "C" {
-#endif                          /* __cplusplus */
+#endif /* __cplusplus */
 
 /**************************************************************************/
 /* Configuration options (guessed by configure).
@@ -73,7 +73,7 @@ extern "C" {
 
 /**************************************************************************/
 
-  /* Basic types: */
+/* Basic types: */
 
 typedef SCM list;
 typedef SCM function;
@@ -82,42 +82,43 @@ typedef SCM object;
 /**************************************************************************/
 
 #ifdef HAVE_NO_GH /* use replacements for gh functions */
-#  define gh_call0 scm_call_0
-#  define gh_call1 scm_call_1
-#  define gh_call2 scm_call_2
-#  define gh_call3 scm_call_3
-#  define gh_apply scm_apply_0
-#  define gh_eval_str scm_c_eval_string
-#  define gh_symbol2scm scm_from_locale_symbol
-#  define ctl_symbol2newstr(x) scm_to_locale_string(scm_symbol_to_string(x))
-#  define gh_cons scm_cons
-#  define gh_car scm_car
-#  define gh_cdr scm_cdr
-#  if SCM_MAJOR_VERSION >= 2 /* get types right for C++, since fc
-			        argument is void* (grrr) in Guile 2.x */
-#    define gh_new_procedure(name, fcn, req, opt, rst) scm_c_define_gsubr(name, req, opt, rst, (scm_t_subr) (fcn))
-#  else
-#    define gh_new_procedure(name, fcn, req, opt, rst) scm_c_define_gsubr(name, req, opt, rst, fcn)
-#  endif
-#  define gh_repl scm_shell
+#define gh_call0 scm_call_0
+#define gh_call1 scm_call_1
+#define gh_call2 scm_call_2
+#define gh_call3 scm_call_3
+#define gh_apply scm_apply_0
+#define gh_eval_str scm_c_eval_string
+#define gh_symbol2scm scm_from_locale_symbol
+#define ctl_symbol2newstr(x) scm_to_locale_string(scm_symbol_to_string(x))
+#define gh_cons scm_cons
+#define gh_car scm_car
+#define gh_cdr scm_cdr
+#if SCM_MAJOR_VERSION >= 2 /* get types right for C++, since fc                                    \
+                              argument is void* (grrr) in Guile 2.x */
+#define gh_new_procedure(name, fcn, req, opt, rst)                                                 \
+  scm_c_define_gsubr(name, req, opt, rst, (scm_t_subr)(fcn))
 #else
-#  define ctl_symbol2newstr(x) gh_symbol2newstr(x, 0)
+#define gh_new_procedure(name, fcn, req, opt, rst) scm_c_define_gsubr(name, req, opt, rst, fcn)
+#endif
+#define gh_repl scm_shell
+#else
+#define ctl_symbol2newstr(x) gh_symbol2newstr(x, 0)
 #endif
 
 #if !defined(GH_LOOKUP_OK) || defined(HAVE_NO_GH)
-#  if defined(HAVE_SCM_VARIABLE_REF) && defined(HAVE_SCM_C_LOOKUP)
-#    define gh_lookup(name) scm_variable_ref(scm_c_lookup(name))
-#  else
-#    define gh_lookup scm_symbol_value0
-#  endif
+#if defined(HAVE_SCM_VARIABLE_REF) && defined(HAVE_SCM_C_LOOKUP)
+#define gh_lookup(name) scm_variable_ref(scm_c_lookup(name))
+#else
+#define gh_lookup scm_symbol_value0
+#endif
 #endif
 
 #if !defined(HAVE_GH_LOAD) || defined(HAVE_NO_GH)
-#  ifdef HAVE_NO_GH
-#    define gh_load scm_c_primitive_load
-#  else
-#    define gh_load gh_eval_file
-#  endif
+#ifdef HAVE_NO_GH
+#define gh_load scm_c_primitive_load
+#else
+#define gh_load gh_eval_file
+#endif
 #endif
 
 extern void ctl_include(const char *filename);
@@ -126,17 +127,17 @@ extern char *ctl_fix_path(const char *path);
 /**************************************************************************/
 
 #ifndef HAVE_SCM_C_MAKE_VECTOR
-#  define scm_c_make_vector(n,fill) scm_make_vector(SCM_MAKINUM(n), fill)
+#define scm_c_make_vector(n, fill) scm_make_vector(SCM_MAKINUM(n), fill)
 #endif
 
 /**************************************************************************/
 
-  /* type conversion */
+/* type conversion */
 
 #if !defined(HAVE_GH_BOOL2SCM) && !defined(HAVE_NO_GH)
-  /* Guile 1.2 is missing gh_bool2scm for some reason; redefine: */
-   extern SCM ctl_gh_bool2scm(boolean);
-#  define gh_bool2scm ctl_gh_bool2scm
+/* Guile 1.2 is missing gh_bool2scm for some reason; redefine: */
+extern SCM ctl_gh_bool2scm(boolean);
+#define gh_bool2scm ctl_gh_bool2scm
 #endif
 
 extern vector3 scm2vector3(SCM sv);
@@ -152,23 +153,23 @@ extern cmatrix3x3 scm2cmatrix3x3(SCM sm);
 extern SCM cmatrix3x32scm(cmatrix3x3 m);
 
 #ifdef HAVE_NO_GH
-#  define ctl_convert_number_to_scm(x) scm_from_double(x)
-#  define ctl_convert_number_to_c(x) scm_to_double(x)
-#  define ctl_convert_integer_to_scm(x) scm_from_int(x)
-#  define ctl_convert_integer_to_c(x) scm_to_int(x)
-#  define ctl_convert_string_to_scm(x) scm_from_locale_string(x)
-#  define ctl_convert_string_to_c(x) scm_to_locale_string(x)
-#  define ctl_convert_boolean_to_scm(x) scm_from_bool(x)
-#  define ctl_convert_boolean_to_c(x) scm_to_bool(x)
+#define ctl_convert_number_to_scm(x) scm_from_double(x)
+#define ctl_convert_number_to_c(x) scm_to_double(x)
+#define ctl_convert_integer_to_scm(x) scm_from_int(x)
+#define ctl_convert_integer_to_c(x) scm_to_int(x)
+#define ctl_convert_string_to_scm(x) scm_from_locale_string(x)
+#define ctl_convert_string_to_c(x) scm_to_locale_string(x)
+#define ctl_convert_boolean_to_scm(x) scm_from_bool(x)
+#define ctl_convert_boolean_to_c(x) scm_to_bool(x)
 #else
-#  define ctl_convert_number_to_scm(x) gh_double2scm(x)
-#  define ctl_convert_number_to_c(x) gh_scm2double(x)
-#  define ctl_convert_integer_to_scm(x) gh_int2scm(x)
-#  define ctl_convert_integer_to_c(x) gh_scm2int(x)
-#  define ctl_convert_string_to_scm(x) gh_str02scm(x)
-#  define ctl_convert_string_to_c(x) gh_scm2newstr(x, 0)
-#  define ctl_convert_boolean_to_scm(x) gh_bool2scm(x)
-#  define ctl_convert_boolean_to_c(x) gh_scm2bool(x)
+#define ctl_convert_number_to_scm(x) gh_double2scm(x)
+#define ctl_convert_number_to_c(x) gh_scm2double(x)
+#define ctl_convert_integer_to_scm(x) gh_int2scm(x)
+#define ctl_convert_integer_to_c(x) gh_scm2int(x)
+#define ctl_convert_string_to_scm(x) gh_str02scm(x)
+#define ctl_convert_string_to_c(x) gh_scm2newstr(x, 0)
+#define ctl_convert_boolean_to_scm(x) gh_bool2scm(x)
+#define ctl_convert_boolean_to_c(x) gh_scm2bool(x)
 #endif
 
 #define ctl_convert_cnumber_to_scm(x) cnumber2scm(x)
@@ -193,13 +194,13 @@ extern SCM cmatrix3x32scm(cmatrix3x3 m);
 
 /**************************************************************************/
 
-  /* variable get/set functions */
+/* variable get/set functions */
 
 extern integer ctl_get_integer(const char *identifier);
 extern number ctl_get_number(const char *identifier);
 extern cnumber ctl_get_cnumber(const char *identifier);
 extern boolean ctl_get_boolean(const char *identifier);
-extern char* ctl_get_string(const char *identifier);
+extern char *ctl_get_string(const char *identifier);
 extern vector3 ctl_get_vector3(const char *identifier);
 extern matrix3x3 ctl_get_matrix3x3(const char *identifier);
 extern cvector3 ctl_get_cvector3(const char *identifier);
@@ -225,14 +226,14 @@ extern void ctl_set_SCM(const char *identifier, SCM value);
 
 /**************************************************************************/
 
-  /* list traversal */
+/* list traversal */
 
 extern int list_length(list l);
 extern integer integer_list_ref(list l, int index);
 extern number number_list_ref(list l, int index);
 extern cnumber cnumber_list_ref(list l, int index);
 extern boolean boolean_list_ref(list l, int index);
-extern char* string_list_ref(list l, int index);
+extern char *string_list_ref(list l, int index);
 extern vector3 vector3_list_ref(list l, int index);
 extern matrix3x3 matrix3x3_list_ref(list l, int index);
 extern cvector3 cvector3_list_ref(list l, int index);
@@ -244,7 +245,7 @@ extern SCM SCM_list_ref(list l, int index);
 
 /**************************************************************************/
 
-  /* list creation */
+/* list creation */
 
 extern list make_integer_list(int num_items, const integer *items);
 extern list make_number_list(int num_items, const number *items);
@@ -262,7 +263,7 @@ extern list make_SCM_list(int num_items, const function *items);
 
 /**************************************************************************/
 
-  /* object properties */
+/* object properties */
 
 boolean object_is_member(const char *type_name, object o);
 
@@ -270,7 +271,7 @@ extern integer integer_object_property(object o, const char *property_name);
 extern number number_object_property(object o, const char *property_name);
 extern cnumber cnumber_object_property(object o, const char *property_name);
 extern boolean boolean_object_property(object o, const char *property_name);
-extern char* string_object_property(object o, const char *property_name);
+extern char *string_object_property(object o, const char *property_name);
 extern vector3 vector3_object_property(object o, const char *property_name);
 extern matrix3x3 matrix3x3_object_property(object o, const char *property_name);
 extern cvector3 cvector3_object_property(object o, const char *property_name);
@@ -295,42 +296,36 @@ extern void ctl_stop_hook(void);
 
 /**************************************************************************/
 
-  /* subplex multi-dimensional minimization routines: */
+/* subplex multi-dimensional minimization routines: */
 
-extern number subplex(multivar_func f, number *x, integer n, void *fdata,
-		      number tol, integer maxnfe,
-		      number fmin, boolean use_fmin,
-		      number *scale,
-		      integer *nfe, integer *errflag);
-extern SCM subplex_scm(SCM f_scm, SCM x_scm,
-		       SCM tol_scm, SCM maxnfe_scm,
-		       SCM fmin_scm, SCM use_fmin_scm,
-		       SCM scale_scm);
+extern number subplex(multivar_func f, number *x, integer n, void *fdata, number tol,
+                      integer maxnfe, number fmin, boolean use_fmin, number *scale, integer *nfe,
+                      integer *errflag);
+extern SCM subplex_scm(SCM f_scm, SCM x_scm, SCM tol_scm, SCM maxnfe_scm, SCM fmin_scm,
+                       SCM use_fmin_scm, SCM scale_scm);
 
-  /* multi-dimensional integration routines */
+/* multi-dimensional integration routines */
 
-extern SCM adaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
-				    SCM abstol_scm, SCM reltol_scm, SCM maxnfe_scm);
+extern SCM adaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm, SCM abstol_scm,
+                                    SCM reltol_scm, SCM maxnfe_scm);
 
 #ifdef CTL_HAS_COMPLEX_INTEGRATION
 
-typedef cnumber (*cmultivar_func) (integer, number *, void *);
+typedef cnumber (*cmultivar_func)(integer, number *, void *);
 
-extern cnumber cadaptive_integration(cmultivar_func f, number *xmin, number *xmax,
-				     integer n, void *fdata,
-				     number abstol, number reltol,
-				     integer maxnfe,
-				     number *esterr, integer *errflag);
+extern cnumber cadaptive_integration(cmultivar_func f, number *xmin, number *xmax, integer n,
+                                     void *fdata, number abstol, number reltol, integer maxnfe,
+                                     number *esterr, integer *errflag);
 
-extern SCM cadaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm,
-				     SCM abstol_scm, SCM reltol_scm, SCM maxnfe_scm);
+extern SCM cadaptive_integration_scm(SCM f_scm, SCM xmin_scm, SCM xmax_scm, SCM abstol_scm,
+                                     SCM reltol_scm, SCM maxnfe_scm);
 
 #endif /* CTL_HAS_COMPLEX_INTEGRATION */
 
 /**************************************************************************/
 
 #ifdef __cplusplus
-	   }                               /* extern "C" */
-#endif                          /* __cplusplus */
+} /* extern "C" */
+#endif /* __cplusplus */
 
 #endif /* CTL_H */
