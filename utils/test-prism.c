@@ -428,10 +428,10 @@ int test_point_in_polygon(int write_log) {
 
   if (f) {
     if (all_points_success) {
-      printf("all test points for slanted H pass and fail as expected\n");
+      printf("all test points for slanted H pass\n");
     }
     else {
-	  printf("one or more test points for slanted H do not pass and fail as expected\n");
+	  printf("one or more test points for slanted H fail\n");
     }
     fclose(f);
   }
@@ -439,11 +439,11 @@ int test_point_in_polygon(int write_log) {
   int num_failed;
   if (all_points_success) {
 	num_failed = 0;
-    printf("all test points for slanted H pass and fail as expected\n");
+    printf("all test points for slanted H pass\n");
   }
   else {
 	num_failed = 1;
-	printf("one or more test points for slanted H do not pass and fail as expected\n");
+	printf("one or more test points for slanted H fail\n");
   }
   
   return num_failed;
