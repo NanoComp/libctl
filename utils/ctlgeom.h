@@ -152,6 +152,9 @@ GEOMETRIC_OBJECT make_block(MATERIAL_TYPE material, vector3 center, vector3 e1, 
 GEOMETRIC_OBJECT make_ellipsoid(MATERIAL_TYPE material, vector3 center, vector3 e1, vector3 e2,
                                 vector3 e3, vector3 size);
 
+extern boolean node_in_or_on_polygon(vector3 q0, vector3 *nodes, int num_nodes,
+                                     boolean include_boundaries);
+
 // prism with `center` field computed automatically from vertices, height, axis
 GEOMETRIC_OBJECT make_prism(MATERIAL_TYPE material, const vector3 *vertices, int num_vertices,
                             double height, vector3 axis);

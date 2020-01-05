@@ -366,6 +366,89 @@ int test_line_segment_intersection(geometric_object the_block, geometric_object 
   return num_failed;
 }
 
+/************************************************************************/
+/* fourth unit test: check of point in polygon test with slanted H     */
+/************************************************************************/
+int test_point_in_polygon(int write_log) {
+  // make array of test points that should always pass
+  vector3 pass[5];
+  pass[0] = make_vector3(0.3, 0.5, 0.0);
+  pass[1] = make_vector3(0.4, 0.4, 0.0);
+  pass[2] = make_vector3(0.5, 0.7, 0.0);
+  pass[3] = make_vector3(0.5, 0.5, 0.0);
+  pass[4] = make_vector3(0.5, 0.3, 0.0);
+  
+  // make array of test points that should always pass
+  vector3 fail[5];
+  fail[0] = make_vector3(0.2, 0.2, 0.0);
+  fail[1] = make_vector3(0.3, 0.3, 0.0);
+  fail[2] = make_vector3(0.4, 0.6, 0.0);
+  fail[3] = make_vector3(0.6, 0.4, 0.0);
+  fail[4] = make_vector3(0.7, 0.7, 0.0);
+
+  // make array of nodes for the test polygon (an H slanted by 45 degrees)
+  int num_nodes = 12;
+  vector3 nodes[num_nodes];
+  nodes[0] = make_vector3(0.5, 0.2, 0.0);
+  nodes[1] = make_vector3(0.6, 0.3, 0.0);
+  nodes[2] = make_vector3(0.5, 0.4, 0.0);
+  nodes[3] = make_vector3(0.6, 0.5, 0.0);
+  nodes[4] = make_vector3(0.7, 0.4, 0.0);
+  nodes[5] = make_vector3(0.8, 0.5, 0.0);
+  nodes[6] = make_vector3(0.5, 0.8, 0.0);
+  nodes[7] = make_vector3(0.4, 0.7, 0.0);
+  nodes[8] = make_vector3(0.5, 0.6, 0.0);
+  nodes[9] = make_vector3(0.4, 0.5, 0.0);
+  nodes[10] = make_vector3(0.3, 0.6, 0.0);
+  nodes[11] = make_vector3(0.2, 0.5, 0.0);
+  
+  FILE *f = write_log ? fopen("/tmp/test-prism.point-in-polygon", "w") : 0;
+  
+  boolean all_points_success = 1;
+  boolean include_boundaries = 1;
+  int i;
+  for (i = 0; i < 5; i++) {
+    boolean local_success = node_in_or_on_polygon(pass[i], nodes, num_nodes, include_boundaries);
+    if (!local_success) {
+    	all_points_success = 0;
+    }
+    if (f) {
+      fprintf(f, "%f %f %i\n", pass[i].x, pass[i].y, local_success);
+    }
+  }
+  for (i = 0; i < 5; i++) {
+    boolean local_success = !node_in_or_on_polygon(fail[i], nodes, num_nodes, include_boundaries);
+    if (!local_success) {
+      all_points_success = 0;
+    }
+    if (f) {
+      fprintf(f, "%f %f %i\n", pass[i].x, pass[i].y, local_success);
+    }
+  }
+
+  if (f) {
+    if (all_points_success) {
+      printf("all test points for slanted H pass and fail as expected\n");
+    }
+    else {
+	  printf("one or more test points for slanted H do not pass and fail as expected\n");
+    }
+    fclose(f);
+  }
+  
+  int num_failed;
+  if (all_points_success) {
+	num_failed = 0;
+    printf("all test points for slanted H pass and fail as expected\n");
+  }
+  else {
+	num_failed = 1;
+	printf("one or more test points for slanted H do not pass and fail as expected\n");
+  }
+  
+  return num_failed;
+}
+
 /***************************************************************/
 /* unit tests: create the same parallelepiped two ways (as a   */
 /* block and as a prism) and verify that geometric primitives  */
@@ -425,8 +508,9 @@ int run_unit_tests() {
   //          although the distinction is only significant in cases where it is irrelevant
   int num_failed_2 = 0; // test_normal_to_object(the_block, the_prism, NUMLINES, write_log);
   int num_failed_3 = test_line_segment_intersection(the_block, the_prism, NUMLINES, write_log);
+  int num_failed_4 = test_point_in_polygon(write_log);
 
-  return num_failed_1 + num_failed_2 + num_failed_3;
+  return num_failed_1 + num_failed_2 + num_failed_3 + num_failed_4;
 }
 
 /***************************************************************/
