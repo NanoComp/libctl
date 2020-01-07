@@ -2404,6 +2404,7 @@ void display_prism_info(int indentby, geometric_object *o) {
 int vector3_nearly_equal(vector3 v1, vector3 v2, double tolerance) {
   return (vector3_norm(vector3_minus(v1, v2)) <= tolerance * vector3_norm(v1));
 }
+matrix3x3 sidewall_scaling_matrix;
 
 /***************************************************************/
 /* return the unit normal vector to the triangle with the given*/
@@ -2494,8 +2495,19 @@ void init_prism(geometric_object *o) {
   
   // This section will be for performing calculations with the sidewall angle
   if (isnan(prsm->sidewall_angle)) {
-	  prsm->sidewall_angle = 0.0;
+    prsm->sidewall_angle = 0.0;
   }
+  double cx, cy;  // Scaling factors in the x- and -y dimensions based on the sidewall angle
+  if (sidewall_angle == 0.0) {
+    // If the sidewall_angle denotes a normal sidewall, the transformation matrix
+    // is simply the identity matrix.
+    cx = 1;
+    cy = 1; 
+  }
+  else if (sidewall_angle > 0.0) {
+    cx = 1 - prism->height
+  }
+  matrix3x3 
 
   // compute rotation matrix that operates on a vector of cartesian coordinates
   // to yield the coordinates of the same point in the prism coordinate system.
