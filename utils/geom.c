@@ -913,6 +913,7 @@ double geom_object_volume(GEOMETRIC_OBJECT o) {
       return o.subclass.block_data->which_subclass == BLK BLOCK_SELF ? vol : vol * (K_PI / 6);
     }
     case GEOM PRISM: {
+      // needs updating for non-normal sidewalls
       vector3_list vertices = o.subclass.prism_data->vertices_p;
       double area = 0;
       int i;
@@ -2490,6 +2491,11 @@ void init_prism(geometric_object *o) {
       vertices[nv] = vector3_plus(vertices[nv], shift);
     centroid = vector3_plus(centroid, shift);
   }
+  
+  // This section will be for performing calculations with the sidewall angle
+  if (isnan(prsm->sidewall_angle)) {
+	  prsm->sidewall_angle = 0.0;
+  }
 
   // compute rotation matrix that operates on a vector of cartesian coordinates
   // to yield the coordinates of the same point in the prism coordinate system.
@@ -2540,14 +2546,15 @@ void init_prism(geometric_object *o) {
 /***************************************************************/
 // prism with center determined automatically from vertices, height, and axis
 geometric_object make_prism(material_type material, const vector3 *vertices, int num_vertices,
-                            double height, vector3 axis) {
-  return make_prism_with_center(material, auto_center, vertices, num_vertices, height, axis);
+                            double height, vector3 axis, double sidewall_angle) {
+  return make_prism_with_center(material, auto_center, vertices, num_vertices, height, axis, 
+		  	  	  	  	  	    sidewall_angle);
 }
 
 // prism in which all vertices are translated to ensure that the prism is centered at center
 geometric_object make_prism_with_center(material_type material, vector3 center,
                                         const vector3 *vertices, int num_vertices, double height,
-                                        vector3 axis) {
+                                        vector3 axis, double sidewall_angle) {
   geometric_object o = make_geometric_object(material, center);
   o.which_subclass = GEOM PRISM;
   prism *prsm = o.subclass.prism_data = MALLOC1(prism);
@@ -2558,6 +2565,7 @@ geometric_object make_prism_with_center(material_type material, vector3 center,
   memcpy(prsm->vertices.items, vertices, num_vertices * sizeof(vector3));
   prsm->height = height;
   prsm->axis = axis;
+  prsm->sidewall_angle = sidewall_angle;
   init_prism(&o);
   return o;
 }

@@ -484,7 +484,7 @@ int run_unit_tests() {
   v[3].z = -0.5 * LZ;
 
   geometric_object the_block = make_block(m, c, xhat, yhat, zhat, size);
-  geometric_object the_prism = make_prism(m, v, 4, LZ, zhat);
+  geometric_object the_prism = make_prism(m, v, 4, LZ, zhat, 0.0);
 
   /***************************************************************/
   /* with probability P_SHIFT, shift the centers of both block   */
@@ -625,7 +625,7 @@ int main(int argc, char *argv[]) {
   }
   fclose(f);
 
-  geometric_object the_prism = make_prism(NULL, vertices, num_vertices, height, axis);
+  geometric_object the_prism = make_prism(NULL, vertices, num_vertices, height, axis, 0.0);
   prism *prsm = the_prism.subclass.prism_data;
   prism2gmsh(prsm, "test-prism.pp");
   prism2gnuplot(prsm, "test-prism.gp");
