@@ -127,7 +127,8 @@
   (define-property centroid (vector3 0 0 0) 'vector3)
   (define-property workspace '() (make-list-type 'number))
   (define-property m_c2p identity_matrix 'matrix3x3)
-  (define-property m_p2c identity_matrix 'matrix3x3))
+  (define-property m_p2c identity_matrix 'matrix3x3)
+  (define-property sidewall_angle 0 'number))
 
 (define-class ellipsoid block
   (define-derived-property inverse-semi-axes 'vector3
