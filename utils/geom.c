@@ -1942,9 +1942,14 @@ matrix3x3 prism_projective_transformation_for_p2c(prism *prsm, vector3 pp) {
         cx = 0;
     }
     else {
-        cx = 1 - pp.z / (pp.x * tan(theta))
+        cx = 1 - pp.z / (pp.x * tan(theta));
     }
-    c2p = {{cx, 0, 0}, {0, cy, 0}, {0, 0, 1}};
+    vector3 c0vector = {cx, 0, 0};
+    c2p.c0 = c0vector;
+    vector3 c1vector = {0, cy, 0};
+    c2p.c1 = c1vector;
+    vector3 c2vector = {0, 0, 1};
+    c2p.c2 = c2vector;
     return c2p;
 }
 
@@ -1958,9 +1963,12 @@ vector3 prism_coordinate_p2c(prism *prsm, vector3 pp) {
   return vector3_plus(prsm->centroid, matrix3x3_vector3_mult(matrix3x3_mult(prsm->m_p2c, projective_transform_p2c), pp));
 }
 
+// the prism_projective_transformation_for_p2c() function won't work
+// here because vp isn't actually at a particular location
 vector3 prism_vector_p2c(prism *prsm, vector3 vp) {
-  matrix3x3 projective_transform_p2c = prism_projective_transformation_for_p2c(prsm, pp);
-  return matrix3x3_vector3_mult(matrix3x3_mult(prsm->m_p2c, projective_transform_p2c), vp);
+  // matrix3x3 projective_transform_p2c = prism_projective_transformation_for_p2c(prsm, pp);
+  // return matrix3x3_vector3_mult(matrix3x3_mult(prsm->m_p2c, projective_transform_p2c), vp);
+  return matrix3x3_vector3_mult(prsm->m_p2c, vp);
 }
 
 vector3 prism_coordinate_c2p(prism *prsm, vector3 pc) {
@@ -1968,9 +1976,12 @@ vector3 prism_coordinate_c2p(prism *prsm, vector3 pc) {
   return matrix3x3_vector3_mult(matrix3x3_mult(prsm->m_p2c, projective_transform_c2p), vector3_minus(pc, prsm->centroid));
 }
 
+// the prism_projective_transformation_for_c2p() function won't work
+// here because vp isn't actually at a particular location
 vector3 prism_vector_c2p(prism *prsm, vector3 vc) {
-  matrix3x3 projective_transform_c2p = prism_projective_transformation_for_c2p(prsm, pp);
-  return matrix3x3_vector3_mult(matrix3x3_mult(prsm->m_p2c, projective_transform_c2p), vc);
+  // matrix3x3 projective_transform_c2p = prism_projective_transformation_for_c2p(prsm, pp);
+  // return matrix3x3_vector3_mult(matrix3x3_mult(prsm->m_p2c, projective_transform_c2p), vc);
+    return matrix3x3_vector3_mult(prsm->m_c2p, vc);
 }
 
 /***************************************************************/
