@@ -1,4 +1,4 @@
-; Copyright (C) 1998-2019 Steven G. Johnson
+; Copyright (C) 1998-2020 Steven G. Johnson
 ;
 ; This file may be used without restriction.  It is in the public
 ; domain, and is NOT restricted by the terms of any GNU license.
