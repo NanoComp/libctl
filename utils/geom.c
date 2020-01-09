@@ -1925,22 +1925,52 @@ geometric_object make_ellipsoid(material_type material, vector3 center, vector3 
 
 /***************************************************************/
 /* given coordinates of a point in the prism coordinate system,*/
-/* return cartesian coordinates of that point                  */
+/* return cartesian coordinates of that point includes calcu-  */
+/* lations to account for the sidewall angle                   */
 /***************************************************************/
+matrix3x3 prism_projective_transformation_for_p2c(prism *prsm, vector3 pp) {
+    matrix3x3 c2p;
+    double cx;
+    double cy;
+    double theta = (K_PI / 2) - prsm->sidewall_angle;
+    if (prsm->sidewall_angle == 0) {
+        cx = 1;
+        cy = 1;
+
+    }
+    if (pp.x == 0) {
+        cx = 0;
+    }
+    else {
+        cx = 1 - pp.z / (pp.x * tan(theta))
+    }
+    c2p = {{cx, 0, 0}, {0, cy, 0}, {0, 0, 1}};
+    return c2p;
+}
+
+matrix3x3 prism_projective_transformation_for_c2p(prism *prsm, vector3 pc) {
+    matrix3x3 p2c = matrix3x3_inverse(prism_projective_transformation_for_c2p(prsm, pc));
+    return p2c;
+}
+
 vector3 prism_coordinate_p2c(prism *prsm, vector3 pp) {
-  return vector3_plus(prsm->centroid, matrix3x3_vector3_mult(prsm->m_p2c, pp));
+  matrix3x3 projective_transform_p2c = prism_projective_transformation_for_p2c(prsm, pp);
+  return vector3_plus(prsm->centroid, matrix3x3_vector3_mult(matrix3x3_mult(prsm->m_p2c, projective_transform_p2c), pp));
 }
 
 vector3 prism_vector_p2c(prism *prsm, vector3 vp) {
-  return matrix3x3_vector3_mult(prsm->m_p2c, vp);
+  matrix3x3 projective_transform_p2c = prism_projective_transformation_for_p2c(prsm, pp);
+  return matrix3x3_vector3_mult(matrix3x3_mult(prsm->m_p2c, projective_transform_p2c), vp);
 }
 
 vector3 prism_coordinate_c2p(prism *prsm, vector3 pc) {
-  return matrix3x3_vector3_mult(prsm->m_c2p, vector3_minus(pc, prsm->centroid));
+  matrix3x3 projective_transform_c2p = prism_projective_transformation_for_c2p(prsm, pp);
+  return matrix3x3_vector3_mult(matrix3x3_mult(prsm->m_p2c, projective_transform_c2p), vector3_minus(pc, prsm->centroid));
 }
 
 vector3 prism_vector_c2p(prism *prsm, vector3 vc) {
-  return matrix3x3_vector3_mult(prsm->m_c2p, vc);
+  matrix3x3 projective_transform_c2p = prism_projective_transformation_for_c2p(prsm, pp);
+  return matrix3x3_vector3_mult(matrix3x3_mult(prsm->m_p2c, projective_transform_c2p), vc);
 }
 
 /***************************************************************/
@@ -2391,8 +2421,8 @@ void display_prism_info(int indentby, geometric_object *o) {
   vector3 *vs = prsm->vertices.items;
   int num_vertices = prsm->vertices.num_items;
 
-  ctl_printf("%*s     height %g, axis (%g,%g,%g), %i vertices:\n", indentby, "", prsm->height,
-             prsm->axis.x, prsm->axis.y, prsm->axis.z, num_vertices);
+  ctl_printf("%*s     height %g, axis (%g,%g,%g), sidewall angle: %g radians, %i vertices:\n", indentby, "", prsm->height,
+             prsm->axis.x, prsm->axis.y, prsm->axis.z, prsm->sidewall_angle, num_vertices);
   int nv;
   for (nv = 0; nv < num_vertices; nv++)
     ctl_printf("%*s     (%g,%g,%g)\n", indentby, "", vs[nv].x, vs[nv].y, vs[nv].z);
@@ -2493,21 +2523,10 @@ void init_prism(geometric_object *o) {
     centroid = vector3_plus(centroid, shift);
   }
   
-  // This section will be for performing calculations with the sidewall angle
+  // This section checks if the sidewall_angle has been initialized
   if (isnan(prsm->sidewall_angle)) {
     prsm->sidewall_angle = 0.0;
   }
-  double cx, cy;  // Scaling factors in the x- and -y dimensions based on the sidewall angle
-  if (sidewall_angle == 0.0) {
-    // If the sidewall_angle denotes a normal sidewall, the transformation matrix
-    // is simply the identity matrix.
-    cx = 1;
-    cy = 1; 
-  }
-  else if (sidewall_angle > 0.0) {
-    cx = 1 - prism->height
-  }
-  matrix3x3 
 
   // compute rotation matrix that operates on a vector of cartesian coordinates
   // to yield the coordinates of the same point in the prism coordinate system.
