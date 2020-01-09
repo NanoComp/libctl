@@ -449,6 +449,34 @@ int test_point_in_polygon(int write_log) {
   return num_failed;
 }
 
+/************************************************************************/
+/* fifth unit test: saves a prism with normal sidewall angle and a      */
+/* prism with the same base polygon with non-normal sidewall angle to   */
+/* separate GNU plot files                                              */
+/************************************************************************/
+int test_sidewall_prisms_to_gnuplot() {
+    void *m = NULL;
+
+    int num_nodes = 4;
+    vector3 nodes[num_nodes];
+    nodes[0] = make_vector3(1.0, 1.0, 0.0);
+    nodes[1] = make_vector3(1.0, -1.0, 0.0);
+    nodes[2] = make_vector3(-1.0, -1.0, 0.0);
+    nodes[3] = make_vector3(-1.0, 1.0, 0.0);
+
+    double height = 10;
+    vector3 zhat = make_vector3(0, 0, 1);
+    double normal_sidewall = 0;
+    geometric_object normal_sidewall_prism = make_prism(m, nodes, num_nodes, height, zhat, normal_sidewall);
+    double ten_degree_sidewall = 10.0 * 2 * K_PI / 360.0;
+    geometric_object ten_degree_sidewall_prism = make_prism(m, nodes, num_nodes, height, zhat, ten_degree_sidewall);
+
+    prism2gnuplot(normal_sidewall_prism, "normal_sidewall_gnu_plot.dat");
+    prism2gnuplot(normal_sidewall_prism, "ten_degree_sidewall_gnu_plot.dat");
+
+    return 0;
+}
+
 /***************************************************************/
 /* unit tests: create the same parallelepiped two ways (as a   */
 /* block and as a prism) and verify that geometric primitives  */
