@@ -1972,7 +1972,7 @@ vector3 prism_vector_p2c(prism *prsm, vector3 vp) {
 }
 
 vector3 prism_coordinate_c2p(prism *prsm, vector3 pc) {
-  matrix3x3 projective_transform_c2p = prism_projective_transformation_for_c2p(prsm, pp);
+  matrix3x3 projective_transform_c2p = prism_projective_transformation_for_c2p(prsm, pc);
   return matrix3x3_vector3_mult(matrix3x3_mult(prsm->m_p2c, projective_transform_c2p), vector3_minus(pc, prsm->centroid));
 }
 
