@@ -466,13 +466,17 @@ int test_sidewall_prisms_to_gnuplot() {
 
     double height = 10;
     vector3 zhat = make_vector3(0, 0, 1);
+
     double normal_sidewall = 0;
-    geometric_object normal_sidewall_prism = make_prism(m, nodes, num_nodes, height, zhat, normal_sidewall);
+    geometric_object normal_sidewall_geom_object = make_prism(m, nodes, num_nodes, height, zhat, normal_sidewall);
+    prism *normal_sidewall_prism = normal_sidewall_geom_object.subclass.prism_data;
+
     double ten_degree_sidewall = 10.0 * 2 * K_PI / 360.0;
-    geometric_object ten_degree_sidewall_prism = make_prism(m, nodes, num_nodes, height, zhat, ten_degree_sidewall);
+    geometric_object ten_degree_sidewall_geom_object = make_prism(m, nodes, num_nodes, height, zhat, ten_degree_sidewall);
+    prism *ten_degree_sidewall_prism = normal_sidewall_geom_object.subclass.prism_data;
 
     prism2gnuplot(normal_sidewall_prism, "normal_sidewall_gnu_plot.dat");
-    prism2gnuplot(normal_sidewall_prism, "ten_degree_sidewall_gnu_plot.dat");
+    prism2gnuplot(ten_degree_sidewall_prism, "ten_degree_sidewall_gnu_plot.dat");
 
     return 0;
 }
@@ -537,6 +541,7 @@ int run_unit_tests() {
   int num_failed_2 = 0; // test_normal_to_object(the_block, the_prism, NUMLINES, write_log);
   int num_failed_3 = test_line_segment_intersection(the_block, the_prism, NUMLINES, write_log);
   int num_failed_4 = test_point_in_polygon(write_log);
+  int num_failed_5 = test_sidewall_prisms_to_gnuplot();
 
   return num_failed_1 + num_failed_2 + num_failed_3 + num_failed_4;
 }
