@@ -2117,6 +2117,10 @@ boolean point_in_or_on_prism(prism *prsm, vector3 pc, boolean include_boundaries
   if (pp.z < 0.0 || pp.z > prsm->height) return 0;
   vector3 *nodes = prsm->vertices_p.items;
   int num_nodes = prsm->vertices_p.num_items;
+  int nv;
+  for (nv = 0; nv < num_nodes; nv++) {
+    nodes[nv] = vector3_plus(nodes[nv], vector3_scale(pp.z, prsm->top_polygon_diff_vectors_scaled_p.items[nv]));
+  }
   return node_in_or_on_polygon(pp, nodes, num_nodes, include_boundaries);
 }
 
@@ -2575,7 +2579,7 @@ void init_prism(geometric_object *o) {
 
     prsm->top_polygon_diff_vectors_p.items[nv].x = (cx - 1) * prsm->vertices_p.items[nv].x;
     prsm->top_polygon_diff_vectors_p.items[nv].y = (cy - 1) * prsm->vertices_p.items[nv].y;
-    prsm->top_polygon_diff_vectors_p.items[nv].z = prsm->height - prsm->vertices_p.items[nv].z;
+    prsm->top_polygon_diff_vectors_p.items[nv].z = prsm->height;
   }
 
   prsm->top_polygon_diff_vectors_scaled_p.num_items = num_vertices;
