@@ -2552,19 +2552,27 @@ void init_prism(geometric_object *o) {
   prsm->top_polygon_diff_vectors_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
   for (nv = 0; nv < num_vertices; nv++) {
     double cx;
-    double cy;
-    if (prsm->vertices_p.items[nv].x == 0) {
+    if (prsm->sidewall_angle == 0 ) {
+        cx = 1;
+    }
+    else if (prsm->vertices_p.items[nv].x == 0) {
         cx = 0;
     }
     else {
         cx = 1 - prsm->height / (prsm->vertices_p.items[nv].x * tan(theta));
     }
-    if (prsm->vertices_p.items[nv].y == 0) {
+
+    double cy;
+    if (prsm->sidewall_angle == 0 ) {
+        cy = 1;
+    }
+    else if (prsm->vertices_p.items[nv].y == 0) {
         cy = 0;
     }
     else {
         cy = 1 - prsm->height / (prsm->vertices_p.items[nv].y * tan(theta));
     }
+
     prsm->top_polygon_diff_vectors_p.items[nv].x = (cx - 1) * prsm->vertices_p.items[nv].x;
     prsm->top_polygon_diff_vectors_p.items[nv].y = (cy - 1) * prsm->vertices_p.items[nv].y;
     prsm->top_polygon_diff_vectors_p.items[nv].z = prsm->height - prsm->vertices_p.items[nv].z;
