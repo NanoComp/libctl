@@ -2492,11 +2492,6 @@ void init_prism(geometric_object *o) {
       vertices[nv] = vector3_plus(vertices[nv], shift);
     centroid = vector3_plus(centroid, shift);
   }
-  
-  // This section checks if the sidewall_angle has been initialized
-  if (isnan(prsm->sidewall_angle)) {
-    prsm->sidewall_angle = 0.0;
-  }
 
   // compute rotation matrix that operates on a vector of cartesian coordinates
   // to yield the coordinates of the same point in the prism coordinate system.
@@ -2535,6 +2530,63 @@ void init_prism(geometric_object *o) {
   prsm->vertices_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
   for (nv = 0; nv < num_vertices; nv++)
     prsm->vertices_p.items[nv] = prism_coordinate_c2p(prsm, vertices[nv]);
+
+  // calculate difference vectors between bottom polygon and the top polygon, where
+  //  * the bottom polygon is the one passed in to the the make_prism() function,
+  //    stored in vertices and vertices_p
+  //  * the top polygon is the top surface (parallel to the bottom polygon) resulting
+  //    from the extrusion of the bottom polygon. Whether or not the extrusion tapers
+  //    is dependent on the value of sidewall_angle.
+  //     ** The value of each of the top polygon vertices can be found
+  //                vertices_p + top_polygon_diff_vectors_p
+  //                vertices   + top_polygon_diff_vectors
+  //     ** A linearly interpolated value of the polygon vertices between the bottom
+  //     polygon and the top can be found
+  //                vertices_p + top_polygon_diff_vectors_scaled_p * z
+  if (isnan(prsm->sidewall_angle)) {
+      prsm->sidewall_angle = 0.0;
+  }
+  double theta = (K_PI/2) - prsm->sidewall_angle;
+
+  prsm->top_polygon_diff_vectors_p.num_items = num_vertices;
+  prsm->top_polygon_diff_vectors_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  for (nv = 0; nv < num_vertices; nv++) {
+    double cx;
+    double cy;
+    if (prsm->vertices_p.items[nv].x == 0) {
+        cx = 0;
+    }
+    else {
+        cx = 1 - prsm->height / (prsm->vertices_p.items[nv].x * tan(theta));
+    }
+    if (prsm->vertices_p.items[nv].y == 0) {
+        cy = 0;
+    }
+    else {
+        cy = 1 - prsm->height / (prsm->vertices_p.items[nv].y * tan(theta));
+    }
+    prsm->top_polygon_diff_vectors_p.items[nv].x = (cx - 1) * prsm->vertices_p.items[nv].x;
+    prsm->top_polygon_diff_vectors_p.items[nv].y = (cy - 1) * prsm->vertices_p.items[nv].y;
+    prsm->top_polygon_diff_vectors_p.items[nv].z = prsm->height - prsm->vertices_p.items[nv].z;
+  }
+
+  prsm->top_polygon_diff_vectors_scaled_p.num_items = num_vertices;
+  prsm->top_polygon_diff_vectors_scaled_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  for (nv = 0; nv < num_vertices; nv++) {
+      prsm->top_polygon_diff_vectors_scaled_p.items[nv] = vector3_scale(1/prsm->height, prsm->top_polygon_diff_vectors_p.items[nv]);
+  }
+
+  prsm->top_polygon_diff_vectors.num_items = num_vertices;
+  prsm->top_polygon_diff_vectors.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  for (nv = 0; nv < num_vertices; nv++) {
+      prsm->top_polygon_diff_vectors.items[nv] = prism_vector_p2c(prsm, prsm->top_polygon_diff_vectors_p.items[nv]);
+  }
+
+  prsm->top_polygon_diff_vectors_scaled.num_items = num_vertices;
+  prsm->top_polygon_diff_vectors_scaled.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  for (nv = 0; nv < num_vertices; nv++) {
+      prsm->top_polygon_diff_vectors_scaled.items[nv] = prism_vector_p2c(prsm, prsm->top_polygon_diff_vectors_scaled_p.items[nv]);
+  }
 
   // workspace is an internally-stored double-valued array of length num_vertices+2
   // that is used by some geometry routines
