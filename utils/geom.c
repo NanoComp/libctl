@@ -1925,63 +1925,22 @@ geometric_object make_ellipsoid(material_type material, vector3 center, vector3 
 
 /***************************************************************/
 /* given coordinates of a point in the prism coordinate system,*/
-/* return cartesian coordinates of that point includes calcu-  */
-/* lations to account for the sidewall angle                   */
+/* return cartesian coordinates of that point                  */
 /***************************************************************/
-matrix3x3 prism_projective_transformation_for_p2c(prism *prsm, vector3 pp) {
-    matrix3x3 c2p;
-    double cx;
-    double cy;
-    double theta = (K_PI / 2) - prsm->sidewall_angle;
-    if (prsm->sidewall_angle == 0) {
-        cx = 1;
-        cy = 1;
-
-    }
-    if (pp.x == 0) {
-        cx = 0;
-    }
-    else {
-        cx = 1 - pp.z / (pp.x * tan(theta));
-    }
-    vector3 c0vector = {cx, 0, 0};
-    c2p.c0 = c0vector;
-    vector3 c1vector = {0, cy, 0};
-    c2p.c1 = c1vector;
-    vector3 c2vector = {0, 0, 1};
-    c2p.c2 = c2vector;
-    return c2p;
-}
-
-matrix3x3 prism_projective_transformation_for_c2p(prism *prsm, vector3 pc) {
-    matrix3x3 p2c = matrix3x3_inverse(prism_projective_transformation_for_c2p(prsm, pc));
-    return p2c;
-}
-
 vector3 prism_coordinate_p2c(prism *prsm, vector3 pp) {
-  matrix3x3 projective_transform_p2c = prism_projective_transformation_for_p2c(prsm, pp);
-  return vector3_plus(prsm->centroid, matrix3x3_vector3_mult(matrix3x3_mult(prsm->m_p2c, projective_transform_p2c), pp));
+  return vector3_plus(prsm->centroid, matrix3x3_vector3_mult(prsm->m_p2c, pp));
 }
 
-// the prism_projective_transformation_for_p2c() function won't work
-// here because vp isn't actually at a particular location
 vector3 prism_vector_p2c(prism *prsm, vector3 vp) {
-  // matrix3x3 projective_transform_p2c = prism_projective_transformation_for_p2c(prsm, pp);
-  // return matrix3x3_vector3_mult(matrix3x3_mult(prsm->m_p2c, projective_transform_p2c), vp);
   return matrix3x3_vector3_mult(prsm->m_p2c, vp);
 }
 
 vector3 prism_coordinate_c2p(prism *prsm, vector3 pc) {
-  matrix3x3 projective_transform_c2p = prism_projective_transformation_for_c2p(prsm, pc);
-  return matrix3x3_vector3_mult(matrix3x3_mult(prsm->m_p2c, projective_transform_c2p), vector3_minus(pc, prsm->centroid));
+  return matrix3x3_vector3_mult(prsm->m_c2p, vector3_minus(pc, prsm->centroid));
 }
 
-// the prism_projective_transformation_for_c2p() function won't work
-// here because vp isn't actually at a particular location
 vector3 prism_vector_c2p(prism *prsm, vector3 vc) {
-  // matrix3x3 projective_transform_c2p = prism_projective_transformation_for_c2p(prsm, pp);
-  // return matrix3x3_vector3_mult(matrix3x3_mult(prsm->m_p2c, projective_transform_c2p), vc);
-    return matrix3x3_vector3_mult(prsm->m_c2p, vc);
+  return matrix3x3_vector3_mult(prsm->m_c2p, vc);
 }
 
 /***************************************************************/
