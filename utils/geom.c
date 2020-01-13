@@ -2550,12 +2550,12 @@ void init_prism(geometric_object *o) {
   if (isnan(prsm->sidewall_angle)) {
       prsm->sidewall_angle = 0.0;
   }
-  double theta = (K_PI/2) - prsm->sidewall_angle;
+  number theta = (K_PI/2) - prsm->sidewall_angle;
 
   prsm->top_polygon_diff_vectors_p.num_items = num_vertices;
   prsm->top_polygon_diff_vectors_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
   for (nv = 0; nv < num_vertices; nv++) {
-    double cx;
+    number cx;
     if (prsm->sidewall_angle == 0 ) {
         cx = 1;
     }
@@ -2566,7 +2566,7 @@ void init_prism(geometric_object *o) {
         cx = 1 - prsm->height / (prsm->vertices_p.items[nv].x * tan(theta));
     }
 
-    double cy;
+    number cy;
     if (prsm->sidewall_angle == 0 ) {
         cy = 1;
     }

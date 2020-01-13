@@ -187,22 +187,27 @@ vector3 random_unit_vector3() {
 void prism2gnuplot(prism *prsm, char *filename) {
   int num_vertices = prsm->vertices_p.num_items;
   double height = prsm->height;
-  vector3 *vertices_bottom = prsm->vertices_p.items;
-  vector3 *vertices_top = prsm->vertices_p.items;
+  vector3_list vertices_bottom;
+  vertices_bottom.num_items = num_vertices;
+  vertices_bottom.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  memcpy(vertices_bottom.items, prsm->vertices_p.items, num_vertices * sizeof(vector3));
+  vector3_list vertices_top;
+  vertices_top.num_items = num_vertices;
+  vertices_top.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
   int nv;
   for (nv = 0; nv < num_vertices; nv++) {
-    vertices_top[nv] = vector3_plus(prsm->vertices_p.items[nv], prsm->top_polygon_diff_vectors_p.items[nv]);
+    vertices_top.items[nv] = vector3_plus(prsm->vertices_p.items[nv], prsm->top_polygon_diff_vectors_p.items[nv]);
   }
 
   FILE *f = fopen(filename, "w");
   for (nv = 0; nv < num_vertices; nv++) {
-    vector3 vap = vertices_bottom[nv];
+    vector3 vap = vertices_bottom.items[nv];
     vap.z = 0.0;
-    vector3 vbp = vertices_top[nv];
+    vector3 vbp = vertices_top.items[nv];
     vbp.z = height;
-    vector3 vcp = vertices_bottom[(nv + 1) % num_vertices];
+    vector3 vcp = vertices_bottom.items[(nv + 1) % num_vertices];
     vcp.z = height;
-    vector3 vdp = vertices_top[(nv + 1) % num_vertices];
+    vector3 vdp = vertices_top.items[(nv + 1) % num_vertices];
     vdp.z = 0.0;
     vector3 vac = prism_coordinate_p2c(prsm, vap);
     vector3 vbc = prism_coordinate_p2c(prsm, vbp);
@@ -217,6 +222,8 @@ void prism2gnuplot(prism *prsm, char *filename) {
     fprintf(f, "\n\n");
   }
   fclose(f);
+
+  printf("prism2gnuplot was run!\n");
 }
 
 /***************************************************************/
@@ -475,12 +482,12 @@ int test_sidewall_prisms_to_gnuplot() {
     geometric_object normal_sidewall_geom_object = make_prism(m, nodes, num_nodes, height, zhat, normal_sidewall);
     prism *normal_sidewall_prism = normal_sidewall_geom_object.subclass.prism_data;
 
-    double ten_degree_sidewall = 10.0 * 2 * K_PI / 360.0;
+    double ten_degree_sidewall = 1.0 * 2 * K_PI / 360.0;
     geometric_object ten_degree_sidewall_geom_object = make_prism(m, nodes, num_nodes, height, zhat, ten_degree_sidewall);
-    prism *ten_degree_sidewall_prism = normal_sidewall_geom_object.subclass.prism_data;
+    prism *ten_degree_sidewall_prism = ten_degree_sidewall_geom_object.subclass.prism_data;
 
-    prism2gnuplot(normal_sidewall_prism, "normal_sidewall_gnu_plot.dat");
-    prism2gnuplot(ten_degree_sidewall_prism, "ten_degree_sidewall_gnu_plot.dat");
+    prism2gnuplot(normal_sidewall_prism, "normal_sidewall_gnu_plot");
+    prism2gnuplot(ten_degree_sidewall_prism, "ten_degree_sidewall_gnu_plot");
 
     return 0;
 }
@@ -547,7 +554,7 @@ int run_unit_tests() {
   int num_failed_4 = test_point_in_polygon(write_log);
   int num_failed_5 = test_sidewall_prisms_to_gnuplot();
 
-  return num_failed_1 + num_failed_2 + num_failed_3 + num_failed_4;
+  return num_failed_1 + num_failed_2 + num_failed_3 + num_failed_4 + num_failed_5;
 }
 
 /***************************************************************/
