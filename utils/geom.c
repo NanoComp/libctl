@@ -2563,7 +2563,7 @@ void init_prism(geometric_object *o) {
         cx = 0;
     }
     else {
-        cx = 1 - prsm->height / (prsm->vertices_p.items[nv].x * tan(theta));
+        cx = 1 - prsm->height / (abs(prsm->vertices_p.items[nv].x) * tan(theta));
     }
 
     number cy;
@@ -2574,7 +2574,7 @@ void init_prism(geometric_object *o) {
         cy = 0;
     }
     else {
-        cy = 1 - prsm->height / (prsm->vertices_p.items[nv].y * tan(theta));
+        cy = 1 - prsm->height / (abs(prsm->vertices_p.items[nv].y) * tan(theta));
     }
 
     prsm->top_polygon_diff_vectors_p.items[nv].x = (cx - 1) * prsm->vertices_p.items[nv].x;

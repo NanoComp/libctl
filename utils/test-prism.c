@@ -470,10 +470,10 @@ int test_sidewall_prisms_to_gnuplot() {
 
     int num_nodes = 4;
     vector3 nodes[num_nodes];
-    nodes[0] = make_vector3(1.0, 1.0, 0.0);
-    nodes[1] = make_vector3(1.0, -1.0, 0.0);
-    nodes[2] = make_vector3(-1.0, -1.0, 0.0);
-    nodes[3] = make_vector3(-1.0, 1.0, 0.0);
+    nodes[0] = make_vector3(-1.0, -1.0, 0.0);
+    nodes[1] = make_vector3(-1.0, 1.0, 0.0);
+    nodes[2] = make_vector3(1.0, 1.0, 0.0);
+    nodes[3] = make_vector3(1.0, -1.0, 0.0);
 
     double height = 10;
     vector3 zhat = make_vector3(0, 0, 1);
