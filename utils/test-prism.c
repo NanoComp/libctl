@@ -205,20 +205,27 @@ void prism2gnuplot(prism *prsm, char *filename) {
     vap.z = 0.0;
     vector3 vbp = vertices_top.items[nv];
     vbp.z = height;
-    vector3 vcp = vertices_bottom.items[(nv + 1) % num_vertices];
+    vector3 vcp = vertices_top.items[(nv + 1) % num_vertices];
     vcp.z = height;
-    vector3 vdp = vertices_top.items[(nv + 1) % num_vertices];
+    vector3 vdp = vertices_bottom.items[(nv + 1) % num_vertices];
     vdp.z = 0.0;
     vector3 vac = prism_coordinate_p2c(prsm, vap);
     vector3 vbc = prism_coordinate_p2c(prsm, vbp);
     vector3 vcc = prism_coordinate_p2c(prsm, vcp);
     vector3 vdc = prism_coordinate_p2c(prsm, vdp);
-
-    fprintf(f, "%e %e %e %e %e %e \n", vac.x, vac.y, vac.z, vap.x, vap.y, vap.z);
-    fprintf(f, "%e %e %e %e %e %e \n", vbc.x, vbc.y, vbc.z, vbp.x, vbp.y, vbp.z);
-    fprintf(f, "%e %e %e %e %e %e \n", vcc.x, vcc.y, vcc.z, vcp.x, vcp.y, vcp.z);
-    fprintf(f, "%e %e %e %e %e %e \n", vdc.x, vdc.y, vdc.z, vdp.x, vdp.y, vdp.z);
-    fprintf(f, "%e %e %e %e %e %e \n", vac.x, vac.y, vac.z, vap.x, vap.y, vap.z);
+    /*
+    fprintf(f, "%e %e %e %e %e %e \n", vac.x, vac.y, vac.z, prsm->top_polygon_diff_vectors_p.items[nv].x, prsm->top_polygon_diff_vectors_p.items[nv].y, prsm->top_polygon_diff_vectors_p.items[nv].z);
+    fprintf(f, "%e %e %e %e %e %e \n", vbc.x, vbc.y, vbc.z, -1 * prsm->top_polygon_diff_vectors_p.items[nv].x, -1 * prsm->top_polygon_diff_vectors_p.items[nv].y, -1 * prsm->top_polygon_diff_vectors_p.items[nv].z);
+    fprintf(f, "%e %e %e %e %e %e \n", vcc.x, vcc.y, vcc.z, prsm->top_polygon_diff_vectors_p.items[(nv + 1) % num_vertices].x, prsm->top_polygon_diff_vectors_p.items[(nv + 1) % num_vertices].y, prsm->top_polygon_diff_vectors_p.items[(nv + 1) % num_vertices].z);
+    fprintf(f, "%e %e %e %e %e %e \n", vdc.x, vdc.y, vdc.z, -1 * prsm->top_polygon_diff_vectors_p.items[(nv + 1) % num_vertices].x, -1 * prsm->top_polygon_diff_vectors_p.items[(nv + 1) % num_vertices].y, -1 * prsm->top_polygon_diff_vectors_p.items[(nv + 1) % num_vertices].z);
+    fprintf(f, "%e %e %e %e %e %e \n", vac.x, vac.y, vac.z, prsm->top_polygon_diff_vectors_p.items[nv].x, prsm->top_polygon_diff_vectors_p.items[nv].y, prsm->top_polygon_diff_vectors_p.items[nv].z);
+    fprintf(f, "\n\n");
+    */
+    fprintf(f, "%e %e %e \n", vac.x, vac.y, vac.z);
+    fprintf(f, "%e %e %e \n", vbc.x, vbc.y, vbc.z);
+    fprintf(f, "%e %e %e \n", vcc.x, vcc.y, vcc.z);
+    fprintf(f, "%e %e %e \n", vdc.x, vdc.y, vdc.z);
+    fprintf(f, "%e %e %e \n", vac.x, vac.y, vac.z);
     fprintf(f, "\n\n");
   }
   fclose(f);
@@ -482,12 +489,12 @@ int test_sidewall_prisms_to_gnuplot() {
     geometric_object normal_sidewall_geom_object = make_prism(m, nodes, num_nodes, height, zhat, normal_sidewall);
     prism *normal_sidewall_prism = normal_sidewall_geom_object.subclass.prism_data;
 
-    double ten_degree_sidewall = 1.0 * 2 * K_PI / 360.0;
-    geometric_object ten_degree_sidewall_geom_object = make_prism(m, nodes, num_nodes, height, zhat, ten_degree_sidewall);
-    prism *ten_degree_sidewall_prism = ten_degree_sidewall_geom_object.subclass.prism_data;
+    double one_degree_sidewall = 1.0 * 2 * K_PI / 360.0;
+    geometric_object one_degree_sidewall_geom_object = make_prism(m, nodes, num_nodes, height, zhat, one_degree_sidewall);
+    prism *one_degree_sidewall_prism = one_degree_sidewall_geom_object.subclass.prism_data;
 
     prism2gnuplot(normal_sidewall_prism, "normal_sidewall_gnu_plot");
-    prism2gnuplot(ten_degree_sidewall_prism, "ten_degree_sidewall_gnu_plot");
+    prism2gnuplot(one_degree_sidewall_prism, "one_degree_sidewall_gnu_plot");
 
     return 0;
 }
