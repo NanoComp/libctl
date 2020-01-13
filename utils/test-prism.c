@@ -185,20 +185,24 @@ vector3 random_unit_vector3() {
 /* gnuplot> splot 'MyFile' u 1:2:3 w lp pt 7 ps 1              */
 /***************************************************************/
 void prism2gnuplot(prism *prsm, char *filename) {
-  vector3 *vertices = prsm->vertices_p.items;
   int num_vertices = prsm->vertices_p.num_items;
   double height = prsm->height;
-
-  FILE *f = fopen(filename, "w");
+  vector3 *vertices_bottom = prsm->vertices_p.items;
+  vector3 *vertices_top = prsm->vertices_p.items;
   int nv;
   for (nv = 0; nv < num_vertices; nv++) {
-    vector3 vap = vertices[nv];
+    vertices_top[nv] = vector3_plus(prsm->vertices_p.items[nv], prsm->top_polygon_diff_vectors_p.items[nv]);
+  }
+
+  FILE *f = fopen(filename, "w");
+  for (nv = 0; nv < num_vertices; nv++) {
+    vector3 vap = vertices_bottom[nv];
     vap.z = 0.0;
-    vector3 vbp = vertices[nv];
+    vector3 vbp = vertices_top[nv];
     vbp.z = height;
-    vector3 vcp = vertices[(nv + 1) % num_vertices];
+    vector3 vcp = vertices_bottom[(nv + 1) % num_vertices];
     vcp.z = height;
-    vector3 vdp = vertices[(nv + 1) % num_vertices];
+    vector3 vdp = vertices_top[(nv + 1) % num_vertices];
     vdp.z = 0.0;
     vector3 vac = prism_coordinate_p2c(prsm, vap);
     vector3 vbc = prism_coordinate_p2c(prsm, vbp);
