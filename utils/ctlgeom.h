@@ -155,7 +155,7 @@ GEOMETRIC_OBJECT make_ellipsoid(MATERIAL_TYPE material, vector3 center, vector3 
 extern boolean node_in_or_on_polygon(vector3 q0, vector3 *nodes, int num_nodes,
                                      boolean include_boundaries);
 
-// prism with `center` field computed automatically from vertices, height, axis
+// prism with `center` field computed automatically from bottom vertices, height, axis, sidewall angle
 GEOMETRIC_OBJECT make_prism(MATERIAL_TYPE material, const vector3 *vertices_bottom, int num_vertices,
                             double height, vector3 axis, double sidewall_angle);
 

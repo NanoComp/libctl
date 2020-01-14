@@ -1904,8 +1904,10 @@ geometric_object make_ellipsoid(material_type material, vector3 center, vector3 
 /***************************************************************
  * The remainder of this file implements geometric primitives for prisms.
  * A prism is a planar polygon, consisting of 3 or more user-specified
- * vertices, extruded through a given thickness (the "height") in the
- * direction of a given unit vector (the "axis.")
+ * vertices (the "bottom_vertices), extruded through a given thickness
+ * (the "height") in the direction of a given unit vector (the "axis")
+ * with the walls of the extrusion tapering at a given angle angle
+ * (the "sidewall_angle).
  * Most calculations are done in the "prism coordinate system",
  * in which the prism floor lies in the XY plane with centroid
  * at the origin and the prism axis is the positive Z-axis.
@@ -2115,7 +2117,6 @@ boolean point_in_or_on_prism(prism *prsm, vector3 pc, boolean include_boundaries
   double height = prsm->height;
   vector3 pp = prism_coordinate_c2p(prsm, pc);
   if (pp.z < 0.0 || pp.z > prsm->height) return 0;
-  // needs to be updated so that vertices_bottom_p.items isn't contaminated
   int num_nodes = prsm->vertices_bottom_p.num_items;
   vector3 nodes[num_nodes];
   int nv;
@@ -2426,14 +2427,15 @@ vector3 triangle_normal(vector3 v1, vector3 v2, vector3 v3) {
 
 /***************************************************************/
 /* On entry, the only fields in o->prism that are assumed to   */
-/* be initialized are: vertices, height, and (optionally) axis.*/
-/* If axis has not been initialized (i.e. it is set to its     */
-/* default value, which is the zero vector) then the prism axis*/
-/* is automatically computed as the normal to the vertex plane.*/
-/* If o->center is equal to auto_center on entry, then it is   */
-/* set to the prism center, as computed from the vertices,     */
-/* axis, and height. Otherwise, the prism is rigidly translated*/
-/* to center it at the specified value of o->center.           */
+/* be initialized are: vertices_bottom, height, (optionally)   */
+/* axis, and sidewall_angle. If axis has not been initialized  */
+/* (i.e. it is set to its default value, which is the zero     */
+/* vector) then the prism axis is automatically computed as    */
+/* the normal to the vertex plane. If o->center is equal to    */
+/* auto_center on entry, then it is set to the prism center,   */
+/* as computed from the vertices, axis, and height. Otherwise, */
+/* the prism is rigidly translated to center it at the         */
+/* specified value of o->center.                               */
 /***************************************************************/
 // special vector3 that signifies 'no value specified'
 vector3 auto_center = {NAN, NAN, NAN};
@@ -2612,7 +2614,8 @@ void init_prism(geometric_object *o) {
 /***************************************************************/
 /* routines called from C++ or python codes to create prisms   */
 /***************************************************************/
-// prism with center determined automatically from vertices_bottom, height, and axis
+// prism with center determined automatically from vertices_bottom,
+// height, axis, and sidewall_angle
 geometric_object make_prism(material_type material, const vector3 *vertices_bottom, int num_vertices,
                             double height, vector3 axis, double sidewall_angle) {
   return make_prism_with_center(material, auto_center, vertices_bottom, num_vertices, height, axis,

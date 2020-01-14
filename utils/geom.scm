@@ -92,13 +92,13 @@
 
 ; some notes regarding prisms:
 ;  (a) When instantiating a prism, typically only the
-;      fields `vertices`, `height,` `sidewall_angle`, and (optionally) `axis`
-;      will be initialized by the user; all remaining fields are
-;      derived properties that are computed internally. (So, morally
-;      they should be thought of as having been declared using 
-;      `define-derived-property` or `define-post-processed-property,`
-;      except here the code that does the derivation or
-;      post-processing is implemented in C, not scheme.)
+;      fields `vertices_bottom`, `height,` (optionally) `axis`,
+;      and `sidewall_angle` will be initialized by the user; all
+;      remaining fields are derived properties that are computed
+;      internally. (So, morally, they should be thought of as having
+;      been declared using `define-derived-property` or
+;      `define-post-processed-property,` except here the code that does
+;      the derivation or post-processing is implemented in C, not scheme.)
 ;  (b) The suffix _p (for "prism") is used to identify variables
 ;      that store coordinates of points or components of vectors
 ;      in the prism coordinate system. (The prism coordinate system 
