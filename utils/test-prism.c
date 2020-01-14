@@ -129,11 +129,11 @@ vector3 random_point_in_box(vector3 min_corner, vector3 max_corner) {
 /* random point uniformly distributed over a planar polygon             */
 /*  (all z coordinates are 0)                                           */
 /************************************************************************/
-vector3 random_point_in_polygon(prsm *prsm) {
+vector3 random_point_in_polygon(prism *prsm) {
   // randomly choose a vertex and generate random point within the triangle
   // formed by that vertex, the next vertex, and the centroid
   vector3 *vertices_bottom = prsm->vertices_bottom.items;
-  int num_vertices = prsm->vertices_bottom_num_items;
+  int num_vertices = prsm->vertices_bottom.num_items;
   int which_vertex = rand() % num_vertices;
   vector3 v0 = {0, 0, 0};
   vector3 v1 = vertices_bottom[which_vertex];
@@ -664,7 +664,7 @@ int main(int argc, char *argv[]) {
       fprintf(stderr, "bad vertex on line %i of %s", num_vertices, vertexfile);
       exit(1);
     }
-    vertices_bottom = (vector3 *)realloc(vertices, num_vertices * sizeof(vector3));
+    vertices_bottom = (vector3 *)realloc(vertices_bottom, num_vertices * sizeof(vector3));
     vertices_bottom[num_vertices - 1] = v;
   }
   fclose(f);
