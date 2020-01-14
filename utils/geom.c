@@ -2330,6 +2330,7 @@ vector3 normal_to_prism(prism *prsm, vector3 pc) {
 
   double height = prsm->height;
   vector3 *vps_bottom = prsm->vertices_bottom_p.items;
+  vector3 *vps_diff_to_top = prsm->top_polygon_diff_vectors_p.items;
   int num_vertices = prsm->vertices_bottom_p.num_items;
 
   vector3 zhatp = {0.0, 0.0, 1.0};
@@ -2344,10 +2345,8 @@ vector3 normal_to_prism(prism *prsm, vector3 pc) {
     int nvp1 = (nv == (num_vertices - 1) ? 0 : nv + 1);
     vector3 v0p = vps_bottom[nv];
     vector3 v1p = vector3_minus(vps_bottom[nvp1], vps_bottom[nv]);
-    // v2p needs to be changed to be from v0p to the corresponding vertex in the top polygon
-    vector3 v2p = axisp;
+    vector3 v2p = vps_diff_to_top[nv];
     vector3 v3p = unit_vector3(vector3_cross(v1p, v2p));
-    // quadrilateral determined {v0p, v0p+v1p, v0p+v2p, v0p+v1p+v2p} with normal vector v3p
     double s = min_distance_to_quadrilateral(pp, v0p, v1p, v2p, v3p);
     if (fabs(s) < min_distance) {
       min_distance = fabs(s);
@@ -2557,40 +2556,48 @@ void init_prism(geometric_object *o) {
   }
   number theta = (K_PI/2) - prsm->sidewall_angle;
 
-  prsm->top_polygon_diff_vectors_p.num_items = num_vertices;
-  prsm->top_polygon_diff_vectors_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  prsm->vertices_top_p.num_items = num_vertices;
+  prsm->vertices_top_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
   for (nv = 0; nv < num_vertices; nv++) {
     number cx;
-    if (prsm->sidewall_angle == 0 ) {
-        cx = 1;
-    }
-    else if (prsm->vertices_bottom_p.items[nv].x == 0) {
-        cx = 0;
-    }
-    else {
-        cx = 1 - prsm->height / (abs(prsm->vertices_bottom_p.items[nv].x) * tan(theta));
+    if (prsm->sidewall_angle == 0) {
+      cx = 1;
+    } else if (prsm->vertices_bottom_p.items[nv].x == 0) {
+      cx = 0;
+    } else {
+      cx = 1 - prsm->height / (abs(prsm->vertices_bottom_p.items[nv].x) * tan(theta));
     }
 
     number cy;
-    if (prsm->sidewall_angle == 0 ) {
-        cy = 1;
-    }
-    else if (prsm->vertices_bottom_p.items[nv].y == 0) {
-        cy = 0;
-    }
-    else {
-        cy = 1 - prsm->height / (abs(prsm->vertices_bottom_p.items[nv].y) * tan(theta));
+    if (prsm->sidewall_angle == 0) {
+      cy = 1;
+    } else if (prsm->vertices_bottom_p.items[nv].y == 0) {
+      cy = 0;
+    } else {
+      cy = 1 - prsm->height / (abs(prsm->vertices_bottom_p.items[nv].y) * tan(theta));
     }
 
-    prsm->top_polygon_diff_vectors_p.items[nv].x = (cx - 1) * prsm->vertices_bottom_p.items[nv].x;
-    prsm->top_polygon_diff_vectors_p.items[nv].y = (cy - 1) * prsm->vertices_bottom_p.items[nv].y;
-    prsm->top_polygon_diff_vectors_p.items[nv].z = prsm->height;
+    prsm->vertices_top_p.items[nv].x = cx * prsm->vertices_bottom_p.items[nv].x;
+    prsm->vertices_top_p.items[nv].y = cy * prsm->vertices_bottom_p.items[nv].y;
+    prsm->vertices_top_p.items[nv].z = prsm->height;
+  }
+
+  prsm->top_polygon_diff_vectors_p.num_items = num_vertices;
+  prsm->top_polygon_diff_vectors_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  for (nv = 0; nv < num_vertices; nv++) {
+    prsm->top_polygon_diff_vectors_p.items[nv] = vector3_minus(prsm->vertices_top_p.items[nv], prsm->vertices_bottom_p.items[nv]);
   }
 
   prsm->top_polygon_diff_vectors_scaled_p.num_items = num_vertices;
   prsm->top_polygon_diff_vectors_scaled_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
   for (nv = 0; nv < num_vertices; nv++) {
       prsm->top_polygon_diff_vectors_scaled_p.items[nv] = vector3_scale(1/prsm->height, prsm->top_polygon_diff_vectors_p.items[nv]);
+  }
+
+  prsm->vertices_top.num_items = num_vertices;
+  prsm->vertices_top.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  for (nv = 0; nv < num_vertices; nv++) {
+    prsm->vertices_top.items[nv] = prism_coordinate_p2c(prsm, prsm->vertices_top_p.items[nv]);
   }
 
   prsm->top_polygon_diff_vectors.num_items = num_vertices;
