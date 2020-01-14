@@ -2370,14 +2370,16 @@ vector3 normal_to_prism(prism *prsm, vector3 pc) {
 /***************************************************************/
 void get_prism_bounding_box(prism *prsm, geom_box *box) {
   vector3 *vertices_bottom = prsm->vertices_bottom.items;
+  vector3 *vertices_top = prsm->vertices_top.items;
   int num_vertices = prsm->vertices_bottom.num_items;
   box->low = box->high = vertices_bottom[0];
   int nv, fc;
   for (nv = 0; nv < num_vertices; nv++)
     for (fc = 0; fc < 2; fc++) // 'floor,ceiling'
     {
-      vector3 v = vertices_bottom[nv];
-      if (fc == 1) v = vector3_plus(v, vector3_scale(prsm->height, prsm->axis));
+      vector3 v;
+      if (fc == 0) v = vertices_bottom[nv];
+      if (fc == 1) v = vertices_top[nv];
 
       box->low.x = fmin(box->low.x, v.x);
       box->low.y = fmin(box->low.y, v.y);
