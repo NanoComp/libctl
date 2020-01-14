@@ -124,16 +124,18 @@
 ;      a foundry that cannot grow objects with a perfectly normal sidewall.
 (define-class prism geometric-object
 ; fields to be filled in by users
-  (define-property vertices '() (make-list-type 'vector3))
+  (define-property vertices_bottom '() (make-list-type 'vector3))
   (define-property height 0 'number)
   (define-property axis (vector3 0 0 0) 'vector3)
   (define-property sidewall_angle 0 'number)
 ; derived fields computed internally
-  (define-property vertices_p '() (make-list-type 'vector3))
-  (define-property top_polygon_diff_vectors '() (make-list-type 'vector3))
-  (define-property top_polygon_diff_vectors_scaled '() (make-list-type 'vector3))
+  (define-property vertices_bottom_p '() (make-list-type 'vector3))
   (define-property top_polygon_diff_vectors_p '() (make-list-type 'vector3))
   (define-property top_polygon_diff_vectors_scaled_p '() (make-list-type 'vector3))
+  (define-property vertices_top_p '() (make-list-type 'vector3))
+  (define-property top_polygon_diff_vectors '() (make-list-type 'vector3))
+  (define-property top_polygon_diff_vectors_scaled '() (make-list-type 'vector3))
+  (define-property vertices_top '() (make-list-type 'vector3))
   (define-property centroid (vector3 0 0 0) 'vector3)
   (define-property workspace '() (make-list-type 'number))
   (define-property m_c2p identity_matrix 'matrix3x3)

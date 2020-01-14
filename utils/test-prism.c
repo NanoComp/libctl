@@ -79,16 +79,16 @@ void GPQuad(FILE *f, vector3 v, vector3 l1, vector3 l2, prism *prsm) {
 /***************************************************************/
 /***************************************************************/
 void my_get_prism_bounding_box(prism *prsm, geom_box *box) {
-  vector3 *vertices = prsm->vertices_p.items;
-  int num_vertices = prsm->vertices_p.num_items;
+  vector3 *vertices_bottom = prsm->vertices_bottom_p.items;
+  int num_vertices = prsm->vertices_bottom_p.num_items;
   double height = prsm->height;
 
-  box->low = box->high = prism_coordinate_p2c(prsm, vertices[0]);
+  box->low = box->high = prism_coordinate_p2c(prsm, vertices_bottom[0]);
   int nv, fc;
   for (nv = 0; nv < num_vertices; nv++)
     for (fc = 0; fc < 2; fc++) // 'floor,ceiling'
     {
-      vector3 vp = vertices[nv];
+      vector3 vp = vertices_bottom[nv];
       if (fc == 1) vp.z = height;
       vector3 vc = prism_coordinate_p2c(prsm, vp);
 
@@ -129,13 +129,15 @@ vector3 random_point_in_box(vector3 min_corner, vector3 max_corner) {
 /* random point uniformly distributed over a planar polygon             */
 /*  (all z coordinates are 0)                                           */
 /************************************************************************/
-vector3 random_point_in_polygon(vector3 *vertices, int num_vertices) {
+vector3 random_point_in_polygon(prsm *prsm) {
   // randomly choose a vertex and generate random point within the triangle
   // formed by that vertex, the next vertex, and the centroid
+  vector3 *vertices_bottom = prsm->vertices_bottom.items;
+  int num_vertices = prsm->vertices_bottom_num_items;
   int which_vertex = rand() % num_vertices;
   vector3 v0 = {0, 0, 0};
-  vector3 v1 = vertices[which_vertex];
-  vector3 v2 = vertices[(which_vertex + 1) % num_vertices];
+  vector3 v1 = vertices_bottom[which_vertex];
+  vector3 v2 = vertices_bottom[(which_vertex + 1) % num_vertices];
   double xi = urand(0.0, 1.0), eta = urand(0.0, 1.0 - xi);
   return vector3_plus(vector3_scale(xi, vector3_minus(v1, v0)),
                       vector3_scale(eta, vector3_minus(v2, v0)));
@@ -146,8 +148,8 @@ vector3 random_point_in_polygon(vector3 *vertices, int num_vertices) {
 /************************************************************************/
 vector3 random_point_on_prism(geometric_object o) {
   prism *prsm = o.subclass.prism_data;
-  vector3 *vertices = prsm->vertices_p.items;
-  int num_vertices = prsm->vertices_p.num_items;
+  vector3 *vertices_bottom = prsm->vertices_bottom_p.items;
+  int num_vertices = prsm->vertices_bottom_p.num_items;
   double height = prsm->height;
 
   // choose a face
@@ -155,15 +157,15 @@ vector3 random_point_on_prism(geometric_object o) {
   int which_face = rand() % num_faces;
   if (which_face < num_vertices) // side face
   {
-    vector3 min_corner = vertices[which_face];
-    vector3 max_corner = vertices[(which_face + 1) % num_vertices];
+    vector3 min_corner = vertices_bottom[which_face];
+    vector3 max_corner = vertices_bottom[(which_face + 1) % num_vertices];
     max_corner.z = height;
     return random_point_in_box(prism_coordinate_p2c(prsm, min_corner),
                                prism_coordinate_p2c(prsm, max_corner));
   }
   else // floor or ceiling
   {
-    vector3 p = random_point_in_polygon(vertices, num_vertices);
+    vector3 p = random_point_in_polygon(prsm);
     if (which_face == num_faces - 1) p.z = height;
     return prism_coordinate_p2c(prsm, p);
   }
@@ -185,18 +187,18 @@ vector3 random_unit_vector3() {
 /* gnuplot> splot 'MyFile' u 1:2:3 w lp pt 7 ps 1              */
 /***************************************************************/
 void prism2gnuplot(prism *prsm, char *filename) {
-  int num_vertices = prsm->vertices_p.num_items;
+  int num_vertices = prsm->vertices_bottom_p.num_items;
   double height = prsm->height;
   vector3_list vertices_bottom;
   vertices_bottom.num_items = num_vertices;
   vertices_bottom.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
-  memcpy(vertices_bottom.items, prsm->vertices_p.items, num_vertices * sizeof(vector3));
+  memcpy(vertices_bottom.items, prsm->vertices_bottom_p.items, num_vertices * sizeof(vector3));
   vector3_list vertices_top;
   vertices_top.num_items = num_vertices;
   vertices_top.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
   int nv;
   for (nv = 0; nv < num_vertices; nv++) {
-    vertices_top.items[nv] = vector3_plus(prsm->vertices_p.items[nv], prsm->top_polygon_diff_vectors_p.items[nv]);
+    vertices_top.items[nv] = vector3_plus(prsm->vertices_bottom_p.items[nv], prsm->top_polygon_diff_vectors_p.items[nv]);
   }
 
   FILE *f = fopen(filename, "w");
@@ -213,14 +215,7 @@ void prism2gnuplot(prism *prsm, char *filename) {
     vector3 vbc = prism_coordinate_p2c(prsm, vbp);
     vector3 vcc = prism_coordinate_p2c(prsm, vcp);
     vector3 vdc = prism_coordinate_p2c(prsm, vdp);
-    /*
-    fprintf(f, "%e %e %e %e %e %e \n", vac.x, vac.y, vac.z, prsm->top_polygon_diff_vectors_p.items[nv].x, prsm->top_polygon_diff_vectors_p.items[nv].y, prsm->top_polygon_diff_vectors_p.items[nv].z);
-    fprintf(f, "%e %e %e %e %e %e \n", vbc.x, vbc.y, vbc.z, -1 * prsm->top_polygon_diff_vectors_p.items[nv].x, -1 * prsm->top_polygon_diff_vectors_p.items[nv].y, -1 * prsm->top_polygon_diff_vectors_p.items[nv].z);
-    fprintf(f, "%e %e %e %e %e %e \n", vcc.x, vcc.y, vcc.z, prsm->top_polygon_diff_vectors_p.items[(nv + 1) % num_vertices].x, prsm->top_polygon_diff_vectors_p.items[(nv + 1) % num_vertices].y, prsm->top_polygon_diff_vectors_p.items[(nv + 1) % num_vertices].z);
-    fprintf(f, "%e %e %e %e %e %e \n", vdc.x, vdc.y, vdc.z, -1 * prsm->top_polygon_diff_vectors_p.items[(nv + 1) % num_vertices].x, -1 * prsm->top_polygon_diff_vectors_p.items[(nv + 1) % num_vertices].y, -1 * prsm->top_polygon_diff_vectors_p.items[(nv + 1) % num_vertices].z);
-    fprintf(f, "%e %e %e %e %e %e \n", vac.x, vac.y, vac.z, prsm->top_polygon_diff_vectors_p.items[nv].x, prsm->top_polygon_diff_vectors_p.items[nv].y, prsm->top_polygon_diff_vectors_p.items[nv].z);
-    fprintf(f, "\n\n");
-    */
+
     fprintf(f, "%e %e %e \n", vac.x, vac.y, vac.z);
     fprintf(f, "%e %e %e \n", vbc.x, vbc.y, vbc.z);
     fprintf(f, "%e %e %e \n", vcc.x, vcc.y, vcc.z);
@@ -229,16 +224,14 @@ void prism2gnuplot(prism *prsm, char *filename) {
     fprintf(f, "\n\n");
   }
   fclose(f);
-
-  printf("prism2gnuplot was run!\n");
 }
 
 /***************************************************************/
 /* write prism vertices and edges to GMSH geometry (.geo) file */
 /***************************************************************/
 void prism2gmsh(prism *prsm, char *filename) {
-  vector3 *vertices = prsm->vertices_p.items;
-  int num_vertices = prsm->vertices_p.num_items;
+  vector3 *vertices_bottom = prsm->vertices_bottom_p.items;
+  int num_vertices = prsm->vertices_bottom_p.num_items;
   double height = prsm->height;
   vector3 zhat = prsm->m_p2c.c2;
   vector3 axis = vector3_scale(height, zhat);
@@ -246,7 +239,7 @@ void prism2gmsh(prism *prsm, char *filename) {
   FILE *f = fopen(filename, "w");
   int nv;
   for (nv = 0; nv < num_vertices; nv++) {
-    vector3 vp = vertices[nv];
+    vector3 vp = vertices_bottom[nv];
     vector3 vc = prism_coordinate_p2c(prsm, vp);
     fprintf(f, "Point(%i)={%e, %e, %e};\n", nv, vc.x, vc.y, vc.z);
   }
@@ -473,30 +466,30 @@ int test_point_in_polygon(int write_log) {
 /* separate GNU plot files                                              */
 /************************************************************************/
 int test_sidewall_prisms_to_gnuplot() {
-    void *m = NULL;
+  void *m = NULL;
 
-    int num_nodes = 4;
-    vector3 nodes[num_nodes];
-    nodes[0] = make_vector3(-1.0, -1.0, 0.0);
-    nodes[1] = make_vector3(-1.0, 1.0, 0.0);
-    nodes[2] = make_vector3(1.0, 1.0, 0.0);
-    nodes[3] = make_vector3(1.0, -1.0, 0.0);
+  int num_nodes = 4;
+  vector3 nodes[num_nodes];
+  nodes[0] = make_vector3(-1.0, -1.0, 0.0);
+  nodes[1] = make_vector3(-1.0, 1.0, 0.0);
+  nodes[2] = make_vector3(1.0, 1.0, 0.0);
+  nodes[3] = make_vector3(1.0, -1.0, 0.0);
 
-    double height = 10;
-    vector3 zhat = make_vector3(0, 0, 1);
+  double height = 10;
+  vector3 zhat = make_vector3(0, 0, 1);
 
-    double normal_sidewall = 0;
-    geometric_object normal_sidewall_geom_object = make_prism(m, nodes, num_nodes, height, zhat, normal_sidewall);
-    prism *normal_sidewall_prism = normal_sidewall_geom_object.subclass.prism_data;
+  double normal_sidewall = 0;
+  geometric_object normal_sidewall_geom_object = make_prism(m, nodes, num_nodes, height, zhat, normal_sidewall);
+  prism *normal_sidewall_prism = normal_sidewall_geom_object.subclass.prism_data;
 
-    double one_degree_sidewall = 1.0 * 2 * K_PI / 360.0;
-    geometric_object one_degree_sidewall_geom_object = make_prism(m, nodes, num_nodes, height, zhat, one_degree_sidewall);
-    prism *one_degree_sidewall_prism = one_degree_sidewall_geom_object.subclass.prism_data;
+  double one_degree_sidewall = 1.0 * 2 * K_PI / 360.0;
+  geometric_object one_degree_sidewall_geom_object = make_prism(m, nodes, num_nodes, height, zhat, one_degree_sidewall);
+  prism *one_degree_sidewall_prism = one_degree_sidewall_geom_object.subclass.prism_data;
 
-    prism2gnuplot(normal_sidewall_prism, "normal_sidewall_gnu_plot");
-    prism2gnuplot(one_degree_sidewall_prism, "one_degree_sidewall_gnu_plot");
+  prism2gnuplot(normal_sidewall_prism, "normal_sidewall_gnu_plot.dat");
+  prism2gnuplot(one_degree_sidewall_prism, "one_degree_sidewall_gnu_plot.dat");
 
-    return 0;
+  return 0;
 }
 
 /***************************************************************/
@@ -657,7 +650,7 @@ int main(int argc, char *argv[]) {
   /***************************************************************/
   /* read vertices from vertex file and create prism *************/
   /***************************************************************/
-  vector3 *vertices = 0;
+  vector3 *vertices_bottom = 0;
   int num_vertices = 0;
   FILE *f = fopen(vertexfile, "r");
   if (!f) usage("could not open vertexfile");
@@ -671,12 +664,12 @@ int main(int argc, char *argv[]) {
       fprintf(stderr, "bad vertex on line %i of %s", num_vertices, vertexfile);
       exit(1);
     }
-    vertices = (vector3 *)realloc(vertices, num_vertices * sizeof(vector3));
-    vertices[num_vertices - 1] = v;
+    vertices_bottom = (vector3 *)realloc(vertices, num_vertices * sizeof(vector3));
+    vertices_bottom[num_vertices - 1] = v;
   }
   fclose(f);
 
-  geometric_object the_prism = make_prism(NULL, vertices, num_vertices, height, axis, 0.0);
+  geometric_object the_prism = make_prism(NULL, vertices_bottom, num_vertices, height, axis, 0.0);
   prism *prsm = the_prism.subclass.prism_data;
   prism2gmsh(prsm, "test-prism.pp");
   prism2gnuplot(prsm, "test-prism.gp");
