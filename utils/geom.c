@@ -2157,13 +2157,21 @@ static int dcmp(const void *pd1, const void *pd2) {
 int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist) {
   vector3 pp = prism_coordinate_c2p(prsm, pc);
   vector3 dp = prism_vector_c2p(prsm, dc);
-  vector3 *vps = prsm->vertices_bottom_p.items;
+  vector3 *vps_bottom = prsm->vertices_bottom_p.items;
+  vector3 *vps_diff_scaled = prsm->top_polygon_diff_vectors_scaled_p.items;
+  vector3 *vps_top = prsm->vertices_top_p.items;
   int num_vertices = prsm->vertices_bottom_p.num_items;
   double height = prsm->height;
 
+  vector3 nodes_at_z[num_vertices];
+  int nv;
+  for (nv = 0; nv < num_vertices; nv++) {
+    nodes_at_z[nv] = vector3_plus(vps_bottom[nv], vector3_scale(pp.z, vps_diff_scaled[nv]));
+  }
+
   // use length of first polygon edge as a length scale for judging
   // lengths to be small or large
-  double length_scale = vector3_norm(vector3_minus(vps[1], vps[0]));
+  double length_scale = vector3_norm(vector3_minus(nodes_at_z[1], nodes_at_z[0]));
 
   // identify intersections with prism side faces
   int num_intersections = 0;
@@ -2176,7 +2184,7 @@ int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist
     // intersection of the XY-plane projection of the line with the
     // polygon edge between vertices (nv,nv+1).
     double s;
-    int status = intersect_line_with_segment(pp, vps[nv], vps[nvp1], dp, &s);
+    int status = intersect_line_with_segment(pp, nodes_at_z[nv], nodes_at_z[nvp1], dp, &s);
     if (status == NON_INTERSECTING || status == ON_RAY) continue;
 
     // OK, we know the XY-plane projection of the line intersects the polygon edge;
@@ -2198,6 +2206,7 @@ int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist
     for (LowerUpper = 0; LowerUpper < 2; LowerUpper++) {
       double z0p = LowerUpper ? height : 0.0;
       double s = (z0p - pp.z) / dp.z;
+      vector3 *vps = LowerUpper ? vps_top : vps_bottom;
       if (!node_in_polygon(pp.x + s * dp.x, pp.y + s * dp.y, vps, num_vertices)) continue;
       slist[num_intersections++] = s;
     }
