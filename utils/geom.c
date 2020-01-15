@@ -2180,7 +2180,6 @@ int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist
 
   // identify intersections with prism side faces
   int num_intersections = 0;
-  int nv;
   for (nv = 0; nv < num_vertices; nv++) {
     int nvp1 = nv + 1;
     if (nvp1 == num_vertices) nvp1 = 0;
