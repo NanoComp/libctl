@@ -915,14 +915,19 @@ double geom_object_volume(GEOMETRIC_OBJECT o) {
     case GEOM PRISM: {
       // needs updating for non-normal sidewalls
       vector3_list vertices_bottom = o.subclass.prism_data->vertices_bottom_p;
-      double area = 0;
+      vector3_list vertices_top = o.subclass.prism_data->vertices_top_p;
+      double area_bottom = 0;
+      double area_top = 0;
       int i;
       for (i = 0; i < vertices_bottom.num_items; ++i) {
         int i1 = (i + 1) % vertices_bottom.num_items;
-        area += 0.5 * (vertices_bottom.items[i1].x - vertices_bottom.items[i].x) *
+        area_bottom += 0.5 * (vertices_bottom.items[i1].x - vertices_bottom.items[i].x) *
                 (vertices_bottom.items[i1].y + vertices_bottom.items[i].y);
+        area_top += 0.5 * (vertices_top.items[i1].x - vertices_top.items[i].x) *
+                       (vertices_top.items[i1].y + vertices_top.items[i].y);
       }
-      return fabs(area) * o.subclass.prism_data->height;
+      double area_rms = sqrt((pow(fabs(area_bottom), 2) + pow(fabs(area_top), 2))/2);
+      return area_rms * o.subclass.prism_data->height;
     }
     default: return 0; /* unsupported object types? */
   }
