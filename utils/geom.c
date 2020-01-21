@@ -2560,27 +2560,34 @@ void init_prism(geometric_object *o) {
   for (nv = 0; nv < num_vertices; nv++)
     prsm->vertices_bottom_p.items[nv] = prism_coordinate_c2p(prsm, vertices_bottom[nv]);
 
-  // calculate difference vertices of the top polygon and vectors between bottom
-  // polygon and the top polygon, where
+  // Calculate difference vertices of the top polygon and vectors between bottom
+  // polygon and the top polygon, where:
   //  * the bottom polygon is the one passed in to the the make_prism() function,
-  //    stored in vertices_bottom and vertices_bottom_p
+  //    stored in vertices_bottom and vertices_bottom_p,
   //  * the top polygon is the top surface (parallel to the bottom polygon) resulting
   //    from the extrusion of the bottom polygon. Whether or not the extrusion tapers
   //    is dependent on the value of sidewall_angle.
+  //
   // The top polygon is calculated by first copying the values of vertices_bottom_p into
-  // vertices_top_p, except z=prsm->height for all top vertices. If prsm->sidewall_angle==0
-  // then no further calculations are performed on the top vertices. If not, we know that
-  // all EDGES of the the top polygon will be offset so that in the xy plane they are
-  // parallel to the edges of the bottom polygon. The offset amount is determined by the
-  // sidewall angle and the height of the prism. To perform the calculation, each of the
-  // edges of the top polygon (without an offset) are stored in an array of edges (edge is
-  // a struct defined if prsm->sidewall_angle!=0 containing the endpoints a1 a2, with a
-  // third vector v defined a2-a1). Then the vector normal to v is calculated, and the
-  // offset vector. It is determined whether the edge will be offset in the positive or
-  // negative direction based on the direction where points are in the polygon and whether
-  // prsm->sidewall_angle is positive or negative. After the offsets are applied to the
-  // edges, the intersections between the new edges are calculated, which are the new
-  // values of vertices_top_p.
+  // vertices_top_p, except z=prsm->height for all top vertices. If prsm->sidewall_angle
+  // is equal to zero, then no further calculations are performed on the top vertices.
+  // If not, we know that all EDGES of the the top polygon will be offset so that in the
+  // xy plane they are parallel to the edges of the bottom polygon. The offset amount is
+  // determined by the sidewall angle and the height of the prism. To perform the
+  // calculation, each of the edges of the top polygon (without an offset) are stored in
+  // an array of edges (edge is a struct defined if prsm->sidewall_angle!=0 containing
+  // the endpoints a1 a2, with a third vector v defined a2-a1). Then the vector normal to
+  // v is calculated, and the offset vector. A test is performed to determine in which
+  // direction (the direction of +offset or -offset) from the edge we can find points
+  // inside the polygon by performing a node_in_or_on_polygon test at a finite distance
+  // away from the midpoint of the edge:
+  //          edge.a1 + 0.5*edge.v + 1e-3*offset.
+  // This information is used to determine in which direction the offset of the edge is
+  // applied, in conjunction with whether prsm->sidewall_angle is positive or negative
+  // (if positive, the offset will be applied in towards the points where
+  // node_in_or_on_polygon is true, else the offset will be applied out away from those
+  // points). After the offsets are applied to the edges, the intersections between the
+  // new edges are calculated, which are the new values of vertices_top_p.
   //
   // Some side notes on the difference vectors:
   //   * The value of each of the top polygon vertices can be found
