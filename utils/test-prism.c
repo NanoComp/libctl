@@ -468,26 +468,57 @@ int test_point_in_polygon(int write_log) {
 int test_sidewall_prisms_to_gnuplot() {
   void *m = NULL;
 
-  int num_nodes = 4;
-  vector3 nodes[num_nodes];
-  nodes[0] = make_vector3(-1.0, -1.0, 0.0);
-  nodes[1] = make_vector3(-1.0, 1.0, 0.0);
-  nodes[2] = make_vector3(1.0, 1.0, 0.0);
-  nodes[3] = make_vector3(1.0, -1.0, 0.0);
+  int num_nodes_square = 4;
+  vector3 nodes_square[num_nodes_square];
+  nodes_square[0] = make_vector3(-1.0, -1.0, 0.0);
+  nodes_square[1] = make_vector3(-1.0, 1.0, 0.0);
+  nodes_square[2] = make_vector3(1.0, 1.0, 0.0);
+  nodes_square[3] = make_vector3(1.0, -1.0, 0.0);
 
-  double height = 10;
+  double height_square = 10;
   vector3 zhat = make_vector3(0, 0, 1);
 
   double normal_sidewall = 0;
-  geometric_object normal_sidewall_geom_object = make_prism(m, nodes, num_nodes, height, zhat, normal_sidewall);
-  prism *normal_sidewall_prism = normal_sidewall_geom_object.subclass.prism_data;
+  geometric_object square_normal_sidewall_geom_object = make_prism(m, nodes_square, num_nodes_square, height_square, zhat, normal_sidewall);
+  prism *square_normal_sidewall_prism = square_normal_sidewall_geom_object.subclass.prism_data;
 
   double one_degree_sidewall = 1.0 * 2 * K_PI / 360.0;
-  geometric_object one_degree_sidewall_geom_object = make_prism(m, nodes, num_nodes, height, zhat, one_degree_sidewall);
-  prism *one_degree_sidewall_prism = one_degree_sidewall_geom_object.subclass.prism_data;
+  geometric_object square_one_degree_sidewall_geom_object = make_prism(m, nodes_square, num_nodes_square, height_square, zhat, one_degree_sidewall);
+  prism *square_one_degree_sidewall_prism = square_one_degree_sidewall_geom_object.subclass.prism_data;
 
-  prism2gnuplot(normal_sidewall_prism, "normal_sidewall_gnu_plot.dat");
-  prism2gnuplot(one_degree_sidewall_prism, "one_degree_sidewall_gnu_plot.dat");
+  prism2gnuplot(square_normal_sidewall_prism, "square_normal_sidewall_gnu_plot.dat");
+  prism2gnuplot(square_one_degree_sidewall_prism, "square_one_degree_sidewall_gnu_plot.dat");
+
+  int num_nodes_octagon_c = 16;
+  vector3 nodes_octagon_c[num_nodes_octagon_c];
+  nodes_octagon_c[0]  = make_vector3(114.905, 88.7434, 0.0);
+  nodes_octagon_c[1]  = make_vector3(88.7434, 114.905, 0.0);
+  nodes_octagon_c[2]  = make_vector3(51.7447, 114.905, 0.0);
+  nodes_octagon_c[3]  = make_vector3(25.5827, 88.7434, 0.0);
+  nodes_octagon_c[4]  = make_vector3(25.5827, 51.7447, 0.0);
+  nodes_octagon_c[5]  = make_vector3(51.7447, 25.5827, 0.0);
+  nodes_octagon_c[6]  = make_vector3(88.7434, 25.5827, 0.0);
+  nodes_octagon_c[7]  = make_vector3(114.905, 51.7447, 0.0);
+  nodes_octagon_c[8]  = make_vector3(140.488, 41.1477, 0.0);
+  nodes_octagon_c[9]  = make_vector3(99.3401, 0.0, 0.0);
+  nodes_octagon_c[10] = make_vector3(41.1477, 0.0, 0.0);
+  nodes_octagon_c[11] = make_vector3(0.0, 41.1477, 0.0);
+  nodes_octagon_c[12] = make_vector3(0.0, 99.3401, 0.0);
+  nodes_octagon_c[13] = make_vector3(41.1477, 140.488, 0.0);
+  nodes_octagon_c[14] = make_vector3(99.3401, 140.488, 0.0);
+  nodes_octagon_c[15] = make_vector3(140.488, 99.3401, 0.0);
+
+  double height_octagon_c = 127;
+
+  geometric_object octagon_c_normal_sidewall_geom_object = make_prism(m, nodes_octagon_c, num_nodes_octagon_c, height_octagon_c, zhat, normal_sidewall);
+  prism *octagon_c_normal_sidewall_prism = octagon_c_normal_sidewall_geom_object.subclass.prism_data;
+
+  double two_half_degree_sidewall = 2.5 * 2 * K_PI / 360.0;
+  geometric_object octagon_c_two_half_degree_sidewall_geom_object = make_prism(m, nodes_octagon_c, num_nodes_octagon_c, height_octagon_c, zhat, two_half_degree_sidewall);
+  prism *octagon_c_two_half_degree_sidewall_prism = octagon_c_two_half_degree_sidewall_geom_object.subclass.prism_data;
+
+  prism2gnuplot(octagon_c_normal_sidewall_prism, "octagon_c_normal_sidewall_gnu_plot.dat");
+  prism2gnuplot(octagon_c_two_half_degree_sidewall_prism, "octagon_c_two_half_degree_sidewall_gnu_plot.dat");
 
   return 0;
 }
