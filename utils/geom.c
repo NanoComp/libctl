@@ -2318,12 +2318,13 @@ double min_distance_to_quadrilateral(vector3 p, vector3 o, vector3 v1, vector3 v
 double min_distance_to_prism_roof_or_ceiling(vector3 pp, prism *prsm, int fc) {
   int num_vertices = prsm->vertices_bottom_p.num_items;
   vector3 op = {0.0, 0.0, 0.0}; // origin of floor/ceiling
+  vector3 *vps;
   if (fc == 1) {
-    vector3 *vps = prsm->vertices_top_p.items;
+    vps = prsm->vertices_top_p.items;
     op.z = prsm->height;
   }
   else {
-    vector3 *vps = prsm->vertices_bottom_p.items;
+    vps = prsm->vertices_bottom_p.items;
   }
   vector3 zhatp = {0, 0, 1.0};
   double s = normal_distance_to_plane(pp, op, vps[0], vps[1], zhatp, 0);
@@ -2559,75 +2560,147 @@ void init_prism(geometric_object *o) {
   for (nv = 0; nv < num_vertices; nv++)
     prsm->vertices_bottom_p.items[nv] = prism_coordinate_c2p(prsm, vertices_bottom[nv]);
 
-  // calculate difference vectors between bottom polygon and the top polygon, where
+  // calculate difference vertices of the top polygon and vectors between bottom
+  // polygon and the top polygon, where
   //  * the bottom polygon is the one passed in to the the make_prism() function,
   //    stored in vertices_bottom and vertices_bottom_p
   //  * the top polygon is the top surface (parallel to the bottom polygon) resulting
   //    from the extrusion of the bottom polygon. Whether or not the extrusion tapers
   //    is dependent on the value of sidewall_angle.
-  //     ** The value of each of the top polygon vertices can be found
-  //                vertices_bottom_p + top_polygon_diff_vectors_p
-  //                vertices_bottom   + top_polygon_diff_vectors
-  //     ** A linearly interpolated value of the polygon vertices between the bottom
+  // The top polygon is calculated by first copying the values of vertices_bottom_p into
+  // vertices_top_p, except z=prsm->height for all top vertices. If prsm->sidewall_angle==0
+  // then no further calculations are performed on the top vertices. If not, we know that
+  // all EDGES of the the top polygon will be offset so that in the xy plane they are
+  // parallel to the edges of the bottom polygon. The offset amount is determined by the
+  // sidewall angle and the height of the prism. To perform the calculation, each of the
+  // edges of the top polygon (without an offset) are stored in an array of edges (edge is
+  // a struct defined if prsm->sidewall_angle!=0 containing the endpoints a1 a2, with a
+  // third vector v defined a2-a1). Then the vector normal to v is calculated, and the
+  // offset vector. It is determined whether the edge will be offset in the positive or
+  // negative direction based on the direction where points are in the polygon and whether
+  // prsm->sidewall_angle is positive or negative. After the offsets are applied to the
+  // edges, the intersections between the new edges are calculated, which are the new
+  // values of vertices_top_p.
+  //
+  // Some side notes on the difference vectors:
+  //   * The value of each of the top polygon vertices can be found
+  //             vertices_bottom_p + top_polygon_diff_vectors_p
+  //             vertices_bottom   + top_polygon_diff_vectors
+  //   * A linearly interpolated value of the polygon vertices between the bottom
   //     polygon and the top can be found
-  //                vertices_bottom_p + top_polygon_diff_vectors_scaled_p * z
+  //             vertices_bottom_p + top_polygon_diff_vectors_scaled_p * z
   if (isnan(prsm->sidewall_angle)) {
       prsm->sidewall_angle = 0.0;
   }
-  number theta = (K_PI/2) - prsm->sidewall_angle;
+  number theta = (K_PI/2) - abs(prsm->sidewall_angle);
 
   prsm->vertices_top_p.num_items = num_vertices;
   prsm->vertices_top_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  CHECK(prsm->vertices_top_p.items, "out of memory");
+  memcpy(prsm->vertices_top_p.items, prsm->vertices_bottom_p.items, num_vertices * sizeof(vector3));
   for (nv = 0; nv < num_vertices; nv++) {
-    number cx;
-    if (prsm->sidewall_angle == 0) {
-      cx = 1;
-    } else if (prsm->vertices_bottom_p.items[nv].x == 0) {
-      cx = 0;
-    } else {
-      cx = 1 - prsm->height / (abs(prsm->vertices_bottom_p.items[nv].x) * tan(theta));
-    }
-
-    number cy;
-    if (prsm->sidewall_angle == 0) {
-      cy = 1;
-    } else if (prsm->vertices_bottom_p.items[nv].y == 0) {
-      cy = 0;
-    } else {
-      cy = 1 - prsm->height / (abs(prsm->vertices_bottom_p.items[nv].y) * tan(theta));
-    }
-
-    prsm->vertices_top_p.items[nv].x = cx * prsm->vertices_bottom_p.items[nv].x;
-    prsm->vertices_top_p.items[nv].y = cy * prsm->vertices_bottom_p.items[nv].y;
     prsm->vertices_top_p.items[nv].z = prsm->height;
+  }
+
+  if (prsm->sidewall_angle != 0.0) {
+    struct edge {
+      vector3 a1, a2, v;  // v will be defined as a2 - a1
+    } edge;
+
+    edge *top_polygon_edges;
+    top_polygon_edges = (edge *)malloc(num_vertices * sizeof(edge));
+    number w = prsm->height / tan(theta);
+
+    for (nv = 0; nv < num_vertices; nv++) {
+      top_polygon_edges[nv].a1 = prsm->vertices_top_p.items[(nv - 1 == -1 ? num_vertices - 1 : nv - 1)];
+      top_polygon_edges[nv].a2 = prsm->vertices_top_p.items[nv];
+      top_polygon_edges[nv].v = vector3_minus(top_polygon_edges[nv].a2, top_polygon_edges[nv].a1);
+
+      vector3 normal_vector;
+      normal_vector.x = top_polygon_edges[nv].v.y;
+      normal_vector.y = -1 * top_polygon_edges[nv].v.x;
+      normal_vector.z = 0;
+      normal_vector = unit_vector3(normal_vector);
+      vector3 offset = vector3_scale(w, normal_vector);
+
+      vector3 midpoint = vector3_plus(top_polygon_edges[nv].a1, vector3_scale(0.5, top_polygon_edges[nv].v));
+      boolean midpoint_on_side_of_postive_offset_is_in_polygon = node_in_or_on_polygon(vector3_plus(midpoint, vector3_scale(1e-3, offset)), prsm->vertices_top_p.items, prsm->vertices_top_p.num_items, 1);
+
+      if (midpoint_on_side_of_postive_offset_is_in_polygon) {
+        // positive sidewall angles means the prism tapers in towards to the rest of the prism body
+        if (prsm->sidewall_angle > 0) {
+          top_polygon_edges[nv].a1 = vector3_plus(top_polygon_edges[nv].a1, offset);
+          top_polygon_edges[nv].a2 = vector3_plus(top_polygon_edges[nv].a2, offset);
+        }
+        // negative sidewall angles means the prism tapers out away from the rest of the prism body
+        else {
+          top_polygon_edges[nv].a1 = vector3_minus(top_polygon_edges[nv].a1, offset);
+          top_polygon_edges[nv].a2 = vector3_minus(top_polygon_edges[nv].a2, offset);
+        }
+      }
+      else {
+        // positive sidewall angles means the prism tapers in towards to the rest of the prism body
+        if (prsm->sidewall_angle > 0) {
+          top_polygon_edges[nv].a1 = vector3_minus(top_polygon_edges[nv].a1, offset);
+          top_polygon_edges[nv].a2 = vector3_minus(top_polygon_edges[nv].a2, offset);
+        }
+        // negative sidewall angles means the prism tapers out away from the rest of the prism body
+        else {
+          top_polygon_edges[nv].a1 = vector3_plus(top_polygon_edges[nv].a1, offset);
+          top_polygon_edges[nv].a2 = vector3_plus(top_polygon_edges[nv].a2, offset);
+        }
+      }
+    }
+
+    for (nv = 0; nv < num_vertices; nv++) {
+      number x1 = top_polygon_edges[nv].a1.x;
+      number y1 = top_polygon_edges[nv].a1.y;
+      number x2 = top_polygon_edges[nv].a2.x;
+      number y2 = top_polygon_edges[nv].a2.y;
+      number x3 = top_polygon_edges[(nv + 1 == num_vertices ? 0 : nv + 1)].a1.x;
+      number y3 = top_polygon_edges[(nv + 1 == num_vertices ? 0 : nv + 1)].a1.y;
+      number x4 = top_polygon_edges[(nv + 1 == num_vertices ? 0 : nv + 1)].a2.x;
+      number y4 = top_polygon_edges[(nv + 1 == num_vertices ? 0 : nv + 1)].a2.y;
+
+      // Intersection point calculated with https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_points_on_each_line
+      number px = ((x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4)) / ((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4));
+      number py = ((x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4)) / ((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4));
+      prsm->vertices_top_p.items[nv].x = px;
+      prsm->vertices_top_p.items[nv].y = py;
+    }
   }
 
   prsm->top_polygon_diff_vectors_p.num_items = num_vertices;
   prsm->top_polygon_diff_vectors_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  CHECK(prsm->top_polygon_diff_vectors_p.items, "out of memory");
   for (nv = 0; nv < num_vertices; nv++) {
     prsm->top_polygon_diff_vectors_p.items[nv] = vector3_minus(prsm->vertices_top_p.items[nv], prsm->vertices_bottom_p.items[nv]);
   }
 
   prsm->top_polygon_diff_vectors_scaled_p.num_items = num_vertices;
   prsm->top_polygon_diff_vectors_scaled_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  CHECK(prsm->top_polygon_diff_vectors_scaled_p.items, "out of memory");
   for (nv = 0; nv < num_vertices; nv++) {
       prsm->top_polygon_diff_vectors_scaled_p.items[nv] = vector3_scale(1/prsm->height, prsm->top_polygon_diff_vectors_p.items[nv]);
   }
 
   prsm->vertices_top.num_items = num_vertices;
   prsm->vertices_top.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  CHECK(prsm->vertices_top.items, "out of memory");
   for (nv = 0; nv < num_vertices; nv++) {
     prsm->vertices_top.items[nv] = prism_coordinate_p2c(prsm, prsm->vertices_top_p.items[nv]);
   }
 
   prsm->top_polygon_diff_vectors.num_items = num_vertices;
   prsm->top_polygon_diff_vectors.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  CHECK(prsm->top_polygon_diff_vectors.items, "out of memory");
   for (nv = 0; nv < num_vertices; nv++) {
       prsm->top_polygon_diff_vectors.items[nv] = prism_vector_p2c(prsm, prsm->top_polygon_diff_vectors_p.items[nv]);
   }
 
   prsm->top_polygon_diff_vectors_scaled.num_items = num_vertices;
   prsm->top_polygon_diff_vectors_scaled.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  CHECK(prsm->top_polygon_diff_vectors_scaled.items, "out of memory");
   for (nv = 0; nv < num_vertices; nv++) {
       prsm->top_polygon_diff_vectors_scaled.items[nv] = prism_vector_p2c(prsm, prsm->top_polygon_diff_vectors_scaled_p.items[nv]);
   }
