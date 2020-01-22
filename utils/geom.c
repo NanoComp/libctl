@@ -77,6 +77,7 @@ static boolean point_in_prism(prism *prsm, vector3 pc);
 static vector3 normal_to_prism(prism *prsm, vector3 pc);
 static double intersect_line_segment_with_prism(prism *prsm, vector3 pc, vector3 dc, double a,
                                                 double b);
+static double get_prism_volume(prism *prsm);
 static void get_prism_bounding_box(prism *prsm, geom_box *box);
 static void display_prism_info(int indentby, geometric_object *o);
 static void init_prism(geometric_object *o);
@@ -913,21 +914,7 @@ double geom_object_volume(GEOMETRIC_OBJECT o) {
       return o.subclass.block_data->which_subclass == BLK BLOCK_SELF ? vol : vol * (K_PI / 6);
     }
     case GEOM PRISM: {
-      // needs updating for non-normal sidewalls
-      vector3_list vertices_bottom = o.subclass.prism_data->vertices_bottom_p;
-      vector3_list vertices_top = o.subclass.prism_data->vertices_top_p;
-      double area_bottom = 0;
-      double area_top = 0;
-      int i;
-      for (i = 0; i < vertices_bottom.num_items; ++i) {
-        int i1 = (i + 1) % vertices_bottom.num_items;
-        area_bottom += 0.5 * (vertices_bottom.items[i1].x - vertices_bottom.items[i].x) *
-                (vertices_bottom.items[i1].y + vertices_bottom.items[i].y);
-        area_top += 0.5 * (vertices_top.items[i1].x - vertices_top.items[i].x) *
-                       (vertices_top.items[i1].y + vertices_top.items[i].y);
-      }
-      double area_rms = sqrt((pow(fabs(area_bottom), 2) + pow(fabs(area_top), 2))/2);
-      return area_rms * o.subclass.prism_data->height;
+      return get_prism_volume(o.subclass.prism_data);
     }
     default: return 0; /* unsupported object types? */
   }
@@ -2382,6 +2369,110 @@ vector3 normal_to_prism(prism *prsm, vector3 pc) {
     }
   }
   return prism_vector_p2c(prsm, retval);
+}
+
+/***************************************************************/
+/* Compute the area of a polygon using its vertices.           */
+/***************************************************************/
+double get_area_of_polygon_from_nodes(vector3 *nodes, int num_nodes){
+  double area = 0;
+  int i;
+  for (i = 0; i < num_nodes; ++i) {
+    int i1 = (i + 1) % num_nodes;
+    area += 0.5 * (nodes[i1].x - nodes[i].x) *
+            (nodes[i1].y + nodes[i].y);
+  }
+  return fabs(area);
+}
+
+/***************************************************************/
+/* This computes the volume of an irregular triangular prism   */
+/* following the scheme of http://darrenirvine.blogspot.com/2011/10/volume-of-irregular-triangular-prism.html */
+/* The two end triangles have points a, b, and c. Angle abc    */
+/* is right, and angles bac and acb are acute, of course. The  */
+/* primary constraint for this method is that the lines be-    */
+/* tween 'a's between triangles, betweens 'b's between         */
+/* triangles, and between 'c's between triangles must all be   */
+/* parallel, though the end triangles need not be parallel.    */
+
+/***************************************************************/
+double get_volume_irregular_triangular_prism(vector3 a0, vector3 b0, vector3 c0, vector3 a1, vector3 b1, vector3 c1) {
+  vector3 side_a = vector3_minus(a1, a0);
+  vector3 side_b = vector3_minus(b1, b0);
+  vector3 side_c = vector3_minus(c1, c0);
+  if (vector3_norm(vector3_cross(side_a, side_b)) != 0 ||
+      vector3_norm(vector3_cross(side_b, side_c)) != 0 ||
+      vector3_norm(vector3_cross(side_c, side_a)) != 0) {
+    //throw an error
+  }
+  double length_side_a = vector3_norm(side_a);
+  double length_side_b = vector3_norm(side_b);
+  double length_side_c = vector3_norm(side_c);
+  double average_length = (length_side_a + length_side_b + length_side_c) / 3.0;
+
+  vector3 point_on_plane = a0;
+  vector3 plane_normal_vector = unit_vector3(side_a);
+  vector3 plane_to_a1 = vector3_minus(a1, point_on_plane);
+  vector3 plane_to_b1 = vector3_minus(b1, point_on_plane);
+  vector3 plane_to_c1 = vector3_minus(c1, point_on_plane);
+  vector3 proj_plane_to_a1_on_normal_vector = vector3_scale(vector3_dot(plane_normal_vector, plane_to_a1), plane_normal_vector);
+  vector3 proj_plane_to_b1_on_normal_vector = vector3_scale(vector3_dot(plane_normal_vector, plane_to_b1), plane_normal_vector);
+  vector3 proj_plane_to_c1_on_normal_vector = vector3_scale(vector3_dot(plane_normal_vector, plane_to_c1), plane_normal_vector);
+  vector3 a1_on_plane = vector3_minus(a1, proj_plane_to_a1_on_normal_vector);
+  vector3 b1_on_plane = vector3_minus(b1, proj_plane_to_b1_on_normal_vector);
+  vector3 c1_on_plane = vector3_minus(c1, proj_plane_to_c1_on_normal_vector);
+  double base = vector3_norm(vector3_minus(c1_on_plane, b1_on_plane));
+  double height = vector3_norm(vector3_minus(a1_on_plane, b1_on_plane));
+  double cross_sectional_area = fabs(0.5 * base * height);
+
+  return fabs(average_length * cross_sectional_area);
+}
+
+/***************************************************************/
+/***************************************************************/
+/***************************************************************/
+double get_prism_volume(prism *prsm) {
+  if (prsm->sidewall_angle == 0.0) {
+    return get_area_of_polygon_from_nodes(prsm->vertices_bottom_p.items, prsm->vertices_bottom_p.num_items) * fabs(prsm->height);
+  }
+  else {
+    int num_vertices = prsm->vertices_bottom_p.num_items;
+    double bottom_polygon_area = get_area_of_polygon_from_nodes(prsm->vertices_bottom_p.items, prsm->vertices_bottom_p.num_items);
+    double top_polygon_area = get_area_of_polygon_from_nodes(prsm->vertices_top_p.items, prsm->vertices_top_p.num_items);
+    double volume;
+    vector3 *wedges_a;
+    wedges_a = (vector3 *)malloc(num_vertices * sizeof(vector3));
+    CHECK(wedges_a, "out of memory");
+    vector3 *wedges_b;
+    wedges_b = (vector3 *)malloc(num_vertices * sizeof(vector3));
+    CHECK(wedges_b, "out of memory");
+    vector3 *wedges_c;
+    wedges_b = (vector3 *)malloc(num_vertices * sizeof(vector3));
+    CHECK(wedges_c, "out of memory");
+    if (bottom_polygon_area > top_polygon_area) {
+      volume = fabs(top_polygon_area * prsm->height);
+      memcpy(wedges_a, prsm->vertices_top_p.items, num_vertices * sizeof(vector3));
+      memcpy(wedges_b, prsm->vertices_top_p.items, num_vertices * sizeof(vector3));
+      for (int nv = 0; nv < num_vertices; nv++) {
+        wedges_b[nv].z = 0.0;
+      }
+      memcpy(wedges_c, prsm->vertices_bottom_p.items, num_vertices * sizeof(vector3));
+    }
+    else {
+      volume = fabs(bottom_polygon_area * prsm->height);
+      memcpy(wedges_a, prsm->vertices_bottom_p.items, num_vertices * sizeof(vector3));
+      memcpy(wedges_b, prsm->vertices_bottom_p.items, num_vertices * sizeof(vector3));
+      for (int nv = 0; nv < num_vertices; nv++) {
+        wedges_b[nv].z = prsm->height;
+      }
+      memcpy(wedges_c, prsm->vertices_top_p.items, num_vertices * sizeof(vector3));
+    }
+    for (int nv = 0; nv < num_vertices; nv++) {
+      int nvp1 = (nv + 1 == num_vertices ? 0 : nv + 1);
+      volume += get_volume_irregular_triangular_prism(wedges_a[nv], wedges_b[nv], wedges_c[nv], wedges_a[nvp1], wedges_b[nvp1], wedges_c[nvp1]);
+    }
+    return volume;
+  }
 }
 
 /***************************************************************/
