@@ -2447,7 +2447,7 @@ double get_prism_volume(prism *prsm) {
     wedges_b = (vector3 *)malloc(num_vertices * sizeof(vector3));
     CHECK(wedges_b, "out of memory");
     vector3 *wedges_c;
-    wedges_b = (vector3 *)malloc(num_vertices * sizeof(vector3));
+    wedges_c = (vector3 *)malloc(num_vertices * sizeof(vector3));
     CHECK(wedges_c, "out of memory");
     if (bottom_polygon_area > top_polygon_area) {
       volume = fabs(top_polygon_area * prsm->height);

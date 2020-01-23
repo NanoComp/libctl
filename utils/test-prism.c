@@ -489,6 +489,9 @@ int test_sidewall_prisms_to_gnuplot() {
   prism2gnuplot(square_normal_sidewall_prism, "square_normal_sidewall_gnu_plot.dat");
   prism2gnuplot(square_one_degree_sidewall_prism, "square_one_degree_sidewall_gnu_plot.dat");
 
+  ctl_printf("The volume of the square-based prism with a normal sidewall angle is %e\n", geom_object_volume(square_normal_sidewall_geom_object));
+  ctl_printf("The volume of the square-based prism with a 1-degree sidewall angle is %e\n", geom_object_volume(square_one_degree_sidewall_geom_object));
+
   int num_nodes_octagon_c = 16;
   vector3 nodes_octagon_c[num_nodes_octagon_c];
   nodes_octagon_c[0]  = make_vector3(114.905, 88.7434, 0.0);
@@ -519,6 +522,10 @@ int test_sidewall_prisms_to_gnuplot() {
 
   prism2gnuplot(octagon_c_normal_sidewall_prism, "octagon_c_normal_sidewall_gnu_plot.dat");
   prism2gnuplot(octagon_c_two_half_degree_sidewall_prism, "octagon_c_two_half_degree_sidewall_gnu_plot.dat");
+
+  ctl_printf("The volume of the prism with the concave octagonal c shape base with a normal sidewall angle is %e\n", geom_object_volume(octagon_c_normal_sidewall_geom_object));
+  ctl_printf("The volume of the prism with the concave octagonal c shape base with a 2.5-degree sidewall angle is %e\n", geom_object_volume(octagon_c_two_half_degree_sidewall_geom_object));
+
 
   return 0;
 }
