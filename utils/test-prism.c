@@ -470,12 +470,12 @@ int test_sidewall_prisms_to_gnuplot() {
 
   int num_nodes_square = 4;
   vector3 nodes_square[num_nodes_square];
-  nodes_square[0] = make_vector3(-1.0, -1.0, 0.0);
-  nodes_square[1] = make_vector3(-1.0, 1.0, 0.0);
-  nodes_square[2] = make_vector3(1.0, 1.0, 0.0);
-  nodes_square[3] = make_vector3(1.0, -1.0, 0.0);
+  nodes_square[0] = make_vector3(-10.0, -10.0, 0.0);
+  nodes_square[1] = make_vector3(-10.0, 10.0, 0.0);
+  nodes_square[2] = make_vector3(10.0, 10.0, 0.0);
+  nodes_square[3] = make_vector3(10.0, -10.0, 0.0);
 
-  double height_square = 10;
+  double height_square = 100;
   vector3 zhat = make_vector3(0, 0, 1);
 
   double normal_sidewall = 0;
