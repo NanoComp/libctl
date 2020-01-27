@@ -461,11 +461,11 @@ int test_point_in_polygon(int write_log) {
 }
 
 /************************************************************************/
-/* fifth unit test: saves a prism with normal sidewall angle and a      */
-/* prism with the same base polygon with non-normal sidewall angle to   */
-/* separate GNU plot files                                              */
+/* fifth unit test: saves a prism with a square base with a normal      */
+/* sidewall angle and a prism with the same base polygon with non-      */
+/* normal sidewall angle to separate GNU plot files.                    */
 /************************************************************************/
-int test_sidewall_prisms_to_gnuplot() {
+int test_square_base_sidewall_prisms_to_gnuplot() {
   void *m = NULL;
 
   int num_nodes_square = 4;
@@ -492,6 +492,17 @@ int test_sidewall_prisms_to_gnuplot() {
   ctl_printf("The volume of the square-based prism with a normal sidewall angle is %e\n", geom_object_volume(square_normal_sidewall_geom_object));
   ctl_printf("The volume of the square-based prism with a 1-degree sidewall angle is %e\n", geom_object_volume(square_one_degree_sidewall_geom_object));
 
+  return 0;
+}
+
+/************************************************************************/
+/* sixth unit test: saves a prism with a concave octagonal c-shaped     */
+/* base with a normal sidewall angle and a prism with the same base     */
+/* polygon with non-normal sidewall angle to separate GNU plot files.   */
+/************************************************************************/
+int test_octagon_c_base_sidewall_prisms_to_gnuplot() {
+  void *m = NULL;
+
   int num_nodes_octagon_c = 16;
   vector3 nodes_octagon_c[num_nodes_octagon_c];
   nodes_octagon_c[0]  = make_vector3(114.905, 88.7434, 0.0);
@@ -512,7 +523,9 @@ int test_sidewall_prisms_to_gnuplot() {
   nodes_octagon_c[15] = make_vector3(140.488, 99.3401, 0.0);
 
   double height_octagon_c = 127;
+  vector3 zhat = make_vector3(0, 0, 1);
 
+  double normal_sidewall = 0;
   geometric_object octagon_c_normal_sidewall_geom_object = make_prism(m, nodes_octagon_c, num_nodes_octagon_c, height_octagon_c, zhat, normal_sidewall);
   prism *octagon_c_normal_sidewall_prism = octagon_c_normal_sidewall_geom_object.subclass.prism_data;
 
@@ -525,7 +538,6 @@ int test_sidewall_prisms_to_gnuplot() {
 
   ctl_printf("The volume of the prism with the concave octagonal c shape base with a normal sidewall angle is %e\n", geom_object_volume(octagon_c_normal_sidewall_geom_object));
   ctl_printf("The volume of the prism with the concave octagonal c shape base with a 2.5-degree sidewall angle is %e\n", geom_object_volume(octagon_c_two_half_degree_sidewall_geom_object));
-
 
   return 0;
 }
@@ -590,9 +602,10 @@ int run_unit_tests() {
   int num_failed_2 = 0; // test_normal_to_object(the_block, the_prism, NUMLINES, write_log);
   int num_failed_3 = test_line_segment_intersection(the_block, the_prism, NUMLINES, write_log);
   int num_failed_4 = test_point_in_polygon(write_log);
-  int num_failed_5 = test_sidewall_prisms_to_gnuplot();
+  int num_failed_5 = test_square_base_sidewall_prisms_to_gnuplot();
+  int num_failed_6 = test_octagon_c_base_sidewall_prisms_to_gnuplot();
 
-  return num_failed_1 + num_failed_2 + num_failed_3 + num_failed_4 + num_failed_5;
+  return num_failed_1 + num_failed_2 + num_failed_3 + num_failed_4 + num_failed_5 + num_failed_6;
 }
 
 /***************************************************************/
