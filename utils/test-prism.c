@@ -598,7 +598,7 @@ int test_helper_functions_on_octagonal_c_prism() {
 
   // test intersect_line_segment_with_prism
 
-  printf("prism helper function testing: %i/4 tests failed with normal sidewall, %i/4 tests failed with tapered sidewall\n", num_failed_normal, num_failed_tapered);
+  printf("prism helper function testing: \n\t%i/4 tests failed with normal sidewall\n\t%i/4 tests failed with tapered sidewall\n", num_failed_normal, num_failed_tapered);
 
   return num_failed_normal + num_failed_tapered;
 }
@@ -665,8 +665,9 @@ int run_unit_tests() {
   int num_failed_4 = test_point_in_polygon(write_log);
   int num_failed_5 = test_square_base_sidewall_prisms_to_gnuplot();
   int num_failed_6 = test_octagon_c_base_sidewall_prisms_to_gnuplot();
+  int num_failed_7 = test_helper_functions_on_octagonal_c_prism();
 
-  return num_failed_1 + num_failed_2 + num_failed_3 + num_failed_4 + num_failed_5 + num_failed_6;
+  return num_failed_1 + num_failed_2 + num_failed_3 + num_failed_4 + num_failed_5 + num_failed_6 + num_failed_7;
 }
 
 /***************************************************************/
