@@ -2788,20 +2788,6 @@ void init_prism(geometric_object *o) {
     prsm->vertices_top.items[nv] = prism_coordinate_p2c(prsm, prsm->vertices_top_p.items[nv]);
   }
 
-  prsm->top_polygon_diff_vectors.num_items = num_vertices;
-  prsm->top_polygon_diff_vectors.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
-  CHECK(prsm->top_polygon_diff_vectors.items, "out of memory");
-  for (nv = 0; nv < num_vertices; nv++) {
-      prsm->top_polygon_diff_vectors.items[nv] = prism_vector_p2c(prsm, prsm->top_polygon_diff_vectors_p.items[nv]);
-  }
-
-  prsm->top_polygon_diff_vectors_scaled.num_items = num_vertices;
-  prsm->top_polygon_diff_vectors_scaled.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
-  CHECK(prsm->top_polygon_diff_vectors_scaled.items, "out of memory");
-  for (nv = 0; nv < num_vertices; nv++) {
-      prsm->top_polygon_diff_vectors_scaled.items[nv] = prism_vector_p2c(prsm, prsm->top_polygon_diff_vectors_scaled_p.items[nv]);
-  }
-
   // workspace is an internally-stored double-valued array of length num_vertices+2
   // that is used by some geometry routines
   prsm->workspace.num_items = num_vertices + 2;

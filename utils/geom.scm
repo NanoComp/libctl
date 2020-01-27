@@ -133,8 +133,6 @@
   (define-property top_polygon_diff_vectors_p '() (make-list-type 'vector3))
   (define-property top_polygon_diff_vectors_scaled_p '() (make-list-type 'vector3))
   (define-property vertices_top_p '() (make-list-type 'vector3))
-  (define-property top_polygon_diff_vectors '() (make-list-type 'vector3))
-  (define-property top_polygon_diff_vectors_scaled '() (make-list-type 'vector3))
   (define-property vertices_top '() (make-list-type 'vector3))
   (define-property centroid (vector3 0 0 0) 'vector3)
   (define-property workspace '() (make-list-type 'number))
