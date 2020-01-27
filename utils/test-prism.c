@@ -489,9 +489,6 @@ int test_square_base_sidewall_prisms_to_gnuplot() {
   prism2gnuplot(square_normal_sidewall_prism, "square_normal_sidewall_gnu_plot.dat");
   prism2gnuplot(square_one_degree_sidewall_prism, "square_one_degree_sidewall_gnu_plot.dat");
 
-  ctl_printf("The volume of the square-based prism with a normal sidewall angle is %e\n", geom_object_volume(square_normal_sidewall_geom_object));
-  ctl_printf("The volume of the square-based prism with a 1-degree sidewall angle is %e\n", geom_object_volume(square_one_degree_sidewall_geom_object));
-
   return 0;
 }
 
@@ -536,10 +533,74 @@ int test_octagon_c_base_sidewall_prisms_to_gnuplot() {
   prism2gnuplot(octagon_c_normal_sidewall_prism, "octagon_c_normal_sidewall_gnu_plot.dat");
   prism2gnuplot(octagon_c_two_half_degree_sidewall_prism, "octagon_c_two_half_degree_sidewall_gnu_plot.dat");
 
-  ctl_printf("The volume of the prism with the concave octagonal c shape base with a normal sidewall angle is %e\n", geom_object_volume(octagon_c_normal_sidewall_geom_object));
-  ctl_printf("The volume of the prism with the concave octagonal c shape base with a 2.5-degree sidewall angle is %e\n", geom_object_volume(octagon_c_two_half_degree_sidewall_geom_object));
-
   return 0;
+}
+
+/************************************************************************/
+/* seventh unit test: test all of geom.c's prism helper functions on a  */
+/* prism with a concave octagonal c-shaped base with both a normal      */
+/* sidewall angle a 2.5-degree sidewall angle.                          */
+/************************************************************************/
+int test_helper_functions_on_octagonal_c_prism() {
+  void *m = NULL;
+
+  int num_nodes_octagon_c = 16;
+  vector3 nodes_octagon_c[num_nodes_octagon_c];
+  nodes_octagon_c[0]  = make_vector3(114.905, 88.7434, 0.0);
+  nodes_octagon_c[1]  = make_vector3(88.7434, 114.905, 0.0);
+  nodes_octagon_c[2]  = make_vector3(51.7447, 114.905, 0.0);
+  nodes_octagon_c[3]  = make_vector3(25.5827, 88.7434, 0.0);
+  nodes_octagon_c[4]  = make_vector3(25.5827, 51.7447, 0.0);
+  nodes_octagon_c[5]  = make_vector3(51.7447, 25.5827, 0.0);
+  nodes_octagon_c[6]  = make_vector3(88.7434, 25.5827, 0.0);
+  nodes_octagon_c[7]  = make_vector3(114.905, 51.7447, 0.0);
+  nodes_octagon_c[8]  = make_vector3(140.488, 41.1477, 0.0);
+  nodes_octagon_c[9]  = make_vector3(99.3401, 0.0, 0.0);
+  nodes_octagon_c[10] = make_vector3(41.1477, 0.0, 0.0);
+  nodes_octagon_c[11] = make_vector3(0.0, 41.1477, 0.0);
+  nodes_octagon_c[12] = make_vector3(0.0, 99.3401, 0.0);
+  nodes_octagon_c[13] = make_vector3(41.1477, 140.488, 0.0);
+  nodes_octagon_c[14] = make_vector3(99.3401, 140.488, 0.0);
+  nodes_octagon_c[15] = make_vector3(140.488, 99.3401, 0.0);
+
+  double height_octagon_c = 127;
+  vector3 zhat = make_vector3(0, 0, 1);
+
+  double normal_sidewall = 0;
+  geometric_object octagon_c_normal_sidewall_geom_object = make_prism(m, nodes_octagon_c, num_nodes_octagon_c, height_octagon_c, zhat, normal_sidewall);
+  prism *octagon_c_normal_sidewall_prism = octagon_c_normal_sidewall_geom_object.subclass.prism_data;
+
+  double two_half_degree_sidewall = 2.5 * 2 * K_PI / 360.0;
+  geometric_object octagon_c_two_half_degree_sidewall_geom_object = make_prism(m, nodes_octagon_c, num_nodes_octagon_c, height_octagon_c, zhat, two_half_degree_sidewall);
+  prism *octagon_c_two_half_degree_sidewall_prism = octagon_c_two_half_degree_sidewall_geom_object.subclass.prism_data;
+
+  int num_failed_normal = 0;
+  int num_failed_tapered = 0;
+
+  // test geom_object_volume
+  double volume_normal_sidewall_freecad = 1082462.27453587;
+  double volume_normal_sidewall_calculated = geom_object_volume(octagon_c_normal_sidewall_geom_object);
+
+  if (fabs((volume_normal_sidewall_calculated-volume_normal_sidewall_freecad)/volume_normal_sidewall_freecad) > 5e-5) {
+    num_failed_normal++;
+  }
+
+  double volume_tapered_sidewall_freecad = 833978.754046812;
+  double volume_tapered_sidewall_calculated = geom_object_volume(octagon_c_two_half_degree_sidewall_geom_object);
+
+  if (fabs((volume_tapered_sidewall_calculated-volume_tapered_sidewall_freecad)/volume_tapered_sidewall_freecad) > 5e-5) {
+    num_failed_tapered++;
+  }
+
+  // test point_in_prism
+
+  // test normal_to_prism
+
+  // test intersect_line_segment_with_prism
+
+  printf("prism helper function testing: %i/4 tests failed with normal sidewall, %i/4 tests failed with tapered sidewall\n", num_failed_normal, num_failed_tapered);
+
+  return num_failed_normal + num_failed_tapered;
 }
 
 /***************************************************************/
