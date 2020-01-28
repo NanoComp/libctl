@@ -542,6 +542,11 @@ int test_octagon_c_base_sidewall_prisms_to_gnuplot() {
 /* sidewall angle a 2.5-degree sidewall angle.                          */
 /************************************************************************/
 int test_helper_functions_on_octagonal_c_prism() {
+  double relative_error(double actual, double expected) {
+    return fabs((actual-expected)/actual);
+  }
+  double tolerance = 5.0e-5;
+
   void *m = NULL;
 
   int num_nodes_octagon_c = 16;
@@ -574,31 +579,70 @@ int test_helper_functions_on_octagonal_c_prism() {
   geometric_object octagon_c_two_half_degree_sidewall_geom_object = make_prism(m, nodes_octagon_c, num_nodes_octagon_c, height_octagon_c, zhat, two_half_degree_sidewall);
   prism *octagon_c_two_half_degree_sidewall_prism = octagon_c_two_half_degree_sidewall_geom_object.subclass.prism_data;
 
+  int num_tests_normal = 0;
   int num_failed_normal = 0;
+  int num_tests_tapered = 0;
   int num_failed_tapered = 0;
 
   // test geom_object_volume
   double volume_normal_sidewall_freecad = 1082462.27453587;
   double volume_normal_sidewall_calculated = geom_object_volume(octagon_c_normal_sidewall_geom_object);
-
-  if (fabs((volume_normal_sidewall_calculated-volume_normal_sidewall_freecad)/volume_normal_sidewall_freecad) > 5e-5) {
+  num_tests_normal++;
+  if (relative_error(volume_normal_sidewall_calculated, volume_normal_sidewall_freecad) > tolerance) {
     num_failed_normal++;
   }
 
   double volume_tapered_sidewall_freecad = 833978.754046812;
   double volume_tapered_sidewall_calculated = geom_object_volume(octagon_c_two_half_degree_sidewall_geom_object);
-
-  if (fabs((volume_tapered_sidewall_calculated-volume_tapered_sidewall_freecad)/volume_tapered_sidewall_freecad) > 5e-5) {
+  num_tests_tapered++;
+  if (relative_error(volume_tapered_sidewall_calculated, volume_tapered_sidewall_freecad) > tolerance) {
     num_failed_tapered++;
   }
 
   // test point_in_prism
+  vector3_list point_in_prism_test_points_normal_sidewall;
+  point_in_prism_test_points_normal_sidewall.num_items = 6;
+  point_in_prism_test_points_normal_sidewall.items = (vector3 *)malloc(point_in_prism_test_points_normal_sidewall.num_items * sizeof(vector3));
+  point_in_prism_test_points_normal_sidewall.items[0] = make_vector3(140.488, 99.3401, 127.); // failing point, probably from high tolerance in floating-point numbers
+  point_in_prism_test_points_normal_sidewall.items[1] = make_vector3(140.488, 99.3401, 129.);
+  point_in_prism_test_points_normal_sidewall.items[2] = make_vector3(141.902, 97.9259, 127.);
+  point_in_prism_test_points_normal_sidewall.items[3] = make_vector3(142.336, 100.105, 127.);
+  point_in_prism_test_points_normal_sidewall.items[4] = make_vector3(137.226, 99.9890, 125.);
+  point_in_prism_test_points_normal_sidewall.items[5] = make_vector3(25.5827, 88.7434, 127.); // failing point, probably from high tolerance in floating-point numbers
+  point_in_prism_test_points_normal_sidewall.items[6] = make_vector3(25.5827, 88.7434, 129.);
+  point_in_prism_test_points_normal_sidewall.items[7] = make_vector3(24.1685, 87.3292, 127.);
+  point_in_prism_test_points_normal_sidewall.items[8] = make_vector3(25.5827, 90.7434, 127.);
+  point_in_prism_test_points_normal_sidewall.items[9] = make_vector3(26.9969, 88.1576, 125.);
+
+  int point_in_prism_expected_normal_sidewall[point_in_prism_test_points_normal_sidewall.num_items];
+  point_in_prism_expected_normal_sidewall[0] = 1;
+  point_in_prism_expected_normal_sidewall[1] = 0;
+  point_in_prism_expected_normal_sidewall[2] = 0;
+  point_in_prism_expected_normal_sidewall[3] = 0;
+  point_in_prism_expected_normal_sidewall[4] = 1;
+  point_in_prism_expected_normal_sidewall[5] = 1;
+  point_in_prism_expected_normal_sidewall[6] = 0;
+  point_in_prism_expected_normal_sidewall[7] = 1;
+  point_in_prism_expected_normal_sidewall[8] = 1;
+  point_in_prism_expected_normal_sidewall[9] = 0;
+
+  int point_in_prism_actual_normal_sidewall[point_in_prism_test_points_normal_sidewall.num_items];
+  for (int i = 0; i < point_in_prism_test_points_normal_sidewall.num_items; i++) {
+    num_tests_normal++;
+    point_in_prism_actual_normal_sidewall[i] = point_in_fixed_pobjectp(point_in_prism_test_points_normal_sidewall.items[i], &octagon_c_normal_sidewall_geom_object);
+  }
+
+  for (int i = 0; i < point_in_prism_test_points_normal_sidewall.num_items; i++) {
+    if (point_in_prism_actual_normal_sidewall[i] != point_in_prism_expected_normal_sidewall[i]) {
+      num_failed_normal++;
+    }
+  }
 
   // test normal_to_prism
 
   // test intersect_line_segment_with_prism
 
-  printf("prism helper function testing: \n\t%i/4 tests failed with normal sidewall\n\t%i/4 tests failed with tapered sidewall\n", num_failed_normal, num_failed_tapered);
+  printf("prism helper function testing: \n\t%i/11 tests failed with normal sidewall\n\t%i/11 tests failed with tapered sidewall\n", num_failed_normal, num_failed_tapered);
 
   return num_failed_normal + num_failed_tapered;
 }
