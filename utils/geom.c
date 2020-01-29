@@ -1975,7 +1975,7 @@ int intersect_line_with_segment(vector3 q0, vector3 q1, vector3 q2, vector3 u, d
     double dot = q01x * q02x + q01y * q02y;
     if (fabs(dot) < (1.0 - THRESH) * q01 * q02)
       return NON_INTERSECTING;
-    else if (dot < 0.0) {
+    else if (dot <= 0.0) {
       *s = 0.0;
       return IN_SEGMENT;
     }
@@ -2037,7 +2037,7 @@ boolean node_in_or_on_polygon(vector3 q0, vector3 *nodes, int num_nodes,
   // Is q0 on a vertex or edge?
   // Transform coordinate system of nodes such that q0 is at 0|0
   for (nn = 0; nn < num_nodes; nn++) {
-    int status = intersect_ray_with_segment(q0, nodes[nn], nodes[(nn + 1) % num_nodes], xAxis, 0);
+    int status = intersect_ray_with_segment(q0, nodes[nn], nodes[(nn + 1) % num_nodes], unit_vector3(vector3_minus(nodes[(nn + 1) % num_nodes], nodes[nn])), 0);
     if (status == IN_SEGMENT) { return include_boundaries; }
 
     // Find start point which is not on the x axis (from q0)
