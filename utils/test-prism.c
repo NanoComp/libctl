@@ -216,11 +216,11 @@ void prism2gnuplot(prism *prsm, char *filename) {
     vector3 vcc = prism_coordinate_p2c(prsm, vcp);
     vector3 vdc = prism_coordinate_p2c(prsm, vdp);
 
-    fprintf(f, "%e %e %e \n", vac.x, vac.y, vac.z);
-    fprintf(f, "%e %e %e \n", vbc.x, vbc.y, vbc.z);
-    fprintf(f, "%e %e %e \n", vcc.x, vcc.y, vcc.z);
-    fprintf(f, "%e %e %e \n", vdc.x, vdc.y, vdc.z);
-    fprintf(f, "%e %e %e \n", vac.x, vac.y, vac.z);
+    fprintf(f, "%0.16e %0.16e %0.16e \n", vac.x, vac.y, vac.z);
+    fprintf(f, "%0.16e %0.16e %0.16e \n", vbc.x, vbc.y, vbc.z);
+    fprintf(f, "%0.16e %0.16e %0.16e \n", vcc.x, vcc.y, vcc.z);
+    fprintf(f, "%0.16e %0.16e %0.16e \n", vdc.x, vdc.y, vdc.z);
+    fprintf(f, "%0.16e %0.16e %0.16e \n", vac.x, vac.y, vac.z);
     fprintf(f, "\n\n");
   }
   fclose(f);
@@ -601,30 +601,60 @@ int test_helper_functions_on_octagonal_c_prism() {
 
   // test point_in_prism
   vector3_list point_in_prism_test_points_normal_sidewall;
-  point_in_prism_test_points_normal_sidewall.num_items = 6;
+  point_in_prism_test_points_normal_sidewall.num_items = 25;
   point_in_prism_test_points_normal_sidewall.items = (vector3 *)malloc(point_in_prism_test_points_normal_sidewall.num_items * sizeof(vector3));
-  point_in_prism_test_points_normal_sidewall.items[0] = make_vector3(140.488, 99.3401, 127.); // failing point, probably from high tolerance in floating-point numbers
-  point_in_prism_test_points_normal_sidewall.items[1] = make_vector3(140.488, 99.3401, 129.);
-  point_in_prism_test_points_normal_sidewall.items[2] = make_vector3(141.902, 97.9259, 127.);
-  point_in_prism_test_points_normal_sidewall.items[3] = make_vector3(142.336, 100.105, 127.);
-  point_in_prism_test_points_normal_sidewall.items[4] = make_vector3(137.226, 99.9890, 125.);
-  point_in_prism_test_points_normal_sidewall.items[5] = make_vector3(25.5827, 88.7434, 127.); // failing point, probably from high tolerance in floating-point numbers
-  point_in_prism_test_points_normal_sidewall.items[6] = make_vector3(25.5827, 88.7434, 129.);
-  point_in_prism_test_points_normal_sidewall.items[7] = make_vector3(24.1685, 87.3292, 127.);
-  point_in_prism_test_points_normal_sidewall.items[8] = make_vector3(25.5827, 90.7434, 127.);
-  point_in_prism_test_points_normal_sidewall.items[9] = make_vector3(26.9969, 88.1576, 125.);
+  point_in_prism_test_points_normal_sidewall.items[0]  = make_vector3(46.4462, 12.7914, 63.5000); // interior point
+  point_in_prism_test_points_normal_sidewall.items[1]  = make_vector3(127.697, 46.4462, 95.2500); // interior point
+  point_in_prism_test_points_normal_sidewall.items[2]  = make_vector3(70.2439, 0.00000, 31.7500); // point on external side face
+  point_in_prism_test_points_normal_sidewall.items[3]  = make_vector3(101.824, 38.6637, 95.2500); // point on internal side face
+  point_in_prism_test_points_normal_sidewall.items[4]  = make_vector3(19.1870, 49.0955, 127.000); // point on top face
+  point_in_prism_test_points_normal_sidewall.items[5]  = make_vector3(134.092, 96.6909, 0.00000); // point on bottom face
+  point_in_prism_test_points_normal_sidewall.items[6]  = make_vector3(127.6965, 94.04175, 127.0); // edge on top
+  point_in_prism_test_points_normal_sidewall.items[7]  = make_vector3(70.24405, 114.905, 0.0000); // edge on bottom
+  point_in_prism_test_points_normal_sidewall.items[8]  = make_vector3(41.1477, 0.00000, 100.000); // edge on side
+  point_in_prism_test_points_normal_sidewall.items[9]  = make_vector3(140.488, 99.3401, 127.000); // vertex -> corner on top at edge of c
+  point_in_prism_test_points_normal_sidewall.items[10] = make_vector3(140.488, 99.3401, 129.000); // continuation of edge from vertex
+  point_in_prism_test_points_normal_sidewall.items[11] = make_vector3(141.902, 97.9259, 127.000); // continuation of edge from vertex
+  point_in_prism_test_points_normal_sidewall.items[12] = make_vector3(142.336, 100.105, 127.000); // continuation of edge from vertex
+  point_in_prism_test_points_normal_sidewall.items[13] = make_vector3(137.226, 99.9890, 125.000); // continuation of edge from vertex
+  point_in_prism_test_points_normal_sidewall.items[14] = make_vector3(25.5827, 88.7434, 127.000); // vertex -> corner on top inside c
+  point_in_prism_test_points_normal_sidewall.items[15] = make_vector3(25.5827, 88.7434, 129.000); // continuation of edge from vertex
+  point_in_prism_test_points_normal_sidewall.items[16] = make_vector3(24.1685, 87.3292, 127.000); // continuation of edge from vertex
+  point_in_prism_test_points_normal_sidewall.items[17] = make_vector3(25.5827, 90.7434, 127.000); // continuation of edge from vertex
+  point_in_prism_test_points_normal_sidewall.items[18] = make_vector3(26.9969, 88.1576, 125.000); // continuation of edge from vertex
+  point_in_prism_test_points_normal_sidewall.items[19] = make_vector3(41.1477, 0.00000, 127.000); // vertex -> corner on top outside c
+  point_in_prism_test_points_normal_sidewall.items[20] = make_vector3(114.905, 51.7447, 0.00000); // vertex -> corner on bottom at edge of c
+  point_in_prism_test_points_normal_sidewall.items[21] = make_vector3(51.7447, 114.905, 0.00000); // vertex -> corner on bottom inside c
+  point_in_prism_test_points_normal_sidewall.items[22] = make_vector3(0.00000, 99.3401, 0.00000); // vertex -> corner on bottom outside c
+  point_in_prism_test_points_normal_sidewall.items[23] = make_vector3(0.00000, 0.00000, 0.00000); // origin
+  point_in_prism_test_points_normal_sidewall.items[24] = make_vector3(70.2440, 70.2440, 63.5000); // center of the c
 
   int point_in_prism_expected_normal_sidewall[point_in_prism_test_points_normal_sidewall.num_items];
-  point_in_prism_expected_normal_sidewall[0] = 1;
-  point_in_prism_expected_normal_sidewall[1] = 0;
-  point_in_prism_expected_normal_sidewall[2] = 0;
-  point_in_prism_expected_normal_sidewall[3] = 0;
-  point_in_prism_expected_normal_sidewall[4] = 1;
-  point_in_prism_expected_normal_sidewall[5] = 1;
-  point_in_prism_expected_normal_sidewall[6] = 0;
-  point_in_prism_expected_normal_sidewall[7] = 1;
-  point_in_prism_expected_normal_sidewall[8] = 1;
-  point_in_prism_expected_normal_sidewall[9] = 0;
+  point_in_prism_expected_normal_sidewall[0]  = 1; // interior point
+  point_in_prism_expected_normal_sidewall[1]  = 1; // interior point
+  point_in_prism_expected_normal_sidewall[2]  = 1; // point on external side face
+  point_in_prism_expected_normal_sidewall[3]  = 1; // point on internal side face
+  point_in_prism_expected_normal_sidewall[4]  = 1; // point on top face
+  point_in_prism_expected_normal_sidewall[5]  = 1; // point on bottom face
+  point_in_prism_expected_normal_sidewall[6]  = 1; // edge on top
+  point_in_prism_expected_normal_sidewall[7]  = 1; // edge on bottom
+  point_in_prism_expected_normal_sidewall[8]  = 1; // edge on side
+  point_in_prism_expected_normal_sidewall[9]  = 1; // vertex -> corner on top at edge of c
+  point_in_prism_expected_normal_sidewall[10] = 0; // continuation of edge from vertex
+  point_in_prism_expected_normal_sidewall[11] = 0; // continuation of edge from vertex
+  point_in_prism_expected_normal_sidewall[12] = 0; // continuation of edge from vertex
+  point_in_prism_expected_normal_sidewall[13] = 1; // continuation of edge from vertex
+  point_in_prism_expected_normal_sidewall[14] = 1; // vertex -> corner on top inside c
+  point_in_prism_expected_normal_sidewall[15] = 0; // continuation of edge from vertex
+  point_in_prism_expected_normal_sidewall[16] = 1; // continuation of edge from vertex
+  point_in_prism_expected_normal_sidewall[17] = 1; // continuation of edge from vertex
+  point_in_prism_expected_normal_sidewall[18] = 0; // continuation of edge from vertex
+  point_in_prism_expected_normal_sidewall[19] = 1; // vertex -> corner on top outside c
+  point_in_prism_expected_normal_sidewall[20] = 1; // vertex -> corner on bottom at edge of c
+  point_in_prism_expected_normal_sidewall[21] = 1; // vertex -> corner on bottom inside c
+  point_in_prism_expected_normal_sidewall[22] = 1; // vertex -> corner on bottom outside c
+  point_in_prism_expected_normal_sidewall[23] = 0; // origin
+  point_in_prism_expected_normal_sidewall[24] = 0; // center of the c
 
   int point_in_prism_actual_normal_sidewall[point_in_prism_test_points_normal_sidewall.num_items];
   for (int i = 0; i < point_in_prism_test_points_normal_sidewall.num_items; i++) {
@@ -634,15 +664,39 @@ int test_helper_functions_on_octagonal_c_prism() {
 
   for (int i = 0; i < point_in_prism_test_points_normal_sidewall.num_items; i++) {
     if (point_in_prism_actual_normal_sidewall[i] != point_in_prism_expected_normal_sidewall[i]) {
+      ctl_printf("At (%f, %f, %f) we expected point_in_fixed_pobjectp to return %i, but instead it returned %i\n", point_in_prism_test_points_normal_sidewall.items[i].x, point_in_prism_test_points_normal_sidewall.items[i].y, point_in_prism_test_points_normal_sidewall.items[i].z, point_in_prism_expected_normal_sidewall[i], point_in_prism_actual_normal_sidewall[i]);
       num_failed_normal++;
     }
   }
 
+  /*
   // test normal_to_prism
+  vector3_list normal_to_prism_test_points_normal_sidewall;
+  normal_to_prism_test_points_normal_sidewall.num_items = 1;
+  normal_to_prism_test_points_normal_sidewall.items = (vector3 *)malloc(normal_to_prism_test_points_normal_sidewall.num_items * sizeof(vector3));
+  normal_to_prism_test_points_normal_sidewall.items[0] = make_vector3(114.905, 88.7434, 0.0);
 
+  vector3 normal_to_prism_expected_normal_sidewall[normal_to_prism_test_points_normal_sidewall.num_items];
+  normal_to_prism_expected_normal_sidewall[0] = make_vector3(0, 0, 0);
+
+  vector3 normal_to_prism_actual_normal_sidewall[normal_to_prism_test_points_normal_sidewall.num_items];
+  for (int i = 0; i < normal_to_prism_test_points_normal_sidewall.num_items; i++) {
+    num_tests_normal++;
+    normal_to_prism_actual_normal_sidewall[i] = normal_to_fixed_object(normal_to_prism_test_points_normal_sidewall.items[i], octagon_c_normal_sidewall_geom_object);
+  }
+
+  for (int i = 0; i < normal_to_prism_test_points_normal_sidewall.num_items; i++) {
+    if (fabs(normal_to_prism_expected_normal_sidewall[i].x - normal_to_prism_actual_normal_sidewall[i].x) > 0.1
+        || fabs(normal_to_prism_expected_normal_sidewall[i].y - normal_to_prism_actual_normal_sidewall[i].y) > 0.1
+        || fabs(normal_to_prism_expected_normal_sidewall[i].z - normal_to_prism_actual_normal_sidewall[i].z) > 0.1) {
+      num_failed_normal++;
+      ctl_printf("The expected normal vector was (%f, %f, %f), but the actual normal vector was (%f, %f, %f\n", normal_to_prism_expected_normal_sidewall[i].x, normal_to_prism_expected_normal_sidewall[i].y, normal_to_prism_expected_normal_sidewall[i].z, normal_to_prism_actual_normal_sidewall[i].x, normal_to_prism_actual_normal_sidewall[i].y, normal_to_prism_actual_normal_sidewall[i].z);
+    }
+  }
+  */
   // test intersect_line_segment_with_prism
 
-  printf("prism helper function testing: \n\t%i/11 tests failed with normal sidewall\n\t%i/11 tests failed with tapered sidewall\n", num_failed_normal, num_failed_tapered);
+  printf("prism helper function testing: \n\t%i/%i tests failed with normal sidewall\n\t%i/%i tests failed with tapered sidewall\n", num_failed_normal, num_tests_normal, num_failed_tapered, num_tests_tapered);
 
   return num_failed_normal + num_failed_tapered;
 }
