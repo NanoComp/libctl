@@ -1961,6 +1961,7 @@ vector3 prism_vector_c2p(prism *prsm, vector3 vc) {
 #define IN_SEGMENT 2
 #define ON_RAY 3
 int intersect_line_with_segment(vector3 q0, vector3 q1, vector3 q2, vector3 u, double *s) {
+  if (vector3_nearly_equal(q0, q1, 1e-12) || vector3_nearly_equal(q0, q2, 1e-12)) return IN_SEGMENT;
   /* ||ux   q1x-q2x|| |s| = | q1x-q0x | */
   /* ||uy   q1y-q2y|| |t| = | q1y-q0y | */
   double M00 = u.x, M01 = q1.x - q2.x;
@@ -1975,7 +1976,7 @@ int intersect_line_with_segment(vector3 q0, vector3 q1, vector3 q2, vector3 u, d
     double dot = q01x * q02x + q01y * q02y;
     if (fabs(dot) < (1.0 - THRESH) * q01 * q02)
       return NON_INTERSECTING;
-    else if (dot <= 0.0) {
+    else if (dot < 0.0) {
       *s = 0.0;
       return IN_SEGMENT;
     }

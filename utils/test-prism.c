@@ -664,8 +664,77 @@ int test_helper_functions_on_octagonal_c_prism() {
 
   for (int i = 0; i < point_in_prism_test_points_normal_sidewall.num_items; i++) {
     if (point_in_prism_actual_normal_sidewall[i] != point_in_prism_expected_normal_sidewall[i]) {
-      ctl_printf("At (%f, %f, %f) we expected point_in_fixed_pobjectp to return %i, but instead it returned %i\n", point_in_prism_test_points_normal_sidewall.items[i].x, point_in_prism_test_points_normal_sidewall.items[i].y, point_in_prism_test_points_normal_sidewall.items[i].z, point_in_prism_expected_normal_sidewall[i], point_in_prism_actual_normal_sidewall[i]);
+      ctl_printf("At (%f, %f, %f) we expected point_in_fixed_pobjectp on the normal sidewall prism to return %i, but instead it returned %i\n", point_in_prism_test_points_normal_sidewall.items[i].x, point_in_prism_test_points_normal_sidewall.items[i].y, point_in_prism_test_points_normal_sidewall.items[i].z, point_in_prism_expected_normal_sidewall[i], point_in_prism_actual_normal_sidewall[i]);
       num_failed_normal++;
+    }
+  }
+
+  vector3_list point_in_prism_test_points_tapered_sidewall;
+  point_in_prism_test_points_tapered_sidewall.num_items = 25;
+  point_in_prism_test_points_tapered_sidewall.items = (vector3 *)malloc(point_in_prism_test_points_tapered_sidewall.num_items * sizeof(vector3));
+  point_in_prism_test_points_tapered_sidewall.items[0]  = make_vector3(46.446200000000005, 12.791350000000001, 63.500000000000000); // interior point
+  point_in_prism_test_points_tapered_sidewall.items[1]  = make_vector3(123.45257948434455, 98.285670515655440, 63.500000000000000); // interior point
+  point_in_prism_test_points_tapered_sidewall.items[2]  = make_vector3(102.72366312425248, 35.642282404302410, 63.500000000000000); // point on external side face
+  point_in_prism_test_points_tapered_sidewall.items[3]  = make_vector3(21.423995187964220, 70.244056207821420, 95.250000000000000); // point on internal side face
+  point_in_prism_test_points_tapered_sidewall.items[4]  = make_vector3(29.618783181268217, 110.86913318128589, 127.00000000000000); // point on top face
+  point_in_prism_test_points_tapered_sidewall.items[5]  = make_vector3(134.09200000000000, 96.690900000000000, 0.0000000000000000); // point on bottom face
+  point_in_prism_test_points_tapered_sidewall.items[6]  = make_vector3(20.037760250618970, 70.244062415642820, 127.00000000000000); // edge on top
+  point_in_prism_test_points_tapered_sidewall.items[7]  = make_vector3(70.244050000000000, 114.90500000000000, 0.0000000000000000); // edge on bottom
+  point_in_prism_test_points_tapered_sidewall.items[8]  = make_vector3(50.596305376632360, 22.810230125309488, 63.500000000000000); // edge on side
+  point_in_prism_test_points_tapered_sidewall.items[9]  = make_vector3(130.69912049055401, 101.28725051332967, 127.00000000000000); // vertex -> corner on top at edge of c  // failing
+  point_in_prism_test_points_tapered_sidewall.items[10] = make_vector3(130.62227962053330, 101.30253528002449, 127.99692620419043); // continuation of edge from vertex
+  point_in_prism_test_points_tapered_sidewall.items[11] = make_vector3(131.40622727174056, 100.58014373214311, 127.00000000000000); // continuation of edge from vertex
+  point_in_prism_test_points_tapered_sidewall.items[12] = make_vector3(131.62300162627434, 101.66993007518276, 127.00000000000000); // continuation of edge from vertex
+  point_in_prism_test_points_tapered_sidewall.items[13] = make_vector3(129.14497344366782, 101.59639296596830, 126.00307379580957); // continuation of edge from vertex
+  point_in_prism_test_points_tapered_sidewall.items[14] = make_vector3(20.037760250618966, 91.040214078020940, 127.00000000000000); // vertex -> corner on top inside c
+  point_in_prism_test_points_tapered_sidewall.items[15] = make_vector3(19.994147981293120, 91.058279066765540, 127.99888519167415); // continuation of edge from vertex
+  point_in_prism_test_points_tapered_sidewall.items[16] = make_vector3(19.330648063809882, 90.333112702498250, 127.00000000000000); // continuation of edge from vertex
+  point_in_prism_test_points_tapered_sidewall.items[17] = make_vector3(20.037760250618966, 92.040214078020940, 127.00000000000000); // continuation of edge from vertex
+  point_in_prism_test_points_tapered_sidewall.items[18] = make_vector3(20.788484706753895, 90.729250464799020, 126.00111480832585); // continuation of edge from vertex
+  point_in_prism_test_points_tapered_sidewall.items[19] = make_vector3(43.444489246735300, 5.5449397493810295, 127.00000000000000); // vertex -> corner on top outside c
+  point_in_prism_test_points_tapered_sidewall.items[20] = make_vector3(114.90500000000000, 51.744700000000000, 0.0000000000000000); // vertex -> corner on bottom at edge of c
+  point_in_prism_test_points_tapered_sidewall.items[21] = make_vector3(51.744700000000000, 114.90500000000000, 0.0000000000000000); // vertex -> corner on bottom inside c
+  point_in_prism_test_points_tapered_sidewall.items[22] = make_vector3(0.0000000000000000, 99.340100000000000, 0.0000000000000000); // vertex -> corner on bottom outside c
+  point_in_prism_test_points_tapered_sidewall.items[23] = make_vector3(0.0000000000000000, 0.0000000000000000, 0.0000000000000000); // origin
+  point_in_prism_test_points_tapered_sidewall.items[24] = make_vector3(70.244000000000000, 70.244000000000000, 63.500000000000000); // center of the c
+
+  int point_in_prism_expected_tapered_sidewall[point_in_prism_test_points_tapered_sidewall.num_items];
+  point_in_prism_expected_tapered_sidewall[0]  = 1; // interior point
+  point_in_prism_expected_tapered_sidewall[1]  = 1; // interior point
+  point_in_prism_expected_tapered_sidewall[2]  = 1; // point on external side face
+  point_in_prism_expected_tapered_sidewall[3]  = 1; // point on internal side face
+  point_in_prism_expected_tapered_sidewall[4]  = 1; // point on top face
+  point_in_prism_expected_tapered_sidewall[5]  = 1; // point on bottom face
+  point_in_prism_expected_tapered_sidewall[6]  = 1; // edge on top
+  point_in_prism_expected_tapered_sidewall[7]  = 1; // edge on bottom
+  point_in_prism_expected_tapered_sidewall[8]  = 1; // edge on side
+  point_in_prism_expected_tapered_sidewall[9]  = 1; // vertex -> corner on top at edge of c
+  point_in_prism_expected_tapered_sidewall[10] = 0; // continuation of edge from vertex
+  point_in_prism_expected_tapered_sidewall[11] = 0; // continuation of edge from vertex
+  point_in_prism_expected_tapered_sidewall[12] = 0; // continuation of edge from vertex
+  point_in_prism_expected_tapered_sidewall[13] = 1; // continuation of edge from vertex
+  point_in_prism_expected_tapered_sidewall[14] = 1; // vertex -> corner on top inside c
+  point_in_prism_expected_tapered_sidewall[15] = 0; // continuation of edge from vertex
+  point_in_prism_expected_tapered_sidewall[16] = 1; // continuation of edge from vertex
+  point_in_prism_expected_tapered_sidewall[17] = 1; // continuation of edge from vertex
+  point_in_prism_expected_tapered_sidewall[18] = 0; // continuation of edge from vertex
+  point_in_prism_expected_tapered_sidewall[19] = 1; // vertex -> corner on top outside c
+  point_in_prism_expected_tapered_sidewall[20] = 1; // vertex -> corner on bottom at edge of c
+  point_in_prism_expected_tapered_sidewall[21] = 1; // vertex -> corner on bottom inside c
+  point_in_prism_expected_tapered_sidewall[22] = 1; // vertex -> corner on bottom outside c
+  point_in_prism_expected_tapered_sidewall[23] = 0; // origin
+  point_in_prism_expected_tapered_sidewall[24] = 0; // center of the c
+
+  int point_in_prism_actual_tapered_sidewall[point_in_prism_test_points_tapered_sidewall.num_items];
+  for (int i = 0; i < point_in_prism_test_points_tapered_sidewall.num_items; i++) {
+    num_tests_tapered++;
+    point_in_prism_actual_tapered_sidewall[i] = point_in_fixed_pobjectp(point_in_prism_test_points_tapered_sidewall.items[i], &octagon_c_two_half_degree_sidewall_geom_object);
+  }
+
+  for (int i = 0; i < point_in_prism_test_points_tapered_sidewall.num_items; i++) {
+    if (point_in_prism_actual_tapered_sidewall[i] != point_in_prism_expected_tapered_sidewall[i]) {
+      ctl_printf("At (%f, %f, %f) we expected point_in_fixed_pobjectp on the tapered sidewall prism to return %i, but instead it returned %i\n", point_in_prism_test_points_tapered_sidewall.items[i].x, point_in_prism_test_points_tapered_sidewall.items[i].y, point_in_prism_test_points_tapered_sidewall.items[i].z, point_in_prism_expected_tapered_sidewall[i], point_in_prism_actual_tapered_sidewall[i]);
+      num_failed_tapered++;
     }
   }
 
