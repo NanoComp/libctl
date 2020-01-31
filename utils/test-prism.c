@@ -541,10 +541,11 @@ int test_octagon_c_base_sidewall_prisms_to_gnuplot() {
 /* prism with a concave octagonal c-shaped base with both a normal      */
 /* sidewall angle a 2.5-degree sidewall angle.                          */
 /************************************************************************/
+double relative_error(double actual, double expected) {
+  return fabs((actual-expected)/actual);
+}
+
 int test_helper_functions_on_octagonal_c_prism() {
-  double relative_error(double actual, double expected) {
-    return fabs((actual-expected)/actual);
-  }
   double tolerance = 5.0e-5;
 
   void *m = NULL;
