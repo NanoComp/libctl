@@ -1961,7 +1961,6 @@ vector3 prism_vector_c2p(prism *prsm, vector3 vc) {
 #define IN_SEGMENT 2
 #define ON_RAY 3
 int intersect_line_with_segment(vector3 q0, vector3 q1, vector3 q2, vector3 u, double *s) {
-  if (vector3_nearly_equal(q0, q1, 1e-12) || vector3_nearly_equal(q0, q2, 1e-12)) return IN_SEGMENT;
   /* ||ux   q1x-q2x|| |s| = | q1x-q0x | */
   /* ||uy   q1y-q2y|| |t| = | q1y-q0y | */
   double M00 = u.x, M01 = q1.x - q2.x;
@@ -1971,6 +1970,7 @@ int intersect_line_with_segment(vector3 q0, vector3 q1, vector3 q2, vector3 u, d
   double DetM = M00 * M11 - M01 * M10;
   double L2 = M01 * M01 + M11 * M11; // squared length of edge, used to set length scale
   if (fabs(DetM) < 1.0e-10 * L2) {   // d zero or nearly parallel to edge
+    if (vector3_nearly_equal(q0, q1, 1e-12) || vector3_nearly_equal(q0, q2, 1e-12)) return IN_SEGMENT;
     double q01x = q0.x - q1.x, q01y = q0.y - q1.y, q01 = sqrt(q01x * q01x + q01y * q01y);
     double q02x = q0.x - q2.x, q02y = q0.y - q2.y, q02 = sqrt(q02x * q02x + q02y * q02y);
     double dot = q01x * q02x + q01y * q02y;
