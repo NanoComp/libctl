@@ -741,31 +741,175 @@ int test_helper_functions_on_octagonal_c_prism() {
     }
   }
 
-
   // test normal_to_prism
   vector3_list normal_to_prism_test_points_normal_sidewall;
-  normal_to_prism_test_points_normal_sidewall.num_items = 1;
+  normal_to_prism_test_points_normal_sidewall.num_items = 30;
   normal_to_prism_test_points_normal_sidewall.items = (vector3 *)malloc(normal_to_prism_test_points_normal_sidewall.num_items * sizeof(vector3));
-  normal_to_prism_test_points_normal_sidewall.items[0] = make_vector3(114.905, 88.7434, 0.0);
+  normal_to_prism_test_points_normal_sidewall.items[0]  = make_vector3(98.2887, 98.2887, 63.5000); // points around sidewalls
+  normal_to_prism_test_points_normal_sidewall.items[1]  = make_vector3(70.2441, 109.905, 63.5000);
+  normal_to_prism_test_points_normal_sidewall.items[2]  = make_vector3(42.1992, 98.2886, 63.5000);
+  normal_to_prism_test_points_normal_sidewall.items[3]  = make_vector3(30.5827, 70.2441, 63.5000);
+  normal_to_prism_test_points_normal_sidewall.items[4]  = make_vector3(42.1992, 42.1992, 63.5000);
+  normal_to_prism_test_points_normal_sidewall.items[5]  = make_vector3(70.2441, 30.5827, 63.5000);
+  normal_to_prism_test_points_normal_sidewall.items[6]  = make_vector3(98.2886, 42.1992, 63.5000);
+  normal_to_prism_test_points_normal_sidewall.items[7]  = make_vector3(129.610, 51.0656, 63.5000);
+  normal_to_prism_test_points_normal_sidewall.items[8]  = make_vector3(123.450, 17.0383, 63.5000);
+  normal_to_prism_test_points_normal_sidewall.items[9]  = make_vector3(70.2439, -5.0000, 63.5000);
+  normal_to_prism_test_points_normal_sidewall.items[10] = make_vector3(17.0383, 17.0383, 63.5000);
+  normal_to_prism_test_points_normal_sidewall.items[11] = make_vector3(-5.0000, 70.2439, 63.5000);
+  normal_to_prism_test_points_normal_sidewall.items[12] = make_vector3(17.0383, 123.450, 63.5000);
+  normal_to_prism_test_points_normal_sidewall.items[13] = make_vector3(70.2439, 145.488, 63.5000);
+  normal_to_prism_test_points_normal_sidewall.items[14] = make_vector3(123.450, 123.450, 63.5000);
+  normal_to_prism_test_points_normal_sidewall.items[15] = make_vector3(129.610, 89.4223, 63.5000);
+  normal_to_prism_test_points_normal_sidewall.items[16] = make_vector3(110.869, 110.869, -5.0000); // points off bottom face
+  normal_to_prism_test_points_normal_sidewall.items[17] = make_vector3(70.2440, 127.697, -5.0000);
+  normal_to_prism_test_points_normal_sidewall.items[18] = make_vector3(29.6188, 110.869, -5.0000);
+  normal_to_prism_test_points_normal_sidewall.items[19] = make_vector3(12.7914, 70.2440, -5.0000);
+  normal_to_prism_test_points_normal_sidewall.items[20] = make_vector3(29.6188, 29.6188, -5.0000);
+  normal_to_prism_test_points_normal_sidewall.items[21] = make_vector3(70.2440, 12.7914, -5.0000);
+  normal_to_prism_test_points_normal_sidewall.items[22] = make_vector3(110.869, 29.6188, -5.0000);
+  // normal_to_prism_test_points_normal_sidewall.items[23] = make_vector3(108.747, 112.991, 132.000); // failing // points off top face
+  normal_to_prism_test_points_normal_sidewall.items[23] = make_vector3(110.869, 110.869, 132.000);
+  normal_to_prism_test_points_normal_sidewall.items[24] = make_vector3(70.2440, 127.697, 132.000); // failing
+  normal_to_prism_test_points_normal_sidewall.items[25] = make_vector3(29.6188, 110.869, 132.000);
+  normal_to_prism_test_points_normal_sidewall.items[26] = make_vector3(12.7914, 70.2440, 132.000); // failing
+  normal_to_prism_test_points_normal_sidewall.items[27] = make_vector3(29.6188, 29.6188, 132.000); // failing
+  normal_to_prism_test_points_normal_sidewall.items[28] = make_vector3(70.2440, 12.7914, 132.000); // failing
+  normal_to_prism_test_points_normal_sidewall.items[29] = make_vector3(108.747, 27.4968, 132.000);
 
   vector3 normal_to_prism_expected_normal_sidewall[normal_to_prism_test_points_normal_sidewall.num_items];
-  normal_to_prism_expected_normal_sidewall[0] = make_vector3(0, 0, 0);
+  normal_to_prism_expected_normal_sidewall[0]  = make_vector3(-0.707107, -0.707107, 0.0000000); // points around sidewalls
+  normal_to_prism_expected_normal_sidewall[1]  = make_vector3(0.0000000, -1.000000, 0.0000000);
+  normal_to_prism_expected_normal_sidewall[2]  = make_vector3(0.7071010, -0.707112, 0.0000000);
+  normal_to_prism_expected_normal_sidewall[3]  = make_vector3(1.0000000, 0.0000000, 0.0000000);
+  normal_to_prism_expected_normal_sidewall[4]  = make_vector3(0.7071070, 0.7071070, 0.0000000);
+  normal_to_prism_expected_normal_sidewall[5]  = make_vector3(0.0000000, 1.0000000, 0.0000000);
+  normal_to_prism_expected_normal_sidewall[6]  = make_vector3(-0.707112, 0.7071010, 0.0000000);
+  normal_to_prism_expected_normal_sidewall[7]  = make_vector3(0.3826890, 0.9238770, 0.0000000);
+  normal_to_prism_expected_normal_sidewall[8]  = make_vector3(0.7071050, -0.707108, 0.0000000);
+  normal_to_prism_expected_normal_sidewall[9]  = make_vector3(0.0000000, -1.000000, 0.0000000);
+  normal_to_prism_expected_normal_sidewall[10] = make_vector3(-0.707107, -0.707107, 0.0000000);
+  normal_to_prism_expected_normal_sidewall[11] = make_vector3(-1.000000, 0.0000000, 0.0000000);
+  normal_to_prism_expected_normal_sidewall[12] = make_vector3(-0.707108, 0.7071050, 0.0000000);
+  normal_to_prism_expected_normal_sidewall[13] = make_vector3(0.0000000, 1.0000000, 0.0000000);
+  normal_to_prism_expected_normal_sidewall[14] = make_vector3(0.7071070, 0.7071070, 0.0000000);
+  normal_to_prism_expected_normal_sidewall[15] = make_vector3(0.3826800, -0.923881, 0.0000000);
+  normal_to_prism_expected_normal_sidewall[16] = make_vector3(0.0000000, 0.0000000, -1.000000); // points off bottom face
+  normal_to_prism_expected_normal_sidewall[17] = make_vector3(0.0000000, 0.0000000, -1.000000);
+  normal_to_prism_expected_normal_sidewall[18] = make_vector3(0.0000000, 0.0000000, -1.000000);
+  normal_to_prism_expected_normal_sidewall[19] = make_vector3(0.0000000, 0.0000000, -1.000000);
+  normal_to_prism_expected_normal_sidewall[20] = make_vector3(0.0000000, 0.0000000, -1.000000);
+  normal_to_prism_expected_normal_sidewall[21] = make_vector3(0.0000000, 0.0000000, -1.000000);
+  normal_to_prism_expected_normal_sidewall[22] = make_vector3(0.0000000, 0.0000000, -1.000000);
+  normal_to_prism_expected_normal_sidewall[23] = make_vector3(0.0000000, 0.0000000, 1.0000000); // failing  // points off top face
+  normal_to_prism_expected_normal_sidewall[24] = make_vector3(0.0000000, 0.0000000, 1.0000000); // failing
+  normal_to_prism_expected_normal_sidewall[25] = make_vector3(0.0000000, 0.0000000, 1.0000000);
+  normal_to_prism_expected_normal_sidewall[26] = make_vector3(0.0000000, 0.0000000, 1.0000000); // failing
+  normal_to_prism_expected_normal_sidewall[27] = make_vector3(0.0000000, 0.0000000, 1.0000000); // failing
+  normal_to_prism_expected_normal_sidewall[28] = make_vector3(0.0000000, 0.0000000, 1.0000000); // failing
+  normal_to_prism_expected_normal_sidewall[29] = make_vector3(0.0000000, 0.0000000, 1.0000000);
 
   vector3 normal_to_prism_actual_normal_sidewall[normal_to_prism_test_points_normal_sidewall.num_items];
   for (int i = 0; i < normal_to_prism_test_points_normal_sidewall.num_items; i++) {
     num_tests_normal++;
-    normal_to_prism_actual_normal_sidewall[i] = normal_to_fixed_object(normal_to_prism_test_points_normal_sidewall.items[i], octagon_c_normal_sidewall_geom_object);
+    normal_to_prism_actual_normal_sidewall[i] = unit_vector3(normal_to_object(normal_to_prism_test_points_normal_sidewall.items[i], octagon_c_normal_sidewall_geom_object));
   }
 
   for (int i = 0; i < normal_to_prism_test_points_normal_sidewall.num_items; i++) {
-    if (fabs(normal_to_prism_expected_normal_sidewall[i].x - normal_to_prism_actual_normal_sidewall[i].x) > 0.1
-        || fabs(normal_to_prism_expected_normal_sidewall[i].y - normal_to_prism_actual_normal_sidewall[i].y) > 0.1
-        || fabs(normal_to_prism_expected_normal_sidewall[i].z - normal_to_prism_actual_normal_sidewall[i].z) > 0.1) {
+    if (!vector3_nearly_equal(normal_to_prism_expected_normal_sidewall[i], normal_to_prism_actual_normal_sidewall[i], tolerance)
+        && !vector3_nearly_equal(normal_to_prism_expected_normal_sidewall[i], vector3_scale(-1, normal_to_prism_actual_normal_sidewall[i]), tolerance)) {
       num_failed_normal++;
-      ctl_printf("\tThe expected normal vector was (%f, %f, %f), but the actual\n\t\tnormal vector was (%f, %f, %f\n", normal_to_prism_expected_normal_sidewall[i].x, normal_to_prism_expected_normal_sidewall[i].y, normal_to_prism_expected_normal_sidewall[i].z, normal_to_prism_actual_normal_sidewall[i].x, normal_to_prism_actual_normal_sidewall[i].y, normal_to_prism_actual_normal_sidewall[i].z);
+      vector3 test_point = normal_to_prism_test_points_normal_sidewall.items[i];
+      vector3 expected = normal_to_prism_expected_normal_sidewall[i];
+      vector3 actual = normal_to_prism_actual_normal_sidewall[i];
+      ctl_printf("\tAt (%f, %f, %f) the expected normal vector was (%f, %f, %f), but the actual\n\t\tnormal vector was (%f, %f, %f\n", test_point.x, test_point.y, test_point.z, expected.x, expected.y, expected.z, actual.x, actual.y, actual.z);
     }
   }
 
+  vector3_list normal_to_prism_test_points_tapered_sidewall;
+  normal_to_prism_test_points_tapered_sidewall.num_items = 30;
+  normal_to_prism_test_points_tapered_sidewall.items = (vector3 *)malloc(normal_to_prism_test_points_tapered_sidewall.num_items * sizeof(vector3));
+  normal_to_prism_test_points_tapered_sidewall.items[0]  = make_vector3(106.256, 108.378, 63.2819); // points around sidewalls
+  normal_to_prism_test_points_tapered_sidewall.items[1]  = make_vector3(70.2441, 122.673, 63.2819);
+  normal_to_prism_test_points_tapered_sidewall.items[2]  = make_vector3(33.1711, 107.317, 63.2819);
+  normal_to_prism_test_points_tapered_sidewall.items[3]  = make_vector3(17.8150, 70.2441, 63.2819);
+  normal_to_prism_test_points_tapered_sidewall.items[4]  = make_vector3(33.1711, 33.1711, 63.2819);
+  normal_to_prism_test_points_tapered_sidewall.items[5]  = make_vector3(70.2441, 17.8150, 63.2819);
+  normal_to_prism_test_points_tapered_sidewall.items[6]  = make_vector3(106.256, 32.1101, 63.2819);
+  normal_to_prism_test_points_tapered_sidewall.items[7]  = make_vector3(123.663, 39.7093, 63.2819);
+  normal_to_prism_test_points_tapered_sidewall.items[8]  = make_vector3(113.360, 25.0055, 63.2819);
+  normal_to_prism_test_points_tapered_sidewall.items[9]  = make_vector3(70.2439, 7.76771, 63.2819);
+  normal_to_prism_test_points_tapered_sidewall.items[10] = make_vector3(26.0665, 26.0665, 63.2819);
+  normal_to_prism_test_points_tapered_sidewall.items[11] = make_vector3(7.76771, 70.2439, 63.2819);
+  normal_to_prism_test_points_tapered_sidewall.items[12] = make_vector3(26.0665, 114.421, 63.2819);
+  normal_to_prism_test_points_tapered_sidewall.items[13] = make_vector3(70.2439, 132.720, 63.2819);
+  normal_to_prism_test_points_tapered_sidewall.items[14] = make_vector3(113.360, 115.482, 63.2819);
+  normal_to_prism_test_points_tapered_sidewall.items[15] = make_vector3(123.663, 100.779, 63.2819);
+  normal_to_prism_test_points_tapered_sidewall.items[16] = make_vector3(110.869, 110.869, -5.0000); // points off bottom face
+  normal_to_prism_test_points_tapered_sidewall.items[17] = make_vector3(70.2440, 127.697, -5.0000);
+  normal_to_prism_test_points_tapered_sidewall.items[18] = make_vector3(29.6188, 110.869, -5.0000);
+  normal_to_prism_test_points_tapered_sidewall.items[19] = make_vector3(12.7914, 70.2440, -5.0000);
+  normal_to_prism_test_points_tapered_sidewall.items[20] = make_vector3(29.6188, 29.6188, -5.0000);
+  normal_to_prism_test_points_tapered_sidewall.items[21] = make_vector3(70.2440, 12.7914, -5.0000);
+  normal_to_prism_test_points_tapered_sidewall.items[22] = make_vector3(110.869, 29.6188, -5.0000);
+  normal_to_prism_test_points_tapered_sidewall.items[23] = make_vector3(108.747, 112.991, 132.000); // points off top face
+  normal_to_prism_test_points_tapered_sidewall.items[24] = make_vector3(70.2440, 127.697, 132.000);
+  normal_to_prism_test_points_tapered_sidewall.items[25] = make_vector3(29.6188, 110.869, 132.000);
+  normal_to_prism_test_points_tapered_sidewall.items[26] = make_vector3(12.7914, 70.2440, 132.000);
+  normal_to_prism_test_points_tapered_sidewall.items[27] = make_vector3(29.6188, 29.6188, 132.000);
+  normal_to_prism_test_points_tapered_sidewall.items[28] = make_vector3(70.2440, 12.7914, 132.000);
+  normal_to_prism_test_points_tapered_sidewall.items[29] = make_vector3(108.747, 27.4968, 132.000);
+
+  vector3 normal_to_prism_expected_tapered_sidewall[normal_to_prism_test_points_tapered_sidewall.num_items];
+  normal_to_prism_expected_tapered_sidewall[0]  = make_vector3(0.7064340, 0.7064340, -0.0436194); // points off top face
+  normal_to_prism_expected_tapered_sidewall[1]  = make_vector3(0.0000000, 0.9990480, -0.0436194);
+  normal_to_prism_expected_tapered_sidewall[2]  = make_vector3(-0.706428, 0.7064390, -0.0436194);
+  normal_to_prism_expected_tapered_sidewall[3]  = make_vector3(-0.999048, 0.0000000, -0.0436194);
+  normal_to_prism_expected_tapered_sidewall[4]  = make_vector3(-0.706434, -0.706434, -0.0436194);
+  normal_to_prism_expected_tapered_sidewall[5]  = make_vector3(0.0000000, -0.999048, -0.0436194);
+  normal_to_prism_expected_tapered_sidewall[6]  = make_vector3(0.7064390, -0.706428, -0.0436194);
+  normal_to_prism_expected_tapered_sidewall[7]  = make_vector3(-0.382325, -0.922998, -0.0436194);
+  normal_to_prism_expected_tapered_sidewall[8]  = make_vector3(-0.706432, 0.7064350, -0.0436194);
+  normal_to_prism_expected_tapered_sidewall[9]  = make_vector3(0.0000000, 0.9990480, -0.0436194);
+  normal_to_prism_expected_tapered_sidewall[10] = make_vector3(0.7064340, 0.7064340, -0.0436194);
+  normal_to_prism_expected_tapered_sidewall[11] = make_vector3(0.9990480, 0.0000000, -0.0436194);
+  normal_to_prism_expected_tapered_sidewall[12] = make_vector3(0.7064350, -0.706432, -0.0436194);
+  normal_to_prism_expected_tapered_sidewall[13] = make_vector3(0.0000000, -0.999048, -0.0436194);
+  normal_to_prism_expected_tapered_sidewall[14] = make_vector3(-0.706434, -0.706434, -0.0436194);
+  normal_to_prism_expected_tapered_sidewall[15] = make_vector3(-0.382315, 0.9230020, -0.0436194);
+  normal_to_prism_expected_tapered_sidewall[16] = make_vector3(0.0000000, 0.0000000, -1.000000); // points off bottom face
+  normal_to_prism_expected_tapered_sidewall[17] = make_vector3(0.0000000, 0.0000000, -1.000000);
+  normal_to_prism_expected_tapered_sidewall[18] = make_vector3(0.0000000, 0.0000000, -1.000000);
+  normal_to_prism_expected_tapered_sidewall[19] = make_vector3(0.0000000, 0.0000000, -1.000000);
+  normal_to_prism_expected_tapered_sidewall[20] = make_vector3(0.0000000, 0.0000000, -1.000000);
+  normal_to_prism_expected_tapered_sidewall[21] = make_vector3(0.0000000, 0.0000000, -1.000000);
+  normal_to_prism_expected_tapered_sidewall[22] = make_vector3(0.0000000, 0.0000000, -1.000000);
+  normal_to_prism_expected_tapered_sidewall[23] = make_vector3(0.0000000, 0.0000000, 1.0000000);  // points off top face
+  normal_to_prism_expected_tapered_sidewall[24] = make_vector3(0.0000000, 0.0000000, 1.0000000);
+  normal_to_prism_expected_tapered_sidewall[25] = make_vector3(0.0000000, 0.0000000, 1.0000000);
+  normal_to_prism_expected_tapered_sidewall[26] = make_vector3(0.0000000, 0.0000000, 1.0000000);
+  normal_to_prism_expected_tapered_sidewall[27] = make_vector3(0.0000000, 0.0000000, 1.0000000);
+  normal_to_prism_expected_tapered_sidewall[28] = make_vector3(0.0000000, 0.0000000, 1.0000000);
+  normal_to_prism_expected_tapered_sidewall[29] = make_vector3(0.0000000, 0.0000000, 1.0000000);
+
+  vector3 normal_to_prism_actual_tapered_sidewall[normal_to_prism_test_points_tapered_sidewall.num_items];
+  for (int i = 0; i < normal_to_prism_test_points_tapered_sidewall.num_items; i++) {
+    num_tests_tapered++;
+    normal_to_prism_actual_tapered_sidewall[i] = unit_vector3(normal_to_object(normal_to_prism_test_points_tapered_sidewall.items[i], octagon_c_two_half_degree_sidewall_geom_object));
+  }
+
+  for (int i = 0; i < normal_to_prism_test_points_tapered_sidewall.num_items; i++) {
+    if (!vector3_nearly_equal(normal_to_prism_expected_tapered_sidewall[i], normal_to_prism_actual_tapered_sidewall[i], tolerance)
+        && !vector3_nearly_equal(normal_to_prism_expected_tapered_sidewall[i], vector3_scale(-1, normal_to_prism_actual_tapered_sidewall[i]), tolerance)) {
+      num_failed_tapered++;
+      vector3 test_point = normal_to_prism_test_points_tapered_sidewall.items[i];
+      vector3 expected = normal_to_prism_expected_tapered_sidewall[i];
+      vector3 actual = normal_to_prism_actual_tapered_sidewall[i];
+      ctl_printf("\tAt (%f, %f, %f) the expected normal vector was (%f, %f, %f), but the actual\n\t\tnormal vector was (%f, %f, %f\n", test_point.x, test_point.y, test_point.z, expected.x, expected.y, expected.z, actual.x, actual.y, actual.z);
+    }
+  }
+
+  /*
   // test intersect_line_segment_with_prism
   vector3_list intersect_line_with_prism_test_points_normal_sidewall;
   intersect_line_with_prism_test_points_normal_sidewall.num_items = 1;
@@ -805,7 +949,7 @@ int test_helper_functions_on_octagonal_c_prism() {
       num_failed_normal++;
     }
   }
-
+  */
   printf("\n\tprism helper function testing summary: \n\t\t%i/%i tests failed with normal sidewall\n\t\t%i/%i tests failed with tapered sidewall\n", num_failed_normal, num_tests_normal, num_failed_tapered, num_tests_tapered);
 
   return num_failed_normal + num_failed_tapered;
