@@ -2306,13 +2306,16 @@ double min_distance_to_quadrilateral(vector3 p, vector3 o, vector3 v1, vector3 v
 double min_distance_to_prism_roof_or_ceiling(vector3 pp, prism *prsm, int fc) {
   int num_vertices = prsm->vertices_bottom_p.num_items;
   vector3 op = {0.0, 0.0, 0.0}; // origin of floor/ceiling
-  vector3 *vps;
+  vector3 vps[num_vertices];
   if (fc == 1) {
-    vps = prsm->vertices_top_p.items;
+    memcpy(vps, prsm->vertices_top_p.items, num_vertices * sizeof(vector3));
+    for (int i = 0; i < num_vertices; i++) {
+      vps[i].z = 0;
+    }
     op.z = prsm->height;
   }
   else {
-    vps = prsm->vertices_bottom_p.items;
+    memcpy(vps, prsm->vertices_bottom_p.items, num_vertices * sizeof(vector3));
   }
   vector3 zhatp = {0, 0, 1.0};
   double s = normal_distance_to_plane(pp, op, vps[0], vps[1], zhatp, 0);
