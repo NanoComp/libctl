@@ -2148,47 +2148,39 @@ static int dcmp(const void *pd1, const void *pd2) {
 /* the return value is the number of intersections.               */
 /******************************************************************/
 int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist) {
+  double tolerance = 1e-8;
   vector3 pp = prism_coordinate_c2p(prsm, pc);
   vector3 dp = prism_vector_c2p(prsm, dc);
   vector3 *vps_bottom = prsm->vertices_bottom_p.items;
-  vector3 *vps_diff_scaled = prsm->top_polygon_diff_vectors_scaled_p.items;
   vector3 *vps_top = prsm->vertices_top_p.items;
   int num_vertices = prsm->vertices_bottom_p.num_items;
   double height = prsm->height;
 
-  vector3 nodes_at_z[num_vertices];
-  int nv;
-  for (nv = 0; nv < num_vertices; nv++) {
-    nodes_at_z[nv] = vector3_plus(vps_bottom[nv], vector3_scale(pp.z, vps_diff_scaled[nv]));
-  }
-
-  // use length of first polygon edge as a length scale for judging
-  // lengths to be small or large
-  double length_scale = vector3_norm(vector3_minus(nodes_at_z[1], nodes_at_z[0]));
-
   // identify intersections with prism side faces
   int num_intersections = 0;
+  int nv;
   for (nv = 0; nv < num_vertices; nv++) {
     int nvp1 = nv + 1;
     if (nvp1 == num_vertices) nvp1 = 0;
 
-    // first solve the in-plane portion of the problem: determine the
-    // intersection of the XY-plane projection of the line with the
-    // polygon edge between vertices (nv,nv+1).
-    double s;
-    int status = intersect_line_with_segment(pp, nodes_at_z[nv], nodes_at_z[nvp1], dp, &s);
-    if (status == NON_INTERSECTING || status == ON_RAY) continue;
+    // checks if dp is parallel to the plane of the prism side face under consideration
+    vector3 v1 = vector3_minus(vps_bottom[nvp1], vps_bottom[nv]);
+    vector3 v2 = vector3_minus(vps_top[nv], vps_bottom[nv]);
+    if (fabs(vector3_dot(dp, vector3_cross(v1, v2))) <= tolerance) continue;
 
-    // OK, we know the XY-plane projection of the line intersects the polygon edge;
-    // now go back to 3D, ask for the z-coordinate at which the line intersects
-    // the z-axis extrusion of the edge, and determine whether this point lies
-    // inside or outside the height of the prism.
-    double zp_intersect = pp.z + s * dp.z;
-    double AbsTol = 1.0e-7 * length_scale;
-    double zp_min = 0.0 - AbsTol;
-    double zp_max = height + AbsTol;
-    if ((zp_intersect < zp_min) || (zp_intersect > zp_max)) continue;
-
+    // to find the intersection point pp + s*dp between the line and the
+    // prism side face, we will solve the vector equation
+    //             pp + s*dp = o + t*v1 + u*v2
+    // where o is vps_bottom[nv], v1 is vps_bottom[nvp1]-vps_bottom[nv],
+    // v2 is vps_top[nv]-vps_bottom[nv], and 0 <= t <= 1, 0 <= u <= 1.
+    matrix3x3 M;
+    M.c0 = v1;
+    M.c1 = v2;
+    M.c2 = vector3_scale(-1, dp);
+    vector3 RHS = vector3_minus(dp, vps_bottom[nv]);
+    vector3 tus = matrix3x3_vector3_mult(matrix3x3_inverse(M), RHS);
+    if (tus.x < -tolerance || tus.x > 1+tolerance || tus.y < -tolerance || tus.y > 1+tolerance) continue;
+    double s = tus.z;
     slist[num_intersections++] = s;
   }
 
@@ -2203,7 +2195,20 @@ int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist
       slist[num_intersections++] = s;
     }
 
+  // sort slist
   qsort((void *)slist, num_intersections, sizeof(double), dcmp);
+  // remove duplicates from slist
+  int num_unique_elements = 1;
+  double slist_unique[num_vertices+2];
+  slist_unique[0] = slist[0];
+  for (nv = 1; nv < num_vertices; nv++) {
+    if (fabs(slist[nv] - slist[nv-1]) > tolerance) {
+      slist_unique[num_unique_elements] = slist[nv];
+      num_unique_elements++;
+    }
+  }
+  slist = slist_unique;
+  num_intersections = num_unique_elements;
   return num_intersections;
 }
 
