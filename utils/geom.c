@@ -2177,7 +2177,7 @@ int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist
     M.c0 = v1;
     M.c1 = v2;
     M.c2 = vector3_scale(-1, dp);
-    vector3 RHS = vector3_minus(dp, vps_bottom[nv]);
+    vector3 RHS = vector3_minus(pp, vps_bottom[nv]);
     vector3 tus = matrix3x3_vector3_mult(matrix3x3_inverse(M), RHS);
     if (tus.x < -tolerance || tus.x > 1+tolerance || tus.y < -tolerance || tus.y > 1+tolerance) continue;
     double s = tus.z;
