@@ -265,7 +265,7 @@ vector3 standardize(vector3 v) {
 }
 
 /************************************************************************/
-/* first unit test: check inclusion of randomly-generated points        */
+/* 1st unit test: check inclusion of randomly-generated points          */
 /************************************************************************/
 int test_point_inclusion(geometric_object the_block, geometric_object the_prism, int num_tests,
                          int write_log) {
@@ -300,7 +300,7 @@ int test_point_inclusion(geometric_object the_block, geometric_object the_prism,
 }
 
 /************************************************************************/
-/* second unit test: check calculation of normals to objects            */
+/* 2nd unit test: check calculation of normals to objects               */
 /************************************************************************/
 #define PFACE 0.1
 int test_normal_to_object(geometric_object the_block, geometric_object the_prism, int num_tests,
@@ -338,7 +338,7 @@ int test_normal_to_object(geometric_object the_block, geometric_object the_prism
 }
 
 /************************************************************************/
-/* third unit test: check-line segment intersections                   */
+/* 3rd unit test: check-line segment intersections                      */
 /************************************************************************/
 int test_line_segment_intersection(geometric_object the_block, geometric_object the_prism,
                                    int num_tests, int write_log) {
@@ -378,7 +378,124 @@ int test_line_segment_intersection(geometric_object the_block, geometric_object 
 }
 
 /************************************************************************/
-/* fourth unit test: check of point in polygon test with slanted H     */
+/* fourth unit test: running some particular test points that are known */
+/* to be particularly troublesome in test_line_segment_intersection.    */
+/************************************************************************/
+/*
+int custom_debug() {
+  void *m = NULL;
+  int num_nodes = 4;
+  vector3 nodes[num_nodes];
+  nodes[0] = make_vector3(-0.25, -0.5, -0.75);
+  nodes[1] = make_vector3(0.25, -0.5, -0.75);
+  nodes[2] = make_vector3(0.25, 0.5, -0.75);
+  nodes[3] = make_vector3(-0.25, 0.5, -0.75);
+  double height = 1.5;
+  vector3 zhat = make_vector3(0, 0, 1);
+  double sidewall_angle = 0;
+
+  geometric_object the_prism = make_prism(m, nodes, num_nodes, height, zhat, sidewall_angle);
+
+  vector3_list custom_debug_intersections_test_points;
+  custom_debug_intersections_test_points.num_items = 12;
+  custom_debug_intersections_test_points.items = (vector3 *)malloc(custom_debug_intersections_test_points.num_items * sizeof(vector3));
+  custom_debug_intersections_test_points.items[0]  = make_vector3(1.697446e-02, 3.062249e-01, 4.905154e-01);
+  custom_debug_intersections_test_points.items[1]  = make_vector3(2.976338e-03, 2.853139e-02, -3.231677e-02);
+  custom_debug_intersections_test_points.items[2]  = make_vector3(-2.927777e-01, -7.719853e-02, 5.238586e-01);
+  custom_debug_intersections_test_points.items[3]  = make_vector3(4.144918e-01, -3.341994e-01, 6.344019e-01);
+  custom_debug_intersections_test_points.items[4]  = make_vector3(-1.384952e-01, -5.921033e-01, -1.186381e+00); // failing
+  custom_debug_intersections_test_points.items[5]  = make_vector3(4.791191e-03, -4.208515e-01, -6.405487e-01);
+  custom_debug_intersections_test_points.items[6]  = make_vector3(-2.284288e-01, 8.653566e-01, -1.549580e-01);
+  custom_debug_intersections_test_points.items[7]  = make_vector3(-3.231172e-01, 1.423690e-01, -3.185766e-01); // failing
+  custom_debug_intersections_test_points.items[8]  = make_vector3(-4.858779e-02, -4.514021e-01, -6.305032e-01);
+  custom_debug_intersections_test_points.items[9]  = make_vector3(-4.476677e-01, 7.027821e-01, -6.134772e-01);
+  custom_debug_intersections_test_points.items[10] = make_vector3(-3.604339e-01, 9.245385e-02, -2.974320e-01);
+  custom_debug_intersections_test_points.items[11] = make_vector3(-2.619019e-01, -5.164794e-01, -1.361271e-01);
+
+  vector3_list custom_debug_intersections_test_vectors;
+  custom_debug_intersections_test_vectors.num_items = custom_debug_intersections_test_points.num_items;
+  custom_debug_intersections_test_vectors.items = (vector3 *)malloc(custom_debug_intersections_test_vectors.num_items * sizeof(vector3));
+  custom_debug_intersections_test_vectors.items[0]  = make_vector3(4.799756e-01, -7.340031e-01, 4.804819e-01);
+  custom_debug_intersections_test_vectors.items[1]  = make_vector3(3.821483e-01, 8.852039e-01, 2.652860e-01);
+  custom_debug_intersections_test_vectors.items[2]  = make_vector3(4.350841e-01, 6.323497e-01, 6.409647e-01);
+  custom_debug_intersections_test_vectors.items[3]  = make_vector3(-8.691933e-01, 4.836753e-01, 1.027673e-01);
+  custom_debug_intersections_test_vectors.items[4]  = make_vector3(-2.124709e-01, 2.241148e-01, 9.511197e-01 ); // failing
+  custom_debug_intersections_test_vectors.items[5]  = make_vector3(-7.657534e-01, 3.103869e-02, 6.423849e-01 );
+  custom_debug_intersections_test_vectors.items[6]  = make_vector3(5.331027e-01, -8.172830e-01, 2.187464e-01);
+  custom_debug_intersections_test_vectors.items[7]  = make_vector3(2.052464e-01, 9.019452e-01, 3.799588e-01); // failing
+  custom_debug_intersections_test_vectors.items[8]  = make_vector3(6.123326e-01, 5.255650e-01, 5.906186e-01);
+  custom_debug_intersections_test_vectors.items[9]  = make_vector3(9.018752e-01, -3.385689e-01, 2.683135e-01);
+  custom_debug_intersections_test_vectors.items[10] = make_vector3(6.671782e-01, -7.356403e-01, 1.170753e-01);
+  custom_debug_intersections_test_vectors.items[11] = make_vector3(5.628490e-01, 8.150067e-01, 1.377139e-01);
+
+  double custom_debug_intersections_a[custom_debug_intersections_test_points.num_items];
+  custom_debug_intersections_a[0]  = 2.589105e-01;
+  custom_debug_intersections_a[1]  = 4.391680e-02;
+  custom_debug_intersections_a[2]  = 1.231745e-01;
+  custom_debug_intersections_a[3]  = 5.617384e-03;
+  custom_debug_intersections_a[4]  = 4.902939e-01;
+  custom_debug_intersections_a[5]  = 3.006307e-01;
+  custom_debug_intersections_a[6]  = 7.248314e-01;
+  custom_debug_intersections_a[7]  = 1.064971e-01;
+  custom_debug_intersections_a[8]  = 1.288089e-01;
+  custom_debug_intersections_a[9]  = 5.522725e-02;
+  custom_debug_intersections_a[10] = 2.067135e-01;
+  custom_debug_intersections_a[11] = 1.582341e-01;
+
+  double custom_debug_intersections_b[custom_debug_intersections_test_points.num_items];
+  custom_debug_intersections_b[0]  = 8.082756e-01;
+  custom_debug_intersections_b[1]  = 8.526660e-01;
+  custom_debug_intersections_b[2]  = 7.614422e-01;
+  custom_debug_intersections_b[3]  = 8.082797e-01;
+  custom_debug_intersections_b[4]  = 8.399955e-01;
+  custom_debug_intersections_b[5]  = 8.436420e-01;
+  custom_debug_intersections_b[6]  = 9.989410e-01;
+  custom_debug_intersections_b[7]  = 8.725338e-01;
+  custom_debug_intersections_b[8]  = 9.463053e-01;
+  custom_debug_intersections_b[9]  = 9.102767e-01;
+  custom_debug_intersections_b[10] = 9.281630e-01;
+  custom_debug_intersections_b[11] = 9.882542e-01;
+
+  double custom_debug_intersections_expected[custom_debug_intersections_test_points.num_items];
+  custom_debug_intersections_expected[0]  = 2.265841e-01;
+  custom_debug_intersections_expected[1]  = 4.886934e-01;
+  custom_debug_intersections_expected[2]  = 2.296397e-01;
+  custom_debug_intersections_expected[3]  = 5.752460e-01;
+  custom_debug_intersections_expected[4]  = 3.450638e-02;
+  custom_debug_intersections_expected[5]  = 3.210201e-02;
+  custom_debug_intersections_expected[6]  = 1.726108e-01;
+  custom_debug_intersections_expected[7]  = 4.026999e-02;
+  custom_debug_intersections_expected[8]  = 3.588146e-01;
+  custom_debug_intersections_expected[9]  = 1.746355e-01;
+  custom_debug_intersections_expected[10] = 5.986446e-01;
+  custom_debug_intersections_expected[11] = 7.512494e-01;
+
+  int num_tests = 0;
+  int num_failed = 0;
+  double custom_debug_intersections_actual[custom_debug_intersections_test_points.num_items];
+  for (int i = 0; i < custom_debug_intersections_test_points.num_items; i++) {
+    vector3 p = custom_debug_intersections_test_points.items[i];
+    vector3 d = custom_debug_intersections_test_vectors.items[i];
+    double a = custom_debug_intersections_a[i];
+    double b = custom_debug_intersections_b[i];
+    num_tests++;
+    custom_debug_intersections_actual[i] = intersect_line_segment_with_object(p, d, the_prism, a, b);
+  }
+
+  for (int i = 0; i < custom_debug_intersections_test_points.num_items; i++) {
+    double s_expected = custom_debug_intersections_expected[i];
+    double s_actual = custom_debug_intersections_actual[i];
+    if (fabs(s_expected - s_actual) > 1.0e-5 * fmax(fabs(s_expected), fabs(s_actual))) {
+      num_failed++;
+      printf("the point with index %i failed\n", i);
+    }
+  }
+  printf("%i/%i of problematic segments failed\n", num_failed, num_tests);
+  return num_failed;
+}
+*/
+/************************************************************************/
+/* 4th unit test: check of point in polygon test with slanted H         */
 /************************************************************************/
 int test_point_in_polygon(int write_log) {
   // make array of test points that should always pass
@@ -461,7 +578,7 @@ int test_point_in_polygon(int write_log) {
 }
 
 /************************************************************************/
-/* fifth unit test: saves a prism with a square base with a normal      */
+/* 5th unit test: saves a prism with a square base with a normal        */
 /* sidewall angle and a prism with the same base polygon with non-      */
 /* normal sidewall angle to separate GNU plot files.                    */
 /************************************************************************/
@@ -493,7 +610,7 @@ int test_square_base_sidewall_prisms_to_gnuplot() {
 }
 
 /************************************************************************/
-/* sixth unit test: saves a prism with a concave octagonal c-shaped     */
+/* 6th unit test: saves a prism with a concave octagonal c-shaped       */
 /* base with a normal sidewall angle and a prism with the same base     */
 /* polygon with non-normal sidewall angle to separate GNU plot files.   */
 /************************************************************************/
@@ -537,7 +654,7 @@ int test_octagon_c_base_sidewall_prisms_to_gnuplot() {
 }
 
 /************************************************************************/
-/* seventh unit test: test all of geom.c's prism helper functions on a  */
+/* 7th unit test: test all of geom.c's prism helper functions on a      */
 /* prism with a concave octagonal c-shaped base with both a normal      */
 /* sidewall angle a 2.5-degree sidewall angle.                          */
 /************************************************************************/
@@ -907,7 +1024,6 @@ int test_helper_functions_on_octagonal_c_prism() {
       ctl_printf("\tAt (%f, %f, %f) the expected normal vector was (%f, %f, %f), but the actual\n\t\tnormal vector was (%f, %f, %f\n", test_point.x, test_point.y, test_point.z, expected.x, expected.y, expected.z, actual.x, actual.y, actual.z);
     }
   }
-
   /*
   // test intersect_line_segment_with_prism
   vector3_list intersect_line_with_prism_test_points_normal_sidewall;
@@ -919,7 +1035,7 @@ int test_helper_functions_on_octagonal_c_prism() {
   intersect_line_with_prism_test_vectors_normal_sidewall[0] = make_vector3(0.247276, 0.596978, 0.763198); // line crossing [16] to [10]
 
   double intersect_line_with_prism_expected_normal_sidewall[intersect_line_with_prism_test_points_normal_sidewall.num_items];
-  intersect_line_with_prism_expected_normal_sidewall[0] = 2; // line crossing [16] to [10]
+  intersect_line_with_prism_expected_normal_sidewall[0] = 4; // line crossing [16] to [10]
 
   double intersect_line_with_prism_actual_normal_sidewall[intersect_line_with_prism_test_points_normal_sidewall.num_items];
   for (int i = 0; i < intersect_line_with_prism_test_points_normal_sidewall.num_items; i++) {
@@ -1011,14 +1127,14 @@ int run_unit_tests() {
   // 20180712 disabling this test because the new implementation of normal_to_object
   //          for prisms is actually more accurate than the implementation for blocks,
   //          although the distinction is only significant in cases where it is irrelevant
-  int num_failed_2 = 0; // test_normal_to_object(the_block, the_prism, NUMLINES, write_log);
+  // int num_failed_2 = test_normal_to_object(the_block, the_prism, NUMLINES, write_log);
   int num_failed_3 = test_line_segment_intersection(the_block, the_prism, NUMLINES, write_log);
   int num_failed_4 = test_point_in_polygon(write_log);
   int num_failed_5 = test_square_base_sidewall_prisms_to_gnuplot();
   int num_failed_6 = test_octagon_c_base_sidewall_prisms_to_gnuplot();
   int num_failed_7 = test_helper_functions_on_octagonal_c_prism();
 
-  return num_failed_1 + num_failed_2 + num_failed_3 + num_failed_4 + num_failed_5 + num_failed_6 + num_failed_7;
+  return num_failed_1 + num_failed_3 + num_failed_4 + num_failed_5 + num_failed_6 + num_failed_7;
 }
 
 /***************************************************************/
