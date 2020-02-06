@@ -2195,21 +2195,24 @@ int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist
       slist[num_intersections++] = s;
     }
 
-  // sort slist
   qsort((void *)slist, num_intersections, sizeof(double), dcmp);
-  // remove duplicates from slist
-  int num_unique_elements = 1;
-  double slist_unique[num_vertices+2];
-  slist_unique[0] = slist[0];
-  for (nv = 1; nv < num_vertices; nv++) {
-    if (fabs(slist[nv] - slist[nv-1]) > tolerance) {
-      slist_unique[num_unique_elements] = slist[nv];
-      num_unique_elements++;
+  // if num_intersections is zero then just return that
+  if (num_intersections == 0) return num_intersections;
+  else {
+    // remove duplicates from slist
+    int num_unique_elements = 1;
+    double slist_unique[num_vertices+2];
+    slist_unique[0] = slist[0];
+    for (nv = 1; nv < num_intersections; nv++) {
+      if (fabs(slist[nv] - slist[nv-1]) > tolerance) {
+        slist_unique[num_unique_elements] = slist[nv];
+        num_unique_elements++;
+      }
     }
+    slist = slist_unique;
+    num_intersections = num_unique_elements;
+    return num_intersections;
   }
-  slist = slist_unique;
-  num_intersections = num_unique_elements;
-  return num_intersections;
 }
 
 /***************************************************************/
