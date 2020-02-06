@@ -2148,7 +2148,7 @@ static int dcmp(const void *pd1, const void *pd2) {
 /* the return value is the number of intersections.               */
 /******************************************************************/
 int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist) {
-  double tolerance = 1e-8;
+  double tolerance = 1e-4;
   vector3 pp = prism_coordinate_c2p(prsm, pc);
   vector3 dp = prism_vector_c2p(prsm, dc);
   vector3 *vps_bottom = prsm->vertices_bottom_p.items;

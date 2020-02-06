@@ -907,18 +907,25 @@ int test_helper_functions_on_octagonal_c_prism() {
       ctl_printf("\tAt (%f, %f, %f) the expected normal vector was (%f, %f, %f), but the actual\n\t\tnormal vector was (%f, %f, %f\n", test_point.x, test_point.y, test_point.z, expected.x, expected.y, expected.z, actual.x, actual.y, actual.z);
     }
   }
-  /*
+
   // test intersect_line_segment_with_prism
   vector3_list intersect_line_with_prism_test_points_normal_sidewall;
   intersect_line_with_prism_test_points_normal_sidewall.num_items = 1;
   intersect_line_with_prism_test_points_normal_sidewall.items = (vector3 *)malloc(intersect_line_with_prism_test_points_normal_sidewall.num_items * sizeof(vector3));
-  intersect_line_with_prism_test_points_normal_sidewall.items[0] = make_vector3(139.252, 96.3552, 123.184); // line crossing [16] to [10]
+  intersect_line_with_prism_test_points_normal_sidewall.items[0] = make_vector3(141.724, 102.325, 130.816); // line crossing [16] to [10]
+  intersect_line_with_prism_test_points_normal_sidewall.items[1] = make_vector3(141.724, 102.325, 130.816); // line crossing [16] to [10]
 
   vector3 intersect_line_with_prism_test_vectors_normal_sidewall[intersect_line_with_prism_test_points_normal_sidewall.num_items];
-  intersect_line_with_prism_test_vectors_normal_sidewall[0] = make_vector3(0.247276, 0.596978, 0.763198); // line crossing [16] to [10]
+  intersect_line_with_prism_test_vectors_normal_sidewall[0] = make_vector3(-0.247276, -0.596978, -0.763198); // line crossing [16] to [10]
 
   double intersect_line_with_prism_expected_normal_sidewall[intersect_line_with_prism_test_points_normal_sidewall.num_items];
-  intersect_line_with_prism_expected_normal_sidewall[0] = 4; // line crossing [16] to [10]
+  intersect_line_with_prism_expected_normal_sidewall[0] = 83.20275844; // line crossing [16] to [10]
+
+  double intersect_line_with_prism_a_normal_sidewall[intersect_line_with_prism_test_points_normal_sidewall.num_items];
+  intersect_line_with_prism_a_normal_sidewall[0] = 0;
+
+  double intersect_line_with_prism_b_normal_sidewall[intersect_line_with_prism_test_points_normal_sidewall.num_items];
+  intersect_line_with_prism_b_normal_sidewall[0] = 150;
 
   double intersect_line_with_prism_actual_normal_sidewall[intersect_line_with_prism_test_points_normal_sidewall.num_items];
   for (int i = 0; i < intersect_line_with_prism_test_points_normal_sidewall.num_items; i++) {
@@ -926,28 +933,28 @@ int test_helper_functions_on_octagonal_c_prism() {
     vector3 p = intersect_line_with_prism_test_points_normal_sidewall.items[i];
     vector3 d = intersect_line_with_prism_test_vectors_normal_sidewall[i];
     geometric_object o = octagon_c_normal_sidewall_geom_object;
-    double a = 0;
-    double b = 300;
+    double a = intersect_line_with_prism_a_normal_sidewall[i];
+    double b = intersect_line_with_prism_b_normal_sidewall[i];
     intersect_line_with_prism_actual_normal_sidewall[i] = intersect_line_segment_with_object(p, d, o, a, b);
   }
 
   for (int i = 0; i < intersect_line_with_prism_test_points_normal_sidewall.num_items; i++) {
-    if (intersect_line_with_prism_actual_normal_sidewall[i] != intersect_line_with_prism_expected_normal_sidewall[i]) {
+    double actual = intersect_line_with_prism_actual_normal_sidewall[i];
+    double expected = intersect_line_with_prism_expected_normal_sidewall[i];
+    if (fabs(fabs(actual)-fabs(expected)) > tolerance * fmax(fabs(actual), fabs(expected))) {
       double px = intersect_line_with_prism_test_points_normal_sidewall.items[i].x;
       double py = intersect_line_with_prism_test_points_normal_sidewall.items[i].y;
       double pz = intersect_line_with_prism_test_points_normal_sidewall.items[i].z;
       double dx = intersect_line_with_prism_test_vectors_normal_sidewall[i].x;
       double dy = intersect_line_with_prism_test_vectors_normal_sidewall[i].y;
       double dz = intersect_line_with_prism_test_vectors_normal_sidewall[i].z;
-      double expected = intersect_line_with_prism_expected_normal_sidewall[i];
-      double actual = intersect_line_with_prism_actual_normal_sidewall[i];
       ctl_printf(
-          "\tThe line segment emanating from (%f, %f, %f) along s*d,\n\t\twith 0 <= s <= 300, d = (%f, %f, %f), was expected\n\t\tto intersect the prism %f times but instead instersected it %f times.\n",
+          "\tThe line segment emanating from (%f, %f, %f) along s*d,\n\t\twith 0 <= s <= 300, d = (%f, %f, %f), was expected\n\t\tto have intersection length %f but instead had %f.\n",
           px, py, pz, dx, dy, dz, expected, actual);
       num_failed_normal++;
     }
   }
-  */
+
   printf("\n\tprism helper function testing summary: \n\t\t%i/%i tests failed with normal sidewall\n\t\t%i/%i tests failed with tapered sidewall\n", num_failed_normal, num_tests_normal, num_failed_tapered, num_tests_tapered);
 
   return num_failed_normal + num_failed_tapered;
