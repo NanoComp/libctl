@@ -913,7 +913,6 @@ int test_helper_functions_on_octagonal_c_prism() {
   intersect_line_with_prism_test_points_normal_sidewall.num_items = 1;
   intersect_line_with_prism_test_points_normal_sidewall.items = (vector3 *)malloc(intersect_line_with_prism_test_points_normal_sidewall.num_items * sizeof(vector3));
   intersect_line_with_prism_test_points_normal_sidewall.items[0] = make_vector3(141.724, 102.325, 130.816); // line crossing [16] to [10]
-  intersect_line_with_prism_test_points_normal_sidewall.items[1] = make_vector3(141.724, 102.325, 130.816); // line crossing [16] to [10]
 
   vector3 intersect_line_with_prism_test_vectors_normal_sidewall[intersect_line_with_prism_test_points_normal_sidewall.num_items];
   intersect_line_with_prism_test_vectors_normal_sidewall[0] = make_vector3(-0.247276, -0.596978, -0.763198); // line crossing [16] to [10]
