@@ -2148,7 +2148,6 @@ static int dcmp(const void *pd1, const void *pd2) {
 /* the return value is the number of intersections.               */
 /******************************************************************/
 int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist) {
-  double tolerance = 1e-4;
   vector3 pp = prism_coordinate_c2p(prsm, pc);
   vector3 dp = prism_vector_c2p(prsm, dc);
   vector3 *vps_bottom = prsm->vertices_bottom_p.items;
@@ -2157,6 +2156,7 @@ int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist
   double height = prsm->height;
 
   // identify intersections with prism side faces
+  double tus_tolerance = 1e-8;
   int num_intersections = 0;
   int nv;
   for (nv = 0; nv < num_vertices; nv++) {
@@ -2166,7 +2166,8 @@ int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist
     // checks if dp is parallel to the plane of the prism side face under consideration
     vector3 v1 = vector3_minus(vps_bottom[nvp1], vps_bottom[nv]);
     vector3 v2 = vector3_minus(vps_top[nv], vps_bottom[nv]);
-    if (fabs(vector3_dot(dp, vector3_cross(v1, v2))) <= tolerance) continue;
+    double dot_tolerance = 1e-6;
+    if (fabs(vector3_dot(dp, vector3_cross(v1, v2))) <= dot_tolerance) continue;
 
     // to find the intersection point pp + s*dp between the line and the
     // prism side face, we will solve the vector equation
@@ -2179,7 +2180,7 @@ int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist
     M.c2 = vector3_scale(-1, dp);
     vector3 RHS = vector3_minus(pp, vps_bottom[nv]);
     vector3 tus = matrix3x3_vector3_mult(matrix3x3_inverse(M), RHS);
-    if (tus.x < -tolerance || tus.x > 1+tolerance || tus.y < -tolerance || tus.y > 1+tolerance) continue;
+    if (tus.x < -tus_tolerance || tus.x > 1+tus_tolerance || tus.y < -tus_tolerance || tus.y > 1+tus_tolerance) continue;
     double s = tus.z;
     slist[num_intersections++] = s;
   }
@@ -2200,11 +2201,12 @@ int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist
   if (num_intersections == 0) return num_intersections;
   else {
     // remove duplicates from slist
+    double duplicate_tolerance = 1e-3;
     int num_unique_elements = 1;
     double slist_unique[num_vertices+2];
     slist_unique[0] = slist[0];
     for (nv = 1; nv < num_intersections; nv++) {
-      if (fabs(slist[nv] - slist[nv-1]) > tolerance) {
+      if (fabs(slist[nv] - slist[nv-1]) > duplicate_tolerance*fabs(slist[nv])) {
         slist_unique[num_unique_elements] = slist[nv];
         num_unique_elements++;
       }

@@ -910,21 +910,31 @@ int test_helper_functions_on_octagonal_c_prism() {
 
   // test intersect_line_segment_with_prism
   vector3_list intersect_line_with_prism_test_points_normal_sidewall;
-  intersect_line_with_prism_test_points_normal_sidewall.num_items = 1;
+  intersect_line_with_prism_test_points_normal_sidewall.num_items = 3;
   intersect_line_with_prism_test_points_normal_sidewall.items = (vector3 *)malloc(intersect_line_with_prism_test_points_normal_sidewall.num_items * sizeof(vector3));
-  intersect_line_with_prism_test_points_normal_sidewall.items[0] = make_vector3(141.724, 102.325, 130.816); // line crossing [16] to [10]
+  intersect_line_with_prism_test_points_normal_sidewall.items[0] = make_vector3(100.809, 144.033, 130.205); // line crossing top[15] to bottom[11]
+  intersect_line_with_prism_test_points_normal_sidewall.items[1] = make_vector3(17.0383, 123.450, 63.5000); // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_test_points_normal_sidewall.items[2] = make_vector3(17.0383, 123.450, 63.5000); // line crossing midpoint 13-14 face to midpoint 9-10 face
 
   vector3 intersect_line_with_prism_test_vectors_normal_sidewall[intersect_line_with_prism_test_points_normal_sidewall.num_items];
-  intersect_line_with_prism_test_vectors_normal_sidewall[0] = make_vector3(-0.247276, -0.596978, -0.763198); // line crossing [16] to [10]
-
-  double intersect_line_with_prism_expected_normal_sidewall[intersect_line_with_prism_test_points_normal_sidewall.num_items];
-  intersect_line_with_prism_expected_normal_sidewall[0] = 83.20275844; // line crossing [16] to [10]
+  intersect_line_with_prism_test_vectors_normal_sidewall[0] = make_vector3(-0.29372, -0.709099, -0.64102); // line crossing top[15] to bottom[11]
+  intersect_line_with_prism_test_vectors_normal_sidewall[1] = make_vector3(0.707107, -0.707107, 0.000000); // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_test_vectors_normal_sidewall[2] = make_vector3(0.707107, -0.707107, 0.000000); // line crossing midpoint 13-14 face to midpoint 9-10 face
 
   double intersect_line_with_prism_a_normal_sidewall[intersect_line_with_prism_test_points_normal_sidewall.num_items];
-  intersect_line_with_prism_a_normal_sidewall[0] = 0;
+  intersect_line_with_prism_a_normal_sidewall[0] = 0;   // line crossing top[15] to bottom[11]
+  intersect_line_with_prism_a_normal_sidewall[1] = 0;   // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_a_normal_sidewall[2] = 100; // line crossing midpoint 13-14 face to midpoint 9-10 face
 
   double intersect_line_with_prism_b_normal_sidewall[intersect_line_with_prism_test_points_normal_sidewall.num_items];
-  intersect_line_with_prism_b_normal_sidewall[0] = 150;
+  intersect_line_with_prism_b_normal_sidewall[0] = 150; // line crossing top[15] to bottom[11]
+  intersect_line_with_prism_b_normal_sidewall[1] = 100; // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_b_normal_sidewall[2] = 150; // line crossing midpoint 13-14 face to midpoint 9-10 face
+
+  double intersect_line_with_prism_expected_normal_sidewall[intersect_line_with_prism_test_points_normal_sidewall.num_items];
+  intersect_line_with_prism_expected_normal_sidewall[0] = 36.07816398; // line crossing top[15] to bottom[11]
+  intersect_line_with_prism_expected_normal_sidewall[1] = 25.58291121; // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_expected_normal_sidewall[2] = 25.58291120; // line crossing midpoint 13-14 face to midpoint 9-10 face
 
   double intersect_line_with_prism_actual_normal_sidewall[intersect_line_with_prism_test_points_normal_sidewall.num_items];
   for (int i = 0; i < intersect_line_with_prism_test_points_normal_sidewall.num_items; i++) {
@@ -951,6 +961,51 @@ int test_helper_functions_on_octagonal_c_prism() {
           "\tThe line segment emanating from (%f, %f, %f) along s*d,\n\t\twith 0 <= s <= 300, d = (%f, %f, %f), was expected\n\t\tto have intersection length %f but instead had %f.\n",
           px, py, pz, dx, dy, dz, expected, actual);
       num_failed_normal++;
+    }
+  }
+
+  vector3_list intersect_line_with_prism_test_points_tapered_sidewall;
+  intersect_line_with_prism_test_points_tapered_sidewall.num_items = 1;
+  intersect_line_with_prism_test_points_tapered_sidewall.items = (vector3 *)malloc(intersect_line_with_prism_test_points_tapered_sidewall.num_items * sizeof(vector3));
+  intersect_line_with_prism_test_points_tapered_sidewall.items[0] = make_vector3(98.4872, 138.429, 130.281); // line crossing top[15] to bottom[11]
+
+  vector3 intersect_line_with_prism_test_vectors_tapered_sidewall[intersect_line_with_prism_test_points_tapered_sidewall.num_items];
+  intersect_line_with_prism_test_vectors_tapered_sidewall[0] = make_vector3(-0.288786, -0.697187, -0.656149); // line crossing top[15] to bottom[11]
+
+  double intersect_line_with_prism_expected_tapered_sidewall[intersect_line_with_prism_test_points_tapered_sidewall.num_items];
+  intersect_line_with_prism_expected_tapered_sidewall[0] = 21.67860775; // line crossing top[15] to bottom[11]
+
+  double intersect_line_with_prism_a_tapered_sidewall[intersect_line_with_prism_test_points_tapered_sidewall.num_items];
+  intersect_line_with_prism_a_tapered_sidewall[0] = 0; // line crossing top[15] to bottom[11]
+
+  double intersect_line_with_prism_b_tapered_sidewall[intersect_line_with_prism_test_points_tapered_sidewall.num_items];
+  intersect_line_with_prism_b_tapered_sidewall[0] = 150; // line crossing top[15] to bottom[11]
+
+  double intersect_line_with_prism_actual_tapered_sidewall[intersect_line_with_prism_test_points_tapered_sidewall.num_items];
+  for (int i = 0; i < intersect_line_with_prism_test_points_tapered_sidewall.num_items; i++) {
+    num_tests_tapered++;
+    vector3 p = intersect_line_with_prism_test_points_tapered_sidewall.items[i];
+    vector3 d = intersect_line_with_prism_test_vectors_tapered_sidewall[i];
+    geometric_object o = octagon_c_two_half_degree_sidewall_geom_object;
+    double a = intersect_line_with_prism_a_tapered_sidewall[i];
+    double b = intersect_line_with_prism_b_tapered_sidewall[i];
+    intersect_line_with_prism_actual_tapered_sidewall[i] = intersect_line_segment_with_object(p, d, o, a, b);
+  }
+
+  for (int i = 0; i < intersect_line_with_prism_test_points_tapered_sidewall.num_items; i++) {
+    double actual = intersect_line_with_prism_actual_tapered_sidewall[i];
+    double expected = intersect_line_with_prism_expected_tapered_sidewall[i];
+    if (fabs(fabs(actual)-fabs(expected)) > tolerance * fmax(fabs(actual), fabs(expected))) {
+      double px = intersect_line_with_prism_test_points_tapered_sidewall.items[i].x;
+      double py = intersect_line_with_prism_test_points_tapered_sidewall.items[i].y;
+      double pz = intersect_line_with_prism_test_points_tapered_sidewall.items[i].z;
+      double dx = intersect_line_with_prism_test_vectors_tapered_sidewall[i].x;
+      double dy = intersect_line_with_prism_test_vectors_tapered_sidewall[i].y;
+      double dz = intersect_line_with_prism_test_vectors_tapered_sidewall[i].z;
+      ctl_printf(
+          "\tThe line segment emanating from (%f, %f, %f) along s*d,\n\t\twith 0 <= s <= 300, d = (%f, %f, %f), was expected\n\t\tto have intersection length %f but instead had %f.\n",
+          px, py, pz, dx, dy, dz, expected, actual);
+      num_failed_tapered++;
     }
   }
 
