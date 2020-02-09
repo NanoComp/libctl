@@ -910,31 +910,61 @@ int test_helper_functions_on_octagonal_c_prism() {
 
   // test intersect_line_segment_with_prism
   vector3_list intersect_line_with_prism_test_points_normal_sidewall;
-  intersect_line_with_prism_test_points_normal_sidewall.num_items = 3;
+  intersect_line_with_prism_test_points_normal_sidewall.num_items = 9;
   intersect_line_with_prism_test_points_normal_sidewall.items = (vector3 *)malloc(intersect_line_with_prism_test_points_normal_sidewall.num_items * sizeof(vector3));
   intersect_line_with_prism_test_points_normal_sidewall.items[0] = make_vector3(100.809, 144.033, 130.205); // line crossing top[15] to bottom[11]
   intersect_line_with_prism_test_points_normal_sidewall.items[1] = make_vector3(17.0383, 123.450, 63.5000); // line crossing midpoint 13-14 face to midpoint 9-10 face
   intersect_line_with_prism_test_points_normal_sidewall.items[2] = make_vector3(17.0383, 123.450, 63.5000); // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_test_points_normal_sidewall.items[3] = make_vector3(17.0383, 123.450, 63.5000); // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_test_points_normal_sidewall.items[4] = make_vector3(12.7914, 70.2440, 63.5000); // interior point between 4, 5, 12, 13 in positive xhat
+  intersect_line_with_prism_test_points_normal_sidewall.items[5] = make_vector3(12.7914, 70.2440, 63.5000); // interior point between 4, 5, 12, 13 in negative xhat
+  intersect_line_with_prism_test_points_normal_sidewall.items[6] = make_vector3(40.1648, 142.861, 131.290); // between top point 14 and center of c on bottom
+  intersect_line_with_prism_test_points_normal_sidewall.items[7] = make_vector3(41.1477, 0.00000, 127.000); // between top point 11 and origin
+  intersect_line_with_prism_test_points_normal_sidewall.items[8] = make_vector3(51.7447, 114.905, 127.000); // between top point 3 and center of c on bottom
 
   vector3 intersect_line_with_prism_test_vectors_normal_sidewall[intersect_line_with_prism_test_points_normal_sidewall.num_items];
   intersect_line_with_prism_test_vectors_normal_sidewall[0] = make_vector3(-0.29372, -0.709099, -0.64102); // line crossing top[15] to bottom[11]
   intersect_line_with_prism_test_vectors_normal_sidewall[1] = make_vector3(0.707107, -0.707107, 0.000000); // line crossing midpoint 13-14 face to midpoint 9-10 face
   intersect_line_with_prism_test_vectors_normal_sidewall[2] = make_vector3(0.707107, -0.707107, 0.000000); // line crossing midpoint 13-14 face to midpoint 9-10 face
-
-  double intersect_line_with_prism_a_normal_sidewall[intersect_line_with_prism_test_points_normal_sidewall.num_items];
-  intersect_line_with_prism_a_normal_sidewall[0] = 0;   // line crossing top[15] to bottom[11]
-  intersect_line_with_prism_a_normal_sidewall[1] = 0;   // line crossing midpoint 13-14 face to midpoint 9-10 face
-  intersect_line_with_prism_a_normal_sidewall[2] = 100; // line crossing midpoint 13-14 face to midpoint 9-10 face
-
-  double intersect_line_with_prism_b_normal_sidewall[intersect_line_with_prism_test_points_normal_sidewall.num_items];
-  intersect_line_with_prism_b_normal_sidewall[0] = 150; // line crossing top[15] to bottom[11]
-  intersect_line_with_prism_b_normal_sidewall[1] = 100; // line crossing midpoint 13-14 face to midpoint 9-10 face
-  intersect_line_with_prism_b_normal_sidewall[2] = 150; // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_test_vectors_normal_sidewall[3] = make_vector3(0.707107, -0.707107, 0.000000); // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_test_vectors_normal_sidewall[4] = make_vector3(1.000000, 0.0000000, 0.000000); // interior point between 4, 5, 12, 13 in positive xhat
+  intersect_line_with_prism_test_vectors_normal_sidewall[5] = make_vector3(-1.00000, 0.0000000, 0.000000); // interior point between 4, 5, 12, 13 in negative xhat
+  intersect_line_with_prism_test_vectors_normal_sidewall[6] = make_vector3(0.196571, -0.474559,-0.857994); // between top point 14 and center of c on bottom
+  intersect_line_with_prism_test_vectors_normal_sidewall[7] = make_vector3(-0.308223, 0.000000,-0.951314); // between top point 11 and origin
+  intersect_line_with_prism_test_vectors_normal_sidewall[8] = make_vector3(0.136135, -0.328658,-0.934586); // between top point 3 and center of c on bottom
 
   double intersect_line_with_prism_expected_normal_sidewall[intersect_line_with_prism_test_points_normal_sidewall.num_items];
   intersect_line_with_prism_expected_normal_sidewall[0] = 36.07816398; // line crossing top[15] to bottom[11]
   intersect_line_with_prism_expected_normal_sidewall[1] = 25.58291121; // line crossing midpoint 13-14 face to midpoint 9-10 face
   intersect_line_with_prism_expected_normal_sidewall[2] = 25.58291120; // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_expected_normal_sidewall[3] = 51.16582241; // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_expected_normal_sidewall[4] = 12.79135000; // interior point between 4, 5, 12, 13 in positive xhat
+  intersect_line_with_prism_expected_normal_sidewall[5] = 12.79135000; // interior point between 4, 5, 12, 13 in negative xhat
+  intersect_line_with_prism_expected_normal_sidewall[6] = 53.90914485; // between top point 14 and center of c on bottom
+  intersect_line_with_prism_expected_normal_sidewall[7] = 0.000000000; // between top point 11 and origin
+  intersect_line_with_prism_expected_normal_sidewall[8] = 0.000000000; // between top point 3 and center of c on bottom
+
+  double intersect_line_with_prism_a_normal_sidewall[intersect_line_with_prism_test_points_normal_sidewall.num_items];
+  intersect_line_with_prism_a_normal_sidewall[0] = 0;   // line crossing top[15] to bottom[11]
+  intersect_line_with_prism_a_normal_sidewall[1] = 0;   // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_a_normal_sidewall[2] = 100; // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_a_normal_sidewall[3] = 0;   // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_a_normal_sidewall[4] = 0;   // interior point between 4, 5, 12, 13 in positive xhat
+  intersect_line_with_prism_a_normal_sidewall[5] = 0;   // interior point between 4, 5, 12, 13 in negative xhat
+  intersect_line_with_prism_a_normal_sidewall[6] = 0;   // between top point 14 and center of c on bottom
+  intersect_line_with_prism_a_normal_sidewall[7] = 0;   // between top point 11 and origin
+  intersect_line_with_prism_a_normal_sidewall[8] = 0;   // between top point 3 and center of c on bottom
+
+  double intersect_line_with_prism_b_normal_sidewall[intersect_line_with_prism_test_points_normal_sidewall.num_items];
+  intersect_line_with_prism_b_normal_sidewall[0] = 150; // line crossing top[15] to bottom[11]
+  intersect_line_with_prism_b_normal_sidewall[1] = 100; // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_b_normal_sidewall[2] = 150; // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_b_normal_sidewall[3] = 150; // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_b_normal_sidewall[4] = 300; // interior point between 4, 5, 12, 13 in positive xhat 
+  intersect_line_with_prism_b_normal_sidewall[5] = 300; // interior point between 4, 5, 12, 13 in negative xhat
+  intersect_line_with_prism_b_normal_sidewall[6] = 300; // between top point 14 and center of c on bottom
+  intersect_line_with_prism_b_normal_sidewall[7] = 300; // between top point 11 and origin
+  intersect_line_with_prism_b_normal_sidewall[8] = 300; // between top point 3 and center of c on bottom
 
   double intersect_line_with_prism_actual_normal_sidewall[intersect_line_with_prism_test_points_normal_sidewall.num_items];
   for (int i = 0; i < intersect_line_with_prism_test_points_normal_sidewall.num_items; i++) {
@@ -965,21 +995,61 @@ int test_helper_functions_on_octagonal_c_prism() {
   }
 
   vector3_list intersect_line_with_prism_test_points_tapered_sidewall;
-  intersect_line_with_prism_test_points_tapered_sidewall.num_items = 1;
+  intersect_line_with_prism_test_points_tapered_sidewall.num_items = 9;
   intersect_line_with_prism_test_points_tapered_sidewall.items = (vector3 *)malloc(intersect_line_with_prism_test_points_tapered_sidewall.num_items * sizeof(vector3));
   intersect_line_with_prism_test_points_tapered_sidewall.items[0] = make_vector3(98.4872, 138.429, 130.281); // line crossing top[15] to bottom[11]
+  intersect_line_with_prism_test_points_tapered_sidewall.items[1] = make_vector3(19.0383, 121.528, 63.5000); // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_test_points_tapered_sidewall.items[2] = make_vector3(19.0383, 121.528, 63.5000); // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_test_points_tapered_sidewall.items[3] = make_vector3(19.0383, 121.528, 63.5000); // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_test_points_tapered_sidewall.items[4] = make_vector3(12.7914, 70.2440, 63.5000); // interior point between 4, 5, 12, 13 in positive xhat
+  intersect_line_with_prism_test_points_tapered_sidewall.items[5] = make_vector3(12.7914, 70.2440, 63.5000); // interior point between 4, 5, 12, 13 in negative xhat
+  intersect_line_with_prism_test_points_tapered_sidewall.items[6] = make_vector3(43.4445, 134.943, 127.000); // between top point 14 and center of c on bottom
+  intersect_line_with_prism_test_points_tapered_sidewall.items[7] = make_vector3(43.4445, 5.54494, 127.000); // between top point 11 and origin
+  intersect_line_with_prism_test_points_tapered_sidewall.items[8] = make_vector3(34.7428, 105.745, 127.000); // between top point 3 and center of c on bottom
 
   vector3 intersect_line_with_prism_test_vectors_tapered_sidewall[intersect_line_with_prism_test_points_tapered_sidewall.num_items];
   intersect_line_with_prism_test_vectors_tapered_sidewall[0] = make_vector3(-0.288786, -0.697187, -0.656149); // line crossing top[15] to bottom[11]
+  intersect_line_with_prism_test_vectors_tapered_sidewall[1] = make_vector3(0.6992010, -0.714925, 0.0000000); // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_test_vectors_tapered_sidewall[2] = make_vector3(0.6992010, -0.714925, 0.0000000); // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_test_vectors_tapered_sidewall[3] = make_vector3(0.6992010, -0.714925, 0.0000000); // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_test_vectors_tapered_sidewall[4] = make_vector3(1.0000000, 0.0000000, 0.0000000); // interior point between 4, 5, 12, 13 in positive xhat
+  intersect_line_with_prism_test_vectors_tapered_sidewall[5] = make_vector3(-1.000000, 0.0000000, 0.0000000); // interior point between 4, 5, 12, 13 in negative xhat
+  intersect_line_with_prism_test_vectors_tapered_sidewall[6] = make_vector3(0.1847880,-0.4461140, -0.875692); // between top point 14 and center of c on bottom
+  intersect_line_with_prism_test_vectors_tapered_sidewall[7] = make_vector3(-0.323393,-0.0412755, -0.945364); // between top point 11 and origin
+  intersect_line_with_prism_test_vectors_tapered_sidewall[8] = make_vector3(0.2599600,-0.2599600, -0.929969); // between top point 3 and center of c on bottom
 
   double intersect_line_with_prism_expected_tapered_sidewall[intersect_line_with_prism_test_points_tapered_sidewall.num_items];
   intersect_line_with_prism_expected_tapered_sidewall[0] = 21.67860775; // line crossing top[15] to bottom[11]
+  intersect_line_with_prism_expected_tapered_sidewall[1] = 20.03920840; // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_expected_tapered_sidewall[2] = 20.03919670; // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_expected_tapered_sidewall[3] = 40.07840510; // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_expected_tapered_sidewall[4] = 10.01888013; // interior point between 4, 5, 12, 13 in positive xhat
+  intersect_line_with_prism_expected_tapered_sidewall[5] = 10.01888013; // interior point between 4, 5, 12, 13 in negative xhat
+  intersect_line_with_prism_expected_tapered_sidewall[6] = 35.53300107; // between top point 14 and center of c on bottom
+  intersect_line_with_prism_expected_tapered_sidewall[7] = 0.000000000; // between top point 11 and origin
+  intersect_line_with_prism_expected_tapered_sidewall[8] = 0.000000000; // between top point 3 and center of c on bottom
 
   double intersect_line_with_prism_a_tapered_sidewall[intersect_line_with_prism_test_points_tapered_sidewall.num_items];
-  intersect_line_with_prism_a_tapered_sidewall[0] = 0; // line crossing top[15] to bottom[11]
+  intersect_line_with_prism_a_tapered_sidewall[0] = 0;  // line crossing top[15] to bottom[11]
+  intersect_line_with_prism_a_tapered_sidewall[1] = 0;  // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_a_tapered_sidewall[2] = 50; // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_a_tapered_sidewall[3] = 0;  // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_a_tapered_sidewall[4] = 0;  // interior point between 4, 5, 12, 13 in positive xhat
+  intersect_line_with_prism_a_tapered_sidewall[5] = 0;  // interior point between 4, 5, 12, 13 in negative xhat
+  intersect_line_with_prism_a_tapered_sidewall[6] = 0;  // between top point 14 and center of c on bottom
+  intersect_line_with_prism_a_tapered_sidewall[7] = 0;  // between top point 11 and origin
+  intersect_line_with_prism_a_tapered_sidewall[8] = 0;  // between top point 3 and center of c on bottom
 
   double intersect_line_with_prism_b_tapered_sidewall[intersect_line_with_prism_test_points_tapered_sidewall.num_items];
   intersect_line_with_prism_b_tapered_sidewall[0] = 150; // line crossing top[15] to bottom[11]
+  intersect_line_with_prism_b_tapered_sidewall[1] = 50;  // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_b_tapered_sidewall[2] = 150; // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_b_tapered_sidewall[3] = 150; // line crossing midpoint 13-14 face to midpoint 9-10 face
+  intersect_line_with_prism_b_tapered_sidewall[4] = 300; // interior point between 4, 5, 12, 13 in positive xhat
+  intersect_line_with_prism_b_tapered_sidewall[5] = 300; // interior point between 4, 5, 12, 13 in negative xhat
+  intersect_line_with_prism_b_tapered_sidewall[6] = 300; // between top point 14 and center of c on bottom
+  intersect_line_with_prism_b_tapered_sidewall[7] = 300; // between top point 11 and origin
+  intersect_line_with_prism_b_tapered_sidewall[8] = 300; // between top point 3 and center of c on bottom
 
   double intersect_line_with_prism_actual_tapered_sidewall[intersect_line_with_prism_test_points_tapered_sidewall.num_items];
   for (int i = 0; i < intersect_line_with_prism_test_points_tapered_sidewall.num_items; i++) {
@@ -1009,7 +1079,7 @@ int test_helper_functions_on_octagonal_c_prism() {
     }
   }
 
-  printf("\n\tprism helper function testing summary: \n\t\t%i/%i tests failed with normal sidewall\n\t\t%i/%i tests failed with tapered sidewall\n", num_failed_normal, num_tests_normal, num_failed_tapered, num_tests_tapered);
+  printf("\tprism helper function testing summary: \n\t\t%i/%i tests failed with normal sidewall\n\t\t%i/%i tests failed with tapered sidewall\n", num_failed_normal, num_tests_normal, num_failed_tapered, num_tests_tapered);
 
   return num_failed_normal + num_failed_tapered;
 }
