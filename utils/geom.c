@@ -2718,6 +2718,39 @@ void init_prism(geometric_object *o) {
       vector3 a1, a2, v;  // v will be defined as a2 - a1
     } edge;
 
+    // find the point at the bottom left corner of the polygon
+    double smallest_x = HUGE_VAL;
+    double smallest_y = HUGE_VAL;
+    int index_for_point_a = -1;
+    int index_for_point_b = -1;
+    int index_for_point_c = -1;
+    for (nv = 0; nv < num_vertices; nv++) {
+        double current_x = prsm->vertices_bottom_p.items[nv].x;
+        double current_y = prsm->vertices_bottom_p.items[nv].y;
+        if (current_x < smallest_x) {
+            smallest_x = current_x;
+            smallest_y = current_y;
+            index_for_point_b = nv;
+        }
+        else if (current_x == smallest_x && current_y < smallest_y) {
+            smallest_y = current_y;
+            index_for_point_b = nv;
+        }
+    }
+    if (index_for_point_b == -1) {
+        exit(EXIT_FAILURE);
+    }
+    else {
+        index_for_point_a = (index_for_point_b + 1 == num_vertices ? 0 : index_for_point_b + 1);
+        index_for_point_c = (index_for_point_b - 1 == -1 ? num_vertices - 1 : index_for_point_b - 1);
+    }
+    // find orientation of the polygon
+    vector3 A = prsm->vertices_bottom_p.items[index_for_point_a];
+    vector3 B = prsm->vertices_bottom_p.items[index_for_point_b];
+    vector3 C = prsm->vertices_bottom_p.items[index_for_point_c];
+    double orientation_number = (B.x - A.x)*(C.y - A.y)-(C.x - A.x)*(B.y - A.y);
+    int orientation_positive_or_negative = (orientation_number < 0 ? 0 : 1);
+
     edge *top_polygon_edges;
     top_polygon_edges = (edge *)malloc(num_vertices * sizeof(edge));
     number w = prsm->height / tan(theta);
@@ -2727,39 +2760,18 @@ void init_prism(geometric_object *o) {
       top_polygon_edges[nv].a2 = prsm->vertices_top_p.items[nv];
       top_polygon_edges[nv].v = vector3_minus(top_polygon_edges[nv].a2, top_polygon_edges[nv].a1);
 
-      vector3 normal_vector;
-      normal_vector.x = top_polygon_edges[nv].v.y;
-      normal_vector.y = -1 * top_polygon_edges[nv].v.x;
-      normal_vector.z = 0;
-      normal_vector = unit_vector3(normal_vector);
+      vector3 normal_vector = (orientation_positive_or_negative ? unit_vector3(vector3_cross(top_polygon_edges[nv].v, zhat)) : unit_vector3(vector3_cross(top_polygon_edges[nv].v, vector3_scale(-1, zhat))));
       vector3 offset = vector3_scale(w, normal_vector);
 
-      vector3 midpoint = vector3_plus(top_polygon_edges[nv].a1, vector3_scale(0.5, top_polygon_edges[nv].v));
-      boolean midpoint_on_side_of_postive_offset_is_in_polygon = node_in_or_on_polygon(vector3_plus(midpoint, vector3_scale(1e-3, offset)), prsm->vertices_top_p.items, prsm->vertices_top_p.num_items, 1);
-
-      if (midpoint_on_side_of_postive_offset_is_in_polygon) {
-        // positive sidewall angles means the prism tapers in towards to the rest of the prism body
-        if (prsm->sidewall_angle > 0) {
+      // positive sidewall angles means the prism tapers in towards the rest of the prism body
+      if (prsm->sidewall_angle > 0) {
           top_polygon_edges[nv].a1 = vector3_plus(top_polygon_edges[nv].a1, offset);
           top_polygon_edges[nv].a2 = vector3_plus(top_polygon_edges[nv].a2, offset);
-        }
-        // negative sidewall angles means the prism tapers out away from the rest of the prism body
-        else {
-          top_polygon_edges[nv].a1 = vector3_minus(top_polygon_edges[nv].a1, offset);
-          top_polygon_edges[nv].a2 = vector3_minus(top_polygon_edges[nv].a2, offset);
-        }
       }
+      // negative sidewall angles means the prism tapers out away from the rest of the prism body
       else {
-        // positive sidewall angles means the prism tapers in towards to the rest of the prism body
-        if (prsm->sidewall_angle > 0) {
           top_polygon_edges[nv].a1 = vector3_minus(top_polygon_edges[nv].a1, offset);
           top_polygon_edges[nv].a2 = vector3_minus(top_polygon_edges[nv].a2, offset);
-        }
-        // negative sidewall angles means the prism tapers out away from the rest of the prism body
-        else {
-          top_polygon_edges[nv].a1 = vector3_plus(top_polygon_edges[nv].a1, offset);
-          top_polygon_edges[nv].a2 = vector3_plus(top_polygon_edges[nv].a2, offset);
-        }
       }
     }
 
