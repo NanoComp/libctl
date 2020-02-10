@@ -159,8 +159,14 @@ extern boolean node_in_or_on_polygon(vector3 q0, vector3 *nodes, int num_nodes,
 GEOMETRIC_OBJECT make_prism(MATERIAL_TYPE material, const vector3 *vertices_bottom, int num_vertices,
                             double height, vector3 axis, double sidewall_angle);
 
-// as make_prism, but with a rigid translation so that the prism is centered at center
+// Same as make_prism, but with a rigid translation so that the prism is centered at center. Have both
+// make_prism_with_center and make_slanted_prism_with_center to maintain ABI compatibility, though
+// make_prism_with_center just calls make_slanted_prism_with_center with the sidewall angle equal to zero.
 GEOMETRIC_OBJECT make_prism_with_center(MATERIAL_TYPE material, vector3 center,
+                                        const vector3 *vertices_bottom, int num_vertices, double height,
+                                        vector3 axis;
+
+GEOMETRIC_OBJECT make_slanted_prism_with_center(MATERIAL_TYPE material, vector3 center,
                                         const vector3 *vertices_bottom, int num_vertices, double height,
                                         vector3 axis, double sidewall_angle);
 
