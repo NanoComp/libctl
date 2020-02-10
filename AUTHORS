@@ -3,6 +3,7 @@ libctl was written by Steven G. Johnson (stevenj@alum.mit.edu) with contribution
 M.T. Homer Reid
 Christopher Hogan
 Ardavan Oskooi
+Daniel W. Boyce
 
 The multidimensional integration routines in src/integrator.c were adapted
 from the HIntlib Library by Rudolf Schuerer and from the GNU Scientific
