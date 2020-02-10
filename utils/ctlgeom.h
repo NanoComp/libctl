@@ -164,7 +164,7 @@ GEOMETRIC_OBJECT make_prism(MATERIAL_TYPE material, const vector3 *vertices_bott
 // make_prism_with_center just calls make_slanted_prism_with_center with the sidewall angle equal to zero.
 GEOMETRIC_OBJECT make_prism_with_center(MATERIAL_TYPE material, vector3 center,
                                         const vector3 *vertices_bottom, int num_vertices, double height,
-                                        vector3 axis;
+                                        vector3 axis);
 
 GEOMETRIC_OBJECT make_slanted_prism_with_center(MATERIAL_TYPE material, vector3 center,
                                         const vector3 *vertices_bottom, int num_vertices, double height,

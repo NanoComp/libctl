@@ -2819,7 +2819,7 @@ void init_prism(geometric_object *o) {
 geometric_object make_prism(material_type material, const vector3 *vertices_bottom, int num_vertices,
                             double height, vector3 axis, double sidewall_angle) {
   if (sidewall_angle == 0) return make_prism_with_center(material, auto_center, vertices_bottom, num_vertices, height, axis);
-  else return make_slanted_prism_with_center(material, center, vertices_bottom, num_vertices, height, axis, sidewall_angle);
+  else return make_slanted_prism_with_center(material, auto_center, vertices_bottom, num_vertices, height, axis, sidewall_angle);
 }
 
 // prism in which all vertices are translated to ensure that the prism is centered at center. Have both
@@ -2845,5 +2845,5 @@ geometric_object make_slanted_prism_with_center(material_type material, vector3 
 
 geometric_object make_prism_with_center(material_type material, vector3 center, const vector3 *vertices_bottom,
                                         int num_vertices, double height, vector3 axis) {
-    return make_slanted_prism_with_center(material, center, vertices_bottom, num_vertices, height, axis, 0)
+    return make_slanted_prism_with_center(material, center, vertices_bottom, num_vertices, height, axis, 0);
 }
