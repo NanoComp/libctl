@@ -2701,9 +2701,6 @@ void init_prism(geometric_object *o) {
   //   * A linearly interpolated value of the polygon vertices between the bottom
   //     polygon and the top can be found
   //             vertices_bottom_p + top_polygon_diff_vectors_scaled_p * z
-  if (isnan(prsm->sidewall_angle)) {
-      prsm->sidewall_angle = 0.0;
-  }
   number theta = (K_PI/2) - fabs(prsm->sidewall_angle);
   prsm->vertices_top_p.num_items = num_vertices;
   prsm->vertices_top_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
