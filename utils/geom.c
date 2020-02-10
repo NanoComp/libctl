@@ -2758,18 +2758,12 @@ void init_prism(geometric_object *o) {
       top_polygon_edges[nv].v = vector3_minus(top_polygon_edges[nv].a2, top_polygon_edges[nv].a1);
 
       vector3 normal_vector = (orientation_positive_or_negative ? unit_vector3(vector3_cross(top_polygon_edges[nv].v, zhat)) : unit_vector3(vector3_cross(top_polygon_edges[nv].v, vector3_scale(-1, zhat))));
-      vector3 offset = vector3_scale(w, normal_vector);
 
       // positive sidewall angles means the prism tapers in towards the rest of the prism body
-      if (prsm->sidewall_angle > 0) {
-          top_polygon_edges[nv].a1 = vector3_plus(top_polygon_edges[nv].a1, offset);
-          top_polygon_edges[nv].a2 = vector3_plus(top_polygon_edges[nv].a2, offset);
-      }
       // negative sidewall angles means the prism tapers out away from the rest of the prism body
-      else {
-          top_polygon_edges[nv].a1 = vector3_minus(top_polygon_edges[nv].a1, offset);
-          top_polygon_edges[nv].a2 = vector3_minus(top_polygon_edges[nv].a2, offset);
-      }
+      vector3 offset = vector3_scale(prsm->sidewall_angle > 0 ? w : -w, normal_vector);
+      top_polygon_edges[nv].a1 = vector3_plus(top_polygon_edges[nv].a1, offset);
+      top_polygon_edges[nv].a2 = vector3_plus(top_polygon_edges[nv].a2, offset);
     }
 
     for (nv = 0; nv < num_vertices; nv++) {
