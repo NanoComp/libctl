@@ -164,6 +164,15 @@ GEOMETRIC_OBJECT make_prism_with_center(MATERIAL_TYPE material, vector3 center,
                                         const vector3 *vertices, int num_vertices, double height,
                                         vector3 axis);
 
+// slanted prism with `center` field computed automatically from vertices, height, axis, sidewall_angle
+GEOMETRIC_OBJECT make_slanted_prism(MATERIAL_TYPE material, const vector3 *vertices_bottom, int num_vertices,
+                            double height, vector3 axis, double sidewall_angle);
+
+// as make_slanted_prism, but with a rigid translation so that the prism is centered at center
+GEOMETRIC_OBJECT make_slanted_prism_with_center(MATERIAL_TYPE material, vector3 center,
+                                        const vector3 *vertices_bottom, int num_vertices, double height,
+                                        vector3 axis, double sidewall_angle);
+
 int vector3_nearly_equal(vector3 v1, vector3 v2, double tolerance);
 
 /**************************************************************************/

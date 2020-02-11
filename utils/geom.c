@@ -77,6 +77,7 @@ static boolean point_in_prism(prism *prsm, vector3 pc);
 static vector3 normal_to_prism(prism *prsm, vector3 pc);
 static double intersect_line_segment_with_prism(prism *prsm, vector3 pc, vector3 dc, double a,
                                                 double b);
+static double get_prism_volume(prism *prsm);
 static void get_prism_bounding_box(prism *prsm, geom_box *box);
 static void display_prism_info(int indentby, geometric_object *o);
 static void init_prism(geometric_object *o);
@@ -913,15 +914,7 @@ double geom_object_volume(GEOMETRIC_OBJECT o) {
       return o.subclass.block_data->which_subclass == BLK BLOCK_SELF ? vol : vol * (K_PI / 6);
     }
     case GEOM PRISM: {
-      vector3_list vertices = o.subclass.prism_data->vertices_p;
-      double area = 0;
-      int i;
-      for (i = 0; i < vertices.num_items; ++i) {
-        int i1 = (i + 1) % vertices.num_items;
-        area += 0.5 * (vertices.items[i1].x - vertices.items[i].x) *
-                (vertices.items[i1].y + vertices.items[i].y);
-      }
-      return fabs(area) * o.subclass.prism_data->height;
+      return get_prism_volume(o.subclass.prism_data);
     }
     default: return 0; /* unsupported object types? */
   }
@@ -1903,8 +1896,10 @@ geometric_object make_ellipsoid(material_type material, vector3 center, vector3 
 /***************************************************************
  * The remainder of this file implements geometric primitives for prisms.
  * A prism is a planar polygon, consisting of 3 or more user-specified
- * vertices, extruded through a given thickness (the "height") in the
- * direction of a given unit vector (the "axis.")
+ * vertices (the "bottom_vertices), extruded through a given thickness
+ * (the "height") in the direction of a given unit vector (the "axis")
+ * with the walls of the extrusion tapering at a given angle angle
+ * (the "sidewall_angle).
  * Most calculations are done in the "prism coordinate system",
  * in which the prism floor lies in the XY plane with centroid
  * at the origin and the prism axis is the positive Z-axis.
@@ -1975,6 +1970,7 @@ int intersect_line_with_segment(vector3 q0, vector3 q1, vector3 q2, vector3 u, d
   double DetM = M00 * M11 - M01 * M10;
   double L2 = M01 * M01 + M11 * M11; // squared length of edge, used to set length scale
   if (fabs(DetM) < 1.0e-10 * L2) {   // d zero or nearly parallel to edge
+    if (vector3_nearly_equal(q0, q1, 1e-12) || vector3_nearly_equal(q0, q2, 1e-12)) return IN_SEGMENT;
     double q01x = q0.x - q1.x, q01y = q0.y - q1.y, q01 = sqrt(q01x * q01x + q01y * q01y);
     double q02x = q0.x - q2.x, q02y = q0.y - q2.y, q02 = sqrt(q02x * q02x + q02y * q02y);
     double dot = q01x * q02x + q01y * q02y;
@@ -2042,7 +2038,7 @@ boolean node_in_or_on_polygon(vector3 q0, vector3 *nodes, int num_nodes,
   // Is q0 on a vertex or edge?
   // Transform coordinate system of nodes such that q0 is at 0|0
   for (nn = 0; nn < num_nodes; nn++) {
-    int status = intersect_ray_with_segment(q0, nodes[nn], nodes[(nn + 1) % num_nodes], xAxis, 0);
+    int status = intersect_ray_with_segment(q0, nodes[nn], nodes[(nn + 1) % num_nodes], unit_vector3(vector3_minus(nodes[(nn + 1) % num_nodes], nodes[nn])), 0);
     if (status == IN_SEGMENT) { return include_boundaries; }
 
     // Find start point which is not on the x axis (from q0)
@@ -2114,8 +2110,12 @@ boolean point_in_or_on_prism(prism *prsm, vector3 pc, boolean include_boundaries
   double height = prsm->height;
   vector3 pp = prism_coordinate_c2p(prsm, pc);
   if (pp.z < 0.0 || pp.z > prsm->height) return 0;
-  vector3 *nodes = prsm->vertices_p.items;
-  int num_nodes = prsm->vertices_p.num_items;
+  int num_nodes = prsm->vertices_bottom_p.num_items;
+  vector3 nodes[num_nodes];
+  int nv;
+  for (nv = 0; nv < num_nodes; nv++) {
+    nodes[nv] = vector3_plus(prsm->vertices_bottom_p.items[nv], vector3_scale(pp.z, prsm->top_polygon_diff_vectors_scaled_p.items[nv]));
+  }
   return node_in_or_on_polygon(pp, nodes, num_nodes, include_boundaries);
 }
 
@@ -2150,38 +2150,38 @@ static int dcmp(const void *pd1, const void *pd2) {
 int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist) {
   vector3 pp = prism_coordinate_c2p(prsm, pc);
   vector3 dp = prism_vector_c2p(prsm, dc);
-  vector3 *vps = prsm->vertices_p.items;
-  int num_vertices = prsm->vertices_p.num_items;
+  vector3 *vps_bottom = prsm->vertices_bottom_p.items;
+  vector3 *vps_top = prsm->vertices_top_p.items;
+  int num_vertices = prsm->vertices_bottom_p.num_items;
   double height = prsm->height;
 
-  // use length of first polygon edge as a length scale for judging
-  // lengths to be small or large
-  double length_scale = vector3_norm(vector3_minus(vps[1], vps[0]));
-
   // identify intersections with prism side faces
+  double tus_tolerance = 1e-8;
   int num_intersections = 0;
   int nv;
   for (nv = 0; nv < num_vertices; nv++) {
     int nvp1 = nv + 1;
     if (nvp1 == num_vertices) nvp1 = 0;
 
-    // first solve the in-plane portion of the problem: determine the
-    // intersection of the XY-plane projection of the line with the
-    // polygon edge between vertices (nv,nv+1).
-    double s;
-    int status = intersect_line_with_segment(pp, vps[nv], vps[nvp1], dp, &s);
-    if (status == NON_INTERSECTING || status == ON_RAY) continue;
+    // checks if dp is parallel to the plane of the prism side face under consideration
+    vector3 v1 = vector3_minus(vps_bottom[nvp1], vps_bottom[nv]);
+    vector3 v2 = vector3_minus(vps_top[nv], vps_bottom[nv]);
+    double dot_tolerance = 1e-6;
+    if (fabs(vector3_dot(dp, vector3_cross(v1, v2))) <= dot_tolerance) continue;
 
-    // OK, we know the XY-plane projection of the line intersects the polygon edge;
-    // now go back to 3D, ask for the z-coordinate at which the line intersects
-    // the z-axis extrusion of the edge, and determine whether this point lies
-    // inside or outside the height of the prism.
-    double zp_intersect = pp.z + s * dp.z;
-    double AbsTol = 1.0e-7 * length_scale;
-    double zp_min = 0.0 - AbsTol;
-    double zp_max = height + AbsTol;
-    if ((zp_intersect < zp_min) || (zp_intersect > zp_max)) continue;
-
+    // to find the intersection point pp + s*dp between the line and the
+    // prism side face, we will solve the vector equation
+    //             pp + s*dp = o + t*v1 + u*v2
+    // where o is vps_bottom[nv], v1 is vps_bottom[nvp1]-vps_bottom[nv],
+    // v2 is vps_top[nv]-vps_bottom[nv], and 0 <= t <= 1, 0 <= u <= 1.
+    matrix3x3 M;
+    M.c0 = v1;
+    M.c1 = v2;
+    M.c2 = vector3_scale(-1, dp);
+    vector3 RHS = vector3_minus(pp, vps_bottom[nv]);
+    vector3 tus = matrix3x3_vector3_mult(matrix3x3_inverse(M), RHS);
+    if (tus.x < -tus_tolerance || tus.x > 1+tus_tolerance || tus.y < -tus_tolerance || tus.y > 1+tus_tolerance) continue;
+    double s = tus.z;
     slist[num_intersections++] = s;
   }
 
@@ -2191,12 +2191,30 @@ int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist
     for (LowerUpper = 0; LowerUpper < 2; LowerUpper++) {
       double z0p = LowerUpper ? height : 0.0;
       double s = (z0p - pp.z) / dp.z;
+      vector3 *vps = LowerUpper ? vps_top : vps_bottom;
       if (!node_in_polygon(pp.x + s * dp.x, pp.y + s * dp.y, vps, num_vertices)) continue;
       slist[num_intersections++] = s;
     }
 
   qsort((void *)slist, num_intersections, sizeof(double), dcmp);
-  return num_intersections;
+  // if num_intersections is zero then just return that
+  if (num_intersections == 0) return num_intersections;
+  else {
+    // remove duplicates from slist
+    double duplicate_tolerance = 1e-3;
+    int num_unique_elements = 1;
+    double slist_unique[num_vertices+2];
+    slist_unique[0] = slist[0];
+    for (nv = 1; nv < num_intersections; nv++) {
+      if (fabs(slist[nv] - slist[nv-1]) > duplicate_tolerance*fabs(slist[nv])) {
+        slist_unique[num_unique_elements] = slist[nv];
+        num_unique_elements++;
+      }
+    }
+    slist = slist_unique;
+    num_intersections = num_unique_elements;
+    return num_intersections;
+  }
 }
 
 /***************************************************************/
@@ -2296,10 +2314,19 @@ double min_distance_to_quadrilateral(vector3 p, vector3 o, vector3 v1, vector3 v
 
 // fc==0/1 for floor/ceiling
 double min_distance_to_prism_roof_or_ceiling(vector3 pp, prism *prsm, int fc) {
-  vector3 *vps = prsm->vertices_p.items;
-  int num_vertices = prsm->vertices_p.num_items;
-  vector3 op = {0.0, 0.0, 0.0};
-  if (fc == 1) op.z = prsm->height; // origin of floor/ceiling
+  int num_vertices = prsm->vertices_bottom_p.num_items;
+  vector3 op = {0.0, 0.0, 0.0}; // origin of floor/ceiling
+  vector3 vps[num_vertices];
+  if (fc == 1) {
+    memcpy(vps, prsm->vertices_top_p.items, num_vertices * sizeof(vector3));
+    for (int i = 0; i < num_vertices; i++) {
+      vps[i].z = 0;
+    }
+    op.z = prsm->height;
+  }
+  else {
+    memcpy(vps, prsm->vertices_bottom_p.items, num_vertices * sizeof(vector3));
+  }
   vector3 zhatp = {0, 0, 1.0};
   double s = normal_distance_to_plane(pp, op, vps[0], vps[1], zhatp, 0);
   vector3 ppProj =
@@ -2322,8 +2349,9 @@ vector3 normal_to_prism(prism *prsm, vector3 pc) {
   if (prsm->height == 0.0) return prsm->axis;
 
   double height = prsm->height;
-  vector3 *vps = prsm->vertices_p.items;
-  int num_vertices = prsm->vertices_p.num_items;
+  vector3 *vps_bottom = prsm->vertices_bottom_p.items;
+  vector3 *vps_diff_to_top = prsm->top_polygon_diff_vectors_p.items;
+  int num_vertices = prsm->vertices_bottom_p.num_items;
 
   vector3 zhatp = {0.0, 0.0, 1.0};
   vector3 axisp = vector3_scale(height, zhatp);
@@ -2335,9 +2363,9 @@ vector3 normal_to_prism(prism *prsm, vector3 pc) {
   // consider side walls
   for (nv = 0; nv < num_vertices; nv++) {
     int nvp1 = (nv == (num_vertices - 1) ? 0 : nv + 1);
-    vector3 v0p = vps[nv];
-    vector3 v1p = vector3_minus(vps[nvp1], vps[nv]);
-    vector3 v2p = axisp;
+    vector3 v0p = vps_bottom[nv];
+    vector3 v1p = vector3_minus(vps_bottom[nvp1], vps_bottom[nv]);
+    vector3 v2p = vps_diff_to_top[nv];
     vector3 v3p = unit_vector3(vector3_cross(v1p, v2p));
     double s = min_distance_to_quadrilateral(pp, v0p, v1p, v2p, v3p);
     if (fabs(s) < min_distance) {
@@ -2358,18 +2386,124 @@ vector3 normal_to_prism(prism *prsm, vector3 pc) {
 }
 
 /***************************************************************/
+/* Compute the area of a polygon using its vertices.           */
+/***************************************************************/
+double get_area_of_polygon_from_nodes(vector3 *nodes, int num_nodes){
+  double area = 0;
+  int i;
+  for (i = 0; i < num_nodes; ++i) {
+    int i1 = (i + 1) % num_nodes;
+    area += 0.5 * (nodes[i1].x - nodes[i].x) *
+            (nodes[i1].y + nodes[i].y);
+  }
+  return fabs(area);
+}
+
+/***************************************************************/
+/* This computes the volume of an irregular triangular prism   */
+/* following the scheme of http://darrenirvine.blogspot.com/2011/10/volume-of-irregular-triangular-prism.html */
+/* The two end triangles have points a, b, and c. Angle abc    */
+/* is right, and angles bac and acb are acute, of course. The  */
+/* primary constraint for this method is that the lines be-    */
+/* tween 'a's between triangles, betweens 'b's between         */
+/* triangles, and between 'c's between triangles must all be   */
+/* parallel, though the end triangles need not be parallel.    */
+
+/***************************************************************/
+double get_volume_irregular_triangular_prism(vector3 a0, vector3 b0, vector3 c0, vector3 a1, vector3 b1, vector3 c1) {
+  vector3 side_a = vector3_minus(a1, a0);
+  vector3 side_b = vector3_minus(b1, b0);
+  vector3 side_c = vector3_minus(c1, c0);
+  if (vector3_norm(vector3_cross(side_a, side_b)) != 0 ||
+      vector3_norm(vector3_cross(side_b, side_c)) != 0 ||
+      vector3_norm(vector3_cross(side_c, side_a)) != 0) {
+    //throw an error
+  }
+  double length_side_a = vector3_norm(side_a);
+  double length_side_b = vector3_norm(side_b);
+  double length_side_c = vector3_norm(side_c);
+  double average_length = (length_side_a + length_side_b + length_side_c) / 3.0;
+
+  vector3 point_on_plane = a0;
+  vector3 plane_normal_vector = unit_vector3(side_a);
+  vector3 plane_to_a1 = vector3_minus(a1, point_on_plane);
+  vector3 plane_to_b1 = vector3_minus(b1, point_on_plane);
+  vector3 plane_to_c1 = vector3_minus(c1, point_on_plane);
+  vector3 proj_plane_to_a1_on_normal_vector = vector3_scale(vector3_dot(plane_normal_vector, plane_to_a1), plane_normal_vector);
+  vector3 proj_plane_to_b1_on_normal_vector = vector3_scale(vector3_dot(plane_normal_vector, plane_to_b1), plane_normal_vector);
+  vector3 proj_plane_to_c1_on_normal_vector = vector3_scale(vector3_dot(plane_normal_vector, plane_to_c1), plane_normal_vector);
+  vector3 a1_on_plane = vector3_minus(a1, proj_plane_to_a1_on_normal_vector);
+  vector3 b1_on_plane = vector3_minus(b1, proj_plane_to_b1_on_normal_vector);
+  vector3 c1_on_plane = vector3_minus(c1, proj_plane_to_c1_on_normal_vector);
+  double base = vector3_norm(vector3_minus(c1_on_plane, b1_on_plane));
+  double height = vector3_norm(vector3_minus(a1_on_plane, b1_on_plane));
+  double cross_sectional_area = fabs(0.5 * base * height);
+
+  return fabs(average_length * cross_sectional_area);
+}
+
+/***************************************************************/
+/***************************************************************/
+/***************************************************************/
+double get_prism_volume(prism *prsm) {
+  if (prsm->sidewall_angle == 0.0) {
+    return get_area_of_polygon_from_nodes(prsm->vertices_bottom_p.items, prsm->vertices_bottom_p.num_items) * fabs(prsm->height);
+  }
+  else {
+    int num_vertices = prsm->vertices_bottom_p.num_items;
+    double bottom_polygon_area = get_area_of_polygon_from_nodes(prsm->vertices_bottom_p.items, prsm->vertices_bottom_p.num_items);
+    double top_polygon_area = get_area_of_polygon_from_nodes(prsm->vertices_top_p.items, prsm->vertices_top_p.num_items);
+    double volume;
+    vector3 *wedges_a;
+    wedges_a = (vector3 *)malloc(num_vertices * sizeof(vector3));
+    CHECK(wedges_a, "out of memory");
+    vector3 *wedges_b;
+    wedges_b = (vector3 *)malloc(num_vertices * sizeof(vector3));
+    CHECK(wedges_b, "out of memory");
+    vector3 *wedges_c;
+    wedges_c = (vector3 *)malloc(num_vertices * sizeof(vector3));
+    CHECK(wedges_c, "out of memory");
+    if (bottom_polygon_area > top_polygon_area) {
+      volume = fabs(top_polygon_area * prsm->height);
+      memcpy(wedges_a, prsm->vertices_top_p.items, num_vertices * sizeof(vector3));
+      memcpy(wedges_b, prsm->vertices_top_p.items, num_vertices * sizeof(vector3));
+      for (int nv = 0; nv < num_vertices; nv++) {
+        wedges_b[nv].z = 0.0;
+      }
+      memcpy(wedges_c, prsm->vertices_bottom_p.items, num_vertices * sizeof(vector3));
+    }
+    else {
+      volume = fabs(bottom_polygon_area * prsm->height);
+      memcpy(wedges_a, prsm->vertices_bottom_p.items, num_vertices * sizeof(vector3));
+      memcpy(wedges_b, prsm->vertices_bottom_p.items, num_vertices * sizeof(vector3));
+      for (int nv = 0; nv < num_vertices; nv++) {
+        wedges_b[nv].z = prsm->height;
+      }
+      memcpy(wedges_c, prsm->vertices_top_p.items, num_vertices * sizeof(vector3));
+    }
+    for (int nv = 0; nv < num_vertices; nv++) {
+      int nvp1 = (nv + 1 == num_vertices ? 0 : nv + 1);
+      volume += get_volume_irregular_triangular_prism(wedges_a[nv], wedges_b[nv], wedges_c[nv], wedges_a[nvp1], wedges_b[nvp1], wedges_c[nvp1]);
+    }
+    return volume;
+  }
+}
+
+/***************************************************************/
 /***************************************************************/
 /***************************************************************/
 void get_prism_bounding_box(prism *prsm, geom_box *box) {
-  vector3 *vertices = prsm->vertices.items;
-  int num_vertices = prsm->vertices.num_items;
-  box->low = box->high = vertices[0];
+  vector3 *vertices_bottom = prsm->vertices_bottom.items;
+  vector3 *vertices_top = prsm->vertices_top.items;
+  int num_vertices = prsm->vertices_bottom.num_items;
+  box->low = box->high = vertices_bottom[0];
   int nv, fc;
   for (nv = 0; nv < num_vertices; nv++)
     for (fc = 0; fc < 2; fc++) // 'floor,ceiling'
     {
-      vector3 v = vertices[nv];
-      if (fc == 1) v = vector3_plus(v, vector3_scale(prsm->height, prsm->axis));
+      vector3 v;
+      if (fc == 0) v = vertices_bottom[nv];
+      if (fc == 1) v = vertices_top[nv];
 
       box->low.x = fmin(box->low.x, v.x);
       box->low.y = fmin(box->low.y, v.y);
@@ -2387,11 +2521,11 @@ void get_prism_bounding_box(prism *prsm, geom_box *box) {
 void display_prism_info(int indentby, geometric_object *o) {
   prism *prsm = o->subclass.prism_data;
 
-  vector3 *vs = prsm->vertices.items;
-  int num_vertices = prsm->vertices.num_items;
+  vector3 *vs = prsm->vertices_bottom.items;
+  int num_vertices = prsm->vertices_bottom.num_items;
 
-  ctl_printf("%*s     height %g, axis (%g,%g,%g), %i vertices:\n", indentby, "", prsm->height,
-             prsm->axis.x, prsm->axis.y, prsm->axis.z, num_vertices);
+  ctl_printf("%*s     height %g, axis (%g,%g,%g), sidewall angle: %g radians, %i vertices:\n", indentby, "", prsm->height,
+             prsm->axis.x, prsm->axis.y, prsm->axis.z, prsm->sidewall_angle, num_vertices);
   int nv;
   for (nv = 0; nv < num_vertices; nv++)
     ctl_printf("%*s     (%g,%g,%g)\n", indentby, "", vs[nv].x, vs[nv].y, vs[nv].z);
@@ -2403,6 +2537,7 @@ void display_prism_info(int indentby, geometric_object *o) {
 int vector3_nearly_equal(vector3 v1, vector3 v2, double tolerance) {
   return (vector3_norm(vector3_minus(v1, v2)) <= tolerance * vector3_norm(v1));
 }
+matrix3x3 sidewall_scaling_matrix;
 
 /***************************************************************/
 /* return the unit normal vector to the triangle with the given*/
@@ -2417,28 +2552,29 @@ vector3 triangle_normal(vector3 v1, vector3 v2, vector3 v3) {
 
 /***************************************************************/
 /* On entry, the only fields in o->prism that are assumed to   */
-/* be initialized are: vertices, height, and (optionally) axis.*/
-/* If axis has not been initialized (i.e. it is set to its     */
-/* default value, which is the zero vector) then the prism axis*/
-/* is automatically computed as the normal to the vertex plane.*/
-/* If o->center is equal to auto_center on entry, then it is   */
-/* set to the prism center, as computed from the vertices,     */
-/* axis, and height. Otherwise, the prism is rigidly translated*/
-/* to center it at the specified value of o->center.           */
+/* be initialized are: vertices_bottom, height, (optionally)   */
+/* axis, and sidewall_angle. If axis has not been initialized  */
+/* (i.e. it is set to its default value, which is the zero     */
+/* vector) then the prism axis is automatically computed as    */
+/* the normal to the vertex plane. If o->center is equal to    */
+/* auto_center on entry, then it is set to the prism center,   */
+/* as computed from the vertices, axis, and height. Otherwise, */
+/* the prism is rigidly translated to center it at the         */
+/* specified value of o->center.                               */
 /***************************************************************/
 // special vector3 that signifies 'no value specified'
 vector3 auto_center = {NAN, NAN, NAN};
 void init_prism(geometric_object *o) {
   prism *prsm = o->subclass.prism_data;
-  vector3 *vertices = prsm->vertices.items;
-  int num_vertices = prsm->vertices.num_items;
+  vector3 *vertices_bottom = prsm->vertices_bottom.items;
+  int num_vertices = prsm->vertices_bottom.num_items;
   CHECK(num_vertices >= 3, "fewer than 3 vertices in init_prism");
 
   // compute centroid of vertices
   vector3 centroid = {0.0, 0.0, 0.0};
   int nv;
   for (nv = 0; nv < num_vertices; nv++)
-    centroid = vector3_plus(centroid, vertices[nv]);
+    centroid = vector3_plus(centroid, vertices_bottom[nv]);
   prsm->centroid = centroid = vector3_scale(1.0 / ((double)num_vertices), centroid);
 
   // make sure all vertices lie in a plane, i.e. that the normal
@@ -2448,7 +2584,7 @@ void init_prism(geometric_object *o) {
   double tol = 1.0e-6;
   for (nv = 0; nv < num_vertices; nv++) {
     int nvp1 = (nv + 1) % num_vertices;
-    vector3 tri_normal = triangle_normal(centroid, vertices[nv], vertices[nvp1]);
+    vector3 tri_normal = triangle_normal(centroid, vertices_bottom[nv], vertices_bottom[nvp1]);
     if (vector3_norm(tri_normal) == 0.0) // vertices collinear with centroid
       continue;
     if (!plane_normal_set) {
@@ -2487,7 +2623,7 @@ void init_prism(geometric_object *o) {
   else {
     vector3 shift = vector3_minus(o->center, current_center);
     for (nv = 0; nv < num_vertices; nv++)
-      vertices[nv] = vector3_plus(vertices[nv], shift);
+      vertices_bottom[nv] = vector3_plus(vertices_bottom[nv], shift);
     centroid = vector3_plus(centroid, shift);
   }
 
@@ -2516,18 +2652,158 @@ void init_prism(geometric_object *o) {
     yhat = y0hat;
   }
   else {
-    xhat = unit_vector3(vector3_minus(vertices[1], vertices[0]));
+    xhat = unit_vector3(vector3_minus(vertices_bottom[1], vertices_bottom[0]));
     yhat = unit_vector3(vector3_cross(zhat, xhat));
   }
   matrix3x3 m_p2c = {xhat, yhat, zhat};
   prsm->m_p2c = m_p2c;
   prsm->m_c2p = matrix3x3_inverse(m_p2c);
 
-  // compute vertices in prism coordinate system
-  prsm->vertices_p.num_items = num_vertices;
-  prsm->vertices_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  // compute vertices_bottom in prism coordinate system
+  prsm->vertices_bottom_p.num_items = num_vertices;
+  prsm->vertices_bottom_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
   for (nv = 0; nv < num_vertices; nv++)
-    prsm->vertices_p.items[nv] = prism_coordinate_c2p(prsm, vertices[nv]);
+    prsm->vertices_bottom_p.items[nv] = prism_coordinate_c2p(prsm, vertices_bottom[nv]);
+
+  // Calculate difference vertices of the top polygon and vectors between bottom
+  // polygon and the top polygon, where:
+  //  * the bottom polygon is the one passed in to the the make_prism() function,
+  //    stored in vertices_bottom and vertices_bottom_p,
+  //  * the top polygon is the top surface (parallel to the bottom polygon) resulting
+  //    from the extrusion of the bottom polygon. Whether or not the extrusion tapers
+  //    is dependent on the value of sidewall_angle.
+  //
+  // The top polygon is calculated by first copying the values of vertices_bottom_p into
+  // vertices_top_p, except z=prsm->height for all top vertices. If prsm->sidewall_angle
+  // is equal to zero, then no further calculations are performed on the top vertices.
+  // If not, we know that all EDGES of the the top polygon will be offset so that in the
+  // xy plane they are parallel to the edges of the bottom polygon. The offset amount is
+  // determined by the sidewall angle and the height of the prism. To perform the
+  // calculation, each of the edges of the top polygon (without an offset) are stored in
+  // an array of edges (edge is a struct defined if prsm->sidewall_angle!=0 containing
+  // the endpoints a1 a2, with a third vector v defined a2-a1). Then the vector normal to
+  // v is calculated, and the offset vector. A test is performed to determine in which
+  // direction (the direction of +offset or -offset) from the edge we can find points
+  // inside the polygon by performing a node_in_or_on_polygon test at a finite distance
+  // away from the midpoint of the edge:
+  //          edge.a1 + 0.5*edge.v + 1e-3*offset.
+  // This information is used to determine in which direction the offset of the edge is
+  // applied, in conjunction with whether prsm->sidewall_angle is positive or negative
+  // (if positive, the offset will be applied in towards the points where
+  // node_in_or_on_polygon is true, else the offset will be applied out away from those
+  // points). After the offsets are applied to the edges, the intersections between the
+  // new edges are calculated, which are the new values of vertices_top_p.
+  //
+  // Some side notes on the difference vectors:
+  //   * The value of each of the top polygon vertices can be found
+  //             vertices_bottom_p + top_polygon_diff_vectors_p
+  //             vertices_bottom   + top_polygon_diff_vectors
+  //   * A linearly interpolated value of the polygon vertices between the bottom
+  //     polygon and the top can be found
+  //             vertices_bottom_p + top_polygon_diff_vectors_scaled_p * z
+  number theta = (K_PI/2) - fabs(prsm->sidewall_angle);
+  prsm->vertices_top_p.num_items = num_vertices;
+  prsm->vertices_top_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  CHECK(prsm->vertices_top_p.items, "out of memory");
+  memcpy(prsm->vertices_top_p.items, prsm->vertices_bottom_p.items, num_vertices * sizeof(vector3));
+  for (nv = 0; nv < num_vertices; nv++) {
+    prsm->vertices_top_p.items[nv].z = prsm->height;
+  }
+
+  if (prsm->sidewall_angle != 0.0) {
+    typedef struct {
+      vector3 a1, a2, v;  // v will be defined as a2 - a1
+    } edge;
+
+    // find the point at the bottom left corner of the polygon
+    double smallest_x = HUGE_VAL;
+    double smallest_y = HUGE_VAL;
+    int index_for_point_a = -1;
+    int index_for_point_b = -1;
+    int index_for_point_c = -1;
+    for (nv = 0; nv < num_vertices; nv++) {
+        double current_x = prsm->vertices_bottom_p.items[nv].x;
+        double current_y = prsm->vertices_bottom_p.items[nv].y;
+        if (current_x < smallest_x) {
+            smallest_x = current_x;
+            smallest_y = current_y;
+            index_for_point_b = nv;
+        }
+        else if (current_x == smallest_x && current_y < smallest_y) {
+            smallest_y = current_y;
+            index_for_point_b = nv;
+        }
+    }
+    if (index_for_point_b == -1) {
+        exit(EXIT_FAILURE);
+    }
+    else {
+        index_for_point_a = (index_for_point_b + 1 == num_vertices ? 0 : index_for_point_b + 1);
+        index_for_point_c = (index_for_point_b - 1 == -1 ? num_vertices - 1 : index_for_point_b - 1);
+    }
+    // find orientation of the polygon
+    vector3 A = prsm->vertices_bottom_p.items[index_for_point_a];
+    vector3 B = prsm->vertices_bottom_p.items[index_for_point_b];
+    vector3 C = prsm->vertices_bottom_p.items[index_for_point_c];
+    double orientation_number = (B.x - A.x)*(C.y - A.y)-(C.x - A.x)*(B.y - A.y);
+    int orientation_positive_or_negative = (orientation_number < 0 ? 0 : 1);
+
+    edge *top_polygon_edges;
+    top_polygon_edges = (edge *)malloc(num_vertices * sizeof(edge));
+    number w = prsm->height / tan(theta);
+
+    for (nv = 0; nv < num_vertices; nv++) {
+      top_polygon_edges[nv].a1 = prsm->vertices_top_p.items[(nv - 1 == -1 ? num_vertices - 1 : nv - 1)];
+      top_polygon_edges[nv].a2 = prsm->vertices_top_p.items[nv];
+      top_polygon_edges[nv].v = vector3_minus(top_polygon_edges[nv].a2, top_polygon_edges[nv].a1);
+
+      vector3 normal_vector = (orientation_positive_or_negative ? unit_vector3(vector3_cross(top_polygon_edges[nv].v, zhat)) : unit_vector3(vector3_cross(top_polygon_edges[nv].v, vector3_scale(-1, zhat))));
+
+      // positive sidewall angles means the prism tapers in towards the rest of the prism body
+      // negative sidewall angles means the prism tapers out away from the rest of the prism body
+      vector3 offset = vector3_scale(prsm->sidewall_angle > 0 ? w : -w, normal_vector);
+      top_polygon_edges[nv].a1 = vector3_plus(top_polygon_edges[nv].a1, offset);
+      top_polygon_edges[nv].a2 = vector3_plus(top_polygon_edges[nv].a2, offset);
+    }
+
+    for (nv = 0; nv < num_vertices; nv++) {
+      number x1 = top_polygon_edges[nv].a1.x;
+      number y1 = top_polygon_edges[nv].a1.y;
+      number x2 = top_polygon_edges[nv].a2.x;
+      number y2 = top_polygon_edges[nv].a2.y;
+      number x3 = top_polygon_edges[(nv + 1 == num_vertices ? 0 : nv + 1)].a1.x;
+      number y3 = top_polygon_edges[(nv + 1 == num_vertices ? 0 : nv + 1)].a1.y;
+      number x4 = top_polygon_edges[(nv + 1 == num_vertices ? 0 : nv + 1)].a2.x;
+      number y4 = top_polygon_edges[(nv + 1 == num_vertices ? 0 : nv + 1)].a2.y;
+
+      // Intersection point calculated with https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_points_on_each_line
+      number px = ((x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4)) / ((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4));
+      number py = ((x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4)) / ((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4));
+      prsm->vertices_top_p.items[nv].x = px;
+      prsm->vertices_top_p.items[nv].y = py;
+    }
+  }
+
+  prsm->top_polygon_diff_vectors_p.num_items = num_vertices;
+  prsm->top_polygon_diff_vectors_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  CHECK(prsm->top_polygon_diff_vectors_p.items, "out of memory");
+  for (nv = 0; nv < num_vertices; nv++) {
+    prsm->top_polygon_diff_vectors_p.items[nv] = vector3_minus(prsm->vertices_top_p.items[nv], prsm->vertices_bottom_p.items[nv]);
+  }
+
+  prsm->top_polygon_diff_vectors_scaled_p.num_items = num_vertices;
+  prsm->top_polygon_diff_vectors_scaled_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  CHECK(prsm->top_polygon_diff_vectors_scaled_p.items, "out of memory");
+  for (nv = 0; nv < num_vertices; nv++) {
+      prsm->top_polygon_diff_vectors_scaled_p.items[nv] = vector3_scale(1/prsm->height, prsm->top_polygon_diff_vectors_p.items[nv]);
+  }
+
+  prsm->vertices_top.num_items = num_vertices;
+  prsm->vertices_top.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  CHECK(prsm->vertices_top.items, "out of memory");
+  for (nv = 0; nv < num_vertices; nv++) {
+    prsm->vertices_top.items[nv] = prism_coordinate_p2c(prsm, prsm->vertices_top_p.items[nv]);
+  }
 
   // workspace is an internally-stored double-valued array of length num_vertices+2
   // that is used by some geometry routines
@@ -2544,20 +2820,34 @@ geometric_object make_prism(material_type material, const vector3 *vertices, int
   return make_prism_with_center(material, auto_center, vertices, num_vertices, height, axis);
 }
 
-// prism in which all vertices are translated to ensure that the prism is centered at center
-geometric_object make_prism_with_center(material_type material, vector3 center,
-                                        const vector3 *vertices, int num_vertices, double height,
-                                        vector3 axis) {
+// prism in which all vertices are translated to ensure that the prism is centered at center.
+geometric_object make_prism_with_center(material_type material, vector3 center, const vector3 *vertices_bottom,
+                                        int num_vertices, double height, vector3 axis) {
+  return make_slanted_prism_with_center(material, center, vertices_bottom, num_vertices, height, axis, 0);
+}
+
+// slanted prism with center determined automatically from vertices, height, axis, and sidewall_angle
+geometric_object make_slanted_prism(material_type material, const vector3 *vertices_bottom,
+                                    int num_vertices, double height, vector3 axis, double sidewall_angle) {
+  return make_slanted_prism_with_center(material, auto_center, vertices_bottom, num_vertices, height, axis, sidewall_angle);
+}
+
+// Have both make_prism_with_center and make_slanted_prism_with_center keep the same parameters to maintain ABI
+// compatibility, though make_prism_with_center just calls make_slanted_prism_with_center with the sidewall angle equal
+// to zero. To make a slanted prism, the user will have to call make_slanted_prism for now.
+geometric_object make_slanted_prism_with_center(material_type material, vector3 center, const vector3 *vertices_bottom,
+                                                int num_vertices, double height, vector3 axis, double sidewall_angle) {
   geometric_object o = make_geometric_object(material, center);
   o.which_subclass = GEOM PRISM;
   prism *prsm = o.subclass.prism_data = MALLOC1(prism);
   CHECK(prsm, "out of memory");
-  prsm->vertices.num_items = num_vertices;
-  prsm->vertices.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
-  CHECK(prsm->vertices.items, "out of memory");
-  memcpy(prsm->vertices.items, vertices, num_vertices * sizeof(vector3));
+  prsm->vertices_bottom.num_items = num_vertices;
+  prsm->vertices_bottom.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  CHECK(prsm->vertices_bottom.items, "out of memory");
+  memcpy(prsm->vertices_bottom.items, vertices_bottom, num_vertices * sizeof(vector3));
   prsm->height = height;
   prsm->axis = axis;
+  prsm->sidewall_angle = sidewall_angle;
   init_prism(&o);
   return o;
 }
