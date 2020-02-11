@@ -92,7 +92,7 @@
 
 ; some notes regarding prisms:
 ;  (a) When instantiating a prism, typically only the
-;      fields `vertices_bottom`, `height,` (optionally) `axis`,
+;      fields `vertices`, `height,` (optionally) `axis`,
 ;      and `sidewall_angle` will be initialized by the user; all
 ;      remaining fields are derived properties that are computed
 ;      internally. (So, morally, they should be thought of as having
@@ -101,8 +101,8 @@
 ;      the derivation or post-processing is implemented in C, not scheme.)
 ;  (b) The suffix _p (for "prism") is used to identify variables
 ;      that store coordinates of points or components of vectors
-;      in the prism coordinate system. (The prism coordinate system 
-;      is defined by the condition that the prism axis is the z-axis 
+;      in the prism coordinate system. (The prism coordinate system
+;      is defined by the condition that the prism axis is the z-axis
 ;      and the prism floor lies in the xy plane at z==0.) Variables
 ;      with no suffix refer to quantities in ordinary 3D space.
 ;  (c) "centroid" refers to the centroid of the prism floor polygon; this is
@@ -124,12 +124,12 @@
 ;      a foundry that cannot grow objects with a perfectly normal sidewall.
 (define-class prism geometric-object
 ; fields to be filled in by users
-  (define-property vertices_bottom '() (make-list-type 'vector3))
+  (define-property vertices '() (make-list-type 'vector3))
   (define-property height 0 'number)
   (define-property axis (vector3 0 0 0) 'vector3)
   (define-property sidewall_angle 0 'number)
 ; derived fields computed internally
-  (define-property vertices_bottom_p '() (make-list-type 'vector3))
+  (define-property vertices_p '() (make-list-type 'vector3))
   (define-property top_polygon_diff_vectors_p '() (make-list-type 'vector3))
   (define-property top_polygon_diff_vectors_scaled_p '() (make-list-type 'vector3))
   (define-property vertices_top_p '() (make-list-type 'vector3))
