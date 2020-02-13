@@ -53,3 +53,4 @@ geom-ctl-io.c
 geomtst
 nlopt-constants.scm
 utils/test-prism
+*.dat
