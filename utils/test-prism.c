@@ -546,6 +546,7 @@ double relative_error(double actual, double expected) {
 }
 
 int test_helper_functions_on_octagonal_c_prism() {
+  int i;
   double tolerance = 5.0e-5;
 
   void *m = NULL;
@@ -660,12 +661,12 @@ int test_helper_functions_on_octagonal_c_prism() {
   point_in_prism_expected_normal_sidewall[24] = 0; // center of the c
 
   int point_in_prism_actual_normal_sidewall[point_in_prism_test_points_normal_sidewall.num_items];
-  for (int i = 0; i < point_in_prism_test_points_normal_sidewall.num_items; i++) {
+  for (i = 0; i < point_in_prism_test_points_normal_sidewall.num_items; i++) {
     num_tests_normal++;
     point_in_prism_actual_normal_sidewall[i] = point_in_fixed_pobjectp(point_in_prism_test_points_normal_sidewall.items[i], &octagon_c_normal_sidewall_geom_object);
   }
 
-  for (int i = 0; i < point_in_prism_test_points_normal_sidewall.num_items; i++) {
+  for (i = 0; i < point_in_prism_test_points_normal_sidewall.num_items; i++) {
     if (point_in_prism_actual_normal_sidewall[i] != point_in_prism_expected_normal_sidewall[i]) {
       ctl_printf("\tAt (%f, %f, %f) we expected point_in_fixed_pobjectp on the normal sidewall prism to return %i, but instead it returned %i\n", point_in_prism_test_points_normal_sidewall.items[i].x, point_in_prism_test_points_normal_sidewall.items[i].y, point_in_prism_test_points_normal_sidewall.items[i].z, point_in_prism_expected_normal_sidewall[i], point_in_prism_actual_normal_sidewall[i]);
       num_failed_normal++;
@@ -729,12 +730,12 @@ int test_helper_functions_on_octagonal_c_prism() {
   point_in_prism_expected_tapered_sidewall[24] = 0; // center of the c
 
   int point_in_prism_actual_tapered_sidewall[point_in_prism_test_points_tapered_sidewall.num_items];
-  for (int i = 0; i < point_in_prism_test_points_tapered_sidewall.num_items; i++) {
+  for (i = 0; i < point_in_prism_test_points_tapered_sidewall.num_items; i++) {
     num_tests_tapered++;
     point_in_prism_actual_tapered_sidewall[i] = point_in_fixed_pobjectp(point_in_prism_test_points_tapered_sidewall.items[i], &octagon_c_two_half_degree_sidewall_geom_object);
   }
 
-  for (int i = 0; i < point_in_prism_test_points_tapered_sidewall.num_items; i++) {
+  for (i = 0; i < point_in_prism_test_points_tapered_sidewall.num_items; i++) {
     if (point_in_prism_actual_tapered_sidewall[i] != point_in_prism_expected_tapered_sidewall[i]) {
       ctl_printf("\tAt (%f, %f, %f) we expected point_in_fixed_pobjectp on the tapered sidewall prism to return %i, but instead it returned %i\n", point_in_prism_test_points_tapered_sidewall.items[i].x, point_in_prism_test_points_tapered_sidewall.items[i].y, point_in_prism_test_points_tapered_sidewall.items[i].z, point_in_prism_expected_tapered_sidewall[i], point_in_prism_actual_tapered_sidewall[i]);
       num_failed_tapered++;
@@ -809,12 +810,12 @@ int test_helper_functions_on_octagonal_c_prism() {
   normal_to_prism_expected_normal_sidewall[29] = make_vector3(0.0000000, 0.0000000, 1.0000000);
 
   vector3 normal_to_prism_actual_normal_sidewall[normal_to_prism_test_points_normal_sidewall.num_items];
-  for (int i = 0; i < normal_to_prism_test_points_normal_sidewall.num_items; i++) {
+  for (i = 0; i < normal_to_prism_test_points_normal_sidewall.num_items; i++) {
     num_tests_normal++;
     normal_to_prism_actual_normal_sidewall[i] = unit_vector3(normal_to_object(normal_to_prism_test_points_normal_sidewall.items[i], octagon_c_normal_sidewall_geom_object));
   }
 
-  for (int i = 0; i < normal_to_prism_test_points_normal_sidewall.num_items; i++) {
+  for (i = 0; i < normal_to_prism_test_points_normal_sidewall.num_items; i++) {
     if (!vector3_nearly_equal(normal_to_prism_expected_normal_sidewall[i], normal_to_prism_actual_normal_sidewall[i], tolerance)
         && !vector3_nearly_equal(normal_to_prism_expected_normal_sidewall[i], vector3_scale(-1, normal_to_prism_actual_normal_sidewall[i]), tolerance)) {
       num_failed_normal++;
@@ -892,12 +893,12 @@ int test_helper_functions_on_octagonal_c_prism() {
   normal_to_prism_expected_tapered_sidewall[29] = make_vector3(0.0000000, 0.0000000, 1.0000000);
 
   vector3 normal_to_prism_actual_tapered_sidewall[normal_to_prism_test_points_tapered_sidewall.num_items];
-  for (int i = 0; i < normal_to_prism_test_points_tapered_sidewall.num_items; i++) {
+  for (i = 0; i < normal_to_prism_test_points_tapered_sidewall.num_items; i++) {
     num_tests_tapered++;
     normal_to_prism_actual_tapered_sidewall[i] = unit_vector3(normal_to_object(normal_to_prism_test_points_tapered_sidewall.items[i], octagon_c_two_half_degree_sidewall_geom_object));
   }
 
-  for (int i = 0; i < normal_to_prism_test_points_tapered_sidewall.num_items; i++) {
+  for (i = 0; i < normal_to_prism_test_points_tapered_sidewall.num_items; i++) {
     if (!vector3_nearly_equal(normal_to_prism_expected_tapered_sidewall[i], normal_to_prism_actual_tapered_sidewall[i], tolerance)
         && !vector3_nearly_equal(normal_to_prism_expected_tapered_sidewall[i], vector3_scale(-1, normal_to_prism_actual_tapered_sidewall[i]), tolerance)) {
       num_failed_tapered++;
@@ -967,7 +968,7 @@ int test_helper_functions_on_octagonal_c_prism() {
   intersect_line_with_prism_b_normal_sidewall[8] = 300; // between top point 3 and center of c on bottom
 
   double intersect_line_with_prism_actual_normal_sidewall[intersect_line_with_prism_test_points_normal_sidewall.num_items];
-  for (int i = 0; i < intersect_line_with_prism_test_points_normal_sidewall.num_items; i++) {
+  for (i = 0; i < intersect_line_with_prism_test_points_normal_sidewall.num_items; i++) {
     num_tests_normal++;
     vector3 p = intersect_line_with_prism_test_points_normal_sidewall.items[i];
     vector3 d = intersect_line_with_prism_test_vectors_normal_sidewall[i];
@@ -977,7 +978,7 @@ int test_helper_functions_on_octagonal_c_prism() {
     intersect_line_with_prism_actual_normal_sidewall[i] = intersect_line_segment_with_object(p, d, o, a, b);
   }
 
-  for (int i = 0; i < intersect_line_with_prism_test_points_normal_sidewall.num_items; i++) {
+  for (i = 0; i < intersect_line_with_prism_test_points_normal_sidewall.num_items; i++) {
     double actual = intersect_line_with_prism_actual_normal_sidewall[i];
     double expected = intersect_line_with_prism_expected_normal_sidewall[i];
     if (fabs(fabs(actual)-fabs(expected)) > tolerance * fmax(fabs(actual), fabs(expected))) {
@@ -1052,7 +1053,7 @@ int test_helper_functions_on_octagonal_c_prism() {
   intersect_line_with_prism_b_tapered_sidewall[8] = 300; // between top point 3 and center of c on bottom
 
   double intersect_line_with_prism_actual_tapered_sidewall[intersect_line_with_prism_test_points_tapered_sidewall.num_items];
-  for (int i = 0; i < intersect_line_with_prism_test_points_tapered_sidewall.num_items; i++) {
+  for (i = 0; i < intersect_line_with_prism_test_points_tapered_sidewall.num_items; i++) {
     num_tests_tapered++;
     vector3 p = intersect_line_with_prism_test_points_tapered_sidewall.items[i];
     vector3 d = intersect_line_with_prism_test_vectors_tapered_sidewall[i];
@@ -1062,7 +1063,7 @@ int test_helper_functions_on_octagonal_c_prism() {
     intersect_line_with_prism_actual_tapered_sidewall[i] = intersect_line_segment_with_object(p, d, o, a, b);
   }
 
-  for (int i = 0; i < intersect_line_with_prism_test_points_tapered_sidewall.num_items; i++) {
+  for (i = 0; i < intersect_line_with_prism_test_points_tapered_sidewall.num_items; i++) {
     double actual = intersect_line_with_prism_actual_tapered_sidewall[i];
     double expected = intersect_line_with_prism_expected_tapered_sidewall[i];
     if (fabs(fabs(actual)-fabs(expected)) > tolerance * fmax(fabs(actual), fabs(expected))) {
