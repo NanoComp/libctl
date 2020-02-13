@@ -2314,12 +2314,12 @@ double min_distance_to_quadrilateral(vector3 p, vector3 o, vector3 v1, vector3 v
 
 // fc==0/1 for floor/ceiling
 double min_distance_to_prism_roof_or_ceiling(vector3 pp, prism *prsm, int fc) {
-  int num_vertices = prsm->vertices_p.num_items;
+  int num_vertices = prsm->vertices_p.num_items, i;
   vector3 op = {0.0, 0.0, 0.0}; // origin of floor/ceiling
   vector3 vps[num_vertices];
   if (fc == 1) {
     memcpy(vps, prsm->vertices_top_p.items, num_vertices * sizeof(vector3));
-    for (int i = 0; i < num_vertices; i++) {
+    for (i = 0; i < num_vertices; i++) {
       vps[i].z = 0;
     }
     op.z = prsm->height;
@@ -2450,7 +2450,7 @@ double get_prism_volume(prism *prsm) {
     return get_area_of_polygon_from_nodes(prsm->vertices_p.items, prsm->vertices_p.num_items) * fabs(prsm->height);
   }
   else {
-    int num_vertices = prsm->vertices_p.num_items;
+    int num_vertices = prsm->vertices_p.num_items, nv;
     double bottom_polygon_area = get_area_of_polygon_from_nodes(prsm->vertices_p.items, prsm->vertices_p.num_items);
     double top_polygon_area = get_area_of_polygon_from_nodes(prsm->vertices_top_p.items, prsm->vertices_top_p.num_items);
     double volume;
@@ -2467,7 +2467,7 @@ double get_prism_volume(prism *prsm) {
       volume = fabs(top_polygon_area * prsm->height);
       memcpy(wedges_a, prsm->vertices_top_p.items, num_vertices * sizeof(vector3));
       memcpy(wedges_b, prsm->vertices_top_p.items, num_vertices * sizeof(vector3));
-      for (int nv = 0; nv < num_vertices; nv++) {
+      for (nv = 0; nv < num_vertices; nv++) {
         wedges_b[nv].z = 0.0;
       }
       memcpy(wedges_c, prsm->vertices_p.items, num_vertices * sizeof(vector3));
@@ -2476,12 +2476,12 @@ double get_prism_volume(prism *prsm) {
       volume = fabs(bottom_polygon_area * prsm->height);
       memcpy(wedges_a, prsm->vertices_p.items, num_vertices * sizeof(vector3));
       memcpy(wedges_b, prsm->vertices_p.items, num_vertices * sizeof(vector3));
-      for (int nv = 0; nv < num_vertices; nv++) {
+      for (nv = 0; nv < num_vertices; nv++) {
         wedges_b[nv].z = prsm->height;
       }
       memcpy(wedges_c, prsm->vertices_top_p.items, num_vertices * sizeof(vector3));
     }
-    for (int nv = 0; nv < num_vertices; nv++) {
+    for (nv = 0; nv < num_vertices; nv++) {
       int nvp1 = (nv + 1 == num_vertices ? 0 : nv + 1);
       volume += get_volume_irregular_triangular_prism(wedges_a[nv], wedges_b[nv], wedges_c[nv], wedges_a[nvp1], wedges_b[nvp1], wedges_c[nvp1]);
     }
