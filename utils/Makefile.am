@@ -42,6 +42,11 @@ ctl-io.h: geom.scm $(GEN_CTL_IO)
 
 ctlgeom-types.h: ctl-io.h
 	sed 's,SCM,void*,;s,ctl\.h,ctl-math.h,' ctl-io.h > $@
+	echo '#ifndef LIBCTL_MAJOR_VERSION' >> $@
+	echo '#  define LIBCTL_MAJOR_VERSION '$(LIBCTL_MAJOR_VERSION) >> $@
+	echo '#  define LIBCTL_MINOR_VERSION '$(LIBCTL_MINOR_VERSION) >> $@
+	echo '#  define LIBCTL_BUGFIX_VERSION '$(LIBCTL_BUGFIX_VERSION) >> $@
+	echo '#endif' >> $@
 
 geom-ctl-io.c: ctl-io.c
 	sed 's,ctl-io\.h,ctlgeom-types.h,;s,/.* Input variables .*/,@#include "geom-ctl-io-defaults.c"@#if 0@,;s,/.* Output variables .*/,#endif@,' ctl-io.c | tr '@' '\n' > $@

@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT(libctl, 4.4.0, stevenj@alum.mit.edu)
+AC_INIT(libctl, 4.5.0, stevenj@alum.mit.edu)
 AC_CONFIG_SRCDIR([src/ctl.c])
 AC_CONFIG_HEADERS([config.h src/ctl.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -8,7 +8,7 @@ AM_MAINTAINER_MODE
 # Shared-library version number; indicates api compatibility, and is
 # not the same as the "public" version number.  (Don't worry about this
 # except for public releases.)
-SHARED_VERSION_INFO="9:0:2" # CURRENT:REVISION:AGE
+SHARED_VERSION_INFO="10:0:3" # CURRENT:REVISION:AGE
 
 AM_INIT_AUTOMAKE([foreign])
 AC_SUBST(SHARED_VERSION_INFO)
@@ -29,6 +29,9 @@ test "x$LIBCTL_BUGFIX_VERSION" = x && LIBCTL_BUGFIX_VERSION=0
 AC_DEFINE_UNQUOTED(LIBCTL_MAJOR_VERSION, $LIBCTL_MAJOR_VERSION, [major v.])
 AC_DEFINE_UNQUOTED(LIBCTL_MINOR_VERSION, $LIBCTL_MINOR_VERSION, [minor v.])
 AC_DEFINE_UNQUOTED(LIBCTL_BUGFIX_VERSION, $LIBCTL_BUGFIX_VERSION, [bugfix v.])
+AC_SUBST(LIBCTL_MAJOR_VERSION)
+AC_SUBST(LIBCTL_MINOR_VERSION)
+AC_SUBST(LIBCTL_BUGFIX_VERSION)
 
 ###########################################################################
 

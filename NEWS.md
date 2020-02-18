@@ -1,5 +1,15 @@
 # Libctl Release Notes
 
+## libctl 4.5.0
+
+* New `make_slanted_prism` functions to make a prism with
+  a given sidewall angle (#53).
+
+* Defined `LIBCTL_MAJOR_VERSION` etc. in `ctlgeom.h` header file when
+  using stand-alone libctlgeom.
+
+* Bugfix in point-in-prism test (#49).
+
 ## libctl 4.4.0
 
 11/12/19
