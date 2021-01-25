@@ -25,6 +25,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdarg.h>
+#include <stdbool.h>
 
 #ifndef LIBCTLGEOM
 #include "ctl-io.h"
@@ -80,7 +81,7 @@ static double intersect_line_segment_with_prism(prism *prsm, vector3 pc, vector3
 static double get_prism_volume(prism *prsm);
 static void get_prism_bounding_box(prism *prsm, geom_box *box);
 static void display_prism_info(int indentby, geometric_object *o);
-static void init_prism(geometric_object *o);
+static void init_prism(geometric_object *o, const bool first_time);
 /**************************************************************************/
 
 /* Allows writing to Python's stdout when running from Meep's Python interface */
@@ -157,7 +158,7 @@ void geom_fix_object_ptr(geometric_object *o) {
       break;
     }
     case GEOM PRISM: {
-      init_prism(o);
+      init_prism(o, false);
       break;
     }
     case GEOM COMPOUND_GEOMETRIC_OBJECT: {
@@ -2584,7 +2585,7 @@ vector3 triangle_normal(vector3 v1, vector3 v2, vector3 v3) {
 /***************************************************************/
 // special vector3 that signifies 'no value specified'
 vector3 auto_center = {NAN, NAN, NAN};
-void init_prism(geometric_object *o) {
+void init_prism(geometric_object *o, const bool first_time) {
   prism *prsm = o->subclass.prism_data;
   vector3 *vertices = prsm->vertices.items;
   int num_vertices = prsm->vertices.num_items;
@@ -2681,7 +2682,8 @@ void init_prism(geometric_object *o) {
 
   // compute vertices in prism coordinate system
   prsm->vertices_p.num_items = num_vertices;
-  prsm->vertices_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  if (first_time || !prsm->vertices_p.items)
+    prsm->vertices_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
   for (nv = 0; nv < num_vertices; nv++)
     prsm->vertices_p.items[nv] = prism_coordinate_c2p(prsm, vertices[nv]);
 
@@ -2723,7 +2725,8 @@ void init_prism(geometric_object *o) {
   //             vertices_p + top_polygon_diff_vectors_scaled_p * z
   number theta = (K_PI/2) - fabs(prsm->sidewall_angle);
   prsm->vertices_top_p.num_items = num_vertices;
-  prsm->vertices_top_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  if (first_time || !prsm->vertices_top_p.items)
+    prsm->vertices_top_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
   CHECK(prsm->vertices_top_p.items, "out of memory");
   memcpy(prsm->vertices_top_p.items, prsm->vertices_p.items, num_vertices * sizeof(vector3));
   for (nv = 0; nv < num_vertices; nv++) {
@@ -2803,23 +2806,26 @@ void init_prism(geometric_object *o) {
       prsm->vertices_top_p.items[nv].y = py;
     }
   }
+  FREE(top_polygon_edges);
 
   prsm->top_polygon_diff_vectors_p.num_items = num_vertices;
-  prsm->top_polygon_diff_vectors_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  if (first_time || !prsm->top_polygon_diff_vectors_p.items)
+    prsm->top_polygon_diff_vectors_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
   CHECK(prsm->top_polygon_diff_vectors_p.items, "out of memory");
   for (nv = 0; nv < num_vertices; nv++) {
     prsm->top_polygon_diff_vectors_p.items[nv] = vector3_minus(prsm->vertices_top_p.items[nv], prsm->vertices_p.items[nv]);
   }
 
   prsm->top_polygon_diff_vectors_scaled_p.num_items = num_vertices;
-  prsm->top_polygon_diff_vectors_scaled_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
-  CHECK(prsm->top_polygon_diff_vectors_scaled_p.items, "out of memory");
+  if (first_time || !prsm->top_polygon_diff_vectors_scaled_p.items)
+    prsm->top_polygon_diff_vectors_scaled_p.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
   for (nv = 0; nv < num_vertices; nv++) {
       prsm->top_polygon_diff_vectors_scaled_p.items[nv] = vector3_scale(1/prsm->height, prsm->top_polygon_diff_vectors_p.items[nv]);
   }
 
   prsm->vertices_top.num_items = num_vertices;
-  prsm->vertices_top.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  if (first_time || !prsm->vertices_top.items)
+    prsm->vertices_top.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
   CHECK(prsm->vertices_top.items, "out of memory");
   for (nv = 0; nv < num_vertices; nv++) {
     prsm->vertices_top.items[nv] = prism_coordinate_p2c(prsm, prsm->vertices_top_p.items[nv]);
@@ -2828,7 +2834,8 @@ void init_prism(geometric_object *o) {
   // workspace is an internally-stored double-valued array of length num_vertices+2
   // that is used by some geometry routines
   prsm->workspace.num_items = num_vertices + 2;
-  prsm->workspace.items = (double *)malloc((num_vertices + 2) * sizeof(double));
+  if (first_time || !prsm->workspace.items)
+    prsm->workspace.items = (double *)malloc((num_vertices + 2) * sizeof(double));
 }
 
 /***************************************************************/
@@ -2868,6 +2875,6 @@ geometric_object make_slanted_prism_with_center(material_type material, vector3 
   prsm->height = height;
   prsm->axis = axis;
   prsm->sidewall_angle = sidewall_angle;
-  init_prism(&o);
+  init_prism(&o, true);
   return o;
 }
