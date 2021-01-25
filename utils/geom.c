@@ -1359,8 +1359,28 @@ void destroy_geom_box_tree(geom_box_tree t) {
   if (t) {
     destroy_geom_box_tree(t->t1);
     destroy_geom_box_tree(t->t2);
-    if (t->nobjects && t->objects) FREE(t->objects);
+    if (t->nobjects && t->objects) {
+      if (t->objects->o)
+        if (t->objects->o->which_subclass == GEOM PRISM) {
+          prism *prsm = t->objects->o->subclass.prism_data;
+          FREE(prsm->vertices_p.items);
+          prsm->vertices_p.items = NULL;
+          FREE(prsm->top_polygon_diff_vectors_p.items);
+          prsm->top_polygon_diff_vectors_p.items = NULL;
+          FREE(prsm->top_polygon_diff_vectors_scaled_p.items);
+          prsm->top_polygon_diff_vectors_scaled_p.items = NULL;
+          FREE(prsm->vertices_top.items);
+          prsm->vertices_top.items = NULL;
+          FREE(prsm->vertices_top_p.items);
+          prsm->vertices_top_p.items = NULL;
+          FREE(prsm->workspace.items);
+          prsm->workspace.items = NULL;
+        }
+      FREE(t->objects);
+      t->objects = NULL;
+    }
     FREE1(t);
+    t = NULL;
   }
 }
 
