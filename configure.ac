@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT(libctl, 4.5.0, stevenj@alum.mit.edu)
+AC_INIT([libctl],[4.5.0],[stevenj@alum.mit.edu])
 AC_CONFIG_SRCDIR([src/ctl.c])
 AC_CONFIG_HEADERS([config.h src/ctl.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -12,8 +12,8 @@ SHARED_VERSION_INFO="10:0:3" # CURRENT:REVISION:AGE
 
 AM_INIT_AUTOMAKE([foreign])
 AC_SUBST(SHARED_VERSION_INFO)
-AM_ENABLE_SHARED(no) dnl shared libs cause too many headaches to be default
-AC_PROG_LIBTOOL
+AC_ENABLE_SHARED([no]) dnl shared libs cause too many headaches to be default
+LT_INIT
 
 ###########################################################################
 
@@ -50,14 +50,11 @@ if test "$ok" = "yes"; then
         AC_DEFINE(DEBUG, 1, [Define to enable debugging checks.])
 fi
 
-# Checks for header files.
-AC_HEADER_STDC
-
 ###########################################################################
 
 # Find Guile library, flags, etcetera:
 
-AC_ARG_WITH(guile, [AC_HELP_STRING([--without-guile],[disable use of Guile])],
+AC_ARG_WITH(guile, [AS_HELP_STRING([--without-guile],[disable use of Guile])],
                    with_guile=$withval, with_guile=yes)
 
 if test x"$with_guile" = xyes; then
@@ -118,78 +115,78 @@ if test x"$with_guile" = xyes; then
 
 AC_MSG_CHECKING([for modern non-gh interface])
 ok=yes
-AC_TRY_LINK([#include <libguile.h>
-], [scm_from_double(0.0);scm_from_int(0);scm_boot_guile(0,0,0,0);scm_c_define_gsubr(0,0,0,0,0);], [AC_DEFINE(HAVE_NO_GH, 1, [Define if we can avoid the gh interface])], ok=no)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <libguile.h>
+]], [[scm_from_double(0.0);scm_from_int(0);scm_boot_guile(0,0,0,0);scm_c_define_gsubr(0,0,0,0,0);]])],[AC_DEFINE(HAVE_NO_GH, 1, [Define if we can avoid the gh interface])],[ok=no])
 AC_MSG_RESULT($ok)
 
 
 AC_MSG_CHECKING([for gh_enter])
 ok=yes
-AC_TRY_LINK([#include <guile/gh.h>
-], [gh_enter(0,0,0);], [AC_DEFINE(HAVE_GH_ENTER, 1, [Define if we have gh_enter.])], ok=no)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <guile/gh.h>
+]], [[gh_enter(0,0,0);]])],[AC_DEFINE(HAVE_GH_ENTER, 1, [Define if we have gh_enter.])],[ok=no])
 AC_MSG_RESULT($ok)
 
 AC_MSG_CHECKING([for gh_eval_str])
 ok=yes
-AC_TRY_LINK([#include <guile/gh.h>
-], [gh_eval_str(0);], [AC_DEFINE(HAVE_GH_EVAL_STR, 1, [Define if we have gh_eval_str.])], ok=no)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <guile/gh.h>
+]], [[gh_eval_str(0);]])],[AC_DEFINE(HAVE_GH_EVAL_STR, 1, [Define if we have gh_eval_str.])],[ok=no])
 AC_MSG_RESULT($ok)
 
 AC_MSG_CHECKING([for gh_load])
 ok=yes
-AC_TRY_LINK([#include <guile/gh.h>
-], [gh_load(0);], [AC_DEFINE(HAVE_GH_LOAD, 1, [Define if we have gh_load.])], ok=no)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <guile/gh.h>
+]], [[gh_load(0);]])],[AC_DEFINE(HAVE_GH_LOAD, 1, [Define if we have gh_load.])],[ok=no])
 AC_MSG_RESULT($ok)
 
 AC_MSG_CHECKING([for gh_bool2scm])
 ok=yes
-AC_TRY_LINK([#include <guile/gh.h>
-], [gh_bool2scm(0);], [AC_DEFINE(HAVE_GH_BOOL2SCM, 1, [Define if we have gh_bool2scm])], ok=no)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <guile/gh.h>
+]], [[gh_bool2scm(0);]])],[AC_DEFINE(HAVE_GH_BOOL2SCM, 1, [Define if we have gh_bool2scm])],[ok=no])
 AC_MSG_RESULT($ok)
 
 AC_MSG_CHECKING([for gh_vector_ref])
 ok=yes
-AC_TRY_LINK([#include <guile/gh.h>
-], [gh_vector_ref(0,0);], [AC_DEFINE(HAVE_GH_VECTOR_REF, 1, [Define if we have gh_vector_ref])], ok=no)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <guile/gh.h>
+]], [[gh_vector_ref(0,0);]])],[AC_DEFINE(HAVE_GH_VECTOR_REF, 1, [Define if we have gh_vector_ref])],[ok=no])
 AC_MSG_RESULT($ok)
 
 AC_MSG_CHECKING([for gh_list_ref])
 ok=yes
-AC_TRY_LINK([#include <guile/gh.h>
-], [gh_list_ref(0,0);], [AC_DEFINE(HAVE_GH_LIST_REF, 1, [Define if we have gh_list_ref])], ok=no)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <guile/gh.h>
+]], [[gh_list_ref(0,0);]])],[AC_DEFINE(HAVE_GH_LIST_REF, 1, [Define if we have gh_list_ref])],[ok=no])
 AC_MSG_RESULT($ok)
 
 AC_MSG_CHECKING([for gh_length])
 ok=yes
-AC_TRY_LINK([#include <guile/gh.h>
-], [gh_length(0);], [AC_DEFINE(HAVE_GH_LENGTH, 1, [Define if we have gh_length])], ok=no)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <guile/gh.h>
+]], [[gh_length(0);]])],[AC_DEFINE(HAVE_GH_LENGTH, 1, [Define if we have gh_length])],[ok=no])
 AC_MSG_RESULT($ok)
 
 AC_MSG_CHECKING([for scm_flush_all_ports])
 ok=yes
-AC_TRY_LINK([#if defined(HAVE_LIBGUILE_H)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#if defined(HAVE_LIBGUILE_H)
 #  include <libguile.h>
 #else
 #  include <guile/gh.h>
 #endif
-], [scm_flush_all_ports();], [AC_DEFINE(HAVE_SCM_FLUSH_ALL_PORTS, 1, [Define if we have scm_flush_all_ports])], ok=no)
+]], [[scm_flush_all_ports();]])],[AC_DEFINE(HAVE_SCM_FLUSH_ALL_PORTS, 1, [Define if we have scm_flush_all_ports])],[ok=no])
 AC_MSG_RESULT($ok)
 
 AC_CHECK_FUNCS(scm_make_complex scm_c_make_rectangular scm_variable_set_x scm_c_lookup scm_c_make_vector scm_variable_ref)
 
 AC_MSG_CHECKING([for SCM_COMPLEXP])
 ok=yes
-AC_TRY_LINK([#if defined(HAVE_LIBGUILE_H)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#if defined(HAVE_LIBGUILE_H)
 #  include <libguile.h>
 #else
 #  include <guile/gh.h>
 #endif
-], [SCM x; SCM_COMPLEXP(x);], [AC_DEFINE(HAVE_SCM_COMPLEXP, 1, [Define if we have SCM_COMPLEXP])], ok=no)
+]], [[SCM x; SCM_COMPLEXP(x);]])],[AC_DEFINE(HAVE_SCM_COMPLEXP, 1, [Define if we have SCM_COMPLEXP])],[ok=no])
 AC_MSG_RESULT($ok)
 
 AC_MSG_CHECKING([whether gh_lookup works properly])
 ok=yes
-AC_TRY_RUN([
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdlib.h>
 #include <guile/gh.h>
 void main_entry(int argc, char *argv[])
@@ -203,7 +200,7 @@ int main (int argc, char *argv[])
      gh_enter (argc, argv, main_entry);
      return EXIT_SUCCESS;
 }
-], [AC_DEFINE(GH_LOOKUP_OK, 1, [Define if gh_lookup works])], ok=no, ok=no)
+]])],[AC_DEFINE(GH_LOOKUP_OK, 1, [Define if gh_lookup works])],[ok=no],[ok=no])
 AC_MSG_RESULT($ok)
 
 fi # with_guile
@@ -228,8 +225,7 @@ AC_CHECK_HEADERS(complex.h)
 AC_CACHE_CHECK([for C complex keyword], acx_cv_c_complex,
  [acx_cv_c_complex=unsupported
   for acx_kw in complex _Complex __complex__; do
-    AC_TRY_COMPILE([#include <complex.h>], [float $acx_kw foo;],
-                   [acx_cv_c_complex=$acx_kw; break])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <complex.h>]], [[float $acx_kw foo;]])],[acx_cv_c_complex=$acx_kw; break],[])
   done
  ])
 
@@ -239,7 +235,7 @@ else
    AC_DEFINE([CTL_HAS_COMPLEX_INTEGRATION], [1], [If we have C99 complex nums])
 fi
 
-###########################################################################
+##############################k#############################################
 # Check for nlopt, or at least its header, and extract Scheme constants
 
 AC_PROG_EGREP
