@@ -85,6 +85,8 @@ Guile is an extension/scripting language implementation based on Scheme, and we 
 
 - **Important:** Most Linux distributions come with Guile already installed. You can check by seeing whether you can run `guile --version` from the command line. In that case, do **not** install your own version of Guile from source &mdash; having two versions of Guile on the same system will cause problems. However, by default most distributions install only the Guile libraries and not the programming headers &mdash; to compile libctl, you should install the **guile-devel** or **guile-dev** package.
 
+It is possible to compile libcti *without* having Guile on your system by passing `--without-guile` to the `configure` script.   (Guile is not necessary to install the Python interface to Meep and MPB.)   However, to do this, you must be building from an official `.tar.gz` package on the [releases page](https://github.com/NanoComp/libctl/releases); building directly from the libctl git repo requires Guile in order to generate certain source files.
+
 ### Building From Source
 
 Here we provide instructions for building libctl from source on Ubuntu 16.04. Gzipped tarballs of stable versions are available on the [releases page](https://github.com/NanoComp/libctl/releases).
