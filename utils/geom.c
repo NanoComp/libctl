@@ -1359,7 +1359,7 @@ void destroy_geom_box_tree(geom_box_tree t) {
   if (t) {
     destroy_geom_box_tree(t->t1);
     destroy_geom_box_tree(t->t2);
-    if (t->nobjects && t->objects) FREE(t->objects);
+    if (t->objects) FREE(t->objects);
     FREE1(t);
   }
 }
