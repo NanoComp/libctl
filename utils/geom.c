@@ -1977,11 +1977,11 @@ int intersect_line_with_segment(vector3 q0, vector3 q1, vector3 q2, vector3 u, d
     if (fabs(dot) < (1.0 - THRESH) * q01 * q02)
       return NON_INTERSECTING;
     else if (dot < 0.0) {
-      *s = 0.0;
+      if (s) *s = 0.0;
       return IN_SEGMENT;
     }
     else if ((u.x * q01x + u.y * q01y) < 0.0) {
-      *s = fmin(q01, q02) / sqrt(u.x * u.x + u.y * u.y);
+      if (s) *s = fmin(q01, q02) / sqrt(u.x * u.x + u.y * u.y);
       return ON_RAY;
     }
     return NON_INTERSECTING;
