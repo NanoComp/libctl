@@ -2552,7 +2552,7 @@ vector3 triangle_normal(vector3 v1, vector3 v2, vector3 v3) {
 
 /***************************************************************/
 /* On entry, the only fields in o->prism that are assumed to   */
-/* be initialized are: vertices, height, (optionally)   */
+/* be initialized are: vertices, height, (optionally)          */
 /* axis, and sidewall_angle. If axis has not been initialized  */
 /* (i.e. it is set to its default value, which is the zero     */
 /* vector) then the prism axis is automatically computed as    */
@@ -2570,9 +2570,17 @@ void init_prism(geometric_object *o) {
   int num_vertices = prsm->vertices.num_items;
   CHECK(num_vertices >= 3, "fewer than 3 vertices in init_prism");
 
+  // check for any consecutive vertices which are duplicates
+  int nv;
+  for (nv = 1; nv < num_vertices; nv++) {
+    CHECK(!vector3_equal(vertices[nv], vertices[nv-1]),
+          "consecutive prism vertices are duplicates.");
+  }
+  CHECK(!vector3_equal(vertices[num_vertices-1], vertices[0]),
+        "consecutive prism vertices are duplicates.");
+
   // compute centroid of vertices
   vector3 centroid = {0.0, 0.0, 0.0};
-  int nv;
   for (nv = 0; nv < num_vertices; nv++)
     centroid = vector3_plus(centroid, vertices[nv]);
   prsm->centroid = centroid = vector3_scale(1.0 / ((double)num_vertices), centroid);
