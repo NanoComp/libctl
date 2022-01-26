@@ -2570,17 +2570,20 @@ void init_prism(geometric_object *o) {
   int num_vertices = prsm->vertices.num_items;
   CHECK(num_vertices >= 3, "fewer than 3 vertices in init_prism");
 
-  // check for any consecutive vertices which are duplicates
-  int nv;
-  for (nv = 1; nv < num_vertices; nv++) {
-    CHECK(!vector3_equal(vertices[nv], vertices[nv-1]),
-          "consecutive prism vertices are duplicates.");
+  // remove duplicate consecutive prism vertices
+  int i = 0; // last non-deleted vertex
+  for (int j = 1; j < num_vertices; ++j) {
+    if (!vector3_equal(vertices[i], vertices[j])) {
+      i += 1;
+      if (i < j) vertices[i] = vertices[j];
+    }
   }
-  CHECK(!vector3_equal(vertices[num_vertices-1], vertices[0]),
-        "consecutive prism vertices are duplicates.");
+  num_vertices = i + 1 - vector3_equal(vertices[0], vertices[i]);
+  prsm->vertices.num_items = num_vertices;
 
   // compute centroid of vertices
   vector3 centroid = {0.0, 0.0, 0.0};
+  int nv;
   for (nv = 0; nv < num_vertices; nv++)
     centroid = vector3_plus(centroid, vertices[nv]);
   prsm->centroid = centroid = vector3_scale(1.0 / ((double)num_vertices), centroid);
