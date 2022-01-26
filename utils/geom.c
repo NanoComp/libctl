@@ -2579,7 +2579,10 @@ void init_prism(geometric_object *o) {
     }
   }
   num_vertices = i + 1 - vector3_equal(vertices[0], vertices[i]);
-  prsm->vertices.num_items = num_vertices;
+  if (prsm->vertices.num_items != num_vertices) {
+    prsm->vertices.num_items = num_vertices;
+    vertices = (vector3 *)realloc(vertices, num_vertices * sizeof(vector3));
+  }
 
   // compute centroid of vertices
   vector3 centroid = {0.0, 0.0, 0.0};
