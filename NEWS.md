@@ -1,5 +1,13 @@
 # Libctl Release Notes
 
+## libctl 4.5.1
+
+2/1/22
+
+* Ignore duplicate consecutive prism vertices (#60).
+
+* Memory bug fixes (#58, #59).
+
 ## libctl 4.5.0
 
 2/19/20
