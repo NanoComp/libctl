@@ -2589,8 +2589,8 @@ void init_prism(geometric_object *o) {
   vector3 centroid = {0.0, 0.0, 0.0};
   int nv;
   for (nv = 0; nv < num_vertices; nv++)
-    centroid = vector3_plus(centroid, vertices[nv]);
-  prsm->centroid = centroid = vector3_scale(1.0 / ((double)num_vertices), centroid);
+    centroid = vector3_plus(centroid, vector3_scale(1.0 / (double)num_vertices, vertices[nv]));
+  prsm->centroid = centroid;
 
   // make sure all vertices lie in a plane, i.e. that the normal
   // vectors to all triangles (v_n, v_{n+1}, centroid) agree.
