@@ -1091,7 +1091,7 @@ int test_helper_functions_on_octagonal_c_prism() {
 /* https://github.com/NanoComp/libctl/issues/61                         */
 /************************************************************************/
 int test_init_prism_from_issues() {
-  geometric_object *m = NULL;
+  void *m = NULL;
 
   int num_nodes = 11;
   vector3 nodes_prism[num_nodes];
