@@ -1085,6 +1085,41 @@ int test_helper_functions_on_octagonal_c_prism() {
   return num_failed_normal + num_failed_tapered;
 }
 
+/************************************************************************/
+/* 8th unit test:                                                       */
+/* Prism initialization test from issue #61                             */
+/* https://github.com/NanoComp/libctl/issues/61                         */
+/************************************************************************/
+int test_init_prism_from_issues() {
+  geometric_object *m = NULL;
+
+  int num_nodes = 11;
+  vector3 nodes_prism[num_nodes];
+  nodes_prism[0]  = make_vector3(1.0, 0.0, -0.15);
+  nodes_prism[1]  = make_vector3(1.0, 1.0, -0.15);
+  nodes_prism[2]  = make_vector3(-1.0, 1.0, -0.15);
+  nodes_prism[3]  = make_vector3(-1.0, -1.0, -0.15);
+  nodes_prism[4]  = make_vector3(1.0, -1.0, -0.15);
+  nodes_prism[5]  = make_vector3(1.0, 0.0, -0.15);
+  nodes_prism[6]  = make_vector3(2.0, 0.0, -0.15);
+  nodes_prism[7]  = make_vector3(2.0, -2.0, -0.15);
+  nodes_prism[8]  = make_vector3(-2.0, -2.0, -0.15);
+  nodes_prism[9]  = make_vector3(-2.0, 2.0, -0.15);
+  nodes_prism[10] = make_vector3(2.0, 2.0, -0.15);
+  nodes_prism[11] = make_vector3(2.0, 0.0, -0.15);
+
+  double height_prism = 0.3;
+  vector3 zhat = make_vector3(0, 0, 1);
+
+  double normal_sidewall = 0;
+  geometric_object prism_geom_obj = make_prism(m, nodes_prism, num_nodes, height_prism, zhat);
+  prism *prism_obj = prism_geom_obj.subclass.prism_data;
+
+  if(prism_obj) return 0;
+  return 1;
+
+}
+
 /***************************************************************/
 /* unit tests: create the same parallelepiped two ways (as a   */
 /* block and as a prism) and verify that geometric primitives  */
@@ -1148,8 +1183,9 @@ int run_unit_tests() {
   int num_failed_5 = test_square_base_sidewall_prisms_to_gnuplot();
   int num_failed_6 = test_octagon_c_base_sidewall_prisms_to_gnuplot();
   int num_failed_7 = test_helper_functions_on_octagonal_c_prism();
+  int num_failed_8 = test_init_prism_from_issues();
 
-  return num_failed_1 + num_failed_3 + num_failed_4 + num_failed_5 + num_failed_6 + num_failed_7;
+  return num_failed_1 + num_failed_3 + num_failed_4 + num_failed_5 + num_failed_6 + num_failed_7 + num_failed_8;
 }
 
 /***************************************************************/
