@@ -2629,10 +2629,17 @@ void init_prism(geometric_object *o) {
   }
 
   // set current_center=prism center as determined by vertices and height.
+  // If height of the prism defined as infinity in python interface do not
+  // use it to calculate the center.
   // if the center of the geometric object was left unspecified,
   // set it to current_center; otherwise displace the entire prism
   // so that it is centered at the specified center.
-  vector3 current_center = vector3_plus(centroid, vector3_scale(0.5 * prsm->height, prsm->axis));
+  vector3 current_center;
+  // 1e20 <- value of infinity in python interface
+  if(prsm->height >= 1e20)
+    current_center = centroid;
+  else
+    current_center = vector3_plus(centroid, vector3_scale(0.5 * prsm->height, prsm->axis));
   if (isnan(o->center.x) && isnan(o->center.y) && isnan(o->center.z)) // center == auto-center
     o->center = current_center;
   else {
