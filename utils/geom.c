@@ -2639,7 +2639,7 @@ void init_prism(geometric_object *o) {
   if(prsm->height >= 1e20)
     current_center = centroid;
   else
-     current_center = vector3_plus(centroid, vector3_scale(0.5 * prsm->height, prsm->axis));
+    current_center = vector3_plus(centroid, vector3_scale(0.5 * prsm->height, prsm->axis));
   if (isnan(o->center.x) && isnan(o->center.y) && isnan(o->center.z)) // center == auto-center
     o->center = current_center;
   else {
