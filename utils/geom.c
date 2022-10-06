@@ -134,6 +134,7 @@ void geom_fix_object_ptr(geometric_object *o) {
   switch (o->which_subclass) {
     case GEOM CYLINDER:
       lattice_normalize(&o->subclass.cylinder_data->axis);
+      //todo add ellipse
       if (o->subclass.cylinder_data->which_subclass == CYL WEDGE) {
         vector3 a = o->subclass.cylinder_data->axis;
         vector3 s = o->subclass.cylinder_data->subclass.wedge_data->wedge_start;
@@ -278,6 +279,7 @@ boolean point_in_fixed_pobjectp(vector3 p, geometric_object *o) {
         if (o->subclass.cylinder_data->which_subclass == CYL CONE)
           radius += (proj / height + 0.5) *
                     (o->subclass.cylinder_data->subclass.cone_data->radius2 - radius);
+        //todo add ellipse
         else if (o->subclass.cylinder_data->which_subclass == CYL WEDGE) {
           number x = vector3_dot(rm, o->subclass.cylinder_data->subclass.wedge_data->e1);
           number y = vector3_dot(rm, o->subclass.cylinder_data->subclass.wedge_data->e2);
@@ -425,6 +427,7 @@ vector3 normal_to_fixed_object(vector3 p, geometric_object o) {
                               height,
                    o.subclass.cylinder_data->axis));
       else
+      // todo add ellipse
         return vector3_minus(r, vector3_scale(proj, o.subclass.cylinder_data->axis));
     } // case GEOM CYLINDER
 
@@ -638,6 +641,7 @@ void CTLIO display_geometric_object_info(int indentby, geometric_object o) {
       else if (o.subclass.cylinder_data->which_subclass == CYL WEDGE)
         ctl_printf("%*s     wedge-theta %g\n", indentby, "",
                    o.subclass.cylinder_data->subclass.wedge_data->wedge_angle);
+      // todo add ellipse
       break;
     case GEOM SPHERE:
       ctl_printf("%*s     radius %g\n", indentby, "", o.subclass.sphere_data->radius);
@@ -671,6 +675,7 @@ void CTLIO display_geometric_object_info(int indentby, geometric_object o) {
    the number of intersections (at most 2) and the two intersection "s"
    values in s[0] and s[1].   (Note: o must not be a compound object.) */
 int intersect_line_with_object(vector3 p, vector3 d, geometric_object o, double s[2]) {
+  // todo modify with ellipse
   p = vector3_minus(p, o.center);
   s[0] = s[1] = 0;
   switch (o.which_subclass) {
@@ -901,6 +906,7 @@ double geom_object_volume(GEOMETRIC_OBJECT o) {
                            ? o.subclass.cylinder_data->subclass.cone_data->radius2
                            : radius;
       double vol = height * (K_PI / 3) * (radius * radius + radius * radius2 + radius2 * radius2);
+      // todo add ellipse volume
       if (o.subclass.cylinder_data->which_subclass == CYL WEDGE)
         return vol * fabs(o.subclass.cylinder_data->subclass.wedge_data->wedge_angle) / (2 * K_PI);
       else
@@ -1040,6 +1046,8 @@ void geom_get_bounding_box(geometric_object o, geom_box *box) {
          for finding the bounding parallelepiped of a circle
          comes out suprisingly simple in the end.  Proof left
          as an exercise for the reader. */
+
+      //todo modify for ellipse
 
       number radius = o.subclass.cylinder_data->radius;
       number h = o.subclass.cylinder_data->height * 0.5;
@@ -1853,6 +1861,19 @@ geometric_object make_wedge(material_type material, vector3 center, number radiu
   CHECK(o.subclass.cylinder_data->subclass.wedge_data, "out of memory");
   o.subclass.cylinder_data->subclass.wedge_data->wedge_angle = wedge_angle;
   o.subclass.cylinder_data->subclass.wedge_data->wedge_start = wedge_start;
+  geom_fix_object_ptr(&o);
+  return o;
+}
+
+geometric_object make_elliptic_cylinder(MATERIAL_TYPE material, vector3 center, number radius, number height,
+                           vector3 axis, number radius2, vector3 e1, vector3 e2) {
+  geometric_object o = make_cylinder(material, center, radius, height, axis);
+  o.subclass.cylinder_data->which_subclass = CYL ELLIPSE;
+  o.subclass.cylinder_data->subclass.ellipse_data = MALLOC1(ellipse);
+  CHECK(o.subclass.cylinder_data->subclass.ellipse_data, "out of memory");
+  o.subclass.cylinder_data->subclass.ellipse_data->radius2 = radius2;
+  o.subclass.cylinder_data->subclass.ellipse_data->e1 = e1;
+  o.subclass.cylinder_data->subclass.ellipse_data->e2 = e2;
   geom_fix_object_ptr(&o);
   return o;
 }
