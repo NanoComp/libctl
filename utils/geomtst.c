@@ -163,6 +163,7 @@ static const char *object_name(geometric_object o) {
       switch (o.subclass.cylinder_data->which_subclass) {
         case WEDGE: return "wedge";
         case CONE: return "cone";
+        case ELLIPSE: return "ellipse";
         case CYLINDER_SELF: return "cylinder";
       }
     case SPHERE: return "sphere";
