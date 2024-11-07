@@ -17,11 +17,13 @@
 
 /* Define MATERIAL_TYPE with proper typemap */
 %typemap(in) MATERIAL_TYPE {
+    Py_XINCREF($input);  // Increment reference count when passing to C
     $1 = (void*)$input;
 }
 
 %typemap(out) MATERIAL_TYPE {
     $result = (PyObject*)$1;
+    Py_XINCREF($result);  // Increment reference count when returning to Python
 }
 
 extern void display_geometric_object_info(int indentby, geometric_object o);
