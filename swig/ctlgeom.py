@@ -313,8 +313,10 @@ class GroupObject:
     def __post_init__(self):
         geom_objects = [obj.to_geom_object() for obj in self.objects]
         self.geom_list = make_geom_object_list(geom_objects)
-        # self.bounding_box = geom.geom_box()
-        self.bounding_box = make_geom_box((-2, -2, -2), (2, 2, 2))
+        self.bounding_box = make_geom_box(
+            (float("-inf"), float("-inf"), float("-inf")),
+            (float("inf"), float("inf"), float("inf")),
+        )
         self.geom_box_tree = None
 
     def to_tree_object(self) -> Literal["geom.geom_box_tree"]:
