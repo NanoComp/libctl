@@ -22,8 +22,13 @@
 }
 
 %typemap(out) MATERIAL_TYPE {
-    $result = (PyObject*)$1;
-    Py_XINCREF($result);  // Increment reference count when returning to Python
+    if ($1 == NULL) {
+        Py_INCREF(Py_None);
+        $result = Py_None;
+    } else {
+        $result = (PyObject*)$1;
+        Py_XINCREF($result);  // Increment reference count when returning to Python
+    }
 }
 
 extern void display_geometric_object_info(int indentby, geometric_object o);
