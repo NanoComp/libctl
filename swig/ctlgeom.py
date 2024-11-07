@@ -218,6 +218,92 @@ class Ellipsoid(GeometricObject):
         )
 
 
+@dataclasses.dataclass(frozen=True)
+class Prism(GeometricObject):
+    """A prism defined by vertices.
+
+    Attributes:
+        material: Material properties.
+        vertices: List of (x,y,z) vertices defining the prism base.
+        height: The height of the prism.
+        axis: The axis along which the prism extends.
+        center: Optional center point. If None, computed automatically from vertices.
+    """
+
+    material: Material
+    vertices: List[Tuple[float, float, float]]
+    height: float
+    axis: Tuple[float, float, float]
+    center: Tuple[float, float, float] = None
+
+    def to_geom_object(self):
+        # Convert vertices list to array of vector3
+        vertex_array = [make_vector3(*v) for v in self.vertices]
+
+        if self.center is None:
+            return geom.make_prism(
+                self.material,
+                vertex_array,
+                len(vertex_array),
+                self.height,
+                make_vector3(*self.axis),
+            )
+        else:
+            return geom.make_prism_with_center(
+                self.material,
+                make_vector3(*self.center),
+                vertex_array,
+                len(vertex_array),
+                self.height,
+                make_vector3(*self.axis),
+            )
+
+
+@dataclasses.dataclass(frozen=True)
+class SlantedPrism(GeometricObject):
+    """A prism with slanted sides.
+
+    Attributes:
+        material: Material properties.
+        vertices: List of (x,y,z) vertices defining the prism base.
+        height: The height of the prism.
+        axis: The axis along which the prism extends.
+        sidewall_angle: The angle of the sidewalls in radians.
+        center: Optional center point. If None, computed automatically from vertices.
+    """
+
+    material: Material
+    vertices: List[Tuple[float, float, float]]
+    height: float
+    axis: Tuple[float, float, float]
+    sidewall_angle: float
+    center: Tuple[float, float, float] = None
+
+    def to_geom_object(self):
+        # Convert vertices list to array of vector3
+        vertex_array = [make_vector3(*v) for v in self.vertices]
+
+        if self.center is None:
+            return geom.make_slanted_prism(
+                self.material,
+                vertex_array,
+                len(vertex_array),
+                self.height,
+                make_vector3(*self.axis),
+                self.sidewall_angle,
+            )
+        else:
+            return geom.make_slanted_prism_with_center(
+                self.material,
+                make_vector3(*self.center),
+                vertex_array,
+                len(vertex_array),
+                self.height,
+                make_vector3(*self.axis),
+                self.sidewall_angle,
+            )
+
+
 @dataclasses.dataclass(frozen=False)
 class GroupObject:
     """A group of geometric objects."""
