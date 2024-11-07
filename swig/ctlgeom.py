@@ -311,6 +311,9 @@ class GroupObject:
     objects: List[GeometricObject]
 
     def __post_init__(self):
+        self.objects_map = {
+            obj.to_geom_object(): obj for obj in self.objects
+        }  # Add this line
         geom_objects = [obj.to_geom_object() for obj in self.objects]
         self.geom_list = make_geom_object_list(geom_objects)
         self.bounding_box = make_geom_box(
@@ -353,11 +356,7 @@ class GroupObject:
         Args:
             point: The point to query.
         """
-        # tree = self.get_tree_object()
-        # return geom.material_of_point_in_tree(make_vector3(*point), tree)
-
         tree = self.get_tree_object()
-        # Use direct material query since boolean type isn't available
         return geom.material_of_point_in_tree(make_vector3(*point), tree)
 
     def __del__(self):
