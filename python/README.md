@@ -13,13 +13,11 @@ This directory contains SWIG bindings to create a Python extension for libctl.
 **Using Conda Environment**
    ```bash
    conda activate my_env
-   chmod +x build.sh
    ./build.sh
    ```
 
 **Using System Python**
    ```bash
-   chmod +x build.sh
    ./build.sh
    ```
 

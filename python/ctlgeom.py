@@ -1,8 +1,10 @@
 import libctlgeom as geom
 from abc import ABC, abstractmethod
-from typing import Tuple, List, Literal
+from typing import Tuple, List, Literal, Any
 import dataclasses
 import numpy as np
+
+MATERIAL_TYPE = Any
 
 
 def make_vector3(x, y, z):
@@ -27,13 +29,6 @@ class BoundingBox:
         return self.box
 
 
-@dataclasses.dataclass(frozen=True)
-class Material:
-    """Material properties."""
-
-    epsilon: float
-
-
 class GeometricObject(ABC):
     """Abstract base class for geometric objects."""
 
@@ -41,16 +36,18 @@ class GeometricObject(ABC):
     def to_geom_object(self):
         raise NotImplementedError
 
-    def get_volume(self) -> float:
+    def volume(self) -> float:
         return geom.geom_object_volume(self.to_geom_object())
 
     def debug_info(self) -> None:
         display_geom_object_info(self)
 
-    def get_bounding_box(self) -> Tuple[geom.vector3, geom.vector3]:
+    def bounding_box(
+        self,
+    ) -> Tuple[Tuple[float, float, float], Tuple[float, float, float]]:
         box = geom.geom_box()
         geom.geom_get_bounding_box(self.to_geom_object(), box)
-        return (box.low, box.high)
+        return ((box.low.x, box.low.y, box.low.z), (box.high.x, box.high.y, box.high.z))
 
 
 @dataclasses.dataclass(frozen=True)
@@ -65,7 +62,7 @@ class Cylinder(GeometricObject):
         axis: The axis of the cylinder.
     """
 
-    material: Material
+    material: MATERIAL_TYPE
     center: Tuple[float, float, float]
     radius: float
     height: float
@@ -95,7 +92,7 @@ class Wedge(GeometricObject):
         wedge_start: The starting direction vector of the wedge.
     """
 
-    material: Material
+    material: MATERIAL_TYPE
     center: Tuple[float, float, float]
     radius: float
     height: float
@@ -128,7 +125,7 @@ class Cone(GeometricObject):
         radius2: The radius at the top (0 for a perfect cone).
     """
 
-    material: Material
+    material: MATERIAL_TYPE
     center: Tuple[float, float, float]
     radius: float
     height: float
@@ -148,7 +145,7 @@ class Cone(GeometricObject):
 
 @dataclasses.dataclass(frozen=True)
 class Sphere(GeometricObject):
-    material: Material
+    material: MATERIAL_TYPE
     center: Tuple[float, float, float]
     radius: float
 
@@ -169,7 +166,7 @@ class Block(GeometricObject):
         size: Size along each basis vector.
     """
 
-    material: Material
+    material: MATERIAL_TYPE
     center: Tuple[float, float, float]
     e1: Tuple[float, float, float]
     e2: Tuple[float, float, float]
@@ -200,7 +197,7 @@ class Ellipsoid(GeometricObject):
         size: Size along each basis vector.
     """
 
-    material: Material
+    material: MATERIAL_TYPE
     center: Tuple[float, float, float]
     e1: Tuple[float, float, float]
     e2: Tuple[float, float, float]
@@ -230,7 +227,7 @@ class Prism(GeometricObject):
         center: Optional center point. If None, computed automatically from vertices.
     """
 
-    material: Material
+    material: MATERIAL_TYPE
     vertices: List[Tuple[float, float, float]]
     height: float
     axis: Tuple[float, float, float]
@@ -272,7 +269,7 @@ class SlantedPrism(GeometricObject):
         center: Optional center point. If None, computed automatically from vertices.
     """
 
-    material: Material
+    material: MATERIAL_TYPE
     vertices: List[Tuple[float, float, float]]
     height: float
     axis: Tuple[float, float, float]
