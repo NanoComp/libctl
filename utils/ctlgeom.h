@@ -46,7 +46,8 @@
 #define GEOMETRIC_OBJECT geometric_object
 #undef GEOMETRIC_OBJECT_LIST
 #define GEOMETRIC_OBJECT_LIST geometric_object_list
-#undef CTL_IO_H /* to include display_geometric_object_info */
+#include <ctlgeom-types.h>
+extern void display_geometric_object_info(int indentby, geometric_object o);
 #endif
 
 /* Where possible (e.g. for gcc >= 3.1), enable a compiler warning

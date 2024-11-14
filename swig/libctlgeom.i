@@ -98,6 +98,7 @@
 
 // Ignore the original items attribute to prevent conflicts
 %ignore geometric_object_list::items;
+// Ignore deprecated functions
 %ignore geom_fix_object;
 %ignore geom_fix_objects0;
 %ignore get_grid_size;
