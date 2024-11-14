@@ -46,7 +46,7 @@
 #define GEOMETRIC_OBJECT geometric_object
 #undef GEOMETRIC_OBJECT_LIST
 #define GEOMETRIC_OBJECT_LIST geometric_object_list
-#include <ctlgeom-types.h>
+#include <ctlgeom-types-swig.h>
 extern void display_geometric_object_info(int indentby, geometric_object o);
 #endif
 

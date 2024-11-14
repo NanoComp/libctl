@@ -4,11 +4,11 @@
 %{
 #define CTL_SWIG
 #include "ctlgeom.h"
-#include "ctlgeom-types.h"
+#include "ctlgeom-types-swig.h"
 %}
 
 /* Include the type definitions */
-%include "ctlgeom-types.h"
+%include "ctlgeom-types-swig.h"
 
 /* Properly wrap vector3 structure */
 %include "ctl-math.h"

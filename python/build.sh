@@ -1,10 +1,5 @@
 #!/bin/bash
 
-cd ../
-# run autogen.sh to generate all the header files needed
-./autogen.sh
-cd python
-
 # Define local include paths relative to script location
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 LOCAL_INCLUDES="-I$SCRIPT_DIR/../src -I$SCRIPT_DIR/../utils"
