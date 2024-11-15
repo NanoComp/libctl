@@ -11,6 +11,7 @@ from ctlgeom import (
     Ellipsoid,
     Prism,
     SlantedPrism,
+    ObjectGroup,
 )
 
 
@@ -562,3 +563,37 @@ class TestSlantedPrism:
         assert not point_is_in_object((1.5, 0, 0), prism)
         assert not point_is_in_object((0, 0, -1.1), prism)
         assert not point_is_in_object((0, -0.5, 0), prism)
+
+
+class TestObjectGroup:
+    """Tests for ObjectGroup functionality."""
+
+    def test_creation(self):
+        """Test creating an ObjectGroup object."""
+        sphere = Sphere(material="test", center=(0, 0, 0), radius=1.0)
+        cylinder = Cylinder(
+            material="test", center=(2, 0, 0), radius=1.0, height=2.0, axis=(0, 0, 1)
+        )
+
+        group = ObjectGroup(objects=[sphere, cylinder])
+
+        assert len(group.objects) == 2
+        assert group.objects[0] == sphere
+        assert group.objects[1] == cylinder
+
+    def test_material_at(self):
+        """Test getting material at different points in an ObjectGroup."""
+        sphere = Sphere(material="sphere_mat", center=(0, 0, 0), radius=1.0)
+        cylinder = Cylinder(
+            material="cylinder_mat",
+            center=(42, 0, 0),
+            radius=1.0,
+            height=2.0,
+            axis=(0, 0, 1),
+        )
+
+        group = ObjectGroup(objects=[sphere, cylinder])
+
+        assert group.material_at((0, 0, 0)) == "sphere_mat"
+        assert group.material_at((42, 0, 0)) == "cylinder_mat"
+        assert group.material_at((99, 0, 0)) is None
