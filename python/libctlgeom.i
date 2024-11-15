@@ -58,6 +58,7 @@
 
 %include <carrays.i>
 %array_class(geometric_object, geometric_object_array);
+%array_class(vector3, vector3_array);
 
 %extend geometric_object_list {
     void set_items(PyObject* list) {

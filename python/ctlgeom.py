@@ -26,7 +26,7 @@ def make_vector3(x, y, z) -> geom.vector3:
     return v
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass
 class BoundingBox:
     """A bounding box.
 
@@ -267,14 +267,16 @@ class Prism(GeometricObject):
 
     def to_geom_object(self) -> geom.geometric_object:
         """Convert the prism to a geometric object."""
-        # Convert vertices list to array of vector3
-        vertex_array = [make_vector3(*v) for v in self.vertices]
+        # Create a vector3 array and populate it
+        vertex_array = geom.vector3_array(len(self.vertices))
+        for i, v in enumerate(self.vertices):
+            vertex_array[i] = make_vector3(*v)
 
         if self.center is None:
             return geom.make_prism(
                 self.material,
                 vertex_array,
-                len(vertex_array),
+                len(self.vertices),
                 self.height,
                 make_vector3(*self.axis),
             )
@@ -283,7 +285,7 @@ class Prism(GeometricObject):
                 self.material,
                 make_vector3(*self.center),
                 vertex_array,
-                len(vertex_array),
+                len(self.vertices),
                 self.height,
                 make_vector3(*self.axis),
             )
@@ -311,16 +313,16 @@ class SlantedPrism(GeometricObject):
 
     def to_geom_object(self) -> geom.geometric_object:
         """Convert the slanted prism to a geometric object."""
-        raise NotImplementedError
-        # This is not working yet
-        # Convert vertices list to array of vector3
-        vertex_array = [make_vector3(*v) for v in self.vertices]
+        # Create a vector3 array and populate it
+        vertex_array = geom.vector3_array(len(self.vertices))
+        for i, v in enumerate(self.vertices):
+            vertex_array[i] = make_vector3(*v)
 
         if self.center is None:
             return geom.make_slanted_prism(
                 self.material,
                 vertex_array,
-                len(vertex_array),
+                len(self.vertices),
                 self.height,
                 make_vector3(*self.axis),
                 self.sidewall_angle,
@@ -330,7 +332,7 @@ class SlantedPrism(GeometricObject):
                 self.material,
                 make_vector3(*self.center),
                 vertex_array,
-                len(vertex_array),
+                len(self.vertices),
                 self.height,
                 make_vector3(*self.axis),
                 self.sidewall_angle,
