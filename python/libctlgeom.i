@@ -1,18 +1,18 @@
 %module libctlgeom
 
-/* Include the header files first */
+/* Include all SWIG modules first */
+%include "cpointer.i"
+%include "carrays.i"
+%include "ctl-math.h"
+
 %{
 #define CTL_SWIG
 #include "ctlgeom.h"
 #include "ctlgeom-types-swig.h"
 %}
 
-/* Include the type definitions */
 %include "ctlgeom-types-swig.h"
-
-/* Properly wrap vector3 structure */
 %include "ctl-math.h"
-
 %include "cpointer.i"
 %pointer_functions(int, intp);
 
@@ -54,7 +54,6 @@
     free($1);
 }
 
-/* Add these typemaps before the geometric_object_list declaration */
 
 %include <carrays.i>
 %array_class(geometric_object, geometric_object_array);
@@ -97,9 +96,7 @@
     }
 }
 
-// Ignore the original items attribute to prevent conflicts
 %ignore geometric_object_list::items;
-// Ignore deprecated functions
 %ignore geom_fix_object;
 %ignore geom_fix_objects0;
 %ignore get_grid_size;
