@@ -3,6 +3,7 @@ from setuptools.command.build_ext import build_ext
 import sys
 import os
 from sysconfig import get_paths
+import numpy
 
 python_include = get_paths()["include"]
 
@@ -21,7 +22,7 @@ class CustomBuildExtCommand(build_ext):
 libctlgeom_module = Extension(
     "_libctlgeom",
     sources=["libctlgeom_wrap.c"],
-    include_dirs=["/usr/local/include", python_include],
+    include_dirs=["/usr/local/include", python_include, numpy.get_include()],
     library_dirs=["/usr/local/lib"],
     libraries=["ctlgeom"],
     extra_compile_args=["-I/usr/local/include"],
@@ -35,4 +36,5 @@ setup(
     ext_modules=[libctlgeom_module],
     py_modules=["libctlgeom"],
     cmdclass={"build_ext": CustomBuildExtCommand},
+    install_requires=["numpy"],
 )

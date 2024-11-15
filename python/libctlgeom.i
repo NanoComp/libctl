@@ -7,6 +7,7 @@
 
 %{
 #define CTL_SWIG
+#define SWIG_FILE_WITH_INIT
 #include "ctlgeom.h"
 #include "ctlgeom-types-swig.h"
 %}
@@ -104,3 +105,37 @@
 %ignore get_grid_size_n;
 
 %include "ctlgeom.h"
+
+%include "numpy.i"
+%init %{
+    import_array();
+%}
+
+/* Add typemap for numpy array input */
+%apply (double* IN_ARRAY2, int DIM1, int DIM2) {(double* points, int n_points, int dims)}
+
+/* Add the new function declaration */
+%inline %{
+PyObject* material_of_numpy_points_in_tree(double* points, int n_points, int dims, geom_box_tree t) {
+    if (dims != 3) {
+        PyErr_SetString(PyExc_ValueError, "Input array must have 3 columns (x,y,z)");
+        return NULL;
+    }
+    
+    PyObject* result = PyList_New(n_points);
+    for (int i = 0; i < n_points; i++) {
+        vector3 p = {points[i*3], points[i*3 + 1], points[i*3 + 2]};
+        MATERIAL_TYPE material = material_of_point_in_tree(p, t);
+        
+        if (material == NULL) {
+            Py_INCREF(Py_None);
+            PyList_SET_ITEM(result, i, Py_None);
+        } else {
+            PyObject* mat = (PyObject*)material;
+            Py_XINCREF(mat);
+            PyList_SET_ITEM(result, i, mat);
+        }
+    }
+    return result;
+}
+%}
