@@ -38,6 +38,7 @@ missing
 py-compile
 compile
 test-driver
+.DS_Store
 
 # other generated files
 example.scm
@@ -55,10 +56,9 @@ nlopt-constants.scm
 utils/test-prism
 *.dat
 
-/python/__pycache__
-/python/build
-/python/libctlgeom.egg-info
-/python/_libctlgeom.cpython*
-/python/libctlgeom_wrap.c
-/python/libctlgeom.py
-/python/todo.md
+utils/python/__pycache__
+utils/python/build
+utils/python/libctlgeom.egg-info
+utils/python/_libctlgeom.cpython*
+utils/python/libctlgeom_wrap.c
+utils/python/libctlgeom.py

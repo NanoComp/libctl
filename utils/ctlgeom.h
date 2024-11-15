@@ -39,17 +39,6 @@
 #define MATERIAL_TYPE void *
 #endif
 
-#ifndef CTL_SWIG /* for swig */
-#undef MATERIAL_TYPE
-#define MATERIAL_TYPE MATERIAL_TYPE
-#undef GEOMETRIC_OBJECT
-#define GEOMETRIC_OBJECT geometric_object
-#undef GEOMETRIC_OBJECT_LIST
-#define GEOMETRIC_OBJECT_LIST geometric_object_list
-#include <ctlgeom-types-swig.h>
-extern void display_geometric_object_info(int indentby, geometric_object o);
-#endif
-
 /* Where possible (e.g. for gcc >= 3.1), enable a compiler warning
    for code that uses a deprecated function */
 #if defined(__GNUC__) && (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ > 0))

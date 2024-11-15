@@ -241,6 +241,57 @@ fi
 AC_PROG_EGREP
 AC_CHECK_HEADERS(nlopt.h)
 
+
+##############################################################################
+# checks for python
+##############################################################################
+
+AC_ARG_WITH(python,
+	[AS_HELP_STRING([--without-python],[compile without Python interface])],
+        with_python=$withval,with_python=yes)
+
+AC_CHECK_PROG(SWIG, swig, swig, echo)
+if test "$USE_MAINTAINER_MODE" = yes && (test "x$with_python" = "xyes" || test "x$with_scheme" = "xyes") && test "x$SWIG" = xecho; then
+  AC_MSG_ERROR([SWIG not found; configure --without-python --without-scheme or use a release tarball])
+fi
+
+if test "x$with_python" = xno; then
+  have_python=no
+else
+  if test "$enable_shared" = no; then
+     AC_MSG_WARN([Python interface requires --enable-shared; disabling])
+     have_python=no
+  else
+    AM_PATH_PYTHON([],[have_python=yes],[have_python=no])
+    if test $have_python = yes; then
+      AC_MSG_CHECKING([for Python include directory])
+      pinc=`echo "from sysconfig import get_paths; print(get_paths()[['include']])" | $PYTHON - 2>/dev/null`
+      AC_MSG_RESULT([${pinc:-unknown}])
+      test -n "$pinc" && PYTHON_INCLUDES="-I$pinc"
+      save_CPPFLAGS=$CPPFLAGS
+      CPPFLAGS="$CPPFLAGS $PYTHON_INCLUDES"
+      AC_CHECK_HEADER([Python.h], [], [AC_MSG_WARN([disabling Python wrappers])
+                                       have_python=no])
+
+      if test $have_python = yes; then
+        AC_MSG_CHECKING([for Numpy include directory])
+        pinc=`echo "import numpy; print (numpy.get_include())" | $PYTHON - 2>/dev/null`
+        AC_MSG_RESULT([${pinc:-unknown}])
+        test -n "$pinc" && PYTHON_INCLUDES="$PYTHON_INCLUDES -I$pinc"
+        CPPFLAGS="$save_CPPFLAGS $PYTHON_INCLUDES"
+        AC_CHECK_HEADER([numpy/arrayobject.h],[],[
+          AC_MSG_WARN([disabling Python wrappers])
+          have_python=no],[#include <Python.h>])
+      fi
+
+      CPPFLAGS=$save_CPPFLAGS
+    fi # have_python
+  fi # enabled_shared
+fi # with_python
+
+AC_SUBST(PYTHON_INCLUDES)
+AM_CONDITIONAL(WITH_PYTHON, test x"$have_python" = "xyes")
+
 ###########################################################################
 
 libctl_dir=$srcdir
@@ -259,4 +310,9 @@ AC_CHECK_LIB(gen, basename)
 
 AC_CONFIG_FILES([Makefile src/Makefile utils/Makefile examples/Makefile examples/example.scm])
 AC_CONFIG_FILES([utils/gen-ctl-io], [chmod u+x utils/gen-ctl-io])
+
+if test "x$with_python" = xyes; then
+   AC_CONFIG_FILES([utils/python/Makefile])
+fi
+
 AC_OUTPUT
