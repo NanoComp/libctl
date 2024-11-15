@@ -116,6 +116,9 @@
 
 /* Add the new function declaration */
 %inline %{
+#include <numpy/arrayobject.h>
+#include <numpy/npy_math.h>
+
 PyObject* material_of_numpy_points_in_tree(double* points, int n_points, int dims, geom_box_tree t) {
     if (dims != 3) {
         PyErr_SetString(PyExc_ValueError, "Input array must have 3 columns (x,y,z)");
@@ -128,8 +131,8 @@ PyObject* material_of_numpy_points_in_tree(double* points, int n_points, int dim
         MATERIAL_TYPE material = material_of_point_in_tree(p, t);
         
         if (material == NULL) {
-            Py_INCREF(Py_None);
-            PyList_SET_ITEM(result, i, Py_None);
+            PyObject* nan = PyFloat_FromDouble(NPY_NAN);  // Create numpy.nan
+            PyList_SET_ITEM(result, i, nan);
         } else {
             PyObject* mat = (PyObject*)material;
             Py_XINCREF(mat);

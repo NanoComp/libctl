@@ -581,7 +581,7 @@ class TestObjectGroup:
         assert group.objects[0] == sphere
         assert group.objects[1] == cylinder
 
-    def test_material_at(self):
+    def test_material_at_point(self):
         """Test getting material at different points in an ObjectGroup."""
         sphere = Sphere(material="sphere_mat", center=(0, 0, 0), radius=1.0)
         cylinder = Cylinder(
@@ -594,6 +594,94 @@ class TestObjectGroup:
 
         group = ObjectGroup(objects=[sphere, cylinder])
 
-        assert group.material_at((0, 0, 0)) == "sphere_mat"
-        assert group.material_at((42, 0, 0)) == "cylinder_mat"
-        assert group.material_at((99, 0, 0)) is None
+        assert group.material_at_point((0, 0, 0)) == "sphere_mat"
+        assert group.material_at_point((42, 0, 0)) == "cylinder_mat"
+        assert group.material_at_point((99, 0, 0)) is None
+
+    def test_material_at_numpy_points(self):
+        """Test getting materials at multiple points using numpy array."""
+        sphere = Sphere(material="sphere_mat", center=(0, 0, 0), radius=1.0)
+        cylinder = Cylinder(
+            material="cylinder_mat",
+            center=(2, 0, 0),
+            radius=1.0,
+            height=2.0,
+            axis=(0, 0, 1),
+        )
+
+        group = ObjectGroup(objects=[sphere, cylinder])
+
+        # Create a numpy array of test points
+        points = np.array(
+            [
+                [0, 0, 0],  # Inside sphere
+                [2, 0, 0],  # Inside cylinder
+                [5, 5, 5],  # Outside both
+                [0.5, 0, 0],  # Inside sphere
+                [2, 0.5, 0.5],  # Inside cylinder
+            ]
+        )
+
+        materials = group.material_at_numpy_points(points)
+
+        assert materials[0] == "sphere_mat"
+        assert materials[1] == "cylinder_mat"
+        assert np.isnan(materials[2])
+        assert materials[3] == "sphere_mat"
+        assert materials[4] == "cylinder_mat"
+
+    def test_material_at_numpy_points_invalid_input(self):
+        """Test material_at_numpy_points with invalid input shapes."""
+        group = ObjectGroup(
+            objects=[Sphere(material="test", center=(0, 0, 0), radius=1.0)]
+        )
+
+        # Test with wrong number of dimensions
+        with pytest.raises(ValueError, match="Points must be a 2D numpy array"):
+            group.material_at_numpy_points(np.array([1, 2, 3]))
+
+        # Test with wrong second dimension
+        with pytest.raises(ValueError, match="Points must have shape"):
+            group.material_at_numpy_points(np.array([[1, 2], [3, 4]]))
+
+    def test_material_on_grid(self):
+        """Test getting materials on a 3D grid."""
+        sphere = Sphere(material=1.0, center=(0, 0, 0), radius=1.0)
+        group = ObjectGroup(objects=[sphere])
+
+        # Create a simple 3x3x3 grid
+        x = np.linspace(-2, 2, 3)
+        y = np.linspace(-2, 2, 3)
+        z = np.linspace(-2, 2, 3)
+        xx, yy, zz = np.meshgrid(x, y, z)
+
+        materials = group.material_on_grid(xx, yy, zz, default_material=0.0)
+
+        # Check shape
+        assert materials.shape == (3, 3, 3)
+
+        # Center point should be inside sphere (material 1.0)
+        assert materials[1, 1, 1] == 1.0
+
+        # Corner points should be outside sphere (material 0.0)
+        assert materials[0, 0, 0] == 0.0
+        assert materials[0, 0, 2] == 0.0
+        assert materials[0, 2, 0] == 0.0
+        assert materials[2, 0, 0] == 0.0
+        assert materials[2, 2, 2] == 0.0
+
+    def test_material_on_grid_invalid_input(self):
+        """Test material_on_grid with invalid input shapes."""
+        group = ObjectGroup(
+            objects=[Sphere(material=1.0, center=(0, 0, 0), radius=1.0)]
+        )
+
+        # Create mismatched grid shapes
+        x = np.linspace(-2, 2, 3)
+        y = np.linspace(-2, 2, 4)
+        z = np.linspace(-2, 2, 3)
+        xx, yy, zz = np.meshgrid(x, y, z)
+
+        # Test with mismatched shapes
+        with pytest.raises(ValueError, match="xx, yy, and zz must have the same shape"):
+            group.material_on_grid(xx[:2], yy, zz)

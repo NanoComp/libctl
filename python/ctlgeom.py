@@ -358,13 +358,55 @@ class ObjectGroup:
         """Create a tree object from the group of geometric objects."""
         return geom.create_geom_box_tree0(self.geom_list, self.bounding_box)
 
-    def material_at(self, point: Tuple[float, float, float]) -> MATERIAL_TYPE:
+    def material_at_point(self, point: Tuple[float, float, float]) -> MATERIAL_TYPE:
         """Query the material at a point.
 
         Args:
             point: The point to query.
         """
         return geom.material_of_point_in_tree(make_vector3(*point), self.geom_box_tree)
+
+    def material_at_numpy_points(self, points: np.ndarray) -> List[MATERIAL_TYPE]:
+        """Query the material at a numpy array of points. Default material is numpy.nan.
+
+        Args:
+            points: A numpy array of points with shape (n_points, 3).
+
+        Returns:
+            A list of materials corresponding to the points.
+        """
+        if points.ndim != 2:
+            raise ValueError("Points must be a 2D numpy array.")
+        if points.shape[1] != 3:
+            raise ValueError("Points must have shape (n_points, 3).")
+        return geom.material_of_numpy_points_in_tree(points, self.geom_box_tree)
+
+    def material_on_grid(
+        self,
+        xx: np.ndarray,
+        yy: np.ndarray,
+        zz: np.ndarray,
+        default_material: MATERIAL_TYPE = 0,
+    ) -> np.ndarray:
+        """Query the material on a grid.
+
+        Args:
+            xx: A numpy array of x-coordinates.
+            yy: A numpy array of y-coordinates.
+            zz: A numpy array of z-coordinates.
+            default_material: The material to return for points outside of any object. Defaults to 0.
+            dtype: The data type of the returned array. Defaults to float.
+
+        Returns:
+            A numpy array of materials with the same shape as xx, yy, and zz.
+        """
+        if not (xx.shape == yy.shape == zz.shape):
+            raise ValueError("xx, yy, and zz must have the same shape.")
+        points = np.vstack((xx.ravel(), yy.ravel(), zz.ravel())).T
+        return np.nan_to_num(
+            np.array(self.material_at_numpy_points(points)).reshape(xx.shape),
+            nan=default_material,
+        )
 
     def __del__(self):
         # Clean up the tree when the object is destroyed
