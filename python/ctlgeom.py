@@ -3,11 +3,22 @@ from abc import ABC, abstractmethod
 from typing import Tuple, List, Literal, Any
 import dataclasses
 import numpy as np
+import copy
 
 MATERIAL_TYPE = Any
 
 
-def make_vector3(x, y, z):
+def make_vector3(x, y, z) -> geom.vector3:
+    """Create a vector3 object.
+
+    Args:
+        x: The x-coordinate.
+        y: The y-coordinate.
+        z: The z-coordinate.
+
+    Returns:
+        A vector3 object.
+    """
     v = geom.vector3()
     v.x = x
     v.y = y
@@ -17,6 +28,13 @@ def make_vector3(x, y, z):
 
 @dataclasses.dataclass(frozen=True)
 class BoundingBox:
+    """A bounding box.
+
+    Attributes:
+        low: The lower corner of the box.
+        high: The upper corner of the box.
+    """
+
     low: Tuple[float, float, float]
     high: Tuple[float, float, float]
 
@@ -25,7 +43,8 @@ class BoundingBox:
         self.box.low = make_vector3(*self.low)
         self.box.high = make_vector3(*self.high)
 
-    def to_geom_object(self):
+    def to_geom_object(self) -> geom.geom_box:
+        """Convert the bounding box to a geometric object."""
         return self.box
 
 
@@ -33,18 +52,25 @@ class GeometricObject(ABC):
     """Abstract base class for geometric objects."""
 
     @abstractmethod
-    def to_geom_object(self):
+    def to_geom_object(self) -> geom.geometric_object:
         raise NotImplementedError
 
     def volume(self) -> float:
+        """Get the volume of the geometric object."""
         return geom.geom_object_volume(self.to_geom_object())
 
     def debug_info(self) -> None:
+        """Display debug information about the geometric object."""
         display_geom_object_info(self)
 
     def bounding_box(
         self,
     ) -> Tuple[Tuple[float, float, float], Tuple[float, float, float]]:
+        """Get the bounding box of the geometric object.
+
+        Returns:
+            A tuple of the lower and upper corners of the bounding box.
+        """
         box = geom.geom_box()
         geom.geom_get_bounding_box(self.to_geom_object(), box)
         return ((box.low.x, box.low.y, box.low.z), (box.high.x, box.high.y, box.high.z))
@@ -68,7 +94,8 @@ class Cylinder(GeometricObject):
     height: float
     axis: Tuple[float, float, float]
 
-    def to_geom_object(self):
+    def to_geom_object(self) -> geom.geometric_object:
+        """Convert the cylinder to a geometric object."""
         return geom.make_cylinder(
             self.material,
             make_vector3(*self.center),
@@ -100,7 +127,8 @@ class Wedge(GeometricObject):
     wedge_angle: float
     wedge_start: Tuple[float, float, float]
 
-    def to_geom_object(self):
+    def to_geom_object(self) -> geom.geometric_object:
+        """Convert the wedge to a geometric object."""
         return geom.make_wedge(
             self.material,
             make_vector3(*self.center),
@@ -132,7 +160,8 @@ class Cone(GeometricObject):
     axis: Tuple[float, float, float]
     radius2: float
 
-    def to_geom_object(self):
+    def to_geom_object(self) -> geom.geometric_object:
+        """Convert the cone to a geometric object."""
         return geom.make_cone(
             self.material,
             make_vector3(*self.center),
@@ -149,7 +178,8 @@ class Sphere(GeometricObject):
     center: Tuple[float, float, float]
     radius: float
 
-    def to_geom_object(self):
+    def to_geom_object(self) -> geom.geometric_object:
+        """Convert the sphere to a geometric object."""
         return geom.make_sphere(self.material, make_vector3(*self.center), self.radius)
 
 
@@ -173,7 +203,8 @@ class Block(GeometricObject):
     e3: Tuple[float, float, float]
     size: Tuple[float, float, float]
 
-    def to_geom_object(self):
+    def to_geom_object(self) -> geom.geometric_object:
+        """Convert the block to a geometric object."""
         return geom.make_block(
             self.material,
             make_vector3(*self.center),
@@ -204,7 +235,8 @@ class Ellipsoid(GeometricObject):
     e3: Tuple[float, float, float]
     size: Tuple[float, float, float]
 
-    def to_geom_object(self):
+    def to_geom_object(self) -> geom.geometric_object:
+        """Convert the ellipsoid to a geometric object."""
         return geom.make_ellipsoid(
             self.material,
             make_vector3(*self.center),
@@ -233,7 +265,8 @@ class Prism(GeometricObject):
     axis: Tuple[float, float, float]
     center: Tuple[float, float, float] = None
 
-    def to_geom_object(self):
+    def to_geom_object(self) -> geom.geometric_object:
+        """Convert the prism to a geometric object."""
         # Convert vertices list to array of vector3
         vertex_array = [make_vector3(*v) for v in self.vertices]
 
@@ -276,7 +309,10 @@ class SlantedPrism(GeometricObject):
     sidewall_angle: float
     center: Tuple[float, float, float] = None
 
-    def to_geom_object(self):
+    def to_geom_object(self) -> geom.geometric_object:
+        """Convert the slanted prism to a geometric object."""
+        raise NotImplementedError
+        # This is not working yet
         # Convert vertices list to array of vector3
         vertex_array = [make_vector3(*v) for v in self.vertices]
 
@@ -301,65 +337,36 @@ class SlantedPrism(GeometricObject):
             )
 
 
-@dataclasses.dataclass(frozen=False)
-class GroupObject:
+@dataclasses.dataclass
+class ObjectGroup:
     """A group of geometric objects."""
 
     objects: List[GeometricObject]
 
     def __post_init__(self):
-        self.objects_map = {
-            obj.to_geom_object(): obj for obj in self.objects
-        }  # Add this line
         geom_objects = [obj.to_geom_object() for obj in self.objects]
-        self.geom_list = make_geom_object_list(geom_objects)
+        self.geom_list = copy.copy(make_geom_object_list(geom_objects))
         self.bounding_box = make_geom_box(
             (float("-inf"), float("-inf"), float("-inf")),
             (float("inf"), float("inf"), float("inf")),
         )
-        self.geom_box_tree = None
+        self.geom_box_tree = self._create_tree_object()
 
-    def to_tree_object(self) -> Literal["geom.geom_box_tree"]:
+    def _create_tree_object(self) -> Literal["geom.geom_box_tree"]:
         """Create a tree object from the group of geometric objects."""
         return geom.create_geom_box_tree0(self.geom_list, self.bounding_box)
 
-    def get_tree_object(self) -> Literal["geom.geom_box_tree"]:
-        """Get the tree object from the group of geometric objects."""
-        if self.geom_box_tree is None:
-            self.geom_box_tree = self.to_tree_object()
-        return self.geom_box_tree
-
-    def query_object_at_point(
-        self, point: Tuple[float, float, float]
-    ) -> GeometricObject:
-        """Query the object at a point."""
-        shiftby = geom.vector3()
-        return geom.object_of_point0(self.geom_list, make_vector3(*point), shiftby)
-
-    def query_object_at_point_in_tree(
-        self, point: Tuple[float, float, float], precedence: int
-    ) -> GeometricObject:
-        """Unstable. Not outputting object as expected."""
-        shiftby = geom.vector3()
-        precedence_ptr = geom.new_intp()
-        geom.intp_assign(precedence_ptr, precedence)
-        return geom.object_of_point_in_tree(
-            make_vector3(*point), self.get_tree_object(), shiftby, precedence_ptr
-        )
-
-    def query_material_at_point(self, point: Tuple[float, float, float]) -> Material:
+    def material_at(self, point: Tuple[float, float, float]) -> MATERIAL_TYPE:
         """Query the material at a point.
 
         Args:
             point: The point to query.
         """
-        tree = self.get_tree_object()
-        return geom.material_of_point_in_tree(make_vector3(*point), tree)
+        return geom.material_of_point_in_tree(make_vector3(*point), self.geom_box_tree)
 
     def __del__(self):
         # Clean up the tree when the object is destroyed
-        if hasattr(self, "tree"):
-            geom.destroy_geom_box_tree(self.tree)
+        geom.destroy_geom_box_tree(self.geom_box_tree)
 
 
 def point_is_in_object(
@@ -374,7 +381,7 @@ def point_is_in_object(
     return bool(geom.point_in_objectp(make_vector3(*point), object.to_geom_object()))
 
 
-def display_geom_object_info(object: GeometricObject) -> None:
+def display_geom_object_info(object: GeometricObject):
     """Display information about the geometric object.
 
     Args:
@@ -383,14 +390,23 @@ def display_geom_object_info(object: GeometricObject) -> None:
     geom.display_geometric_object_info(0, object.to_geom_object())
 
 
-def make_geom_object_list(objects: list[geom.geometric_object]):
+def make_geom_object_list(
+    objects: list[geom.geometric_object],
+) -> geom.geometric_object_list:
+    """Create a list of geometric objects.
+
+    Args:
+        objects: The geometric objects to create a list of.
+    """
     objects_list = geom.geometric_object_list()
     objects_list.num_items = len(objects)
     objects_list.set_items(objects)  # Use set_items instead of direct assignment
     return objects_list
 
 
-def make_geom_box(low: Tuple[float, float, float], high: Tuple[float, float, float]):
+def make_geom_box(
+    low: Tuple[float, float, float], high: Tuple[float, float, float]
+) -> geom.geom_box:
     """Create a geometric box.
 
     Args:
