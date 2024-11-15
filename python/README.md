@@ -134,55 +134,58 @@ low, high = sphere.bounding_box()
 group = ObjectGroup([sphere, cylinder, block])
 
 # Query material at a point
-material = group.material_at(point)
+material = group.material_at_point(point)
+
+# Query the material at a numpy array of points. (Must faster than python loops!)
+material = group.material_at_numpy_points(point)
+
+# Query the material at a cartesian grid
+material = group.material_on_grid(xx, yy, zz)
 
 # Display debug information
 sphere.debug_info()
 ```
 
-### Vectorized Operations with numpy
+### Vectorized Operations
 
 ```python
 import numpy as np
 import matplotlib.pyplot as plt
-import time
+import time 
 
-# Create some sample geometry
-sphere1 = Sphere(material=1, center=(0, -0.5, 0), radius=0.5)
-sphere2 = Sphere(material=2, center=(0, 0.5, 0), radius=1)
-block = Block(
-    material=3,
-    center=(0.5, 0.5, 0),
-    e1=(1, 1, 0),
-    e2=(1, -1, 0),
-    e3=(0, 0, 1),
-    size=(1, 1, 1)
-)
+sphere1 = Sphere(material=1+3j, center=(0, -0.5, 0), radius=0.5)
+sphere2 = Sphere(material=2+2j, center=(0, 0.5, 0), radius=1)
+block = Block(material=3+1j, center=(0.5, 0.5, 0), e1=(1, 1, 0), e2=(1, -1, 0), e3=(0, 0, 1), size=(1, 1, 1))
 group = ObjectGroup([sphere2, sphere1, block])
 
 # Create a grid of points
-x = np.linspace(-2, 2, 200)
-y = np.linspace(-2, 2, 200)
+x = np.linspace(-1, 1, 500)
+y = np.linspace(-1, 1, 500)
 xx, yy = np.meshgrid(x, y)
+zz = np.zeros_like(xx)
 
-# Vectorize the material lookup function
-def get_material(x, y):
-    mat = group.material_at((x, y, 0))
-    return 0 if mat is None else mat
+start_time = time.time()
+material_map = group.material_on_grid(xx, yy, zz)
+end_time = time.time()
+print(f"Time taken: {end_time - start_time} seconds")
 
-material_lookup = np.vectorize(get_material)
-
-# Generate material map
-material_map = material_lookup(xx, yy)
-
-# Visualize the result
-plt.figure(figsize=(8, 8))
-plt.imshow(material_map, extent=[-2, 2, -2, 2], origin='lower')
-plt.colorbar(label='Material Index')
-plt.title('Material Distribution')
-plt.xlabel('X')
-plt.ylabel('Y')
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 2, 1)
+plt.imshow(material_map.real, cmap='viridis', extent=[-5, 5, -5, 5])
+plt.colorbar(label='Material')
+plt.title('Real')
+plt.subplot(1, 2, 2)
+plt.imshow(material_map.imag, cmap='viridis', extent=[-5, 5, -5, 5])
+plt.colorbar(label='Material')
+plt.title('Imaginary')
 plt.show()
 ```
 
 Note: The `np.vectorize` function allows us to efficiently apply the material lookup across a large array of points. While not as fast as true vectorization (it still calls Python code for each point), it provides a convenient way to process large arrays of coordinates without explicit loops.
+
+
+### Running tests
+First, make sure pytest is installed. You can install it by `pip install pytest`.
+```bash
+pytest test_ctlgeom.py -v
+```
