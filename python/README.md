@@ -181,9 +181,6 @@ plt.title('Imaginary')
 plt.show()
 ```
 
-Note: The `np.vectorize` function allows us to efficiently apply the material lookup across a large array of points. While not as fast as true vectorization (it still calls Python code for each point), it provides a convenient way to process large arrays of coordinates without explicit loops.
-
-
 ### Running tests
 First, make sure pytest is installed. You can install it by `pip install pytest`.
 ```bash
