@@ -6,24 +6,24 @@
 %include "ctl-math.h"
 
 %{
-#define CTL_SWIG
+typedef void *material_type;
 #define SWIG_FILE_WITH_INIT
 #include "ctlgeom.h"
-#include "ctlgeom-types-swig.h"
+#include "ctlgeom-types.h"
 %}
 
-%include "ctlgeom-types-swig.h"
+%include "ctlgeom-types.h"
 %include "ctl-math.h"
 %include "cpointer.i"
 %pointer_functions(int, intp);
 
-/* Define MATERIAL_TYPE with proper typemap */
-%typemap(in) MATERIAL_TYPE {
+/* Define material_type with proper typemap */
+%typemap(in) material_type {
     Py_XINCREF($input);  // Increment reference count when passing to C
     $1 = (void*)$input;
 }
 
-%typemap(out) MATERIAL_TYPE {
+%typemap(out) material_type {
     if ($1 == NULL) {
         Py_INCREF(Py_None);
         $result = Py_None;
@@ -66,13 +66,13 @@
             PyErr_SetString(PyExc_TypeError, "Expected a list");
             return;
         }
-        
+
         int size = PyList_Size(list);
         if (size != $self->num_items) {
             PyErr_SetString(PyExc_ValueError, "List size must match num_items");
             return;
         }
-        
+
         $self->items = (geometric_object*)malloc(size * sizeof(geometric_object));
         for (int i = 0; i < size; i++) {
             PyObject *obj = PyList_GetItem(list, i);
@@ -86,7 +86,7 @@
             $self->items[i] = *item;
         }
     }
-    
+
     PyObject* get_items() {
         PyObject* list = PyList_New($self->num_items);
         for (int i = 0; i < $self->num_items; i++) {
@@ -124,12 +124,12 @@ PyObject* material_of_numpy_points_in_tree(double* points, int n_points, int dim
         PyErr_SetString(PyExc_ValueError, "Input array must have 3 columns (x,y,z)");
         return NULL;
     }
-    
+
     PyObject* result = PyList_New(n_points);
     for (int i = 0; i < n_points; i++) {
         vector3 p = {points[i*3], points[i*3 + 1], points[i*3 + 2]};
-        MATERIAL_TYPE material = material_of_point_in_tree(p, t);
-        
+        material_type material = material_of_point_in_tree(p, t);
+
         if (material == NULL) {
             PyObject* nan = PyFloat_FromDouble(NPY_NAN);  // Create numpy.nan
             PyList_SET_ITEM(result, i, nan);
