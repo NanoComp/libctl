@@ -1,9 +1,10 @@
-import libctlgeom as geom
-from abc import ABC, abstractmethod
-from typing import Tuple, List, Literal, Any
-import dataclasses
-import numpy as np
 import copy
+import dataclasses
+from abc import ABC, abstractmethod
+from typing import Any, List, Literal, Tuple
+
+import libctlgeom as geom
+import numpy as np
 
 MATERIAL_TYPE = Any
 

@@ -1,18 +1,9 @@
-import pytest
 import numpy as np
-from ctlgeom import (
-    BoundingBox,
-    Sphere,
-    point_is_in_object,
-    Cylinder,
-    Wedge,
-    Cone,
-    Block,
-    Ellipsoid,
-    Prism,
-    SlantedPrism,
-    ObjectGroup,
-)
+import pytest
+
+from ctlgeom import (Block, BoundingBox, Cone, Cylinder, Ellipsoid,
+                     ObjectGroup, Prism, SlantedPrism, Sphere, Wedge,
+                     point_is_in_object)
 
 
 class TestBoundingBox:
