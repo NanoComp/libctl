@@ -1,5 +1,7 @@
 if WITH_PYTHON
-SUBDIRS = python
+SUBDIRS = . python
+else
+SUBDIRS = .
 endif
 
 bin_SCRIPTS = gen-ctl-io
