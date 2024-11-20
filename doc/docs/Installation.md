@@ -78,6 +78,23 @@ If you are installing on your personal Linux or BSD machine, then precompiled bi
 
 **Do not compile something from source if an official binary package is available.**  For one thing, you're just creating pain for yourself.  Worse, the binary package may already be installed, in which case installing a different version from source will just cause trouble.
 
+Python Extension for libctlgeom
+------
+
+To install the python extension for the libctlgeom, run the following commands:
+```bash
+./configure --enable-maintainer-mode PYTHON=python3 --enable-shared
+make
+make install
+```
+
+If the user desires to install in a conda environment, use the following commands in the environment:
+```bash
+./configure --enable-maintainer-mode PYTHON=$(which python) --prefix=$CONDA_PREFIX --enable-shared
+make
+make install
+```
+
 Guile
 -----
 

@@ -10,21 +10,19 @@ This directory contains SWIG bindings to create a Python extension for libctl.
 
 ## Installation
 
-**Using Conda Environment**
-   ```bash
-   conda activate my_env
-   ./build.sh
-   ```
+In the top source directory, run the following
+```bash
+./configure --enable-maintainer-mode PYTHON=python3 --enable-shared
+make
+make install
+```
 
-**Using System Python**
-   ```bash
-   ./build.sh
-   ```
-
-The build script will automatically:
-- Generate Python bindings using SWIG
-- Compile the extension module
-- Install the package using pip
+If the user desires to install in a conda environment, use the following commands in the environment:
+```bash
+./configure --enable-maintainer-mode PYTHON=$(which python) --prefix=$CONDA_PREFIX --enable-shared
+make
+make install
+```
 
 ## Usage Examples
 
@@ -184,5 +182,6 @@ plt.show()
 ### Running tests
 First, make sure pytest is installed. You can install it by `pip install pytest`.
 ```bash
-pytest test_ctlgeom.py -v
+cd tests/
+pytest * -v
 ```

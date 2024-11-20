@@ -3,7 +3,7 @@ import dataclasses
 from abc import ABC, abstractmethod
 from typing import Any, List, Literal, Tuple
 
-import libctlgeom as geom
+from . import libctlgeom as geom
 import numpy as np
 
 MATERIAL_TYPE = Any

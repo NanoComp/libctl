@@ -12,6 +12,8 @@ typedef void *material_type;
 #include "ctlgeom-types.h"
 %}
 
+extern void display_geometric_object_info(int indentby, geometric_object o);
+
 %include "ctlgeom-types.h"
 %include "ctl-math.h"
 %include "cpointer.i"

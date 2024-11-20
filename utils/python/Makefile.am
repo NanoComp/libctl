@@ -12,7 +12,7 @@ _libctlgeom_la_LDFLAGS = -module -version-info @SHARED_VERSION_INFO@
 _libctlgeom_la_CPPFLAGS = $(PYTHON_INCLUDES) $(AM_CPPFLAGS)
 
 pyctlgeomdir = $(pythondir)/ctlgeom
-pyctlgeom_PYTHON = ctlgeom.py libctlgeom.py
+pyctlgeom_PYTHON = __init__.py ctlgeom.py libctlgeom.py
 pyctlgeom_LTLIBRARIES = _libctlgeom.la
 
 #################################################
