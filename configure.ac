@@ -262,7 +262,7 @@ else
      AC_MSG_WARN([Python interface requires --enable-shared; disabling])
      have_python=no
   else
-    AM_PATH_PYTHON([],[have_python=yes],[have_python=no])
+    AM_PATH_PYTHON([3],[have_python=yes],[have_python=no])
     if test $have_python = yes; then
       AC_MSG_CHECKING([for Python include directory])
       pinc=`echo "from sysconfig import get_paths; print(get_paths()[['include']])" | $PYTHON - 2>/dev/null`

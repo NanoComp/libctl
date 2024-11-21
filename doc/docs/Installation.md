@@ -83,14 +83,7 @@ Python Extension for libctlgeom
 
 To install the python extension for the libctlgeom, run the following commands:
 ```bash
-./configure --enable-maintainer-mode PYTHON=python3 --enable-shared
-make
-make install
-```
-
-If the user desires to install in a conda environment, use the following commands in the environment:
-```bash
-./configure --enable-maintainer-mode PYTHON=$(which python) --prefix=$CONDA_PREFIX --enable-shared
+./configure --enable-maintainer-mode --enable-shared
 make
 make install
 ```
