@@ -1,2 +1,2 @@
-from .libctlgeom import *
+from . import libctlgeom
 from .ctlgeom import *
