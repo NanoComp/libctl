@@ -5,7 +5,6 @@ This directory contains SWIG bindings to create a Python extension for libctl.
 ## Prerequisites
 - SWIG
 - Python 3.x
-- pip
 - A C compiler (gcc, clang, etc.)
 
 ## Installation (build from source)
@@ -16,6 +15,21 @@ In the top source directory, run the following
 make
 make install
 ```
+Note that you'll need to have `guile` installed to build from source.
+
+## Installation (from a release)
+
+If you are building from an official `.tar.gz` package on the [releases page](https://github.com/NanoComp/libctl/releases), then you can run the following commands:
+```bash
+tar xvzf libctl-x.x.x.tar.gz
+cd libctl-x.x.x
+./configure --enable-shared --without-guile
+make
+make install
+```
+
+If you *don't* want to install the python extension, you can configure with `--without-python`.
+
 
 ## Usage Examples
 

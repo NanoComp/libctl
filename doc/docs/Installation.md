@@ -81,12 +81,7 @@ If you are installing on your personal Linux or BSD machine, then precompiled bi
 Python Extension for libctlgeom
 ------
 
-To install the python extension for the libctlgeom, run the following commands:
-```bash
-./configure --enable-maintainer-mode --enable-shared
-make
-make install
-```
+Please follow the [instructions here](../../utils/python/README.md) to install the python extension.
 
 Guile
 -----
