@@ -1,3 +1,9 @@
+if WITH_PYTHON
+SUBDIRS = . python
+else
+SUBDIRS = .
+endif
+
 bin_SCRIPTS = gen-ctl-io
 include_HEADERS = ctlgeom.h
 nodist_include_HEADERS = ctlgeom-types.h

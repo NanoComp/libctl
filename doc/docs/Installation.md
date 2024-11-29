@@ -78,6 +78,11 @@ If you are installing on your personal Linux or BSD machine, then precompiled bi
 
 **Do not compile something from source if an official binary package is available.**  For one thing, you're just creating pain for yourself.  Worse, the binary package may already be installed, in which case installing a different version from source will just cause trouble.
 
+Python Extension for libctlgeom
+------
+
+Please follow the [instructions here](../../utils/python/README.md) to install the python extension.
+
 Guile
 -----
 
