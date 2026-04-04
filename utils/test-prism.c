@@ -480,6 +480,7 @@ int test_square_base_sidewall_prisms_to_gnuplot() {
 
   double normal_sidewall = 0;
   geometric_object square_normal_sidewall_geom_object = make_prism(m, nodes_square, num_nodes_square, height_square, zhat);
+  geom_fix_object_ptr(&square_normal_sidewall_geom_object);
   prism *square_normal_sidewall_prism = square_normal_sidewall_geom_object.subclass.prism_data;
 
   double one_degree_sidewall = 1.0 * 2 * K_PI / 360.0;
@@ -524,6 +525,7 @@ int test_octagon_c_base_sidewall_prisms_to_gnuplot() {
 
   double normal_sidewall = 0;
   geometric_object octagon_c_normal_sidewall_geom_object = make_prism(m, nodes_octagon_c, num_nodes_octagon_c, height_octagon_c, zhat);
+  geom_fix_object_ptr(&octagon_c_normal_sidewall_geom_object);
   prism *octagon_c_normal_sidewall_prism = octagon_c_normal_sidewall_geom_object.subclass.prism_data;
 
   double two_half_degree_sidewall = 2.5 * 2 * K_PI / 360.0;
@@ -575,6 +577,7 @@ int test_helper_functions_on_octagonal_c_prism() {
 
   double normal_sidewall = 0;
   geometric_object octagon_c_normal_sidewall_geom_object = make_prism(m, nodes_octagon_c, num_nodes_octagon_c, height_octagon_c, zhat);
+  geom_fix_object_ptr(&octagon_c_normal_sidewall_geom_object);
   prism *octagon_c_normal_sidewall_prism = octagon_c_normal_sidewall_geom_object.subclass.prism_data;
 
   double two_half_degree_sidewall = 2.5 * 2 * K_PI / 360.0;
@@ -1121,6 +1124,8 @@ int run_unit_tests() {
 
   geometric_object the_block = make_block(m, c, xhat, yhat, zhat, size);
   geometric_object the_prism = make_prism(m, v, 4, LZ, zhat);
+  geom_fix_object_ptr(&the_block);
+  geom_fix_object_ptr(&the_prism);
 
   /***************************************************************/
   /* with probability P_SHIFT, shift the centers of both block   */
@@ -1265,6 +1270,7 @@ int main(int argc, char *argv[]) {
   fclose(f);
 
   geometric_object the_prism = make_prism(NULL, vertices, num_vertices, height, axis);
+  geom_fix_object_ptr(&the_prism);
   prism *prsm = the_prism.subclass.prism_data;
   prism2gmsh(prsm, "test-prism.pp");
   prism2gnuplot(prsm, "test-prism.gp");
