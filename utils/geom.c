@@ -81,6 +81,7 @@ static double get_prism_volume(prism *prsm);
 static void get_prism_bounding_box(prism *prsm, geom_box *box);
 static void display_prism_info(int indentby, geometric_object *o);
 static void init_prism(geometric_object *o);
+static void reinit_prism(geometric_object *o);
 /**************************************************************************/
 
 /* Allows writing to Python's stdout when running from Meep's Python interface */
@@ -157,7 +158,7 @@ void geom_fix_object_ptr(geometric_object *o) {
       break;
     }
     case GEOM PRISM: {
-      init_prism(o);
+      reinit_prism(o);
       break;
     }
     case GEOM COMPOUND_GEOMETRIC_OBJECT: {
@@ -2797,6 +2798,8 @@ void init_prism(geometric_object *o) {
       prsm->vertices_top_p.items[nv].x = px;
       prsm->vertices_top_p.items[nv].y = py;
     }
+
+    free(top_polygon_edges);
   }
 
   prsm->top_polygon_diff_vectors_p.num_items = num_vertices;
@@ -2824,6 +2827,19 @@ void init_prism(geometric_object *o) {
   // that is used by some geometry routines
   prsm->workspace.num_items = num_vertices + 2;
   prsm->workspace.items = (double *)malloc((num_vertices + 2) * sizeof(double));
+}
+
+/* like init_prism, but works with an already-initialied prism */
+void reinit_prism(geometric_object *o) {
+  // these arrays are re-allocated by init_prism
+  free(prsm->vertices_p.items);
+  free(prsm->vertices_top_p.items);
+  free(prsm->top_polygon_diff_vectors_p.items);
+  free(prsm->top_polygon_diff_vectors_scaled_p.items);
+  free(prsm->vertices_top.items);
+  free(prsm->workspace.items);
+
+  init_prism(o);
 }
 
 /***************************************************************/
