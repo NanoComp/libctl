@@ -2832,6 +2832,7 @@ void init_prism(geometric_object *o) {
 /* like init_prism, but works with an already-initialied prism */
 void reinit_prism(geometric_object *o) {
   // these arrays are re-allocated by init_prism
+  prism *prsm = o->subclass.prism_data;
   free(prsm->vertices_p.items);
   free(prsm->vertices_top_p.items);
   free(prsm->top_polygon_diff_vectors_p.items);
