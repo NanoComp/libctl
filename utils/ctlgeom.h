@@ -173,11 +173,14 @@ GEOMETRIC_OBJECT make_slanted_prism_with_center(MATERIAL_TYPE material, vector3 
                                         const vector3 *vertices, int num_vertices, double height,
                                         vector3 axis, double sidewall_angle);
 
-// mesh with center computed as centroid of vertices
+// Closed triangulated 3D mesh. Vertices are shared; triangles index into the
+// vertex array (0-based, 3 ints per triangle). A BVH is built internally for
+// O(log N) queries. The mesh must be watertight (every edge shared by exactly
+// 2 faces); open meshes are detected at init time and produce a warning.
 GEOMETRIC_OBJECT make_mesh(MATERIAL_TYPE material, const vector3 *vertices, int num_vertices,
                            const int *triangles, int num_triangles);
 
-// mesh with explicit center (vertices shifted so centroid = center)
+// As make_mesh, but translates vertices so the centroid equals center.
 GEOMETRIC_OBJECT make_mesh_with_center(MATERIAL_TYPE material, vector3 center,
                                        const vector3 *vertices, int num_vertices,
                                        const int *triangles, int num_triangles);
