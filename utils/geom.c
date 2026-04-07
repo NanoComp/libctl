@@ -83,6 +83,7 @@ static void display_prism_info(int indentby, geometric_object *o);
 static void init_prism(geometric_object *o);
 static void reinit_prism(geometric_object *o);
 static void init_mesh(geometric_object *o);
+static void reinit_mesh(geometric_object *o);
 static boolean point_in_mesh(const mesh *m, vector3 p);
 static vector3 normal_to_mesh(const mesh *m, vector3 p);
 static void get_mesh_bounding_box(const mesh *m, geom_box *box);
@@ -183,7 +184,7 @@ void geom_fix_object_ptr(geometric_object *o) {
       break;
     }
     case GEOM MESH: {
-      init_mesh(o);
+      reinit_mesh(o);
       break;
     }
     case GEOM GEOMETRIC_OBJECT_SELF:
@@ -2452,11 +2453,22 @@ static int count_ray_mesh_intersections(const mesh *m, vector3 origin, vector3 d
 static boolean point_in_mesh(const mesh *m, vector3 p) {
   if (!m->is_closed) return 0;
 
-  /* Cast a ray along a non-axis-aligned direction to reduce chance of
-     hitting mesh edges exactly (where deduplication is most fragile). */
-  vector3 dir = {0.57735026918962576, 0.57735026918962576, 0.57735026918962576};
-  int crossings = count_ray_mesh_intersections(m, p, dir);
-  return (crossings % 2) == 1;
+  /* Cast rays along multiple directions and take majority vote.
+     A single ray can give wrong parity when it passes through a mesh
+     edge or vertex, causing deduplication to miss or double-count
+     a crossing. Three irrational directions make it extremely unlikely
+     that more than one ray hits a degenerate case at the same point. */
+  static const vector3 dirs[3] = {
+    {0.57735026918962576, 0.57735026918962576, 0.57735026918962576},  /* (1,1,1)/√3 */
+    {0.80178372573727319, 0.53452248382484879, 0.26726124191242440},  /* (3,2,1)/√14 */
+    {0.12309149097933272, 0.49236596391733088, 0.86164043685532904},  /* (1,4,7)/√66 */
+  };
+  int votes = 0;
+  for (int d = 0; d < 3; d++) {
+    int crossings = count_ray_mesh_intersections(m, p, dirs[d]);
+    if (crossings % 2 == 1) votes++;
+  }
+  return votes >= 2;
 }
 
 static vector3 normal_to_mesh(const mesh *m, vector3 p) {
@@ -2621,6 +2633,20 @@ static void init_mesh(geometric_object *o) {
 /***************************************************************/
 /* make_mesh constructors                                      */
 /***************************************************************/
+
+static void reinit_mesh(geometric_object *o) {
+  mesh *m = o->subclass.mesh_data;
+  /* Skip if already initialized — mesh uses absolute coordinates
+     and doesn't depend on the lattice basis, unlike blocks/cylinders. */
+  if (m->bvh != NULL) return;
+  free(m->face_normals);
+  free(m->face_areas);
+  free(m->bvh_face_ids);
+  m->face_normals = NULL;
+  m->face_areas = NULL;
+  m->bvh_face_ids = NULL;
+  init_mesh(o);
+}
 
 static int mesh_is_auto_center(vector3 c) {
   return isnan(c.x) && isnan(c.y) && isnan(c.z);
