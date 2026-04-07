@@ -358,6 +358,51 @@ static void test_mesh_with_center(void) {
 }
 
 /************************************************************************/
+/* Test: open mesh detection                                            */
+/************************************************************************/
+static void test_open_mesh(void) {
+  printf("test_open_mesh... ");
+  /* A tetrahedron with one face duplicated and one face missing — not closed.
+     4 faces total (passes the >= 4 check) but has boundary edges. */
+  vector3 verts[4] = {
+    {0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {0, 0, 1}
+  };
+  int tris[4 * 3] = {
+    0, 1, 2,
+    0, 1, 3,
+    0, 2, 3,
+    0, 2, 3   /* duplicate of face 2 instead of the missing face (1,2,3) */
+  };
+  geometric_object open = make_mesh(NULL, verts, 4, tris, 4);
+  mesh *m = open.subclass.mesh_data;
+  ASSERT_TRUE("open mesh detected as not closed", !m->is_closed);
+
+  /* point_in_mesh should return false for open meshes. */
+  vector3 p = {0.1, 0.1, 0.1};
+  ASSERT_TRUE("open mesh: point_in returns false", !point_in_fixed_pobjectp(p, &open));
+
+  geometric_object_destroy(open);
+  printf("done\n");
+}
+
+/************************************************************************/
+/* Test: closed mesh correctly detected                                 */
+/************************************************************************/
+static void test_closed_detection(void) {
+  printf("test_closed_detection... ");
+  geometric_object cube = make_cube_mesh(NULL);
+  mesh *m = cube.subclass.mesh_data;
+  ASSERT_TRUE("cube mesh detected as closed", m->is_closed);
+  geometric_object_destroy(cube);
+
+  geometric_object tetra = make_tetra_mesh(NULL);
+  m = tetra.subclass.mesh_data;
+  ASSERT_TRUE("tetra mesh detected as closed", m->is_closed);
+  geometric_object_destroy(tetra);
+  printf("done\n");
+}
+
+/************************************************************************/
 int main(void) {
   geom_initialize();
 
@@ -372,6 +417,8 @@ int main(void) {
   test_display_info();
   test_tetra_point_in();
   test_mesh_with_center();
+  test_open_mesh();
+  test_closed_detection();
 
   printf("\n%d test failures\n", test_failures);
   return test_failures > 0 ? 1 : 0;

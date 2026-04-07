@@ -2427,8 +2427,11 @@ static int remove_duplicate_intersections(double *slist, int count, double tol) 
 #define MESH_MAX_INTERSECTIONS 256
 
 /* Count ray-mesh intersections using BVH traversal.
-   Collects all intersection t-values, deduplicates, and returns the count. */
-static int count_ray_mesh_intersections(const mesh *m, vector3 origin, vector3 dir) {
+   Collects all intersection t-values, deduplicates, and returns the count.
+   If had_degenerate is non-NULL, sets it to 1 if any near-duplicate
+   t-values were found (indicating a potential edge/vertex hit). */
+static int count_ray_mesh_intersections_ex(const mesh *m, vector3 origin, vector3 dir,
+                                           int *had_degenerate) {
   double slist[MESH_MAX_INTERSECTIONS];
   int count = mesh_ray_all_intersections(m, origin, dir, slist, MESH_MAX_INTERSECTIONS);
 
@@ -2440,32 +2443,46 @@ static int count_ray_mesh_intersections(const mesh *m, vector3 origin, vector3 d
 
   if (nforward > 1) {
     qsort(slist, nforward, sizeof(double), mesh_dcmp);
-    nforward = remove_duplicate_intersections(slist, nforward, 1e-10);
+    int deduped = remove_duplicate_intersections(slist, nforward, 1e-10);
+    if (had_degenerate) *had_degenerate = (deduped != nforward);
+    nforward = deduped;
+  } else {
+    if (had_degenerate) *had_degenerate = 0;
   }
 
   return nforward;
+}
+
+static int count_ray_mesh_intersections(const mesh *m, vector3 origin, vector3 dir) {
+  return count_ray_mesh_intersections_ex(m, origin, dir, NULL);
 }
 
 /***************************************************************/
 /* Core mesh geometric operations                              */
 /***************************************************************/
 
+static const vector3 mesh_ray_dirs[3] = {
+  {0.57735026918962576, 0.57735026918962576, 0.57735026918962576},  /* (1,1,1)/√3 */
+  {0.80178372573727319, 0.53452248382484879, 0.26726124191242440},  /* (3,2,1)/√14 */
+  {0.12309149097933272, 0.49236596391733088, 0.86164043685532904},  /* (1,4,7)/√66 */
+};
+
 static boolean point_in_mesh(const mesh *m, vector3 p) {
   if (!m->is_closed) return 0;
 
-  /* Cast rays along multiple directions and take majority vote.
-     A single ray can give wrong parity when it passes through a mesh
-     edge or vertex, causing deduplication to miss or double-count
-     a crossing. Three irrational directions make it extremely unlikely
-     that more than one ray hits a degenerate case at the same point. */
-  static const vector3 dirs[3] = {
-    {0.57735026918962576, 0.57735026918962576, 0.57735026918962576},  /* (1,1,1)/√3 */
-    {0.80178372573727319, 0.53452248382484879, 0.26726124191242440},  /* (3,2,1)/√14 */
-    {0.12309149097933272, 0.49236596391733088, 0.86164043685532904},  /* (1,4,7)/√66 */
-  };
-  int votes = 0;
-  for (int d = 0; d < 3; d++) {
-    int crossings = count_ray_mesh_intersections(m, p, dirs[d]);
+  /* Fast path: cast one ray. If no degenerate edge/vertex hits were
+     detected during deduplication, trust the result immediately.
+     Only fall back to 3-ray majority vote when a degenerate case
+     is detected (near-duplicate t-values removed). */
+  int had_degenerate;
+  int crossings = count_ray_mesh_intersections_ex(m, p, mesh_ray_dirs[0], &had_degenerate);
+  if (!had_degenerate)
+    return (crossings % 2) == 1;
+
+  /* Degenerate hit detected — cast two more rays and take majority vote. */
+  int votes = (crossings % 2 == 1) ? 1 : 0;
+  for (int d = 1; d < 3; d++) {
+    crossings = count_ray_mesh_intersections(m, p, mesh_ray_dirs[d]);
     if (crossings % 2 == 1) votes++;
   }
   return votes >= 2;
@@ -2593,9 +2610,65 @@ static void init_mesh(geometric_object *o) {
     m->centroid = vector3_plus(m->centroid, m->vertices.items[i]);
   m->centroid = vector3_scale(1.0 / nv, m->centroid);
 
-  /* Check if mesh is closed (every edge shared by exactly 2 faces)
-     and ensure consistent outward-facing normals. */
-  m->is_closed = 1;
+  /* Check if mesh is closed: every edge must be shared by exactly 2 faces.
+     An edge is identified by a sorted pair of vertex indices. We use a
+     hash table mapping edge → face count. */
+  {
+    /* Hash table size: next power of 2 above 3*nf (each face has 3 edges). */
+    int htsize = 1;
+    while (htsize < 4 * nf) htsize <<= 1;
+    int htmask = htsize - 1;
+
+    /* Each bucket stores (v_lo, v_hi, count). Use open addressing. */
+    int *ht_vlo = (int *)calloc(htsize, sizeof(int));
+    int *ht_vhi = (int *)calloc(htsize, sizeof(int));
+    int *ht_cnt = (int *)calloc(htsize, sizeof(int));
+    /* Mark empty slots with -1. */
+    for (int i = 0; i < htsize; i++) ht_vlo[i] = -1;
+
+    m->is_closed = 1;
+    for (int f = 0; f < nf && m->is_closed; f++) {
+      for (int e = 0; e < 3; e++) {
+        int va = m->face_indices[3 * f + e];
+        int vb = m->face_indices[3 * f + (e + 1) % 3];
+        int vlo = (va < vb) ? va : vb;
+        int vhi = (va < vb) ? vb : va;
+        unsigned int h = (unsigned int)(vlo * 73856093u ^ vhi * 19349663u) & htmask;
+        /* Linear probing. */
+        while (1) {
+          if (ht_vlo[h] == -1) {
+            /* Empty slot: insert new edge. */
+            ht_vlo[h] = vlo;
+            ht_vhi[h] = vhi;
+            ht_cnt[h] = 1;
+            break;
+          } else if (ht_vlo[h] == vlo && ht_vhi[h] == vhi) {
+            /* Found existing edge. */
+            ht_cnt[h]++;
+            if (ht_cnt[h] > 2) m->is_closed = 0; /* non-manifold edge */
+            break;
+          }
+          h = (h + 1) & htmask;
+        }
+      }
+    }
+    /* Check that all edges have exactly 2 faces. */
+    if (m->is_closed) {
+      for (int i = 0; i < htsize; i++) {
+        if (ht_vlo[i] != -1 && ht_cnt[i] != 2) {
+          m->is_closed = 0;
+          break;
+        }
+      }
+    }
+    free(ht_vlo);
+    free(ht_vhi);
+    free(ht_cnt);
+
+    if (!m->is_closed)
+      ctl_printf("WARNING: mesh is not closed (not all edges shared by exactly 2 faces).\n"
+                 "         point_in_mesh results may be incorrect.\n");
+  }
 
   /* Use signed volume to check/fix normal orientation. */
   double signed_vol = 0;
