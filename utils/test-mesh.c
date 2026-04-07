@@ -403,6 +403,87 @@ static void test_closed_detection(void) {
 }
 
 /************************************************************************/
+/* Test: boundary edge (1 face on an edge)                              */
+/************************************************************************/
+static void test_boundary_edge(void) {
+  printf("test_boundary_edge... ");
+  /* Take a valid tetrahedron but remove the last face, replace with
+     a face that shares no edge with it — leaving boundary edges
+     where the removed face was. */
+  vector3 verts[5] = {
+    {0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {0, 0, 1}, {2, 2, 2}
+  };
+  int tris[4 * 3] = {
+    0, 1, 2,   /* face 0 */
+    0, 1, 3,   /* face 1 */
+    0, 2, 3,   /* face 2 */
+    /* missing: 1, 2, 3 — replaced with unconnected face */
+    0, 1, 4    /* face 3: edge (1,2) and (2,3) now have only 1 face */
+  };
+  geometric_object obj = make_mesh(NULL, verts, 5, tris, 4);
+  mesh *m = obj.subclass.mesh_data;
+  ASSERT_TRUE("boundary edge mesh detected as not closed", !m->is_closed);
+  geometric_object_destroy(obj);
+  printf("done\n");
+}
+
+/************************************************************************/
+/* Test: non-manifold edge (3+ faces sharing an edge)                   */
+/************************************************************************/
+static void test_nonmanifold_edge(void) {
+  printf("test_nonmanifold_edge... ");
+  /* A tetrahedron (4 faces) plus 2 extra faces sharing edge (0,1),
+     giving that edge 4 adjacent faces instead of 2. */
+  vector3 verts[6] = {
+    {0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {0, 0, 1},
+    {0.5, -1, 0.5}, {0.5, -1, -0.5}
+  };
+  int tris[6 * 3] = {
+    0, 1, 2,   /* tetra face 0 — uses edge (0,1) */
+    0, 1, 3,   /* tetra face 1 — uses edge (0,1) */
+    0, 2, 3,   /* tetra face 2 */
+    1, 2, 3,   /* tetra face 3 */
+    0, 1, 4,   /* extra face — edge (0,1) now has 3 faces */
+    0, 1, 5,   /* extra face — edge (0,1) now has 4 faces */
+  };
+  geometric_object obj = make_mesh(NULL, verts, 6, tris, 6);
+  mesh *m = obj.subclass.mesh_data;
+  ASSERT_TRUE("non-manifold edge mesh detected as not closed", !m->is_closed);
+  geometric_object_destroy(obj);
+  printf("done\n");
+}
+
+/************************************************************************/
+/* Test: isolated vertex (vertex not referenced by any face)            */
+/************************************************************************/
+static void test_isolated_vertex(void) {
+  printf("test_isolated_vertex... ");
+  /* A valid tetrahedron plus an extra vertex that no face references.
+     The mesh should still be detected as closed (isolated vertices
+     don't affect edge manifold-ness). */
+  vector3 verts[5] = {
+    {1, 1, 1}, {1, -1, -1}, {-1, 1, -1}, {-1, -1, 1},
+    {99, 99, 99}  /* isolated vertex */
+  };
+  int tris[4 * 3] = {
+    0, 1, 2,
+    0, 3, 1,
+    0, 2, 3,
+    1, 3, 2
+  };
+  geometric_object obj = make_mesh(NULL, verts, 5, tris, 4);
+  mesh *m = obj.subclass.mesh_data;
+  ASSERT_TRUE("mesh with isolated vertex still closed", m->is_closed);
+
+  /* Point inside tetrahedron should still work. */
+  vector3 p = {0, 0, 0};
+  ASSERT_TRUE("isolated vertex: centroid inside", point_in_fixed_pobjectp(p, &obj));
+
+  geometric_object_destroy(obj);
+  printf("done\n");
+}
+
+/************************************************************************/
 int main(void) {
   geom_initialize();
 
@@ -419,6 +500,9 @@ int main(void) {
   test_mesh_with_center();
   test_open_mesh();
   test_closed_detection();
+  test_boundary_edge();
+  test_nonmanifold_edge();
+  test_isolated_vertex();
 
   printf("\n%d test failures\n", test_failures);
   return test_failures > 0 ? 1 : 0;
