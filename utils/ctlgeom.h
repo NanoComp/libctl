@@ -173,6 +173,15 @@ GEOMETRIC_OBJECT make_slanted_prism_with_center(MATERIAL_TYPE material, vector3 
                                         const vector3 *vertices, int num_vertices, double height,
                                         vector3 axis, double sidewall_angle);
 
+// mesh with center computed as centroid of vertices
+GEOMETRIC_OBJECT make_mesh(MATERIAL_TYPE material, const vector3 *vertices, int num_vertices,
+                           const int *triangles, int num_triangles);
+
+// mesh with explicit center (vertices shifted so centroid = center)
+GEOMETRIC_OBJECT make_mesh_with_center(MATERIAL_TYPE material, vector3 center,
+                                       const vector3 *vertices, int num_vertices,
+                                       const int *triangles, int num_triangles);
+
 int vector3_nearly_equal(vector3 v1, vector3 v2, double tolerance);
 
 /**************************************************************************/

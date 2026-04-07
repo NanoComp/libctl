@@ -139,6 +139,16 @@
   (define-property m_c2p identity_matrix 'matrix3x3)
   (define-property m_p2c identity_matrix 'matrix3x3))
 
+; A mesh is a triangulated 3D surface (closed manifold).
+; Only vertices and face_indices need to be specified by the user;
+; all other fields are computed internally by init_mesh in C.
+; face_indices is a vector3_list where each vector3 holds 3 integer
+; indices (in x, y, z) referring to entries in the vertices list.
+(define-class mesh geometric-object
+; fields to be filled in by users
+  (define-property vertices '() (make-list-type 'vector3))
+  (define-property face_indices '() (make-list-type 'vector3)))
+
 (define-class ellipsoid block
   (define-derived-property inverse-semi-axes 'vector3
     (lambda (object)
