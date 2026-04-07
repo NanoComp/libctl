@@ -2542,27 +2542,27 @@ static double intersect_line_segment_with_mesh(const mesh *m, vector3 p, vector3
   double slist[MESH_MAX_INTERSECTIONS];
   int num = intersect_line_with_mesh(m, p, d, slist);
 
-  /* Find first intersection > a. */
-  int na = -1;
-  for (int i = 0; na == -1 && i < num; i++)
-    if (slist[i] > a) na = i;
-  if (na == -1) {
-    /* No intersections after a. Check if p+a*d is inside. */
-    vector3 pt = vector3_plus(p, vector3_scale(a, d));
-    if (point_in_mesh(m, pt))
-      return b - a;
-    return 0.0;
-  }
+  /* The sorted intersection list gives all surface crossings along the
+     full ray. At t=-inf we are outside, so the parity after k crossings
+     tells us inside/outside: odd = inside, even = outside.
 
-  /* Determine if we start inside (even-odd parity). */
-  int inside = ((na % 2) == 0) ? 0 : 1;
+     Count crossings before 'a' to determine if we start inside [a,b].
+     Then walk crossings within [a,b] toggling parity and accumulating
+     interior length. No point_in_mesh fallback needed. */
+  int crossings_before_a = 0;
+  for (int i = 0; i < num && slist[i] <= a; i++)
+    crossings_before_a++;
+
+  int inside = (crossings_before_a % 2 == 1);
   double last_s = a, ds = 0.0;
-  for (int i = na; i < num; i++) {
-    double this_s = fmin(b, slist[i]);
-    if (inside) ds += (this_s - last_s);
-    if (b <= slist[i]) break;
-    inside = 1 - inside;
-    last_s = this_s;
+  for (int i = crossings_before_a; i < num; i++) {
+    if (slist[i] >= b) {
+      if (inside) ds += (b - last_s);
+      break;
+    }
+    if (inside) ds += (slist[i] - last_s);
+    inside = !inside;
+    last_s = slist[i];
   }
   if (inside && last_s < b) ds += (b - last_s);
   return ds > 0.0 ? ds : 0.0;
@@ -2752,33 +2752,23 @@ geometric_object make_mesh_with_center(material_type material, vector3 center,
   CHECK(m->face_indices, "out of memory");
   memcpy(m->face_indices, triangles, 3 * num_triangles * sizeof(int));
 
-  /* Initialize derived data (normals, BVH, etc.). */
-  init_mesh(&o);
-
-  /* Set center. */
-  if (mesh_is_auto_center(center))
-    o.center = m->centroid;
-  else {
-    /* Shift vertices so centroid equals center. */
-    vector3 shift = vector3_minus(center, m->centroid);
+  /* Shift vertices before init so BVH is only built once. */
+  if (!mesh_is_auto_center(center)) {
+    /* Compute centroid to determine the shift. */
+    vector3 centroid = {0, 0, 0};
+    for (int i = 0; i < num_vertices; i++)
+      centroid = vector3_plus(centroid, m->vertices.items[i]);
+    centroid = vector3_scale(1.0 / num_vertices, centroid);
+    vector3 shift = vector3_minus(center, centroid);
     for (int i = 0; i < num_vertices; i++)
       m->vertices.items[i] = vector3_plus(m->vertices.items[i], shift);
-    m->centroid = center;
-    o.center = center;
-
-    /* Rebuild BVH after shifting vertices. */
-    free(m->bvh);
-    free(m->bvh_face_ids);
-    m->bvh_face_ids = (int *)malloc(m->num_faces * sizeof(int));
-    CHECK(m->bvh_face_ids, "out of memory");
-    for (int i = 0; i < m->num_faces; i++)
-      m->bvh_face_ids[i] = i;
-    int max_nodes = 2 * m->num_faces;
-    m->bvh = (mesh_bvh_node *)malloc(max_nodes * sizeof(mesh_bvh_node));
-    CHECK(m->bvh, "out of memory");
-    m->num_bvh_nodes = 0;
-    mesh_bvh_build(m, m->bvh_face_ids, 0, m->num_faces, m->bvh, &m->num_bvh_nodes);
   }
+
+  /* Initialize derived data (normals, closure check, BVH). */
+  init_mesh(&o);
+
+  /* Set center from the (possibly shifted) centroid. */
+  o.center = m->centroid;
 
   return o;
 }
