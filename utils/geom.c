@@ -1935,28 +1935,24 @@ geometric_object make_ellipsoid(material_type material, vector3 center, vector3 
 /* Triangle utilities                                          */
 /***************************************************************/
 
-/* Helper to get a geom_box from a BVH node. */
-static geom_box bvh_node_box(const mesh_bvh_node *node) {
-  geom_box b;
-  b.low = node->bbox_low;
-  b.high = node->bbox_high;
-  return b;
-}
-
 /* Helper to set a BVH node's bbox from a geom_box. */
 static void bvh_node_set_box(mesh_bvh_node *node, const geom_box *box) {
   node->bbox_low = box->low;
   node->bbox_high = box->high;
 }
 
+/* Fetch the three vertices of a triangle. */
+static void mesh_triangle_vertices(const mesh *m, int face_id,
+                                   vector3 *v0, vector3 *v1, vector3 *v2) {
+  *v0 = m->vertices.items[m->face_indices[3 * face_id]];
+  *v1 = m->vertices.items[m->face_indices[3 * face_id + 1]];
+  *v2 = m->vertices.items[m->face_indices[3 * face_id + 2]];
+}
+
 /* Compute the AABB of a single triangle. */
 static void mesh_triangle_bbox(const mesh *m, int face_id, geom_box *box) {
-  int i0 = m->face_indices[3 * face_id];
-  int i1 = m->face_indices[3 * face_id + 1];
-  int i2 = m->face_indices[3 * face_id + 2];
-  vector3 v0 = m->vertices.items[i0];
-  vector3 v1 = m->vertices.items[i1];
-  vector3 v2 = m->vertices.items[i2];
+  vector3 v0, v1, v2;
+  mesh_triangle_vertices(m, face_id, &v0, &v1, &v2);
   box->low.x = fmin(v0.x, fmin(v1.x, v2.x));
   box->low.y = fmin(v0.y, fmin(v1.y, v2.y));
   box->low.z = fmin(v0.z, fmin(v1.z, v2.z));
@@ -1967,17 +1963,29 @@ static void mesh_triangle_bbox(const mesh *m, int face_id, geom_box *box) {
 
 /* Compute the centroid of a triangle. */
 static vector3 mesh_triangle_centroid(const mesh *m, int face_id) {
-  int i0 = m->face_indices[3 * face_id];
-  int i1 = m->face_indices[3 * face_id + 1];
-  int i2 = m->face_indices[3 * face_id + 2];
-  vector3 v0 = m->vertices.items[i0];
-  vector3 v1 = m->vertices.items[i1];
-  vector3 v2 = m->vertices.items[i2];
+  vector3 v0, v1, v2;
+  mesh_triangle_vertices(m, face_id, &v0, &v1, &v2);
   vector3 c;
   c.x = (v0.x + v1.x + v2.x) / 3.0;
   c.y = (v0.y + v1.y + v2.y) / 3.0;
   c.z = (v0.z + v1.z + v2.z) / 3.0;
   return c;
+}
+
+/* Compute the AABB and centroid of a triangle in one pass. */
+static void mesh_triangle_bbox_centroid(const mesh *m, int face_id,
+                                        geom_box *box, vector3 *centroid) {
+  vector3 v0, v1, v2;
+  mesh_triangle_vertices(m, face_id, &v0, &v1, &v2);
+  box->low.x = fmin(v0.x, fmin(v1.x, v2.x));
+  box->low.y = fmin(v0.y, fmin(v1.y, v2.y));
+  box->low.z = fmin(v0.z, fmin(v1.z, v2.z));
+  box->high.x = fmax(v0.x, fmax(v1.x, v2.x));
+  box->high.y = fmax(v0.y, fmax(v1.y, v2.y));
+  box->high.z = fmax(v0.z, fmax(v1.z, v2.z));
+  centroid->x = (v0.x + v1.x + v2.x) / 3.0;
+  centroid->y = (v0.y + v1.y + v2.y) / 3.0;
+  centroid->z = (v0.z + v1.z + v2.z) / 3.0;
 }
 
 /* Compute the surface area of a geom_box. */
@@ -2047,7 +2055,9 @@ static int mesh_bvh_build(mesh *m, int *face_ids, int start, int count,
 
     double inv_range = MESH_BVH_NUM_BINS / (hi - lo);
     for (int i = 0; i < count; i++) {
-      vector3 c = mesh_triangle_centroid(m, face_ids[start + i]);
+      geom_box fb;
+      vector3 c;
+      mesh_triangle_bbox_centroid(m, face_ids[start + i], &fb, &c);
       double val;
       switch (axis) {
         case 0: val = c.x; break;
@@ -2058,8 +2068,6 @@ static int mesh_bvh_build(mesh *m, int *face_ids, int start, int count,
       if (bin < 0) bin = 0;
       if (bin >= MESH_BVH_NUM_BINS) bin = MESH_BVH_NUM_BINS - 1;
       bin_counts[bin]++;
-      geom_box fb;
-      mesh_triangle_bbox(m, face_ids[start + i], &fb);
       geom_box_union(&bin_boxes[bin], &bin_boxes[bin], &fb);
     }
 
@@ -2354,8 +2362,25 @@ static int find_closest_face(const mesh *m, vector3 p, double *dist2) {
       }
     } else {
       if (stack_top + 2 > 64) continue;
-      stack[stack_top++] = node->left_child;
-      stack[stack_top++] = node->right_child;
+      /* Push the farther child first so the nearer child is popped first,
+         giving better pruning of the farther subtree. */
+      const mesh_bvh_node *left = &m->bvh[node->left_child];
+      const mesh_bvh_node *right = &m->bvh[node->right_child];
+      double ldx = fmax(0, fmax(left->bbox_low.x - p.x, p.x - left->bbox_high.x));
+      double ldy = fmax(0, fmax(left->bbox_low.y - p.y, p.y - left->bbox_high.y));
+      double ldz = fmax(0, fmax(left->bbox_low.z - p.z, p.z - left->bbox_high.z));
+      double rdx = fmax(0, fmax(right->bbox_low.x - p.x, p.x - right->bbox_high.x));
+      double rdy = fmax(0, fmax(right->bbox_low.y - p.y, p.y - right->bbox_high.y));
+      double rdz = fmax(0, fmax(right->bbox_low.z - p.z, p.z - right->bbox_high.z));
+      double ld2 = ldx*ldx + ldy*ldy + ldz*ldz;
+      double rd2 = rdx*rdx + rdy*rdy + rdz*rdz;
+      if (ld2 < rd2) {
+        stack[stack_top++] = node->right_child; /* farther pushed first */
+        stack[stack_top++] = node->left_child;
+      } else {
+        stack[stack_top++] = node->left_child;
+        stack[stack_top++] = node->right_child;
+      }
     }
   }
 
