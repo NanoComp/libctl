@@ -81,7 +81,8 @@ If you are installing on your personal Linux or BSD machine, then precompiled bi
 Python Extension for libctlgeom
 ------
 
-Please follow the [instructions here](../../utils/python/README.md) to install the python extension.
+Please follow the [instructions here](https://github.com/NanoComp/libctl/blob/master/utils/python/README.md) to install the python extension,
+a demo for which can be found in [this Python notebook](https://github.com/NanoComp/libctl/blob/master/utils/python/demo.ipynb).
 
 Guile
 -----
