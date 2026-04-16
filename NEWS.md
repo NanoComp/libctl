@@ -1,5 +1,13 @@
 # Libctl Release Notes
 
+## libctl 4.6.0
+
+4/16/2026
+
+* Python-callable extension (#71), currently with limited documentation.
+
+* Fix memory leak for prism objects (#73).
+
 ## libctl 4.5.1
 
 2/1/22
