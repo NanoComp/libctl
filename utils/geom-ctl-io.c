@@ -73,6 +73,7 @@ mesh_copy(const mesh * o0, mesh * o)
 	o->is_closed = o0->is_closed;
 	o->centroid = o0->centroid;
 	o->lengthscale = o0->lengthscale;
+	o->vertex_hash = o0->vertex_hash;
 }
 
 void

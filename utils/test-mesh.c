@@ -484,6 +484,163 @@ static void test_isolated_vertex(void) {
 }
 
 /************************************************************************/
+/* Test: mixed winding across disconnected components.                  */
+/* Two unit cubes: one at (-1.5,0,0) with outward winding, one at      */
+/* (1.5,0,0) with inward (reversed) winding. Per-component auto-fix    */
+/* should correct the inverted cube independently.                      */
+/************************************************************************/
+static geometric_object make_two_cube_mesh_mixed_winding(void *material) {
+  /* Cube A centered at (-1.5, 0, 0): outward winding (CCW from outside). */
+  vector3 verts[16] = {
+    /* Cube A vertices 0-7 */
+    {-2, -0.5, -0.5}, {-1, -0.5, -0.5}, {-1,  0.5, -0.5}, {-2,  0.5, -0.5},
+    {-2, -0.5,  0.5}, {-1, -0.5,  0.5}, {-1,  0.5,  0.5}, {-2,  0.5,  0.5},
+    /* Cube B vertices 8-15 */
+    { 1, -0.5, -0.5}, { 2, -0.5, -0.5}, { 2,  0.5, -0.5}, { 1,  0.5, -0.5},
+    { 1, -0.5,  0.5}, { 2, -0.5,  0.5}, { 2,  0.5,  0.5}, { 1,  0.5,  0.5}
+  };
+  int tris[24 * 3] = {
+    /* Cube A: outward-facing (correct winding). */
+    0,2,1,  0,3,2,   /* -Z */
+    4,5,6,  4,6,7,   /* +Z */
+    0,1,5,  0,5,4,   /* -Y */
+    2,3,7,  2,7,6,   /* +Y */
+    0,4,7,  0,7,3,   /* -X */
+    1,2,6,  1,6,5,   /* +X */
+    /* Cube B: inward-facing (REVERSED winding — should be auto-fixed). */
+    8,9,10,   8,10,11,   /* -Z reversed */
+    12,14,13, 12,15,14,  /* +Z reversed */
+    8,13,9,   8,12,13,   /* -Y reversed */
+    10,14,11, 10,15,14,  /* +Y reversed — WRONG, fix below */
+    8,11,15,  8,15,12,   /* -X reversed */
+    9,13,14,  9,14,10    /* +X reversed */
+  };
+  /* Fix +Y face of cube B: the reversed winding for +Y should be: */
+  tris[18*3+0]=10; tris[18*3+1]=14; tris[18*3+2]=15;
+  tris[19*3+0]=10; tris[19*3+1]=15; tris[19*3+2]=11;
+  return make_mesh(material, verts, 16, tris, 24);
+}
+
+static void test_mixed_winding(void) {
+  printf("test_mixed_winding... ");
+  geometric_object obj = make_two_cube_mesh_mixed_winding(NULL);
+
+  /* Both cubes should report correct volume. Total = 1.0 + 1.0 = 2.0. */
+  double vol = geom_object_volume(obj);
+  ASSERT_NEAR("mixed winding: total volume", vol, 2.0, TOLERANCE);
+
+  /* Points inside each cube should be detected as inside. */
+  vector3 p_a = {-1.5, 0, 0};
+  ASSERT_TRUE("mixed winding: center of cube A inside", point_in_fixed_pobjectp(p_a, &obj));
+  vector3 p_b = {1.5, 0, 0};
+  ASSERT_TRUE("mixed winding: center of cube B inside", point_in_fixed_pobjectp(p_b, &obj));
+
+  /* Point between cubes should be outside. */
+  vector3 p_mid = {0, 0, 0};
+  ASSERT_TRUE("mixed winding: midpoint outside", !point_in_fixed_pobjectp(p_mid, &obj));
+
+  /* Normals should point outward for both cubes. */
+  vector3 p_bx = {1.99, 0, 0};
+  vector3 n_bx = normal_to_fixed_object(p_bx, obj);
+  ASSERT_NEAR("mixed winding: cube B +X normal", n_bx.x, 1.0, 0.01);
+
+  vector3 p_ax = {-1.99, 0, 0};
+  vector3 n_ax = normal_to_fixed_object(p_ax, obj);
+  ASSERT_NEAR("mixed winding: cube A -X normal", n_ax.x, -1.0, 0.01);
+
+  geometric_object_destroy(obj);
+  printf("done\n");
+}
+
+/************************************************************************/
+/* Test: high intersection count (>256 ray crossings).                  */
+/* Builds 130 disconnected unit cubes along x-axis (= 260 crossings).  */
+/* Before the fix, this would silently truncate at 256, corrupting the  */
+/* intersection list and producing wrong interior length.               */
+/************************************************************************/
+static void test_many_intersections(void) {
+  printf("test_many_intersections... ");
+  int num_cubes = 130;
+  int nv = num_cubes * 8;
+  int nf = num_cubes * 12;
+  vector3 *verts = (vector3 *)malloc(nv * sizeof(vector3));
+  int *tris = (int *)malloc(nf * 3 * sizeof(int));
+
+  for (int s = 0; s < num_cubes; s++) {
+    double cx = s * 3.0;
+    int vi = s * 8;
+    verts[vi+0] = (vector3){cx-0.5, -0.5, -0.5};
+    verts[vi+1] = (vector3){cx+0.5, -0.5, -0.5};
+    verts[vi+2] = (vector3){cx+0.5,  0.5, -0.5};
+    verts[vi+3] = (vector3){cx-0.5,  0.5, -0.5};
+    verts[vi+4] = (vector3){cx-0.5, -0.5,  0.5};
+    verts[vi+5] = (vector3){cx+0.5, -0.5,  0.5};
+    verts[vi+6] = (vector3){cx+0.5,  0.5,  0.5};
+    verts[vi+7] = (vector3){cx-0.5,  0.5,  0.5};
+
+    int ti = s * 12 * 3;
+    int cube_tris[12][3] = {
+      {0,2,1}, {0,3,2}, {4,5,6}, {4,6,7},
+      {0,1,5}, {0,5,4}, {2,3,7}, {2,7,6},
+      {0,4,7}, {0,7,3}, {1,2,6}, {1,6,5}
+    };
+    for (int f = 0; f < 12; f++) {
+      tris[ti + f*3 + 0] = vi + cube_tris[f][0];
+      tris[ti + f*3 + 1] = vi + cube_tris[f][1];
+      tris[ti + f*3 + 2] = vi + cube_tris[f][2];
+    }
+  }
+
+  geometric_object obj = make_mesh(NULL, verts, nv, tris, nf);
+
+  /* A line segment along x through all cubes should give total interior
+     length = num_cubes * 1.0 (each cube has x-extent of 1.0). */
+  vector3 p = {-1, 0, 0};
+  vector3 d = {1, 0, 0};
+  double len = intersect_line_segment_with_object(p, d, obj, 0, num_cubes * 3.0);
+  ASSERT_NEAR("many intersections: total interior length", len, (double)num_cubes, 0.01);
+
+  geometric_object_destroy(obj);
+  free(verts);
+  free(tris);
+  printf("done\n");
+}
+
+/************************************************************************/
+/* Test: vertex mutation followed by geom_fix_object_ptr.               */
+/* Translates all vertices by +10 in x, calls fix_object_ptr, verifies  */
+/* that queries use updated geometry (BVH/normals/centroid rebuilt).     */
+/************************************************************************/
+static void test_vertex_mutation(void) {
+  printf("test_vertex_mutation... ");
+  geometric_object cube = make_cube_mesh(NULL);
+
+  /* Before mutation: origin is inside. */
+  vector3 p0 = {0, 0, 0};
+  ASSERT_TRUE("pre-mutate: origin inside", point_in_fixed_pobjectp(p0, &cube));
+
+  /* Mutate: translate all vertices by +10 in x. */
+  mesh *m = cube.subclass.mesh_data;
+  for (int i = 0; i < m->vertices.num_items; i++)
+    m->vertices.items[i].x += 10.0;
+
+  /* Trigger rebuild via geom_fix_object_ptr. */
+  geom_fix_object_ptr(&cube);
+
+  /* After mutation: origin should be outside, (10,0,0) should be inside. */
+  ASSERT_TRUE("post-mutate: origin outside", !point_in_fixed_pobjectp(p0, &cube));
+  vector3 p10 = {10, 0, 0};
+  ASSERT_TRUE("post-mutate: (10,0,0) inside", point_in_fixed_pobjectp(p10, &cube));
+
+  /* Volume should still be 1.0. */
+  double vol = geom_object_volume(cube);
+  ASSERT_NEAR("post-mutate: volume", vol, 1.0, TOLERANCE);
+
+  geometric_object_destroy(cube);
+  printf("done\n");
+}
+
+/************************************************************************/
 int main(void) {
   geom_initialize();
 
@@ -503,6 +660,9 @@ int main(void) {
   test_boundary_edge();
   test_nonmanifold_edge();
   test_isolated_vertex();
+  test_mixed_winding();
+  test_many_intersections();
+  test_vertex_mutation();
 
   printf("\n%d test failures\n", test_failures);
   return test_failures > 0 ? 1 : 0;

@@ -126,6 +126,7 @@ extern		"C" {
 		boolean		is_closed;
 		vector3		centroid;
 		number		lengthscale;
+		number		vertex_hash;
 	}		mesh;
 
 	typedef struct ellipsoid_struct {

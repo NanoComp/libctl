@@ -180,11 +180,14 @@ GEOMETRIC_OBJECT make_slanted_prism_with_center(MATERIAL_TYPE material, vector3 
 //   - Watertight: every edge must be shared by exactly 2 triangles.
 //     Open or non-manifold meshes are detected at init time; a warning is
 //     printed and point_in_mesh always returns false.
-//   - Triangle winding: all triangles should have consistent winding.
-//     The face normal is n = (v1-v0) x (v2-v0) per the right-hand rule.
-//     If the signed volume indicates inward-pointing normals, init_mesh
-//     automatically flips all triangle windings to make normals point outward.
-//     Users do NOT need to ensure outward orientation — only consistency.
+//   - Triangle winding: all triangles within each connected component
+//     should have consistent winding. The face normal is
+//     n = (v1-v0) x (v2-v0) per the right-hand rule. If a component's
+//     signed volume indicates inward-pointing normals, init_mesh
+//     automatically flips that component's triangle windings.
+//     Users do NOT need to ensure outward orientation — only consistency
+//     within each connected component. Multi-component meshes with mixed
+//     winding (e.g. one component CW, another CCW) are handled correctly.
 //   - At least 4 vertices and 4 triangles.
 //   - Degenerate (zero-area) triangles are allowed but their normals are
 //     undefined.

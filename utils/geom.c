@@ -1934,8 +1934,9 @@ geometric_object make_ellipsoid(material_type material, vector3 center, vector3 
  *   1. Validate indices and compute lengthscale from vertex bbox
  *   2. Compute per-face normals via n = (v1-v0) x (v2-v0)
  *   3. Check closure: every edge must be shared by exactly 2 faces
- *   4. Auto-fix winding: if signed volume < 0 (normals point inward),
- *      flip all triangle windings and negate normals
+ *   4. Auto-fix winding per connected component: find components via
+ *      union-find on vertices, compute each component's signed volume,
+ *      and flip faces in components with negative volume (inward normals)
  *   5. Build SAH-binned BVH for O(log N) queries
  ***************************************************************/
 
@@ -2398,16 +2399,53 @@ static int find_closest_face(const mesh *m, vector3 p, double *dist2) {
   return best_face;
 }
 
-/* Collect all ray-mesh intersection parameters into slist.
-   Returns the number of intersections. */
-static int mesh_ray_all_intersections(const mesh *m, vector3 origin, vector3 dir,
-                                      double *slist, int max_intersections) {
+/***************************************************************/
+/* Growable hit list: stack buffer for common case, heap on     */
+/* overflow. Avoids malloc on rays that hit <= 256 faces.       */
+/***************************************************************/
+
+#define MESH_HIT_INITIAL_CAP 256
+
+typedef struct {
+  double *data;
+  int count;
+  int cap;
+  double initial_buf[MESH_HIT_INITIAL_CAP];
+} mesh_hit_list;
+
+static void mesh_hit_list_init(mesh_hit_list *h) {
+  h->data = h->initial_buf;
+  h->count = 0;
+  h->cap = MESH_HIT_INITIAL_CAP;
+}
+
+static void mesh_hit_list_push(mesh_hit_list *h, double val) {
+  if (h->count >= h->cap) {
+    int new_cap = h->cap * 2;
+    if (h->data == h->initial_buf) {
+      h->data = (double *)malloc(new_cap * sizeof(double));
+      memcpy(h->data, h->initial_buf, h->cap * sizeof(double));
+    } else {
+      h->data = (double *)realloc(h->data, new_cap * sizeof(double));
+    }
+    h->cap = new_cap;
+  }
+  h->data[h->count++] = val;
+}
+
+static void mesh_hit_list_free(mesh_hit_list *h) {
+  if (h->data != h->initial_buf) free(h->data);
+}
+
+/* Collect all ray-mesh intersection parameters into hits.
+   The hit list grows dynamically if needed. */
+static void mesh_ray_all_intersections(const mesh *m, vector3 origin, vector3 dir,
+                                       mesh_hit_list *hits) {
   vector3 inv_dir;
   inv_dir.x = (fabs(dir.x) > 1e-30) ? 1.0 / dir.x : 1e30;
   inv_dir.y = (fabs(dir.y) > 1e-30) ? 1.0 / dir.y : 1e30;
   inv_dir.z = (fabs(dir.z) > 1e-30) ? 1.0 / dir.z : 1e30;
 
-  int count = 0;
   double det_eps = 1e-12 * m->lengthscale * m->lengthscale;
   int stack[64];
   int stack_top = 0;
@@ -2428,10 +2466,8 @@ static int mesh_ray_all_intersections(const mesh *m, vector3 origin, vector3 dir
         vector3 v2 = m->vertices.items[m->face_indices[3 * fid + 2]];
 
         double t;
-        if (ray_triangle_intersect(origin, dir, v0, v1, v2, det_eps, &t, NULL, NULL)) {
-          if (count < max_intersections)
-            slist[count++] = t;
-        }
+        if (ray_triangle_intersect(origin, dir, v0, v1, v2, det_eps, &t, NULL, NULL))
+          mesh_hit_list_push(hits, t);
       }
     } else {
       if (stack_top + 2 > 64) continue;
@@ -2439,8 +2475,6 @@ static int mesh_ray_all_intersections(const mesh *m, vector3 origin, vector3 dir
       stack[stack_top++] = node->right_child;
     }
   }
-
-  return count;
 }
 
 static int mesh_dcmp(const void *a, const void *b) {
@@ -2460,34 +2494,34 @@ static int remove_duplicate_intersections(double *slist, int count, double tol) 
   return j + 1;
 }
 
-#define MESH_MAX_INTERSECTIONS 256
-
 /* Count ray-mesh intersections using BVH traversal.
    Collects all intersection t-values, deduplicates, and returns the count.
    If had_degenerate is non-NULL, sets it to 1 if any near-duplicate
    t-values were found (indicating a potential edge/vertex hit). */
 static int count_ray_mesh_intersections_ex(const mesh *m, vector3 origin, vector3 dir,
                                            int *had_degenerate) {
-  double slist[MESH_MAX_INTERSECTIONS];
-  int count = mesh_ray_all_intersections(m, origin, dir, slist, MESH_MAX_INTERSECTIONS);
+  mesh_hit_list hits;
+  mesh_hit_list_init(&hits);
+  mesh_ray_all_intersections(m, origin, dir, &hits);
 
   /* Keep only forward intersections (t > eps). */
   double fwd_eps = 1e-12 * m->lengthscale;
   int nforward = 0;
-  for (int i = 0; i < count; i++)
-    if (slist[i] > fwd_eps)
-      slist[nforward++] = slist[i];
+  for (int i = 0; i < hits.count; i++)
+    if (hits.data[i] > fwd_eps)
+      hits.data[nforward++] = hits.data[i];
 
   if (nforward > 1) {
-    qsort(slist, nforward, sizeof(double), mesh_dcmp);
+    qsort(hits.data, nforward, sizeof(double), mesh_dcmp);
     double dedup_tol = 1e-10 * m->lengthscale;
-    int deduped = remove_duplicate_intersections(slist, nforward, dedup_tol);
+    int deduped = remove_duplicate_intersections(hits.data, nforward, dedup_tol);
     if (had_degenerate) *had_degenerate = (deduped != nforward);
     nforward = deduped;
   } else {
     if (had_degenerate) *had_degenerate = 0;
   }
 
+  mesh_hit_list_free(&hits);
   return nforward;
 }
 
@@ -2566,19 +2600,16 @@ static void display_mesh_info(int indentby, const geometric_object *o) {
              m->is_closed ? "closed" : "OPEN (WARNING)");
 }
 
-static int intersect_line_with_mesh(const mesh *m, vector3 p, vector3 d, double *slist) {
-  int count = mesh_ray_all_intersections(m, p, d, slist, MESH_MAX_INTERSECTIONS);
-  if (count > 1) {
-    qsort(slist, count, sizeof(double), mesh_dcmp);
-    count = remove_duplicate_intersections(slist, count, 1e-10 * m->lengthscale);
-  }
-  return count;
-}
-
 static double intersect_line_segment_with_mesh(const mesh *m, vector3 p, vector3 d,
                                                double a, double b) {
-  double slist[MESH_MAX_INTERSECTIONS];
-  int num = intersect_line_with_mesh(m, p, d, slist);
+  mesh_hit_list hits;
+  mesh_hit_list_init(&hits);
+  mesh_ray_all_intersections(m, p, d, &hits);
+
+  if (hits.count > 1) {
+    qsort(hits.data, hits.count, sizeof(double), mesh_dcmp);
+    hits.count = remove_duplicate_intersections(hits.data, hits.count, 1e-10 * m->lengthscale);
+  }
 
   /* The sorted intersection list gives all surface crossings along the
      full ray. At t=-inf we are outside, so the parity after k crossings
@@ -2588,27 +2619,38 @@ static double intersect_line_segment_with_mesh(const mesh *m, vector3 p, vector3
      Then walk crossings within [a,b] toggling parity and accumulating
      interior length. No point_in_mesh fallback needed. */
   int crossings_before_a = 0;
-  for (int i = 0; i < num && slist[i] <= a; i++)
+  for (int i = 0; i < hits.count && hits.data[i] <= a; i++)
     crossings_before_a++;
 
   int inside = (crossings_before_a % 2 == 1);
   double last_s = a, ds = 0.0;
-  for (int i = crossings_before_a; i < num; i++) {
-    if (slist[i] >= b) {
+  for (int i = crossings_before_a; i < hits.count; i++) {
+    if (hits.data[i] >= b) {
       if (inside) ds += (b - last_s);
       break;
     }
-    if (inside) ds += (slist[i] - last_s);
+    if (inside) ds += (hits.data[i] - last_s);
     inside = !inside;
-    last_s = slist[i];
+    last_s = hits.data[i];
   }
   if (inside && last_s < b) ds += (b - last_s);
+  mesh_hit_list_free(&hits);
   return ds > 0.0 ? ds : 0.0;
 }
 
 /***************************************************************/
 /* init_mesh: validate, compute normals, build BVH             */
 /***************************************************************/
+
+static double mesh_vertex_hash(const mesh *m) {
+  double h = 0;
+  for (int i = 0; i < m->vertices.num_items; i++) {
+    h += m->vertices.items[i].x * 73856093.0;
+    h += m->vertices.items[i].y * 19349663.0;
+    h += m->vertices.items[i].z * 83492791.0;
+  }
+  return h;
+}
 
 static void init_mesh(geometric_object *o) {
   mesh *m = o->subclass.mesh_data;
@@ -2722,24 +2764,89 @@ static void init_mesh(geometric_object *o) {
                  "         point_in_mesh results may be incorrect.\n");
   }
 
-  /* Use signed volume to check/fix normal orientation. */
-  double signed_vol = 0;
-  for (int f = 0; f < nf; f++) {
-    vector3 v0 = m->vertices.items[m->face_indices[3 * f]];
-    vector3 v1 = m->vertices.items[m->face_indices[3 * f + 1]];
-    vector3 v2 = m->vertices.items[m->face_indices[3 * f + 2]];
-    signed_vol += vector3_dot(v0, vector3_cross(v1, v2));
-  }
-  /* If signed volume is negative, normals point inward — flip all winding. */
-  if (signed_vol < 0) {
+  /* Fix winding order per connected component.
+     A multi-component mesh (e.g. two disjoint cubes) may have mixed winding.
+     We find connected components via union-find on vertices, compute the
+     signed volume of each component, and flip faces whose component has
+     negative signed volume (inward-pointing normals). */
+  {
+    /* Union-find on vertices. */
+    int *uf_parent = (int *)malloc(nv * sizeof(int));
+    int *uf_rank = (int *)calloc(nv, sizeof(int));
+    CHECK(uf_parent && uf_rank, "out of memory");
+    for (int i = 0; i < nv; i++) uf_parent[i] = i;
+
+    /* Find with path compression. */
+    #define UF_FIND(x) do { \
+      int _r = (x); \
+      while (uf_parent[_r] != _r) _r = uf_parent[_r]; \
+      int _c = (x); \
+      while (uf_parent[_c] != _r) { int _n = uf_parent[_c]; uf_parent[_c] = _r; _c = _n; } \
+      (x) = _r; \
+    } while (0)
+
     for (int f = 0; f < nf; f++) {
-      /* Swap indices 1 and 2. */
-      int tmp = m->face_indices[3 * f + 1];
-      m->face_indices[3 * f + 1] = m->face_indices[3 * f + 2];
-      m->face_indices[3 * f + 2] = tmp;
-      /* Flip normal. */
-      m->face_normals[f] = vector3_scale(-1.0, m->face_normals[f]);
+      int a = m->face_indices[3 * f];
+      int b = m->face_indices[3 * f + 1];
+      int c = m->face_indices[3 * f + 2];
+      /* Union a-b. */
+      UF_FIND(a); UF_FIND(b);
+      if (a != b) {
+        if (uf_rank[a] < uf_rank[b]) { int t = a; a = b; b = t; }
+        uf_parent[b] = a;
+        if (uf_rank[a] == uf_rank[b]) uf_rank[a]++;
+      }
+      /* Union a-c (a is already a root after the above). */
+      a = m->face_indices[3 * f];
+      UF_FIND(a);
+      c = m->face_indices[3 * f + 2];
+      UF_FIND(c);
+      if (a != c) {
+        if (uf_rank[a] < uf_rank[c]) { int t = a; a = c; c = t; }
+        uf_parent[c] = a;
+        if (uf_rank[a] == uf_rank[c]) uf_rank[a]++;
+      }
     }
+    #undef UF_FIND
+
+    /* Map component roots to dense IDs. */
+    int *comp_id = (int *)malloc(nv * sizeof(int));
+    CHECK(comp_id, "out of memory");
+    int num_components = 0;
+    for (int i = 0; i < nv; i++) comp_id[i] = -1;
+    for (int i = 0; i < nv; i++) {
+      int r = i;
+      while (uf_parent[r] != r) r = uf_parent[r];
+      if (comp_id[r] < 0) comp_id[r] = num_components++;
+      comp_id[i] = comp_id[r];
+    }
+
+    /* Compute signed volume per component. */
+    double *comp_vol = (double *)calloc(num_components, sizeof(double));
+    CHECK(comp_vol, "out of memory");
+    for (int f = 0; f < nf; f++) {
+      vector3 v0 = m->vertices.items[m->face_indices[3 * f]];
+      vector3 v1 = m->vertices.items[m->face_indices[3 * f + 1]];
+      vector3 v2 = m->vertices.items[m->face_indices[3 * f + 2]];
+      int ci = comp_id[m->face_indices[3 * f]];
+      comp_vol[ci] += vector3_dot(v0, vector3_cross(v1, v2));
+    }
+
+    /* Flip faces in components with negative signed volume. */
+    for (int f = 0; f < nf; f++) {
+      int ci = comp_id[m->face_indices[3 * f]];
+      if (comp_vol[ci] < 0) {
+        int tmp = m->face_indices[3 * f + 1];
+        m->face_indices[3 * f + 1] = m->face_indices[3 * f + 2];
+        m->face_indices[3 * f + 2] = tmp;
+        m->face_normals[f] = vector3_scale(-1.0, m->face_normals[f]);
+      }
+    }
+
+    free(uf_parent);
+    free(uf_rank);
+    free(comp_id);
+    free(comp_vol);
   }
 
   /* Build BVH. */
@@ -2753,6 +2860,8 @@ static void init_mesh(geometric_object *o) {
 
   m->num_bvh_nodes = 0;
   mesh_bvh_build(m, m->bvh_face_ids, 0, nf, m->bvh, &m->num_bvh_nodes);
+
+  m->vertex_hash = mesh_vertex_hash(m);
 }
 
 /***************************************************************/
@@ -2761,14 +2870,18 @@ static void init_mesh(geometric_object *o) {
 
 static void reinit_mesh(geometric_object *o) {
   mesh *m = o->subclass.mesh_data;
-  /* Skip if already initialized — mesh uses absolute coordinates
-     and doesn't depend on the lattice basis, unlike blocks/cylinders. */
-  if (m->bvh != NULL) return;
+  /* Skip rebuild if vertices haven't changed since last init. This preserves
+     the fast path for geom_fix_object_ptr on copied meshes (called hundreds
+     of times during meep's init_sim) while correctly rebuilding when vertices
+     are mutated post-construction. */
+  if (m->bvh != NULL && mesh_vertex_hash(m) == m->vertex_hash) return;
   free(m->face_normals);
   free(m->face_areas);
+  free(m->bvh);
   free(m->bvh_face_ids);
   m->face_normals = NULL;
   m->face_areas = NULL;
+  m->bvh = NULL;
   m->bvh_face_ids = NULL;
   init_mesh(o);
 }
