@@ -1929,6 +1929,14 @@ geometric_object make_ellipsoid(material_type material, vector3 center, vector3 
  * A mesh is a closed triangulated surface defined by a vertex
  * array and a triangle index array. A BVH (bounding volume
  * hierarchy) is used for O(log N) queries.
+ *
+ * init_mesh performs these steps:
+ *   1. Validate indices and compute lengthscale from vertex bbox
+ *   2. Compute per-face normals via n = (v1-v0) x (v2-v0)
+ *   3. Check closure: every edge must be shared by exactly 2 faces
+ *   4. Auto-fix winding: if signed volume < 0 (normals point inward),
+ *      flip all triangle windings and negate normals
+ *   5. Build SAH-binned BVH for O(log N) queries
  ***************************************************************/
 
 /***************************************************************/
@@ -2033,7 +2041,7 @@ static int mesh_bvh_build(mesh *m, int *face_ids, int start, int count,
   double best_cost = 1e300;
   int best_axis = -1, best_split = -1;
   double parent_area = geom_box_surface_area(&node_box);
-  if (parent_area == 0) parent_area = 1e-30;
+  if (parent_area == 0) parent_area = 1e-30 * m->lengthscale * m->lengthscale;
 
   for (int axis = 0; axis < 3; axis++) {
     double lo, hi;
@@ -2042,7 +2050,7 @@ static int mesh_bvh_build(mesh *m, int *face_ids, int start, int count,
       case 1: lo = node_box.low.y; hi = node_box.high.y; break;
       default: lo = node_box.low.z; hi = node_box.high.z; break;
     }
-    if (hi - lo < 1e-15) continue;
+    if (hi - lo < 1e-15 * m->lengthscale) continue;
 
     /* Bin face centroids. */
     int bin_counts[MESH_BVH_NUM_BINS];
@@ -2171,29 +2179,31 @@ static int mesh_bvh_build(mesh *m, int *face_ids, int start, int count,
 /* Ray-triangle intersection (Moller-Trumbore)                 */
 /***************************************************************/
 
-#define MESH_RAY_EPS 1e-12
+#define MESH_BARY_EPS 1e-10
 
 /* Test intersection of ray (origin + t * dir) with triangle (v0, v1, v2).
    Returns 1 if intersection found, with *t_out set to the parameter.
+   det_eps should be ~1e-12 * lengthscale^2 (determinant has area units).
    Also returns barycentric coords u, v if non-NULL. */
 static int ray_triangle_intersect(vector3 origin, vector3 dir,
                                   vector3 v0, vector3 v1, vector3 v2,
+                                  double det_eps,
                                   double *t_out, double *u_out, double *v_out) {
   vector3 e1 = vector3_minus(v1, v0);
   vector3 e2 = vector3_minus(v2, v0);
   vector3 h = vector3_cross(dir, e2);
   double a = vector3_dot(e1, h);
 
-  if (fabs(a) < MESH_RAY_EPS) return 0;
+  if (fabs(a) < det_eps) return 0;
 
   double f = 1.0 / a;
   vector3 s = vector3_minus(origin, v0);
   double u = f * vector3_dot(s, h);
-  if (u < -MESH_RAY_EPS || u > 1.0 + MESH_RAY_EPS) return 0;
+  if (u < -MESH_BARY_EPS || u > 1.0 + MESH_BARY_EPS) return 0;
 
   vector3 q = vector3_cross(s, e1);
   double v = f * vector3_dot(dir, q);
-  if (v < -MESH_RAY_EPS || u + v > 1.0 + MESH_RAY_EPS) return 0;
+  if (v < -MESH_BARY_EPS || u + v > 1.0 + MESH_BARY_EPS) return 0;
 
   double t = f * vector3_dot(e2, q);
   *t_out = t;
@@ -2398,6 +2408,7 @@ static int mesh_ray_all_intersections(const mesh *m, vector3 origin, vector3 dir
   inv_dir.z = (fabs(dir.z) > 1e-30) ? 1.0 / dir.z : 1e30;
 
   int count = 0;
+  double det_eps = 1e-12 * m->lengthscale * m->lengthscale;
   int stack[64];
   int stack_top = 0;
   stack[stack_top++] = 0;
@@ -2417,7 +2428,7 @@ static int mesh_ray_all_intersections(const mesh *m, vector3 origin, vector3 dir
         vector3 v2 = m->vertices.items[m->face_indices[3 * fid + 2]];
 
         double t;
-        if (ray_triangle_intersect(origin, dir, v0, v1, v2, &t, NULL, NULL)) {
+        if (ray_triangle_intersect(origin, dir, v0, v1, v2, det_eps, &t, NULL, NULL)) {
           if (count < max_intersections)
             slist[count++] = t;
         }
@@ -2461,14 +2472,16 @@ static int count_ray_mesh_intersections_ex(const mesh *m, vector3 origin, vector
   int count = mesh_ray_all_intersections(m, origin, dir, slist, MESH_MAX_INTERSECTIONS);
 
   /* Keep only forward intersections (t > eps). */
+  double fwd_eps = 1e-12 * m->lengthscale;
   int nforward = 0;
   for (int i = 0; i < count; i++)
-    if (slist[i] > MESH_RAY_EPS)
+    if (slist[i] > fwd_eps)
       slist[nforward++] = slist[i];
 
   if (nforward > 1) {
     qsort(slist, nforward, sizeof(double), mesh_dcmp);
-    int deduped = remove_duplicate_intersections(slist, nforward, 1e-10);
+    double dedup_tol = 1e-10 * m->lengthscale;
+    int deduped = remove_duplicate_intersections(slist, nforward, dedup_tol);
     if (had_degenerate) *had_degenerate = (deduped != nforward);
     nforward = deduped;
   } else {
@@ -2557,7 +2570,7 @@ static int intersect_line_with_mesh(const mesh *m, vector3 p, vector3 d, double 
   int count = mesh_ray_all_intersections(m, p, d, slist, MESH_MAX_INTERSECTIONS);
   if (count > 1) {
     qsort(slist, count, sizeof(double), mesh_dcmp);
-    count = remove_duplicate_intersections(slist, count, 1e-10);
+    count = remove_duplicate_intersections(slist, count, 1e-10 * m->lengthscale);
   }
   return count;
 }
@@ -2611,12 +2624,26 @@ static void init_mesh(geometric_object *o) {
     CHECK(m->face_indices[3 * f + 2] >= 0 && m->face_indices[3 * f + 2] < nv, "mesh face index out of range");
   }
 
+  /* Compute characteristic lengthscale from vertex bounding box diagonal. */
+  {
+    vector3 lo = m->vertices.items[0], hi = lo;
+    for (int i = 1; i < nv; i++) {
+      vector3 v = m->vertices.items[i];
+      lo.x = fmin(lo.x, v.x); lo.y = fmin(lo.y, v.y); lo.z = fmin(lo.z, v.z);
+      hi.x = fmax(hi.x, v.x); hi.y = fmax(hi.y, v.y); hi.z = fmax(hi.z, v.z);
+    }
+    double dx = hi.x - lo.x, dy = hi.y - lo.y, dz = hi.z - lo.z;
+    m->lengthscale = sqrt(dx * dx + dy * dy + dz * dz);
+    if (m->lengthscale == 0) m->lengthscale = 1.0;
+  }
+
   /* Compute face normals and areas. */
   m->face_normals = (vector3 *)malloc(nf * sizeof(vector3));
   CHECK(m->face_normals, "out of memory");
   m->face_areas = (double *)malloc(nf * sizeof(double));
   CHECK(m->face_areas, "out of memory");
 
+  double area_eps = 1e-20 * m->lengthscale * m->lengthscale;
   for (int f = 0; f < nf; f++) {
     vector3 v0 = m->vertices.items[m->face_indices[3 * f]];
     vector3 v1 = m->vertices.items[m->face_indices[3 * f + 1]];
@@ -2626,7 +2653,7 @@ static void init_mesh(geometric_object *o) {
     vector3 n = vector3_cross(e1, e2);
     double len = vector3_norm(n);
     m->face_areas[f] = 0.5 * len;
-    m->face_normals[f] = (len > 1e-30) ? vector3_scale(1.0 / len, n) : n;
+    m->face_normals[f] = (len > area_eps) ? vector3_scale(1.0 / len, n) : n;
   }
 
   /* Compute centroid. */

@@ -72,6 +72,7 @@ mesh_copy(const mesh * o0, mesh * o)
 	memcpy(o->bvh_face_ids, o0->bvh_face_ids, sizeof(int) * o->num_faces);
 	o->is_closed = o0->is_closed;
 	o->centroid = o0->centroid;
+	o->lengthscale = o0->lengthscale;
 }
 
 void

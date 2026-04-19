@@ -173,14 +173,28 @@ GEOMETRIC_OBJECT make_slanted_prism_with_center(MATERIAL_TYPE material, vector3 
                                         const vector3 *vertices, int num_vertices, double height,
                                         vector3 axis, double sidewall_angle);
 
-// Closed triangulated 3D mesh. Vertices are shared; triangles index into the
-// vertex array (0-based, 3 ints per triangle). A BVH is built internally for
-// O(log N) queries. The mesh must be watertight (every edge shared by exactly
-// 2 faces); open meshes are detected at init time and produce a warning.
+// Closed triangulated 3D mesh defined by a shared vertex array and triangle
+// index array (0-based, 3 ints per triangle, triangles only — no quads).
+//
+// Requirements:
+//   - Watertight: every edge must be shared by exactly 2 triangles.
+//     Open or non-manifold meshes are detected at init time; a warning is
+//     printed and point_in_mesh always returns false.
+//   - Triangle winding: all triangles should have consistent winding.
+//     The face normal is n = (v1-v0) x (v2-v0) per the right-hand rule.
+//     If the signed volume indicates inward-pointing normals, init_mesh
+//     automatically flips all triangle windings to make normals point outward.
+//     Users do NOT need to ensure outward orientation — only consistency.
+//   - At least 4 vertices and 4 triangles.
+//   - Degenerate (zero-area) triangles are allowed but their normals are
+//     undefined.
+//
+// A BVH (bounding volume hierarchy) is built internally for O(log N) queries.
+// All tolerances scale with the mesh bounding box diagonal (lengthscale).
 GEOMETRIC_OBJECT make_mesh(MATERIAL_TYPE material, const vector3 *vertices, int num_vertices,
                            const int *triangles, int num_triangles);
 
-// As make_mesh, but translates vertices so the centroid equals center.
+// As make_mesh, but translates all vertices so the centroid equals center.
 GEOMETRIC_OBJECT make_mesh_with_center(MATERIAL_TYPE material, vector3 center,
                                        const vector3 *vertices, int num_vertices,
                                        const int *triangles, int num_triangles);

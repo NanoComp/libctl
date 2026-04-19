@@ -125,6 +125,7 @@ extern		"C" {
 		int		*bvh_face_ids;
 		boolean		is_closed;
 		vector3		centroid;
+		number		lengthscale;
 	}		mesh;
 
 	typedef struct ellipsoid_struct {
