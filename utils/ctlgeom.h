@@ -173,6 +173,35 @@ GEOMETRIC_OBJECT make_slanted_prism_with_center(MATERIAL_TYPE material, vector3 
                                         const vector3 *vertices, int num_vertices, double height,
                                         vector3 axis, double sidewall_angle);
 
+// Closed triangulated 3D mesh defined by a shared vertex array and triangle
+// index array (0-based, 3 ints per triangle, triangles only — no quads).
+//
+// Requirements:
+//   - Watertight: every edge must be shared by exactly 2 triangles.
+//     Open or non-manifold meshes are detected at init time; a warning is
+//     printed and point_in_mesh always returns false.
+//   - Triangle winding: all triangles within each connected component
+//     should have consistent winding. The face normal is
+//     n = (v1-v0) x (v2-v0) per the right-hand rule. If a component's
+//     signed volume indicates inward-pointing normals, init_mesh
+//     automatically flips that component's triangle windings.
+//     Users do NOT need to ensure outward orientation — only consistency
+//     within each connected component. Multi-component meshes with mixed
+//     winding (e.g. one component CW, another CCW) are handled correctly.
+//   - At least 4 vertices and 4 triangles.
+//   - Degenerate (zero-area) triangles are allowed but their normals are
+//     undefined.
+//
+// A BVH (bounding volume hierarchy) is built internally for O(log N) queries.
+// All tolerances scale with the mesh bounding box diagonal (lengthscale).
+GEOMETRIC_OBJECT make_mesh(MATERIAL_TYPE material, const vector3 *vertices, int num_vertices,
+                           const int *triangles, int num_triangles);
+
+// As make_mesh, but translates all vertices so the centroid equals center.
+GEOMETRIC_OBJECT make_mesh_with_center(MATERIAL_TYPE material, vector3 center,
+                                       const vector3 *vertices, int num_vertices,
+                                       const int *triangles, int num_triangles);
+
 int vector3_nearly_equal(vector3 v1, vector3 v2, double tolerance);
 
 /**************************************************************************/

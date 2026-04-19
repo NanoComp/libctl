@@ -139,6 +139,25 @@
   (define-property m_c2p identity_matrix 'matrix3x3)
   (define-property m_p2c identity_matrix 'matrix3x3))
 
+; A mesh is a closed triangulated 3D surface (watertight manifold).
+; Only vertices and face_indices need to be specified by the user;
+; all other fields are computed internally by init_mesh in C.
+; face_indices is a vector3_list where each vector3 holds 3 integer
+; indices (in x, y, z) referring to entries in the vertices list.
+;
+; The mesh must be watertight (every edge shared by exactly 2 faces).
+; Open or non-manifold meshes trigger a warning and disable point_in_mesh.
+;
+; Triangle winding must be consistent within each connected component.
+; The face normal is defined as n = (v1-v0) x (v2-v0) (right-hand rule).
+; If a component's normals point inward, init_mesh automatically flips
+; its winding order. Multi-component meshes with mixed winding are
+; handled correctly (each component is fixed independently).
+(define-class mesh geometric-object
+; fields to be filled in by users
+  (define-property vertices '() (make-list-type 'vector3))
+  (define-property face_indices '() (make-list-type 'vector3)))
+
 (define-class ellipsoid block
   (define-derived-property inverse-semi-axes 'vector3
     (lambda (object)

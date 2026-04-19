@@ -82,6 +82,15 @@ static void get_prism_bounding_box(prism *prsm, geom_box *box);
 static void display_prism_info(int indentby, geometric_object *o);
 static void init_prism(geometric_object *o);
 static void reinit_prism(geometric_object *o);
+static void init_mesh(geometric_object *o);
+static void reinit_mesh(geometric_object *o);
+static boolean point_in_mesh(const mesh *m, vector3 p);
+static vector3 normal_to_mesh(const mesh *m, vector3 p);
+static void get_mesh_bounding_box(const mesh *m, geom_box *box);
+static double get_mesh_volume(const mesh *m);
+static void display_mesh_info(int indentby, const geometric_object *o);
+static double intersect_line_segment_with_mesh(const mesh *m, vector3 p, vector3 d,
+                                               double a, double b);
 /**************************************************************************/
 
 /* Allows writing to Python's stdout when running from Meep's Python interface */
@@ -172,6 +181,10 @@ void geom_fix_object_ptr(geometric_object *o) {
 #endif
         geom_fix_object_ptr(os + i);
       }
+      break;
+    }
+    case GEOM MESH: {
+      reinit_mesh(o);
       break;
     }
     case GEOM GEOMETRIC_OBJECT_SELF:
@@ -317,6 +330,9 @@ boolean point_in_fixed_pobjectp(vector3 p, geometric_object *o) {
     case GEOM PRISM: {
       return point_in_prism(o->subclass.prism_data, p);
     }
+    case GEOM MESH: {
+      return point_in_mesh(o->subclass.mesh_data, p);
+    }
     case GEOM COMPOUND_GEOMETRIC_OBJECT: {
       int i;
       int n = o->subclass.compound_geometric_object_data->component_objects.num_items;
@@ -459,6 +475,8 @@ vector3 normal_to_fixed_object(vector3 p, geometric_object o) {
     } // case GEOM BLOCK
 
     case GEOM PRISM: return normal_to_prism(o.subclass.prism_data, p);
+
+    case GEOM MESH: return normal_to_mesh(o.subclass.mesh_data, p);
 
     default: return r;
   } // switch (o.which_subclass)
@@ -623,6 +641,7 @@ void CTLIO display_geometric_object_info(int indentby, geometric_object o) {
       }
       break;
     case GEOM PRISM: ctl_printf("prism"); break;
+    case GEOM MESH: ctl_printf("mesh"); break;
     case GEOM COMPOUND_GEOMETRIC_OBJECT: ctl_printf("compound object"); break;
     default: ctl_printf("geometric object"); break;
   }
@@ -653,6 +672,7 @@ void CTLIO display_geometric_object_info(int indentby, geometric_object o) {
           o.subclass.block_data->e3.x, o.subclass.block_data->e3.y, o.subclass.block_data->e3.z);
       break;
     case GEOM PRISM: display_prism_info(indentby, &o); break;
+    case GEOM MESH: display_mesh_info(indentby, &o); break;
     case GEOM COMPOUND_GEOMETRIC_OBJECT: {
       int i;
       int n = o.subclass.compound_geometric_object_data->component_objects.num_items;
@@ -845,6 +865,9 @@ double intersect_line_segment_with_object(vector3 p, vector3 d, geometric_object
   if (o.which_subclass == GEOM PRISM) {
     return intersect_line_segment_with_prism(o.subclass.prism_data, p, d, a, b);
   }
+  else if (o.which_subclass == GEOM MESH) {
+    return intersect_line_segment_with_mesh(o.subclass.mesh_data, p, d, a, b);
+  }
   else {
     double s[2];
     if (2 == intersect_line_with_object(p, d, o, s)) {
@@ -916,6 +939,9 @@ double geom_object_volume(GEOMETRIC_OBJECT o) {
     }
     case GEOM PRISM: {
       return get_prism_volume(o.subclass.prism_data);
+    }
+    case GEOM MESH: {
+      return get_mesh_volume(o.subclass.mesh_data);
     }
     default: return 0; /* unsupported object types? */
   }
@@ -1117,6 +1143,10 @@ void geom_get_bounding_box(geometric_object o, geom_box *box) {
     }
     case GEOM PRISM: {
       get_prism_bounding_box(o.subclass.prism_data, box);
+      break;
+    }
+    case GEOM MESH: {
+      get_mesh_bounding_box(o.subclass.mesh_data, box);
       break;
     }
     case GEOM COMPOUND_GEOMETRIC_OBJECT: {
@@ -1891,6 +1921,1020 @@ geometric_object make_ellipsoid(material_type material, vector3 center, vector3 
   o.subclass.block_data->subclass.ellipsoid_data->inverse_semi_axes.x = 2.0 / size.x;
   o.subclass.block_data->subclass.ellipsoid_data->inverse_semi_axes.y = 2.0 / size.y;
   o.subclass.block_data->subclass.ellipsoid_data->inverse_semi_axes.z = 2.0 / size.z;
+  return o;
+}
+
+/***************************************************************
+ * Mesh geometry implementation.
+ * A mesh is a closed triangulated surface defined by a vertex
+ * array and a triangle index array. A BVH (bounding volume
+ * hierarchy) is used for O(log N) queries.
+ *
+ * init_mesh performs these steps:
+ *   1. Validate indices and compute lengthscale from vertex bbox
+ *   2. Compute per-face normals via n = (v1-v0) x (v2-v0)
+ *   3. Check closure: every edge must be shared by exactly 2 faces
+ *   4. Auto-fix winding per connected component: find components via
+ *      union-find on vertices, compute each component's signed volume,
+ *      and flip faces in components with negative volume (inward normals)
+ *   5. Build SAH-binned BVH for O(log N) queries
+ ***************************************************************/
+
+/***************************************************************/
+/* Triangle utilities                                          */
+/***************************************************************/
+
+/* Helper to set a BVH node's bbox from a geom_box. */
+static void bvh_node_set_box(mesh_bvh_node *node, const geom_box *box) {
+  node->bbox_low = box->low;
+  node->bbox_high = box->high;
+}
+
+/* Fetch the three vertices of a triangle. */
+static void mesh_triangle_vertices(const mesh *m, int face_id,
+                                   vector3 *v0, vector3 *v1, vector3 *v2) {
+  *v0 = m->vertices.items[m->face_indices[3 * face_id]];
+  *v1 = m->vertices.items[m->face_indices[3 * face_id + 1]];
+  *v2 = m->vertices.items[m->face_indices[3 * face_id + 2]];
+}
+
+/* Compute the AABB of a single triangle. */
+static void mesh_triangle_bbox(const mesh *m, int face_id, geom_box *box) {
+  vector3 v0, v1, v2;
+  mesh_triangle_vertices(m, face_id, &v0, &v1, &v2);
+  box->low.x = fmin(v0.x, fmin(v1.x, v2.x));
+  box->low.y = fmin(v0.y, fmin(v1.y, v2.y));
+  box->low.z = fmin(v0.z, fmin(v1.z, v2.z));
+  box->high.x = fmax(v0.x, fmax(v1.x, v2.x));
+  box->high.y = fmax(v0.y, fmax(v1.y, v2.y));
+  box->high.z = fmax(v0.z, fmax(v1.z, v2.z));
+}
+
+/* Compute the centroid of a triangle. */
+static vector3 mesh_triangle_centroid(const mesh *m, int face_id) {
+  vector3 v0, v1, v2;
+  mesh_triangle_vertices(m, face_id, &v0, &v1, &v2);
+  vector3 c;
+  c.x = (v0.x + v1.x + v2.x) / 3.0;
+  c.y = (v0.y + v1.y + v2.y) / 3.0;
+  c.z = (v0.z + v1.z + v2.z) / 3.0;
+  return c;
+}
+
+/* Compute the AABB and centroid of a triangle in one pass. */
+static void mesh_triangle_bbox_centroid(const mesh *m, int face_id,
+                                        geom_box *box, vector3 *centroid) {
+  vector3 v0, v1, v2;
+  mesh_triangle_vertices(m, face_id, &v0, &v1, &v2);
+  box->low.x = fmin(v0.x, fmin(v1.x, v2.x));
+  box->low.y = fmin(v0.y, fmin(v1.y, v2.y));
+  box->low.z = fmin(v0.z, fmin(v1.z, v2.z));
+  box->high.x = fmax(v0.x, fmax(v1.x, v2.x));
+  box->high.y = fmax(v0.y, fmax(v1.y, v2.y));
+  box->high.z = fmax(v0.z, fmax(v1.z, v2.z));
+  centroid->x = (v0.x + v1.x + v2.x) / 3.0;
+  centroid->y = (v0.y + v1.y + v2.y) / 3.0;
+  centroid->z = (v0.z + v1.z + v2.z) / 3.0;
+}
+
+/* Compute the surface area of a geom_box. */
+static double geom_box_surface_area(const geom_box *b) {
+  double dx = b->high.x - b->low.x;
+  double dy = b->high.y - b->low.y;
+  double dz = b->high.z - b->low.z;
+  return 2.0 * (dx * dy + dy * dz + dz * dx);
+}
+
+/***************************************************************/
+/* BVH construction using Surface Area Heuristic (SAH)         */
+/***************************************************************/
+
+#define MESH_BVH_MAX_LEAF_SIZE 4
+#define MESH_BVH_NUM_BINS 12
+
+/* Recursive BVH build. Returns the index of the root node for this subtree.
+   face_ids[start..start+count-1] are the faces in this node. */
+static int mesh_bvh_build(mesh *m, int *face_ids, int start, int count,
+                          mesh_bvh_node *nodes, int *num_nodes) {
+  int node_idx = (*num_nodes)++;
+  mesh_bvh_node *node = &nodes[node_idx];
+
+  /* Compute bounding box of all faces in this range. */
+  geom_box face_box, node_box;
+  mesh_triangle_bbox(m, face_ids[start], &face_box);
+  node_box = face_box;
+  for (int i = 1; i < count; i++) {
+    mesh_triangle_bbox(m, face_ids[start + i], &face_box);
+    geom_box_union(&node_box, &node_box, &face_box);
+  }
+  bvh_node_set_box(node, &node_box);
+
+  /* Leaf node if few enough faces. */
+  if (count <= MESH_BVH_MAX_LEAF_SIZE) {
+    node->left_child = -1;
+    node->right_child = -1;
+    node->face_start = start;
+    node->face_count = count;
+    return node_idx;
+  }
+
+  /* Find the best split using SAH with binning. */
+  double best_cost = 1e300;
+  int best_axis = -1, best_split = -1;
+  double parent_area = geom_box_surface_area(&node_box);
+  if (parent_area == 0) parent_area = 1e-30 * m->lengthscale * m->lengthscale;
+
+  for (int axis = 0; axis < 3; axis++) {
+    double lo, hi;
+    switch (axis) {
+      case 0: lo = node_box.low.x; hi = node_box.high.x; break;
+      case 1: lo = node_box.low.y; hi = node_box.high.y; break;
+      default: lo = node_box.low.z; hi = node_box.high.z; break;
+    }
+    if (hi - lo < 1e-15 * m->lengthscale) continue;
+
+    /* Bin face centroids. */
+    int bin_counts[MESH_BVH_NUM_BINS];
+    geom_box bin_boxes[MESH_BVH_NUM_BINS];
+    for (int b = 0; b < MESH_BVH_NUM_BINS; b++) {
+      bin_counts[b] = 0;
+      bin_boxes[b].low.x = bin_boxes[b].low.y = bin_boxes[b].low.z = 1e300;
+      bin_boxes[b].high.x = bin_boxes[b].high.y = bin_boxes[b].high.z = -1e300;
+    }
+
+    double inv_range = MESH_BVH_NUM_BINS / (hi - lo);
+    for (int i = 0; i < count; i++) {
+      geom_box fb;
+      vector3 c;
+      mesh_triangle_bbox_centroid(m, face_ids[start + i], &fb, &c);
+      double val;
+      switch (axis) {
+        case 0: val = c.x; break;
+        case 1: val = c.y; break;
+        default: val = c.z; break;
+      }
+      int bin = (int)((val - lo) * inv_range);
+      if (bin < 0) bin = 0;
+      if (bin >= MESH_BVH_NUM_BINS) bin = MESH_BVH_NUM_BINS - 1;
+      bin_counts[bin]++;
+      geom_box_union(&bin_boxes[bin], &bin_boxes[bin], &fb);
+    }
+
+    /* Sweep from left to evaluate SAH cost at each split. */
+    geom_box left_box;
+    left_box.low.x = left_box.low.y = left_box.low.z = 1e300;
+    left_box.high.x = left_box.high.y = left_box.high.z = -1e300;
+    int left_count = 0;
+
+    /* Precompute right sweep. */
+    geom_box right_boxes[MESH_BVH_NUM_BINS];
+    int right_counts[MESH_BVH_NUM_BINS];
+    {
+      geom_box rb;
+      rb.low.x = rb.low.y = rb.low.z = 1e300;
+      rb.high.x = rb.high.y = rb.high.z = -1e300;
+      int rc = 0;
+      for (int b = MESH_BVH_NUM_BINS - 1; b >= 0; b--) {
+        if (bin_counts[b] > 0) {
+          geom_box_union(&rb, &rb, &bin_boxes[b]);
+          rc += bin_counts[b];
+        }
+        right_boxes[b] = rb;
+        right_counts[b] = rc;
+      }
+    }
+
+    for (int split = 1; split < MESH_BVH_NUM_BINS; split++) {
+      int b = split - 1;
+      if (bin_counts[b] > 0) {
+        geom_box_union(&left_box, &left_box, &bin_boxes[b]);
+        left_count += bin_counts[b];
+      }
+      if (left_count == 0 || right_counts[split] == 0) continue;
+
+      double left_area = geom_box_surface_area(&left_box);
+      double right_area = geom_box_surface_area(&right_boxes[split]);
+      double cost = 1.0 + (left_area * left_count + right_area * right_counts[split]) / parent_area;
+      if (cost < best_cost) {
+        best_cost = cost;
+        best_axis = axis;
+        best_split = split;
+      }
+    }
+  }
+
+  /* If no good split found, make a leaf. */
+  if (best_axis < 0) {
+    node->left_child = -1;
+    node->right_child = -1;
+    node->face_start = start;
+    node->face_count = count;
+    return node_idx;
+  }
+
+  /* Partition face_ids by the best split. */
+  double lo, hi;
+  switch (best_axis) {
+    case 0: lo = node_box.low.x; hi = node_box.high.x; break;
+    case 1: lo = node_box.low.y; hi = node_box.high.y; break;
+    default: lo = node_box.low.z; hi = node_box.high.z; break;
+  }
+  double inv_range = MESH_BVH_NUM_BINS / (hi - lo);
+  int left_end = start;
+  for (int i = start; i < start + count; i++) {
+    vector3 c = mesh_triangle_centroid(m, face_ids[i]);
+    double val;
+    switch (best_axis) {
+      case 0: val = c.x; break;
+      case 1: val = c.y; break;
+      default: val = c.z; break;
+    }
+    int bin = (int)((val - lo) * inv_range);
+    if (bin < 0) bin = 0;
+    if (bin >= MESH_BVH_NUM_BINS) bin = MESH_BVH_NUM_BINS - 1;
+    if (bin < best_split) {
+      int tmp = face_ids[left_end];
+      face_ids[left_end] = face_ids[i];
+      face_ids[i] = tmp;
+      left_end++;
+    }
+  }
+
+  /* Handle degenerate partition. */
+  int left_count_final = left_end - start;
+  if (left_count_final == 0 || left_count_final == count) {
+    left_count_final = count / 2;
+    left_end = start + left_count_final;
+  }
+
+  node->face_start = -1;
+  node->face_count = 0;
+  node->left_child = mesh_bvh_build(m, face_ids, start, left_count_final, nodes, num_nodes);
+  /* Re-fetch node pointer since array may have been indexed differently. */
+  node = &nodes[node_idx];
+  node->right_child = mesh_bvh_build(m, face_ids, left_end, count - left_count_final, nodes, num_nodes);
+  return node_idx;
+}
+
+/***************************************************************/
+/* Ray-triangle intersection (Moller-Trumbore)                 */
+/***************************************************************/
+
+#define MESH_BARY_EPS 1e-10
+
+/* Test intersection of ray (origin + t * dir) with triangle (v0, v1, v2).
+   Returns 1 if intersection found, with *t_out set to the parameter.
+   det_eps should be ~1e-12 * lengthscale^2 (determinant has area units).
+   Also returns barycentric coords u, v if non-NULL. */
+static int ray_triangle_intersect(vector3 origin, vector3 dir,
+                                  vector3 v0, vector3 v1, vector3 v2,
+                                  double det_eps,
+                                  double *t_out, double *u_out, double *v_out) {
+  vector3 e1 = vector3_minus(v1, v0);
+  vector3 e2 = vector3_minus(v2, v0);
+  vector3 h = vector3_cross(dir, e2);
+  double a = vector3_dot(e1, h);
+
+  if (fabs(a) < det_eps) return 0;
+
+  double f = 1.0 / a;
+  vector3 s = vector3_minus(origin, v0);
+  double u = f * vector3_dot(s, h);
+  if (u < -MESH_BARY_EPS || u > 1.0 + MESH_BARY_EPS) return 0;
+
+  vector3 q = vector3_cross(s, e1);
+  double v = f * vector3_dot(dir, q);
+  if (v < -MESH_BARY_EPS || u + v > 1.0 + MESH_BARY_EPS) return 0;
+
+  double t = f * vector3_dot(e2, q);
+  *t_out = t;
+  if (u_out) *u_out = u;
+  if (v_out) *v_out = v;
+  return 1;
+}
+
+/***************************************************************/
+/* Ray-AABB intersection test                                  */
+/***************************************************************/
+
+static int ray_bvh_node_intersect(vector3 origin, vector3 inv_dir, const mesh_bvh_node *node,
+                                  double t_min, double t_max) {
+  double tx1 = (node->bbox_low.x - origin.x) * inv_dir.x;
+  double tx2 = (node->bbox_high.x - origin.x) * inv_dir.x;
+  double tmin = fmin(tx1, tx2);
+  double tmax = fmax(tx1, tx2);
+
+  double ty1 = (node->bbox_low.y - origin.y) * inv_dir.y;
+  double ty2 = (node->bbox_high.y - origin.y) * inv_dir.y;
+  tmin = fmax(tmin, fmin(ty1, ty2));
+  tmax = fmin(tmax, fmax(ty1, ty2));
+
+  double tz1 = (node->bbox_low.z - origin.z) * inv_dir.z;
+  double tz2 = (node->bbox_high.z - origin.z) * inv_dir.z;
+  tmin = fmax(tmin, fmin(tz1, tz2));
+  tmax = fmin(tmax, fmax(tz1, tz2));
+
+  return tmax >= fmax(tmin, t_min) && tmin <= t_max;
+}
+
+/***************************************************************/
+/* Closest point on triangle                                   */
+/***************************************************************/
+
+/* Compute the closest point on triangle (v0,v1,v2) to point p.
+   Returns the squared distance. */
+static double closest_point_on_triangle(vector3 p, vector3 v0, vector3 v1, vector3 v2,
+                                        vector3 *closest) {
+  vector3 e0 = vector3_minus(v1, v0);
+  vector3 e1 = vector3_minus(v2, v0);
+  vector3 v = vector3_minus(v0, p);
+
+  double a = vector3_dot(e0, e0);
+  double b = vector3_dot(e0, e1);
+  double c = vector3_dot(e1, e1);
+  double d = vector3_dot(e0, v);
+  double e = vector3_dot(e1, v);
+
+  double det = a * c - b * b;
+  double s = b * e - c * d;
+  double t = b * d - a * e;
+
+  if (s + t <= det) {
+    if (s < 0) {
+      if (t < 0) {
+        /* region 4 */
+        if (d < 0) {
+          t = 0;
+          s = (-d >= a) ? 1 : -d / a;
+        } else {
+          s = 0;
+          t = (e >= 0) ? 0 : ((-e >= c) ? 1 : -e / c);
+        }
+      } else {
+        /* region 3 */
+        s = 0;
+        t = (e >= 0) ? 0 : ((-e >= c) ? 1 : -e / c);
+      }
+    } else if (t < 0) {
+      /* region 5 */
+      t = 0;
+      s = (d >= 0) ? 0 : ((-d >= a) ? 1 : -d / a);
+    } else {
+      /* region 0 (interior) */
+      double inv_det = 1.0 / det;
+      s *= inv_det;
+      t *= inv_det;
+    }
+  } else {
+    if (s < 0) {
+      /* region 2 */
+      double tmp0 = b + d;
+      double tmp1 = c + e;
+      if (tmp1 > tmp0) {
+        double numer = tmp1 - tmp0;
+        double denom = a - 2 * b + c;
+        s = (numer >= denom) ? 1 : numer / denom;
+        t = 1 - s;
+      } else {
+        s = 0;
+        t = (tmp1 <= 0) ? 1 : ((e >= 0) ? 0 : -e / c);
+      }
+    } else if (t < 0) {
+      /* region 6 */
+      double tmp0 = b + e;
+      double tmp1 = a + d;
+      if (tmp1 > tmp0) {
+        double numer = tmp1 - tmp0;
+        double denom = a - 2 * b + c;
+        t = (numer >= denom) ? 1 : numer / denom;
+        s = 1 - t;
+      } else {
+        t = 0;
+        s = (tmp1 <= 0) ? 1 : ((d >= 0) ? 0 : -d / a);
+      }
+    } else {
+      /* region 1 */
+      double numer = (c + e) - (b + d);
+      if (numer <= 0) {
+        s = 0;
+        t = 1;
+      } else {
+        double denom = a - 2 * b + c;
+        s = (numer >= denom) ? 1 : numer / denom;
+        t = 1 - s;
+      }
+    }
+  }
+
+  *closest = vector3_plus(v0, vector3_plus(vector3_scale(s, e0), vector3_scale(t, e1)));
+  vector3 diff = vector3_minus(p, *closest);
+  return vector3_dot(diff, diff);
+}
+
+/***************************************************************/
+/* BVH-accelerated mesh queries                                */
+/***************************************************************/
+
+/* Find the closest face to point p using BVH traversal.
+   Returns the face index and sets *dist2 to the squared distance. */
+static int find_closest_face(const mesh *m, vector3 p, double *dist2) {
+  int best_face = -1;
+  double best_dist2 = 1e300;
+
+  /* Stack-based traversal with pruning. */
+  int stack[64];
+  int stack_top = 0;
+  stack[stack_top++] = 0;
+
+  while (stack_top > 0) {
+    int node_idx = stack[--stack_top];
+    const mesh_bvh_node *node = &m->bvh[node_idx];
+
+    /* Compute minimum squared distance from p to the AABB. */
+    double dx = fmax(0, fmax(node->bbox_low.x - p.x, p.x - node->bbox_high.x));
+    double dy = fmax(0, fmax(node->bbox_low.y - p.y, p.y - node->bbox_high.y));
+    double dz = fmax(0, fmax(node->bbox_low.z - p.z, p.z - node->bbox_high.z));
+    double box_dist2 = dx * dx + dy * dy + dz * dz;
+    if (box_dist2 >= best_dist2) continue;
+
+    if (node->left_child < 0) {
+      /* Leaf: test all faces. */
+      for (int i = 0; i < node->face_count; i++) {
+        int fid = m->bvh_face_ids[node->face_start + i];
+        vector3 v0 = m->vertices.items[m->face_indices[3 * fid]];
+        vector3 v1 = m->vertices.items[m->face_indices[3 * fid + 1]];
+        vector3 v2 = m->vertices.items[m->face_indices[3 * fid + 2]];
+        vector3 closest;
+        double d2 = closest_point_on_triangle(p, v0, v1, v2, &closest);
+        if (d2 < best_dist2) {
+          best_dist2 = d2;
+          best_face = fid;
+        }
+      }
+    } else {
+      if (stack_top + 2 > 64) continue;
+      /* Push the farther child first so the nearer child is popped first,
+         giving better pruning of the farther subtree. */
+      const mesh_bvh_node *left = &m->bvh[node->left_child];
+      const mesh_bvh_node *right = &m->bvh[node->right_child];
+      double ldx = fmax(0, fmax(left->bbox_low.x - p.x, p.x - left->bbox_high.x));
+      double ldy = fmax(0, fmax(left->bbox_low.y - p.y, p.y - left->bbox_high.y));
+      double ldz = fmax(0, fmax(left->bbox_low.z - p.z, p.z - left->bbox_high.z));
+      double rdx = fmax(0, fmax(right->bbox_low.x - p.x, p.x - right->bbox_high.x));
+      double rdy = fmax(0, fmax(right->bbox_low.y - p.y, p.y - right->bbox_high.y));
+      double rdz = fmax(0, fmax(right->bbox_low.z - p.z, p.z - right->bbox_high.z));
+      double ld2 = ldx*ldx + ldy*ldy + ldz*ldz;
+      double rd2 = rdx*rdx + rdy*rdy + rdz*rdz;
+      if (ld2 < rd2) {
+        stack[stack_top++] = node->right_child; /* farther pushed first */
+        stack[stack_top++] = node->left_child;
+      } else {
+        stack[stack_top++] = node->left_child;
+        stack[stack_top++] = node->right_child;
+      }
+    }
+  }
+
+  *dist2 = best_dist2;
+  return best_face;
+}
+
+/***************************************************************/
+/* Growable hit list: stack buffer for common case, heap on     */
+/* overflow. Avoids malloc on rays that hit <= 256 faces.       */
+/***************************************************************/
+
+#define MESH_HIT_INITIAL_CAP 256
+
+typedef struct {
+  double *data;
+  int count;
+  int cap;
+  double initial_buf[MESH_HIT_INITIAL_CAP];
+} mesh_hit_list;
+
+static void mesh_hit_list_init(mesh_hit_list *h) {
+  h->data = h->initial_buf;
+  h->count = 0;
+  h->cap = MESH_HIT_INITIAL_CAP;
+}
+
+static void mesh_hit_list_push(mesh_hit_list *h, double val) {
+  if (h->count >= h->cap) {
+    int new_cap = h->cap * 2;
+    if (h->data == h->initial_buf) {
+      h->data = (double *)malloc(new_cap * sizeof(double));
+      memcpy(h->data, h->initial_buf, h->cap * sizeof(double));
+    } else {
+      h->data = (double *)realloc(h->data, new_cap * sizeof(double));
+    }
+    h->cap = new_cap;
+  }
+  h->data[h->count++] = val;
+}
+
+static void mesh_hit_list_free(mesh_hit_list *h) {
+  if (h->data != h->initial_buf) free(h->data);
+}
+
+/* Collect all ray-mesh intersection parameters into hits.
+   The hit list grows dynamically if needed. */
+static void mesh_ray_all_intersections(const mesh *m, vector3 origin, vector3 dir,
+                                       mesh_hit_list *hits) {
+  vector3 inv_dir;
+  inv_dir.x = (fabs(dir.x) > 1e-30) ? 1.0 / dir.x : 1e30;
+  inv_dir.y = (fabs(dir.y) > 1e-30) ? 1.0 / dir.y : 1e30;
+  inv_dir.z = (fabs(dir.z) > 1e-30) ? 1.0 / dir.z : 1e30;
+
+  double det_eps = 1e-12 * m->lengthscale * m->lengthscale;
+  int stack[64];
+  int stack_top = 0;
+  stack[stack_top++] = 0;
+
+  while (stack_top > 0) {
+    int node_idx = stack[--stack_top];
+    const mesh_bvh_node *node = &m->bvh[node_idx];
+
+    if (!ray_bvh_node_intersect(origin, inv_dir, node, -1e30, 1e30))
+      continue;
+
+    if (node->left_child < 0) {
+      for (int i = 0; i < node->face_count; i++) {
+        int fid = m->bvh_face_ids[node->face_start + i];
+        vector3 v0 = m->vertices.items[m->face_indices[3 * fid]];
+        vector3 v1 = m->vertices.items[m->face_indices[3 * fid + 1]];
+        vector3 v2 = m->vertices.items[m->face_indices[3 * fid + 2]];
+
+        double t;
+        if (ray_triangle_intersect(origin, dir, v0, v1, v2, det_eps, &t, NULL, NULL))
+          mesh_hit_list_push(hits, t);
+      }
+    } else {
+      if (stack_top + 2 > 64) continue;
+      stack[stack_top++] = node->left_child;
+      stack[stack_top++] = node->right_child;
+    }
+  }
+}
+
+static int mesh_dcmp(const void *a, const void *b) {
+  double da = *(const double *)a;
+  double db = *(const double *)b;
+  return (da > db) - (da < db);
+}
+
+/* Remove duplicate intersection parameters within tolerance. */
+static int remove_duplicate_intersections(double *slist, int count, double tol) {
+  if (count <= 1) return count;
+  int j = 0;
+  for (int i = 1; i < count; i++) {
+    if (slist[i] - slist[j] > tol)
+      slist[++j] = slist[i];
+  }
+  return j + 1;
+}
+
+/* Count ray-mesh intersections using BVH traversal.
+   Collects all intersection t-values, deduplicates, and returns the count.
+   If had_degenerate is non-NULL, sets it to 1 if any near-duplicate
+   t-values were found (indicating a potential edge/vertex hit). */
+static int count_ray_mesh_intersections_ex(const mesh *m, vector3 origin, vector3 dir,
+                                           int *had_degenerate) {
+  mesh_hit_list hits;
+  mesh_hit_list_init(&hits);
+  mesh_ray_all_intersections(m, origin, dir, &hits);
+
+  /* Keep only forward intersections (t > eps). */
+  double fwd_eps = 1e-12 * m->lengthscale;
+  int nforward = 0;
+  for (int i = 0; i < hits.count; i++)
+    if (hits.data[i] > fwd_eps)
+      hits.data[nforward++] = hits.data[i];
+
+  if (nforward > 1) {
+    qsort(hits.data, nforward, sizeof(double), mesh_dcmp);
+    double dedup_tol = 1e-10 * m->lengthscale;
+    int deduped = remove_duplicate_intersections(hits.data, nforward, dedup_tol);
+    if (had_degenerate) *had_degenerate = (deduped != nforward);
+    nforward = deduped;
+  } else {
+    if (had_degenerate) *had_degenerate = 0;
+  }
+
+  mesh_hit_list_free(&hits);
+  return nforward;
+}
+
+static int count_ray_mesh_intersections(const mesh *m, vector3 origin, vector3 dir) {
+  return count_ray_mesh_intersections_ex(m, origin, dir, NULL);
+}
+
+/***************************************************************/
+/* Core mesh geometric operations                              */
+/***************************************************************/
+
+static const vector3 mesh_ray_dirs[3] = {
+  {0.57735026918962576, 0.57735026918962576, 0.57735026918962576},  /* (1,1,1)/√3 */
+  {0.80178372573727319, 0.53452248382484879, 0.26726124191242440},  /* (3,2,1)/√14 */
+  {0.12309149097933272, 0.49236596391733088, 0.86164043685532904},  /* (1,4,7)/√66 */
+};
+
+static boolean point_in_mesh(const mesh *m, vector3 p) {
+  if (!m->is_closed) return 0;
+
+  /* Fast path: cast one ray. If no degenerate edge/vertex hits were
+     detected during deduplication, trust the result immediately.
+     Only fall back to 3-ray majority vote when a degenerate case
+     is detected (near-duplicate t-values removed). */
+  int had_degenerate;
+  int crossings = count_ray_mesh_intersections_ex(m, p, mesh_ray_dirs[0], &had_degenerate);
+  if (!had_degenerate)
+    return (crossings % 2) == 1;
+
+  /* Degenerate hit detected — cast two more rays and take majority vote. */
+  int votes = (crossings % 2 == 1) ? 1 : 0;
+  for (int d = 1; d < 3; d++) {
+    crossings = count_ray_mesh_intersections(m, p, mesh_ray_dirs[d]);
+    if (crossings % 2 == 1) votes++;
+  }
+  return votes >= 2;
+}
+
+static vector3 normal_to_mesh(const mesh *m, vector3 p) {
+  double dist2;
+  int face = find_closest_face(m, p, &dist2);
+  if (face < 0) {
+    vector3 zero = {0, 0, 0};
+    return zero;
+  }
+  return m->face_normals[face];
+}
+
+static void get_mesh_bounding_box(const mesh *m, geom_box *box) {
+  if (m->num_bvh_nodes > 0) {
+    box->low = m->bvh[0].bbox_low;
+    box->high = m->bvh[0].bbox_high;
+  } else {
+    box->low = box->high = m->vertices.items[0];
+    for (int i = 1; i < m->vertices.num_items; i++)
+      geom_box_add_pt(box, m->vertices.items[i]);
+  }
+}
+
+static double get_mesh_volume(const mesh *m) {
+  /* Divergence theorem: sum signed tetrahedron volumes. */
+  double vol = 0;
+  for (int f = 0; f < m->num_faces; f++) {
+    vector3 v0 = m->vertices.items[m->face_indices[3 * f]];
+    vector3 v1 = m->vertices.items[m->face_indices[3 * f + 1]];
+    vector3 v2 = m->vertices.items[m->face_indices[3 * f + 2]];
+    vol += vector3_dot(v0, vector3_cross(v1, v2));
+  }
+  return fabs(vol) / 6.0;
+}
+
+static void display_mesh_info(int indentby, const geometric_object *o) {
+  const mesh *m = o->subclass.mesh_data;
+  ctl_printf("%*s     %d vertices, %d faces, %s\n", indentby, "",
+             m->vertices.num_items, m->num_faces,
+             m->is_closed ? "closed" : "OPEN (WARNING)");
+}
+
+static double intersect_line_segment_with_mesh(const mesh *m, vector3 p, vector3 d,
+                                               double a, double b) {
+  mesh_hit_list hits;
+  mesh_hit_list_init(&hits);
+  mesh_ray_all_intersections(m, p, d, &hits);
+
+  if (hits.count > 1) {
+    qsort(hits.data, hits.count, sizeof(double), mesh_dcmp);
+    hits.count = remove_duplicate_intersections(hits.data, hits.count, 1e-10 * m->lengthscale);
+  }
+
+  /* The sorted intersection list gives all surface crossings along the
+     full ray. At t=-inf we are outside, so the parity after k crossings
+     tells us inside/outside: odd = inside, even = outside.
+
+     Count crossings before 'a' to determine if we start inside [a,b].
+     Then walk crossings within [a,b] toggling parity and accumulating
+     interior length. No point_in_mesh fallback needed. */
+  int crossings_before_a = 0;
+  for (int i = 0; i < hits.count && hits.data[i] <= a; i++)
+    crossings_before_a++;
+
+  int inside = (crossings_before_a % 2 == 1);
+  double last_s = a, ds = 0.0;
+  for (int i = crossings_before_a; i < hits.count; i++) {
+    if (hits.data[i] >= b) {
+      if (inside) ds += (b - last_s);
+      break;
+    }
+    if (inside) ds += (hits.data[i] - last_s);
+    inside = !inside;
+    last_s = hits.data[i];
+  }
+  if (inside && last_s < b) ds += (b - last_s);
+  mesh_hit_list_free(&hits);
+  return ds > 0.0 ? ds : 0.0;
+}
+
+/***************************************************************/
+/* init_mesh: validate, compute normals, build BVH             */
+/***************************************************************/
+
+static double mesh_vertex_hash(const mesh *m) {
+  double h = 0;
+  for (int i = 0; i < m->vertices.num_items; i++) {
+    h += m->vertices.items[i].x * 73856093.0;
+    h += m->vertices.items[i].y * 19349663.0;
+    h += m->vertices.items[i].z * 83492791.0;
+  }
+  return h;
+}
+
+static void init_mesh(geometric_object *o) {
+  mesh *m = o->subclass.mesh_data;
+  int nv = m->vertices.num_items;
+  int nf = m->num_faces;
+
+  /* Validate. */
+  CHECK(nv >= 4, "mesh requires at least 4 vertices");
+  CHECK(nf >= 4, "mesh requires at least 4 faces");
+  for (int f = 0; f < nf; f++) {
+    CHECK(m->face_indices[3 * f] >= 0 && m->face_indices[3 * f] < nv, "mesh face index out of range");
+    CHECK(m->face_indices[3 * f + 1] >= 0 && m->face_indices[3 * f + 1] < nv, "mesh face index out of range");
+    CHECK(m->face_indices[3 * f + 2] >= 0 && m->face_indices[3 * f + 2] < nv, "mesh face index out of range");
+  }
+
+  /* Compute characteristic lengthscale from vertex bounding box diagonal. */
+  {
+    vector3 lo = m->vertices.items[0], hi = lo;
+    for (int i = 1; i < nv; i++) {
+      vector3 v = m->vertices.items[i];
+      lo.x = fmin(lo.x, v.x); lo.y = fmin(lo.y, v.y); lo.z = fmin(lo.z, v.z);
+      hi.x = fmax(hi.x, v.x); hi.y = fmax(hi.y, v.y); hi.z = fmax(hi.z, v.z);
+    }
+    double dx = hi.x - lo.x, dy = hi.y - lo.y, dz = hi.z - lo.z;
+    m->lengthscale = sqrt(dx * dx + dy * dy + dz * dz);
+    if (m->lengthscale == 0) m->lengthscale = 1.0;
+  }
+
+  /* Compute face normals and areas. */
+  m->face_normals = (vector3 *)malloc(nf * sizeof(vector3));
+  CHECK(m->face_normals, "out of memory");
+  m->face_areas = (double *)malloc(nf * sizeof(double));
+  CHECK(m->face_areas, "out of memory");
+
+  double area_eps = 1e-20 * m->lengthscale * m->lengthscale;
+  for (int f = 0; f < nf; f++) {
+    vector3 v0 = m->vertices.items[m->face_indices[3 * f]];
+    vector3 v1 = m->vertices.items[m->face_indices[3 * f + 1]];
+    vector3 v2 = m->vertices.items[m->face_indices[3 * f + 2]];
+    vector3 e1 = vector3_minus(v1, v0);
+    vector3 e2 = vector3_minus(v2, v0);
+    vector3 n = vector3_cross(e1, e2);
+    double len = vector3_norm(n);
+    m->face_areas[f] = 0.5 * len;
+    m->face_normals[f] = (len > area_eps) ? vector3_scale(1.0 / len, n) : n;
+  }
+
+  /* Compute centroid. */
+  m->centroid.x = m->centroid.y = m->centroid.z = 0;
+  for (int i = 0; i < nv; i++)
+    m->centroid = vector3_plus(m->centroid, m->vertices.items[i]);
+  m->centroid = vector3_scale(1.0 / nv, m->centroid);
+
+  /* Check if mesh is closed: every edge must be shared by exactly 2 faces.
+     An edge is identified by a sorted pair of vertex indices. We use a
+     hash table mapping edge → face count. */
+  {
+    /* Hash table size: next power of 2 above 3*nf (each face has 3 edges). */
+    int htsize = 1;
+    while (htsize < 4 * nf) htsize <<= 1;
+    int htmask = htsize - 1;
+
+    /* Each bucket stores (v_lo, v_hi, count). Use open addressing. */
+    int *ht_vlo = (int *)calloc(htsize, sizeof(int));
+    int *ht_vhi = (int *)calloc(htsize, sizeof(int));
+    int *ht_cnt = (int *)calloc(htsize, sizeof(int));
+    /* Mark empty slots with -1. */
+    for (int i = 0; i < htsize; i++) ht_vlo[i] = -1;
+
+    m->is_closed = 1;
+    for (int f = 0; f < nf && m->is_closed; f++) {
+      for (int e = 0; e < 3; e++) {
+        int va = m->face_indices[3 * f + e];
+        int vb = m->face_indices[3 * f + (e + 1) % 3];
+        int vlo = (va < vb) ? va : vb;
+        int vhi = (va < vb) ? vb : va;
+        unsigned int h = (unsigned int)(vlo * 73856093u ^ vhi * 19349663u) & htmask;
+        /* Linear probing. */
+        while (1) {
+          if (ht_vlo[h] == -1) {
+            /* Empty slot: insert new edge. */
+            ht_vlo[h] = vlo;
+            ht_vhi[h] = vhi;
+            ht_cnt[h] = 1;
+            break;
+          } else if (ht_vlo[h] == vlo && ht_vhi[h] == vhi) {
+            /* Found existing edge. */
+            ht_cnt[h]++;
+            if (ht_cnt[h] > 2) m->is_closed = 0; /* non-manifold edge */
+            break;
+          }
+          h = (h + 1) & htmask;
+        }
+      }
+    }
+    /* Check that all edges have exactly 2 faces. */
+    if (m->is_closed) {
+      for (int i = 0; i < htsize; i++) {
+        if (ht_vlo[i] != -1 && ht_cnt[i] != 2) {
+          m->is_closed = 0;
+          break;
+        }
+      }
+    }
+    free(ht_vlo);
+    free(ht_vhi);
+    free(ht_cnt);
+
+    if (!m->is_closed)
+      ctl_printf("WARNING: mesh is not closed (not all edges shared by exactly 2 faces).\n"
+                 "         point_in_mesh results may be incorrect.\n");
+  }
+
+  /* Fix winding order per connected component.
+     A multi-component mesh (e.g. two disjoint cubes) may have mixed winding.
+     We find connected components via union-find on vertices, compute the
+     signed volume of each component, and flip faces whose component has
+     negative signed volume (inward-pointing normals). */
+  {
+    /* Union-find on vertices. */
+    int *uf_parent = (int *)malloc(nv * sizeof(int));
+    int *uf_rank = (int *)calloc(nv, sizeof(int));
+    CHECK(uf_parent && uf_rank, "out of memory");
+    for (int i = 0; i < nv; i++) uf_parent[i] = i;
+
+    /* Find with path compression. */
+    #define UF_FIND(x) do { \
+      int _r = (x); \
+      while (uf_parent[_r] != _r) _r = uf_parent[_r]; \
+      int _c = (x); \
+      while (uf_parent[_c] != _r) { int _n = uf_parent[_c]; uf_parent[_c] = _r; _c = _n; } \
+      (x) = _r; \
+    } while (0)
+
+    for (int f = 0; f < nf; f++) {
+      int a = m->face_indices[3 * f];
+      int b = m->face_indices[3 * f + 1];
+      int c = m->face_indices[3 * f + 2];
+      /* Union a-b. */
+      UF_FIND(a); UF_FIND(b);
+      if (a != b) {
+        if (uf_rank[a] < uf_rank[b]) { int t = a; a = b; b = t; }
+        uf_parent[b] = a;
+        if (uf_rank[a] == uf_rank[b]) uf_rank[a]++;
+      }
+      /* Union a-c (a is already a root after the above). */
+      a = m->face_indices[3 * f];
+      UF_FIND(a);
+      c = m->face_indices[3 * f + 2];
+      UF_FIND(c);
+      if (a != c) {
+        if (uf_rank[a] < uf_rank[c]) { int t = a; a = c; c = t; }
+        uf_parent[c] = a;
+        if (uf_rank[a] == uf_rank[c]) uf_rank[a]++;
+      }
+    }
+    #undef UF_FIND
+
+    /* Map component roots to dense IDs. */
+    int *comp_id = (int *)malloc(nv * sizeof(int));
+    CHECK(comp_id, "out of memory");
+    int num_components = 0;
+    for (int i = 0; i < nv; i++) comp_id[i] = -1;
+    for (int i = 0; i < nv; i++) {
+      int r = i;
+      while (uf_parent[r] != r) r = uf_parent[r];
+      if (comp_id[r] < 0) comp_id[r] = num_components++;
+      comp_id[i] = comp_id[r];
+    }
+
+    /* Compute signed volume per component. */
+    double *comp_vol = (double *)calloc(num_components, sizeof(double));
+    CHECK(comp_vol, "out of memory");
+    for (int f = 0; f < nf; f++) {
+      vector3 v0 = m->vertices.items[m->face_indices[3 * f]];
+      vector3 v1 = m->vertices.items[m->face_indices[3 * f + 1]];
+      vector3 v2 = m->vertices.items[m->face_indices[3 * f + 2]];
+      int ci = comp_id[m->face_indices[3 * f]];
+      comp_vol[ci] += vector3_dot(v0, vector3_cross(v1, v2));
+    }
+
+    /* Flip faces in components with negative signed volume. */
+    for (int f = 0; f < nf; f++) {
+      int ci = comp_id[m->face_indices[3 * f]];
+      if (comp_vol[ci] < 0) {
+        int tmp = m->face_indices[3 * f + 1];
+        m->face_indices[3 * f + 1] = m->face_indices[3 * f + 2];
+        m->face_indices[3 * f + 2] = tmp;
+        m->face_normals[f] = vector3_scale(-1.0, m->face_normals[f]);
+      }
+    }
+
+    free(uf_parent);
+    free(uf_rank);
+    free(comp_id);
+    free(comp_vol);
+  }
+
+  /* Build BVH. */
+  int max_nodes = 2 * nf; /* upper bound on BVH nodes */
+  m->bvh = (mesh_bvh_node *)malloc(max_nodes * sizeof(mesh_bvh_node));
+  CHECK(m->bvh, "out of memory");
+  m->bvh_face_ids = (int *)malloc(nf * sizeof(int));
+  CHECK(m->bvh_face_ids, "out of memory");
+  for (int i = 0; i < nf; i++)
+    m->bvh_face_ids[i] = i;
+
+  m->num_bvh_nodes = 0;
+  mesh_bvh_build(m, m->bvh_face_ids, 0, nf, m->bvh, &m->num_bvh_nodes);
+
+  m->vertex_hash = mesh_vertex_hash(m);
+}
+
+/***************************************************************/
+/* make_mesh constructors                                      */
+/***************************************************************/
+
+static void reinit_mesh(geometric_object *o) {
+  mesh *m = o->subclass.mesh_data;
+  /* Skip rebuild if vertices haven't changed since last init. This preserves
+     the fast path for geom_fix_object_ptr on copied meshes (called hundreds
+     of times during meep's init_sim) while correctly rebuilding when vertices
+     are mutated post-construction. */
+  if (m->bvh != NULL && mesh_vertex_hash(m) == m->vertex_hash) return;
+  free(m->face_normals);
+  free(m->face_areas);
+  free(m->bvh);
+  free(m->bvh_face_ids);
+  m->face_normals = NULL;
+  m->face_areas = NULL;
+  m->bvh = NULL;
+  m->bvh_face_ids = NULL;
+  init_mesh(o);
+}
+
+static int mesh_is_auto_center(vector3 c) {
+  return isnan(c.x) && isnan(c.y) && isnan(c.z);
+}
+
+geometric_object make_mesh(material_type material, const vector3 *vertices, int num_vertices,
+                           const int *triangles, int num_triangles) {
+  vector3 auto_c = {NAN, NAN, NAN};
+  return make_mesh_with_center(material, auto_c, vertices, num_vertices, triangles, num_triangles);
+}
+
+geometric_object make_mesh_with_center(material_type material, vector3 center,
+                                       const vector3 *vertices, int num_vertices,
+                                       const int *triangles, int num_triangles) {
+  geometric_object o = make_geometric_object(material, center);
+  o.which_subclass = GEOM MESH;
+  mesh *m = o.subclass.mesh_data = MALLOC1(mesh);
+  CHECK(m, "out of memory");
+  memset(m, 0, sizeof(mesh));
+
+  /* Copy vertices. */
+  m->vertices.num_items = num_vertices;
+  m->vertices.items = (vector3 *)malloc(num_vertices * sizeof(vector3));
+  CHECK(m->vertices.items, "out of memory");
+  memcpy(m->vertices.items, vertices, num_vertices * sizeof(vector3));
+
+  /* Copy triangle indices. */
+  m->num_faces = num_triangles;
+  m->face_indices = (int *)malloc(3 * num_triangles * sizeof(int));
+  CHECK(m->face_indices, "out of memory");
+  memcpy(m->face_indices, triangles, 3 * num_triangles * sizeof(int));
+
+  /* Shift vertices before init so BVH is only built once. */
+  if (!mesh_is_auto_center(center)) {
+    /* Compute centroid to determine the shift. */
+    vector3 centroid = {0, 0, 0};
+    for (int i = 0; i < num_vertices; i++)
+      centroid = vector3_plus(centroid, m->vertices.items[i]);
+    centroid = vector3_scale(1.0 / num_vertices, centroid);
+    vector3 shift = vector3_minus(center, centroid);
+    for (int i = 0; i < num_vertices; i++)
+      m->vertices.items[i] = vector3_plus(m->vertices.items[i], shift);
+  }
+
+  /* Initialize derived data (normals, closure check, BVH). */
+  init_mesh(&o);
+
+  /* Set center from the (possibly shifted) centroid. */
+  o.center = m->centroid;
+
   return o;
 }
 

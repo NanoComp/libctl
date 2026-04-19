@@ -62,3 +62,5 @@ utils/python/libctlgeom.egg-info
 utils/python/_libctlgeom.cpython*
 utils/python/libctlgeom_wrap.c
 utils/python/libctlgeom.py
+utils/*.so*
+utils/test-mesh
