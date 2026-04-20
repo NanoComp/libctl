@@ -56,6 +56,11 @@
 (define-class cone cylinder
   (define-property radius2 0 'number))
 
+(define-class ellipse cylinder
+  (define-property radius2 no-default 'number))
+  (define-property e1 (vector3 1 0 0) 'vector3)
+  (define-property e2 (vector3 0 1 0) 'vector3)
+
 (define-class wedge cylinder
   (define-property wedge-angle (* 8 (atan 1)) 'number)
   (define-property wedge-start (vector3 1 0 0) 'vector3)
@@ -355,4 +360,3 @@
 		   (reciprocal->cartesian v))))
 
 ; ****************************************************************
-
