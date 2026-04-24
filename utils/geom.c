@@ -2642,16 +2642,6 @@ static double intersect_line_segment_with_mesh(const mesh *m, vector3 p, vector3
 /* init_mesh: validate, compute normals, build BVH             */
 /***************************************************************/
 
-static double mesh_vertex_hash(const mesh *m) {
-  double h = 0;
-  for (int i = 0; i < m->vertices.num_items; i++) {
-    h += m->vertices.items[i].x * 73856093.0;
-    h += m->vertices.items[i].y * 19349663.0;
-    h += m->vertices.items[i].z * 83492791.0;
-  }
-  return h;
-}
-
 static void init_mesh(geometric_object *o) {
   mesh *m = o->subclass.mesh_data;
   int nv = m->vertices.num_items;
@@ -2860,8 +2850,6 @@ static void init_mesh(geometric_object *o) {
 
   m->num_bvh_nodes = 0;
   mesh_bvh_build(m, m->bvh_face_ids, 0, nf, m->bvh, &m->num_bvh_nodes);
-
-  m->vertex_hash = mesh_vertex_hash(m);
 }
 
 /***************************************************************/
@@ -2870,11 +2858,11 @@ static void init_mesh(geometric_object *o) {
 
 static void reinit_mesh(geometric_object *o) {
   mesh *m = o->subclass.mesh_data;
-  /* Skip rebuild if vertices haven't changed since last init. This preserves
-     the fast path for geom_fix_object_ptr on copied meshes (called hundreds
-     of times during meep's init_sim) while correctly rebuilding when vertices
-     are mutated post-construction. */
-  if (m->bvh != NULL && mesh_vertex_hash(m) == m->vertex_hash) return;
+  /* Skip rebuild if BVH is already built. Mesh vertices are not part of the
+     documented post-construction API, so a non-NULL bvh implies the cached
+     state is still valid. This preserves the fast path for geom_fix_object_ptr
+     on copied meshes (called hundreds of times during meep's init_sim). */
+  if (m->bvh != NULL) return;
   free(m->face_normals);
   free(m->face_areas);
   free(m->bvh);

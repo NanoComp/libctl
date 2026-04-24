@@ -607,40 +607,6 @@ static void test_many_intersections(void) {
 }
 
 /************************************************************************/
-/* Test: vertex mutation followed by geom_fix_object_ptr.               */
-/* Translates all vertices by +10 in x, calls fix_object_ptr, verifies  */
-/* that queries use updated geometry (BVH/normals/centroid rebuilt).     */
-/************************************************************************/
-static void test_vertex_mutation(void) {
-  printf("test_vertex_mutation... ");
-  geometric_object cube = make_cube_mesh(NULL);
-
-  /* Before mutation: origin is inside. */
-  vector3 p0 = {0, 0, 0};
-  ASSERT_TRUE("pre-mutate: origin inside", point_in_fixed_pobjectp(p0, &cube));
-
-  /* Mutate: translate all vertices by +10 in x. */
-  mesh *m = cube.subclass.mesh_data;
-  for (int i = 0; i < m->vertices.num_items; i++)
-    m->vertices.items[i].x += 10.0;
-
-  /* Trigger rebuild via geom_fix_object_ptr. */
-  geom_fix_object_ptr(&cube);
-
-  /* After mutation: origin should be outside, (10,0,0) should be inside. */
-  ASSERT_TRUE("post-mutate: origin outside", !point_in_fixed_pobjectp(p0, &cube));
-  vector3 p10 = {10, 0, 0};
-  ASSERT_TRUE("post-mutate: (10,0,0) inside", point_in_fixed_pobjectp(p10, &cube));
-
-  /* Volume should still be 1.0. */
-  double vol = geom_object_volume(cube);
-  ASSERT_NEAR("post-mutate: volume", vol, 1.0, TOLERANCE);
-
-  geometric_object_destroy(cube);
-  printf("done\n");
-}
-
-/************************************************************************/
 int main(void) {
   geom_initialize();
 
@@ -662,7 +628,6 @@ int main(void) {
   test_isolated_vertex();
   test_mixed_winding();
   test_many_intersections();
-  test_vertex_mutation();
 
   printf("\n%d test failures\n", test_failures);
   return test_failures > 0 ? 1 : 0;
