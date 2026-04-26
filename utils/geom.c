@@ -1007,8 +1007,6 @@ static number compute_dot_cross(vector3 a, vector3 b, vector3 c) {
    Requires that geometry_lattice global has been initialized,
    etcetera.  */
 void geom_get_bounding_box(geometric_object o, geom_box *box) {
-  geom_fix_object_ptr(&o);
-
   /* initialize to empty box at the center of the object: */
   box->low = box->high = o.center;
 
@@ -2222,7 +2220,8 @@ int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist
 /***************************************************************/
 /***************************************************************/
 double intersect_line_segment_with_prism(prism *prsm, vector3 pc, vector3 dc, double a, double b) {
-  double *slist = prsm->workspace.items;
+  int num_vertices = prsm->vertices_p.num_items;
+  double slist[num_vertices + 2];
   int num_intersections = intersect_line_with_prism(prsm, pc, dc, slist);
 
   // na=smallest index such that slist[na] > a
