@@ -135,7 +135,6 @@
   (define-property vertices_top_p '() (make-list-type 'vector3))
   (define-property vertices_top '() (make-list-type 'vector3))
   (define-property centroid (vector3 0 0 0) 'vector3)
-  (define-property workspace '() (make-list-type 'number))
   (define-property m_c2p identity_matrix 'matrix3x3)
   (define-property m_p2c identity_matrix 'matrix3x3))
 
@@ -355,4 +354,3 @@
 		   (reciprocal->cartesian v))))
 
 ; ****************************************************************
-
