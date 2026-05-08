@@ -2483,7 +2483,9 @@ static int mesh_dcmp(const void *a, const void *b) {
   return (da > db) - (da < db);
 }
 
-/* Remove duplicate intersection parameters within tolerance. */
+/* Remove duplicate intersection parameters within tolerance.
+   TODO(after #75): unify with the prism slist dedup in
+   intersect_line_with_prism — same data structure, same operation. */
 static int remove_duplicate_intersections(double *slist, int count, double tol) {
   if (count <= 1) return count;
   int j = 0;
@@ -2625,10 +2627,7 @@ static double intersect_line_segment_with_mesh(const mesh *m, vector3 p, vector3
   int inside = (crossings_before_a % 2 == 1);
   double last_s = a, ds = 0.0;
   for (int i = crossings_before_a; i < hits.count; i++) {
-    if (hits.data[i] >= b) {
-      if (inside) ds += (b - last_s);
-      break;
-    }
+    if (hits.data[i] >= b) break;
     if (inside) ds += (hits.data[i] - last_s);
     inside = !inside;
     last_s = hits.data[i];

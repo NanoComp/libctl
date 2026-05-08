@@ -241,6 +241,58 @@ static void test_cube_vs_block(void) {
 }
 
 /************************************************************************/
+/* Test: random line segments — cube mesh vs block                      */
+/* Compare interior length from intersect_line_segment_with_object      */
+/* for random segments; results should match within a small tolerance.  */
+/************************************************************************/
+static void test_cube_segments_vs_block(void) {
+  printf("test_cube_segments_vs_block... ");
+  geometric_object cube_mesh = make_cube_mesh(NULL);
+  vector3 center = {0, 0, 0};
+  vector3 e1 = {1, 0, 0}, e2 = {0, 1, 0}, e3 = {0, 0, 1};
+  vector3 size = {1, 1, 1};
+  geometric_object cube_block = make_block(NULL, center, e1, e2, e3, size);
+
+  int mismatches = 0;
+  double max_diff = 0;
+  srand(12345);
+  for (int i = 0; i < 1000; i++) {
+    /* Random start point in [-1.5, 1.5]^3 (often near or inside the cube). */
+    vector3 p;
+    p.x = (rand() / (double)RAND_MAX) * 3.0 - 1.5;
+    p.y = (rand() / (double)RAND_MAX) * 3.0 - 1.5;
+    p.z = (rand() / (double)RAND_MAX) * 3.0 - 1.5;
+
+    /* Random unit direction (resample if too short to normalize stably). */
+    vector3 d;
+    double dnorm;
+    do {
+      d.x = (rand() / (double)RAND_MAX) * 2.0 - 1.0;
+      d.y = (rand() / (double)RAND_MAX) * 2.0 - 1.0;
+      d.z = (rand() / (double)RAND_MAX) * 2.0 - 1.0;
+      dnorm = sqrt(d.x*d.x + d.y*d.y + d.z*d.z);
+    } while (dnorm < 1e-3);
+    d.x /= dnorm; d.y /= dnorm; d.z /= dnorm;
+
+    /* Segment p + t*d for t in [-2, 2] — spans more than the cube's diagonal. */
+    double a = -2.0, b = 2.0;
+    double len_mesh  = intersect_line_segment_with_object(p, d, cube_mesh,  a, b);
+    double len_block = intersect_line_segment_with_object(p, d, cube_block, a, b);
+
+    double diff = fabs(len_mesh - len_block);
+    if (diff > max_diff) max_diff = diff;
+    /* Allow a small tolerance for nearly tangent / grazing segments. */
+    if (diff > 1e-4) mismatches++;
+  }
+
+  ASSERT_TRUE("cube mesh segment length matches block", mismatches == 0);
+
+  geometric_object_destroy(cube_mesh);
+  geometric_object_destroy(cube_block);
+  printf("done (%d mismatches, max diff = %g)\n", mismatches, max_diff);
+}
+
+/************************************************************************/
 /* Test: line_segment intersection                                      */
 /************************************************************************/
 static void test_cube_line_segment(void) {
@@ -616,6 +668,7 @@ int main(void) {
   test_cube_bounding_box();
   test_cube_normals();
   test_cube_vs_block();
+  test_cube_segments_vs_block();
   test_cube_line_segment();
   test_copy_destroy();
   test_display_info();
