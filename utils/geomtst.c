@@ -3,6 +3,10 @@
 #include <math.h>
 #include <time.h>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #include "ctlgeom.h"
 
 /************************************************************************/
@@ -145,15 +149,18 @@ static double simple_ellip_overlap(geom_box b, geometric_object o, double tol) {
   return olap0;
 }
 
-geometric_object random_object_and_lattice(void) {
+/* If perturb_lattice is nonzero, this function mutates the global
+   geometry_lattice variable.  When called from a parallel (e.g. OpenMP)
+   context, pass perturb_lattice=0 to avoid the data race. */
+geometric_object random_object_and_lattice(int perturb_lattice) {
   geometric_object o = random_object();
-#if 1
-  geometry_lattice.basis1 = random_unit_vector3();
-  geometry_lattice.basis2 = random_unit_vector3();
-  geometry_lattice.basis3 = random_unit_vector3();
-  geom_fix_lattice();
+  if (perturb_lattice) {
+    geometry_lattice.basis1 = random_unit_vector3();
+    geometry_lattice.basis2 = random_unit_vector3();
+    geometry_lattice.basis3 = random_unit_vector3();
+    geom_fix_lattice();
+  }
   geom_fix_object_ptr(&o);
-#endif
   return o;
 }
 
@@ -195,11 +202,11 @@ void check_overlap(double tol, double olap0, double olap, int dim, geometric_obj
     printf("Got %s %dd overlap %g vs. %g with tol = %e\n", object_name(o), dim, olap, olap0, tol);
 }
 
-static void test_overlap(double tol,
+static void test_overlap(double tol, int perturb_lattice,
                          number (*box_overlap_with_object)(geom_box b, geometric_object o,
                                                            number tol, integer maxeval),
                          double (*simple_overlap)(geom_box b, geometric_object o, double tol)) {
-  geometric_object o = random_object_and_lattice();
+  geometric_object o = random_object_and_lattice(perturb_lattice);
   vector3 dir = random_unit_vector3();
   geom_box b;
   double d, olap, olap0;
@@ -221,8 +228,8 @@ static void test_overlap(double tol,
   geometric_object_destroy(o);
 }
 
-static void test_volume(double tol) {
-  geometric_object o = random_object_and_lattice();
+static void test_volume(double tol, int perturb_lattice) {
+  geometric_object o = random_object_and_lattice(perturb_lattice);
   geom_box b;
   double olap1, olap2;
 
@@ -240,19 +247,35 @@ int main(void) {
   const int ntest = 100;
   const double tol = 1e-2;
   int i;
+  int perturb_lattice = 1;
 
   srand(time(NULL));
 
   geom_initialize();
 
+#ifdef _OPENMP
+  /* Perturb the global geometry_lattice once in serial; the parallel loops
+     below must not race on it, so they pass perturb_lattice=0 to the test
+     helpers. */
+  geometry_lattice.basis1 = random_unit_vector3();
+  geometry_lattice.basis2 = random_unit_vector3();
+  geometry_lattice.basis3 = random_unit_vector3();
+  geom_fix_lattice();
+  perturb_lattice = 0;
+  printf("**** whole box overlap (OpenMP, %d threads): ****\n", omp_get_max_threads());
+#else
   printf("**** whole box overlap: ****\n");
+#endif
+
+#pragma omp parallel for schedule(dynamic)
   for (i = 0; i < ntest; ++i)
-    test_volume(tol);
+    test_volume(tol, perturb_lattice);
+#pragma omp parallel for schedule(dynamic)
   for (i = 0; i < ntest; ++i) {
     printf("**** box overlap: ****\n");
-    test_overlap(tol, box_overlap_with_object, simple_overlap);
+    test_overlap(tol, perturb_lattice, box_overlap_with_object, simple_overlap);
     printf("**** ellipsoid overlap: ****\n");
-    test_overlap(tol, ellipsoid_overlap_with_object, simple_ellip_overlap);
+    test_overlap(tol, perturb_lattice, ellipsoid_overlap_with_object, simple_ellip_overlap);
   }
 
   return 0;

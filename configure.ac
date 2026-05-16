@@ -52,6 +52,18 @@ fi
 
 ###########################################################################
 
+# Optional OpenMP support, used to exercise thread-safety of ctlgeom
+# functions in the test suite via #pragma omp parallel loops.
+AC_ARG_ENABLE(openmp, [  --enable-openmp         enable OpenMP for tests],
+              enable_openmp=$enableval, enable_openmp=no)
+if test "x$enable_openmp" = xyes; then
+        AX_OPENMP([CFLAGS="$CFLAGS $OPENMP_CFLAGS"
+                   LDFLAGS="$LDFLAGS $OPENMP_CFLAGS"],
+                  [AC_MSG_ERROR([--enable-openmp specified but no OpenMP support detected])])
+fi
+
+###########################################################################
+
 # Find Guile library, flags, etcetera:
 
 AC_ARG_WITH(guile, [AS_HELP_STRING([--without-guile],[disable use of Guile])],
