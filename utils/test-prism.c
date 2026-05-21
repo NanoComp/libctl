@@ -1150,6 +1150,11 @@ int run_unit_tests() {
     vector3 shift = vector3_scale(urand(0.0, 1.0), random_unit_vector3());
     the_block.center = vector3_plus(the_block.center, shift);
     the_prism.center = vector3_plus(the_prism.center, shift);
+    // Sync each object's internal cache (block projection_matrix, prism
+    // vertices_p / centroid) to the new center, once, single-threaded,
+    // before the parallel test loops below run.
+    geom_fix_object_ptr(&the_block);
+    geom_fix_object_ptr(&the_prism);
   }
 
   char *s = getenv("LIBCTL_TEST_PRISM_LOG");

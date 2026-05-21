@@ -250,7 +250,6 @@ void geom_initialize(void) {
    has been called on o (if the lattice basis is non-orthogonal).  */
 
 boolean CTLIO point_in_objectp(vector3 p, geometric_object o) {
-  geom_fix_object_ptr(&o);
   return point_in_fixed_objectp(p, o);
 }
 
@@ -398,7 +397,6 @@ vector3 from_geom_object_coords(vector3 p, geometric_object o) {
    sign of the normal vector are arbitrary. */
 
 vector3 CTLIO normal_to_object(vector3 p, geometric_object o) {
-  geom_fix_object_ptr(&o);
   return normal_to_fixed_object(p, o);
 }
 
@@ -526,7 +524,6 @@ vector3 normal_to_fixed_object(vector3 p, geometric_object o) {
    by the lattice vectors: */
 
 boolean CTLIO point_in_periodic_objectp(vector3 p, geometric_object o) {
-  geom_fix_object_ptr(&o);
   return point_in_periodic_fixed_objectp(p, o);
 }
 
@@ -2600,12 +2597,14 @@ void init_prism(geometric_object *o) {
     vertices = (vector3 *)realloc(vertices, num_vertices * sizeof(vector3));
   }
 
-  // compute centroid of vertices
+  // compute centroid of vertices; prsm->centroid is assigned below, AFTER
+  // the optional shift to o->center is applied (otherwise prsm->centroid
+  // would be stale relative to the shifted vertices).
   vector3 centroid = {0.0, 0.0, 0.0};
   int nv;
   for (nv = 0; nv < num_vertices; nv++)
     centroid = vector3_plus(centroid, vertices[nv]);
-  prsm->centroid = centroid = vector3_scale(1.0 / ((double)num_vertices), centroid);
+  centroid = vector3_scale(1.0 / ((double)num_vertices), centroid);
 
   // make sure all vertices lie in a plane, i.e. that the normal
   // vectors to all triangles (v_n, v_{n+1}, centroid) agree.
@@ -2656,6 +2655,7 @@ void init_prism(geometric_object *o) {
       vertices[nv] = vector3_plus(vertices[nv], shift);
     centroid = vector3_plus(centroid, shift);
   }
+  prsm->centroid = centroid;
 
   // compute rotation matrix that operates on a vector of cartesian coordinates
   // to yield the coordinates of the same point in the prism coordinate system.
