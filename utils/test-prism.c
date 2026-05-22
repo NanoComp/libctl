@@ -280,11 +280,15 @@ int test_point_inclusion(geometric_object the_block, geometric_object the_prism,
   int num_failed = 0, num_adjusted = 0, n;
   char *exclude_env = getenv("LIBCTL_EXCLUDE_BOUNDARIES");
   boolean libctl_include_boundaries = !(exclude_env && exclude_env[0] == '1');
+  // Use point_in_fixed_objectp instead of point_in_objectp because the
+  // latter calls geom_fix_object_ptr internally and is not thread-safe.
+  // the_block and the_prism were fixed up in run_unit_tests above
+  // before this parallel loop runs.
 #pragma omp parallel for schedule(dynamic) reduction(+ : num_failed, num_adjusted)
   for (n = 0; n < num_tests; n++) {
     vector3 p = random_point_in_box(min_corner, max_corner);
-    boolean in_block = point_in_objectp(p, the_block);
-    boolean in_prism = point_in_objectp(p, the_prism);
+    boolean in_block = point_in_fixed_objectp(p, the_block);
+    boolean in_prism = point_in_fixed_objectp(p, the_prism);
 
     if (in_block != in_prism) {
       // retry with boundary exclusion/inclusion reversed
@@ -330,8 +334,10 @@ int test_normal_to_object(geometric_object the_block, geometric_object the_prism
     vector3 p = (urand(0.0, 1.0) < PFACE) ? random_point_on_prism(the_prism)
                                           : random_point_in_box(min_corner, max_corner);
 
-    vector3 nhat_block = standardize(normal_to_object(p, the_block));
-    vector3 nhat_prism = standardize(normal_to_object(p, the_prism));
+    // normal_to_fixed_object instead of normal_to_object: the latter is
+    // not thread-safe (calls geom_fix_object_ptr internally).
+    vector3 nhat_block = standardize(normal_to_fixed_object(p, the_block));
+    vector3 nhat_prism = standardize(normal_to_fixed_object(p, the_prism));
     if (!vector3_nearly_equal(nhat_block, nhat_prism, tolerance)) num_failed++;
 
     if (f) {

@@ -247,9 +247,16 @@ void geom_initialize(void) {
    initialized.
 
    point_in_fixed_objectp additionally requires that geom_fix_object
-   has been called on o (if the lattice basis is non-orthogonal).  */
+   has been called on o (if the lattice basis is non-orthogonal).
+
+   NOT THREAD-SAFE: calls geom_fix_object_ptr, which mutates per-object
+   cached state (and for prisms, frees+reallocates shared arrays).
+   Callers that query the same object from multiple threads must
+   geom_fix_object_ptr once up-front and then call
+   point_in_fixed_objectp / point_in_fixed_pobjectp directly. */
 
 boolean CTLIO point_in_objectp(vector3 p, geometric_object o) {
+  geom_fix_object_ptr(&o);
   return point_in_fixed_objectp(p, o);
 }
 
@@ -394,9 +401,16 @@ vector3 from_geom_object_coords(vector3 p, geometric_object o) {
    in lattice coordinates, using the surface of the object that the
    point is "closest" to for some definition of "closest" that is
    reasonable (at least for points near to the object). The length and
-   sign of the normal vector are arbitrary. */
+   sign of the normal vector are arbitrary.
+
+   NOT THREAD-SAFE: calls geom_fix_object_ptr, which mutates per-object
+   cached state (and for prisms, frees+reallocates shared arrays).
+   Callers that query the same object from multiple threads must
+   geom_fix_object_ptr once up-front and then call
+   normal_to_fixed_object directly. */
 
 vector3 CTLIO normal_to_object(vector3 p, geometric_object o) {
+  geom_fix_object_ptr(&o);
   return normal_to_fixed_object(p, o);
 }
 
@@ -521,9 +535,16 @@ vector3 normal_to_fixed_object(vector3 p, geometric_object o) {
 /**************************************************************************/
 
 /* Like point_in_objectp, but also checks the object shifted
-   by the lattice vectors: */
+   by the lattice vectors.
+
+   NOT THREAD-SAFE: calls geom_fix_object_ptr, which mutates per-object
+   cached state (and for prisms, frees+reallocates shared arrays).
+   Callers that query the same object from multiple threads must
+   geom_fix_object_ptr once up-front and then call
+   point_in_periodic_fixed_objectp directly. */
 
 boolean CTLIO point_in_periodic_objectp(vector3 p, geometric_object o) {
+  geom_fix_object_ptr(&o);
   return point_in_periodic_fixed_objectp(p, o);
 }
 
