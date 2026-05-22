@@ -12,7 +12,10 @@ The official released versions of Libctl can be found in the [releases page](htt
 
 Files are installed under `/usr/local` by default, but this can be
 changed by passing `--prefix=<dir>` to `configure`.  (To build from a
-git clone, you first need to run the `autogen.sh` script.)
+git clone, you first need to install [Guile](http://www.gnu.org/software/guile/)
+and then run the `autogen.sh` script. Guile is required to generate
+the C source files for `libctlgeom`; the official release tarballs
+include pre-generated files so Guile is not needed in that case.)
 
 Documentation can be found in [the Libctl
 manual](https://libctl.readthedocs.io), and an example program is
