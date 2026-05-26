@@ -29,6 +29,10 @@
 #include <time.h>
 #include <string.h>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #include "ctlgeom.h"
 
 vector3 normal_to_plane(vector3 o, vector3 v1, vector3 v2, vector3 p, double *min_distance);
@@ -274,23 +278,30 @@ int test_point_inclusion(geometric_object the_block, geometric_object the_prism,
   vector3 max_corner = vector3_scale(+1.0, size);
   FILE *f = write_log ? fopen("/tmp/test-prism.points", "w") : 0;
   int num_failed = 0, num_adjusted = 0, n;
+  char *exclude_env = getenv("LIBCTL_EXCLUDE_BOUNDARIES");
+  boolean libctl_include_boundaries = !(exclude_env && exclude_env[0] == '1');
+  // Use point_in_fixed_objectp instead of point_in_objectp because the
+  // latter calls geom_fix_object_ptr internally and is not thread-safe.
+  // the_block and the_prism were fixed up in run_unit_tests above
+  // before this parallel loop runs.
+#pragma omp parallel for schedule(dynamic) reduction(+ : num_failed, num_adjusted)
   for (n = 0; n < num_tests; n++) {
     vector3 p = random_point_in_box(min_corner, max_corner);
-    boolean in_block = point_in_objectp(p, the_block);
-    boolean in_prism = point_in_objectp(p, the_prism);
+    boolean in_block = point_in_fixed_objectp(p, the_block);
+    boolean in_prism = point_in_fixed_objectp(p, the_prism);
 
     if (in_block != in_prism) {
       // retry with boundary exclusion/inclusion reversed
-      boolean libctl_include_boundaries = 1;
-      char *s = getenv("LIBCTL_EXCLUDE_BOUNDARIES");
-      if (s && s[0] == '1') libctl_include_boundaries = 0;
       in_prism =
           point_in_or_on_prism(the_prism.subclass.prism_data, p, 1 - libctl_include_boundaries);
       if (in_block == in_prism) num_adjusted++;
     }
 
     if (in_block != in_prism) num_failed++;
-    if (f) fprintf(f, "%i %i %e %e %e \n", in_block, in_prism, p.x, p.y, p.z);
+    if (f) {
+#pragma omp critical(test_prism_log)
+      fprintf(f, "%i %i %e %e %e \n", in_block, in_prism, p.x, p.y, p.z);
+    }
   }
   if (f) fclose(f);
 
@@ -314,6 +325,7 @@ int test_normal_to_object(geometric_object the_block, geometric_object the_prism
   double tolerance = 1.0e-6;
 
   int n;
+#pragma omp parallel for schedule(dynamic) reduction(+ : num_failed)
   for (n = 0; n < num_tests; n++) {
     // with probability PFACE, generate random base point lying on one
     //  of the 6 faces of the prism.
@@ -322,14 +334,18 @@ int test_normal_to_object(geometric_object the_block, geometric_object the_prism
     vector3 p = (urand(0.0, 1.0) < PFACE) ? random_point_on_prism(the_prism)
                                           : random_point_in_box(min_corner, max_corner);
 
-    vector3 nhat_block = standardize(normal_to_object(p, the_block));
-    vector3 nhat_prism = standardize(normal_to_object(p, the_prism));
+    // normal_to_fixed_object instead of normal_to_object: the latter is
+    // not thread-safe (calls geom_fix_object_ptr internally).
+    vector3 nhat_block = standardize(normal_to_fixed_object(p, the_block));
+    vector3 nhat_prism = standardize(normal_to_fixed_object(p, the_prism));
     if (!vector3_nearly_equal(nhat_block, nhat_prism, tolerance)) num_failed++;
 
-    if (f)
+    if (f) {
+#pragma omp critical(test_prism_log)
       fprintf(f, "%e %e %e %e %e %e %e %e %e %i\n\n\n", p.x, p.y, p.z, nhat_block.x, nhat_block.y,
               nhat_block.z, nhat_prism.x, nhat_prism.y, nhat_prism.z,
               vector3_nearly_equal(nhat_block, nhat_prism, tolerance));
+    }
   }
   if (f) fclose(f);
 
@@ -349,6 +365,7 @@ int test_line_segment_intersection(geometric_object the_block, geometric_object 
 
   int num_failed = 0;
   int n;
+#pragma omp parallel for schedule(dynamic) reduction(+ : num_failed)
   for (n = 0; n < num_tests; n++) {
     // randomly generated base point within enlarged bounding box
     vector3 p = random_point_in_box(min_corner, max_corner);
@@ -362,13 +379,16 @@ int test_line_segment_intersection(geometric_object the_block, geometric_object 
 
     if (f) {
       int success = fabs(sblock - sprism) <= 1.0e-6 * fmax(fabs(sblock), fabs(sprism));
-      fprintf(f, " %e %e %s\n", sblock, sprism, success ? "success" : "fail");
-      if (success == 0) {
-        fprintf(f, "#%e %e %e %e %e %e %e %e\n", p.x, p.y, p.z, d.x, d.y, d.z, a, b);
-        fprintf(f, "%e %e %e\n%e %e %e\n%e %e %e\n", p.x, p.y, p.z, p.x + a * d.x, p.y + a * d.y,
-                p.z + a * d.z, p.x + b * d.x, p.y + b * d.y, p.z + b * d.z);
+#pragma omp critical(test_prism_log)
+      {
+        fprintf(f, " %e %e %s\n", sblock, sprism, success ? "success" : "fail");
+        if (success == 0) {
+          fprintf(f, "#%e %e %e %e %e %e %e %e\n", p.x, p.y, p.z, d.x, d.y, d.z, a, b);
+          fprintf(f, "%e %e %e\n%e %e %e\n%e %e %e\n", p.x, p.y, p.z, p.x + a * d.x, p.y + a * d.y,
+                  p.z + a * d.z, p.x + b * d.x, p.y + b * d.y, p.z + b * d.z);
+        }
+        fprintf(f, "\n");
       }
-      fprintf(f, "\n");
     }
   }
   if (f) fclose(f);
@@ -1136,6 +1156,11 @@ int run_unit_tests() {
     vector3 shift = vector3_scale(urand(0.0, 1.0), random_unit_vector3());
     the_block.center = vector3_plus(the_block.center, shift);
     the_prism.center = vector3_plus(the_prism.center, shift);
+    // Sync each object's internal cache (block projection_matrix, prism
+    // vertices_p / centroid) to the new center, once, single-threaded,
+    // before the parallel test loops below run.
+    geom_fix_object_ptr(&the_block);
+    geom_fix_object_ptr(&the_prism);
   }
 
   char *s = getenv("LIBCTL_TEST_PRISM_LOG");

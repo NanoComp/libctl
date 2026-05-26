@@ -260,7 +260,13 @@ void geom_initialize(void) {
    initialized.
 
    point_in_fixed_objectp additionally requires that geom_fix_object
-   has been called on o (if the lattice basis is non-orthogonal).  */
+   has been called on o (if the lattice basis is non-orthogonal).
+
+   NOT THREAD-SAFE: calls geom_fix_object_ptr, which mutates per-object
+   cached state (and for prisms, frees+reallocates shared arrays).
+   Callers that query the same object from multiple threads must
+   geom_fix_object_ptr once up-front and then call
+   point_in_fixed_objectp / point_in_fixed_pobjectp directly. */
 
 boolean CTLIO point_in_objectp(vector3 p, geometric_object o) {
   geom_fix_object_ptr(&o);
@@ -411,7 +417,13 @@ vector3 from_geom_object_coords(vector3 p, geometric_object o) {
    in lattice coordinates, using the surface of the object that the
    point is "closest" to for some definition of "closest" that is
    reasonable (at least for points near to the object). The length and
-   sign of the normal vector are arbitrary. */
+   sign of the normal vector are arbitrary.
+
+   NOT THREAD-SAFE: calls geom_fix_object_ptr, which mutates per-object
+   cached state (and for prisms, frees+reallocates shared arrays).
+   Callers that query the same object from multiple threads must
+   geom_fix_object_ptr once up-front and then call
+   normal_to_fixed_object directly. */
 
 vector3 CTLIO normal_to_object(vector3 p, geometric_object o) {
   geom_fix_object_ptr(&o);
@@ -541,7 +553,13 @@ vector3 normal_to_fixed_object(vector3 p, geometric_object o) {
 /**************************************************************************/
 
 /* Like point_in_objectp, but also checks the object shifted
-   by the lattice vectors: */
+   by the lattice vectors.
+
+   NOT THREAD-SAFE: calls geom_fix_object_ptr, which mutates per-object
+   cached state (and for prisms, frees+reallocates shared arrays).
+   Callers that query the same object from multiple threads must
+   geom_fix_object_ptr once up-front and then call
+   point_in_periodic_fixed_objectp directly. */
 
 boolean CTLIO point_in_periodic_objectp(vector3 p, geometric_object o) {
   geom_fix_object_ptr(&o);
@@ -1033,8 +1051,6 @@ static number compute_dot_cross(vector3 a, vector3 b, vector3 c) {
    Requires that geometry_lattice global has been initialized,
    etcetera.  */
 void geom_get_bounding_box(geometric_object o, geom_box *box) {
-  geom_fix_object_ptr(&o);
-
   /* initialize to empty box at the center of the object: */
   box->low = box->high = o.center;
 
@@ -3179,7 +3195,7 @@ static int dcmp(const void *pd1, const void *pd2) {
 /* the intersection s-values sorted in ascending order.           */
 /* the return value is the number of intersections.               */
 /******************************************************************/
-int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist) {
+int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist, int slist_len) {
   vector3 pp = prism_coordinate_c2p(prsm, pc);
   vector3 dp = prism_vector_c2p(prsm, dc);
   vector3 *vps_bottom = prsm->vertices_p.items;
@@ -3214,7 +3230,7 @@ int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist
     vector3 tus = matrix3x3_vector3_mult(matrix3x3_inverse(M), RHS);
     if (tus.x < -tus_tolerance || tus.x > 1+tus_tolerance || tus.y < -tus_tolerance || tus.y > 1+tus_tolerance) continue;
     double s = tus.z;
-    slist[num_intersections++] = s;
+    if (num_intersections++ < slist_len) slist[num_intersections-1] = s;
   }
 
   // identify intersections with prism ceiling and floor faces
@@ -3225,8 +3241,11 @@ int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist
       double s = (z0p - pp.z) / dp.z;
       vector3 *vps = LowerUpper ? vps_top : vps_bottom;
       if (!node_in_polygon(pp.x + s * dp.x, pp.y + s * dp.y, vps, num_vertices)) continue;
-      slist[num_intersections++] = s;
+      if (num_intersections++ < slist_len) slist[num_intersections-1] = s;
     }
+
+  // caller needs a bigger slist array
+  if (num_intersections > slist_len) return num_intersections;
 
   qsort((void *)slist, num_intersections, sizeof(double), dcmp);
   // if num_intersections is zero then just return that
@@ -3253,20 +3272,30 @@ int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist
 /***************************************************************/
 /***************************************************************/
 double intersect_line_segment_with_prism(prism *prsm, vector3 pc, vector3 dc, double a, double b) {
-  double *slist = prsm->workspace.items;
-  int num_intersections = intersect_line_with_prism(prsm, pc, dc, slist);
+  int num_vertices = prsm->vertices_p.num_items;
+  double *slist;
+  int num_intersections, num_intersections_alloc;
+
+  double slist_stack[1024]; // usually, a small stack-allocated array will be enough
+  slist = slist_stack;
+  num_intersections = num_intersections_alloc = intersect_line_with_prism(prsm, pc, dc, slist, 1024);
+  if (num_intersections_alloc > 1024) { // slow fallback
+    slist = (double *) malloc(num_intersections_alloc * sizeof(double));
+    num_intersections = intersect_line_with_prism(prsm, pc, dc, slist, num_intersections_alloc);
+    CHECK(num_intersections <= num_intersections_alloc, "bug in intersect_line_with_prism");
+  }
 
   // na=smallest index such that slist[na] > a
   int na = -1;
   int ns;
+  double ds = 0.0;
   for (ns = 0; na == -1 && ns < num_intersections; ns++)
     if (slist[ns] > a) na = ns;
 
-  if (na == -1) return 0.0;
+  if (na == -1) goto done;
 
   int inside = ((na % 2) == 0 ? 0 : 1);
   double last_s = a;
-  double ds = 0.0;
   for (ns = na; ns < num_intersections; ns++) {
     double this_s = fmin(b, slist[ns]);
     if (inside) ds += (this_s - last_s);
@@ -3274,6 +3303,9 @@ double intersect_line_segment_with_prism(prism *prsm, vector3 pc, vector3 dc, do
     inside = (1 - inside);
     last_s = this_s;
   }
+
+done:
+  if (num_intersections_alloc > 1024) free(slist);
   return ds > 0.0 ? ds : 0.0;
 }
 
@@ -3617,12 +3649,14 @@ void init_prism(geometric_object *o) {
     vertices = (vector3 *)realloc(vertices, num_vertices * sizeof(vector3));
   }
 
-  // compute centroid of vertices
+  // compute centroid of vertices; prsm->centroid is assigned below, AFTER
+  // the optional shift to o->center is applied (otherwise prsm->centroid
+  // would be stale relative to the shifted vertices).
   vector3 centroid = {0.0, 0.0, 0.0};
   int nv;
   for (nv = 0; nv < num_vertices; nv++)
     centroid = vector3_plus(centroid, vertices[nv]);
-  prsm->centroid = centroid = vector3_scale(1.0 / ((double)num_vertices), centroid);
+  centroid = vector3_scale(1.0 / ((double)num_vertices), centroid);
 
   // make sure all vertices lie in a plane, i.e. that the normal
   // vectors to all triangles (v_n, v_{n+1}, centroid) agree.
@@ -3673,6 +3707,7 @@ void init_prism(geometric_object *o) {
       vertices[nv] = vector3_plus(vertices[nv], shift);
     centroid = vector3_plus(centroid, shift);
   }
+  prsm->centroid = centroid;
 
   // compute rotation matrix that operates on a vector of cartesian coordinates
   // to yield the coordinates of the same point in the prism coordinate system.
@@ -3853,11 +3888,6 @@ void init_prism(geometric_object *o) {
   for (nv = 0; nv < num_vertices; nv++) {
     prsm->vertices_top.items[nv] = prism_coordinate_p2c(prsm, prsm->vertices_top_p.items[nv]);
   }
-
-  // workspace is an internally-stored double-valued array of length num_vertices+2
-  // that is used by some geometry routines
-  prsm->workspace.num_items = num_vertices + 2;
-  prsm->workspace.items = (double *)malloc((num_vertices + 2) * sizeof(double));
 }
 
 /* like init_prism, but works with an already-initialied prism */
@@ -3869,7 +3899,6 @@ void reinit_prism(geometric_object *o) {
   free(prsm->top_polygon_diff_vectors_p.items);
   free(prsm->top_polygon_diff_vectors_scaled_p.items);
   free(prsm->vertices_top.items);
-  free(prsm->workspace.items);
 
   init_prism(o);
 }
