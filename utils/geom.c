@@ -2655,6 +2655,14 @@ static double intersect_line_segment_with_mesh(const mesh *m, vector3 p, vector3
 
 /***************************************************************/
 /* init_mesh: validate, compute normals, build BVH             */
+/*                                                              */
+/* NOT THREAD-SAFE: mutates m->face_indices (winding flip),     */
+/* allocates m->face_normals / m->face_areas / m->bvh /         */
+/* m->bvh_face_ids, and writes m->is_closed, m->centroid,       */
+/* m->lengthscale, m->num_bvh_nodes. Only invoked from the      */
+/* mesh constructors (make_mesh / make_mesh_with_center) and    */
+/* from reinit_mesh; both rely on it running single-threaded    */
+/* per mesh.                                                    */
 /***************************************************************/
 
 static void init_mesh(geometric_object *o) {
@@ -2876,7 +2884,17 @@ static void reinit_mesh(geometric_object *o) {
   /* Skip rebuild if BVH is already built. Mesh vertices are not part of the
      documented post-construction API, so a non-NULL bvh implies the cached
      state is still valid. This preserves the fast path for geom_fix_object_ptr
-     on copied meshes (called hundreds of times during meep's init_sim). */
+     on copied meshes (called hundreds of times during meep's init_sim).
+     NOT THREAD-SAFE for first-time init: the m->bvh != NULL check below is
+     unsynchronized, and init_mesh allocates m->bvh BEFORE populating its
+     contents. Concurrent first-time callers would race both on the check
+     (double-init, leak) and on the post-allocation window (second thread
+     reads bvh != NULL and traverses an empty BVH). Callers must ensure the
+     first reinit_mesh / init_mesh on each mesh runs single-threaded — in
+     practice this is done by calling geom_fix_objects() once at geometry
+     setup, before any parallel queries. After init, all subsequent
+     reinit_mesh calls are pure no-op fast-path returns and safe under
+     concurrency. */
   if (m->bvh != NULL) return;
   free(m->face_normals);
   free(m->face_areas);

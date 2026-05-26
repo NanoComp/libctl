@@ -214,14 +214,21 @@ static void test_cube_vs_block(void) {
   vector3 e1 = {1, 0, 0}, e2 = {0, 1, 0}, e3 = {0, 0, 1};
   vector3 size = {1, 1, 1};
   geometric_object cube_block = make_block(NULL, center, e1, e2, e3, size);
+  /* Mesh and block are fully initialized above on the main thread. The
+     parallel loop below queries them via the _fixed_ variants only, which
+     are pure reads against the BVH/face arrays — no per-query mutation. */
 
   int mismatches = 0;
-  srand(42);
-  for (int i = 0; i < 10000; i++) {
+  int i;
+#pragma omp parallel for schedule(dynamic) reduction(+ : mismatches)
+  for (i = 0; i < 10000; i++) {
+    /* Per-iteration deterministic seed so results are independent of
+       thread count and scheduling. */
+    unsigned int s = (unsigned int)i * 2654435761u + 42u;
     vector3 p;
-    p.x = (rand() / (double)RAND_MAX) * 2.0 - 1.0;
-    p.y = (rand() / (double)RAND_MAX) * 2.0 - 1.0;
-    p.z = (rand() / (double)RAND_MAX) * 2.0 - 1.0;
+    p.x = (rand_r(&s) / (double)RAND_MAX) * 2.0 - 1.0;
+    p.y = (rand_r(&s) / (double)RAND_MAX) * 2.0 - 1.0;
+    p.z = (rand_r(&s) / (double)RAND_MAX) * 2.0 - 1.0;
 
     int in_mesh = point_in_fixed_pobjectp(p, &cube_mesh);
     int in_block = point_in_fixed_pobjectp(p, &cube_block);
@@ -252,24 +259,31 @@ static void test_cube_segments_vs_block(void) {
   vector3 e1 = {1, 0, 0}, e2 = {0, 1, 0}, e3 = {0, 0, 1};
   vector3 size = {1, 1, 1};
   geometric_object cube_block = make_block(NULL, center, e1, e2, e3, size);
+  /* Both objects are constructed (and the mesh's BVH built) here on the
+     main thread before the parallel loop. intersect_line_segment_with_object
+     dispatches MESH directly to intersect_line_segment_with_mesh, which uses
+     a stack-local mesh_hit_list (with per-call heap fallback) — safe to call
+     from multiple threads simultaneously against the same object. */
 
   int mismatches = 0;
   double max_diff = 0;
-  srand(12345);
-  for (int i = 0; i < 1000; i++) {
+  int i;
+#pragma omp parallel for schedule(dynamic) reduction(+ : mismatches) reduction(max : max_diff)
+  for (i = 0; i < 1000; i++) {
+    unsigned int s = (unsigned int)i * 2654435761u + 12345u;
     /* Random start point in [-1.5, 1.5]^3 (often near or inside the cube). */
     vector3 p;
-    p.x = (rand() / (double)RAND_MAX) * 3.0 - 1.5;
-    p.y = (rand() / (double)RAND_MAX) * 3.0 - 1.5;
-    p.z = (rand() / (double)RAND_MAX) * 3.0 - 1.5;
+    p.x = (rand_r(&s) / (double)RAND_MAX) * 3.0 - 1.5;
+    p.y = (rand_r(&s) / (double)RAND_MAX) * 3.0 - 1.5;
+    p.z = (rand_r(&s) / (double)RAND_MAX) * 3.0 - 1.5;
 
     /* Random unit direction (resample if too short to normalize stably). */
     vector3 d;
     double dnorm;
     do {
-      d.x = (rand() / (double)RAND_MAX) * 2.0 - 1.0;
-      d.y = (rand() / (double)RAND_MAX) * 2.0 - 1.0;
-      d.z = (rand() / (double)RAND_MAX) * 2.0 - 1.0;
+      d.x = (rand_r(&s) / (double)RAND_MAX) * 2.0 - 1.0;
+      d.y = (rand_r(&s) / (double)RAND_MAX) * 2.0 - 1.0;
+      d.z = (rand_r(&s) / (double)RAND_MAX) * 2.0 - 1.0;
       dnorm = sqrt(d.x*d.x + d.y*d.y + d.z*d.z);
     } while (dnorm < 1e-3);
     d.x /= dnorm; d.y /= dnorm; d.z /= dnorm;

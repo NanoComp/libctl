@@ -194,10 +194,21 @@ GEOMETRIC_OBJECT make_slanted_prism_with_center(MATERIAL_TYPE material, vector3 
 //
 // A BVH (bounding volume hierarchy) is built internally for O(log N) queries.
 // All tolerances scale with the mesh bounding box diagonal (lengthscale).
+//
+// Thread-safety: each call allocates a fresh mesh object and does not touch
+// shared state, so concurrent calls on different inputs are safe. The
+// returned object is fully initialized (BVH built, normals computed) and
+// can be queried from multiple threads via the *_fixed_* variants
+// (point_in_fixed_pobjectp, normal_to_fixed_object,
+// intersect_line_segment_with_object) without further synchronization.
+// Callers must NOT concurrently invoke geom_fix_object_ptr — or any wrapper
+// that calls it (point_in_objectp, normal_to_object, ...) — on the same
+// mesh, because that path enters reinit_mesh, which is not thread-safe.
 GEOMETRIC_OBJECT make_mesh(MATERIAL_TYPE material, const vector3 *vertices, int num_vertices,
                            const int *triangles, int num_triangles);
 
 // As make_mesh, but translates all vertices so the centroid equals center.
+// Same thread-safety contract as make_mesh.
 GEOMETRIC_OBJECT make_mesh_with_center(MATERIAL_TYPE material, vector3 center,
                                        const vector3 *vertices, int num_vertices,
                                        const int *triangles, int num_triangles);
