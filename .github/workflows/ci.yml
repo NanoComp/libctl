@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y autoconf automake libtool guile-3.0-dev
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install autoconf automake libtool guile
+
+      - name: Build and test
+        run: |
+          sh autogen.sh --prefix=$PWD/.local
+          make
+          make check
+          make install
+
+      - name: Print test logs on failure
+        if: failure()
+        run: |
+          for log in utils/*.log; do
+            [ -f "$log" ] && { echo "=== $log ==="; cat "$log"; }
+          done
