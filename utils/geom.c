@@ -2231,7 +2231,7 @@ int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist
         num_unique_elements++;
       }
     }
-    slist = slist_unique;
+    memcpy(slist, slist_unique, num_unique_elements * sizeof(double));
     num_intersections = num_unique_elements;
     return num_intersections;
   }
