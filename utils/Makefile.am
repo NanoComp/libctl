@@ -20,13 +20,17 @@ geomtst_SOURCES = geomtst.c
 geomtst_LDADD = libctlgeom.la
 geomtst_CPPFLAGS = -I$(top_srcdir)/src
 
-check_PROGRAMS = test-prism
+check_PROGRAMS = test-prism test-mesh
 
 test_prism_SOURCES = test-prism.c
 test_prism_LDADD   = libctlgeom.la
 test_prism_CPPFLAGS = -I$(top_srcdir)/src
 
-TESTS = test-prism
+test_mesh_SOURCES = test-mesh.c
+test_mesh_LDADD   = libctlgeom.la
+test_mesh_CPPFLAGS = -I$(top_srcdir)/src
+
+TESTS = test-prism test-mesh
 
 dist_man_MANS = gen-ctl-io.1
 
