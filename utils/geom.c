@@ -3309,24 +3309,20 @@ int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist
   if (num_intersections > slist_len) return num_intersections;
 
   qsort((void *)slist, num_intersections, sizeof(double), dcmp);
-  // if num_intersections is zero then just return that
-  if (num_intersections == 0) return num_intersections;
-  else {
-    // remove duplicates from slist
-    double duplicate_tolerance = 1e-3;
-    int num_unique_elements = 1;
-    double slist_unique[num_vertices+2];
-    slist_unique[0] = slist[0];
-    for (nv = 1; nv < num_intersections; nv++) {
-      if (fabs(slist[nv] - slist[nv-1]) > duplicate_tolerance*fabs(slist[nv])) {
-        slist_unique[num_unique_elements] = slist[nv];
-        num_unique_elements++;
-      }
+  // Remove near-duplicates in place: walk the sorted slist with a write
+  // head `iv` and read head `nv`; the write at slist[iv++] is always to a
+  // position <= nv, so the comparison slist[nv-1] reads the original
+  // sorted value (positions [iv..nv-1] are either untouched or written
+  // with their own value as a no-op).
+  double duplicate_tolerance = 1e-3;
+  int iv = num_intersections < 1 ? 0 : 1; /* min(1, num_intersections) */
+  for (nv = 1; nv < num_intersections; nv++) {
+    if (fabs(slist[nv] - slist[nv-1]) > duplicate_tolerance*fabs(slist[nv])) {
+      slist[iv++] = slist[nv];
     }
-    slist = slist_unique;
-    num_intersections = num_unique_elements;
-    return num_intersections;
   }
+  num_intersections = iv;
+  return num_intersections;
 }
 
 /***************************************************************/
