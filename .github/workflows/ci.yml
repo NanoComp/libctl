@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: linux (OMP_NUM_THREADS=${{ matrix.omp_threads }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        omp_threads: [1, 8]
+    env:
+      OMP_NUM_THREADS: ${{ matrix.omp_threads }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y autoconf automake libtool guile-3.0-dev
+
+      - name: Build and test
+        run: |
+          sh autogen.sh --prefix=$PWD/.local --enable-openmp
+          make
+          make check
+          make install
+
+      - name: Print test logs on failure
+        if: failure()
+        run: |
+          for log in utils/*.log; do
+            [ -f "$log" ] && { echo "=== $log ==="; cat "$log"; }
+          done
