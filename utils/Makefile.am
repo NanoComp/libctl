@@ -5,12 +5,17 @@ SUBDIRS = .
 endif
 
 bin_SCRIPTS = gen-ctl-io
-include_HEADERS = ctlgeom.h
-nodist_include_HEADERS = ctlgeom-types.h
+# ctlgeom-types.h and geom-ctl-io.c are checked in and hand-maintained —
+# they carry C-only mesh internals (mesh_bvh_node, face_normals, the
+# matching deep-copy code in mesh_copy/mesh_destroy, etc.) that don't
+# have Scheme analogs in geom.scm. Treating them as regular sources
+# (not BUILT_SOURCES) keeps Guile-detected builds from regenerating
+# and clobbering those internals. See PR #74.
+include_HEADERS = ctlgeom.h ctlgeom-types.h
 lib_LTLIBRARIES = libctlgeom.la
 noinst_PROGRAMS = geomtst
 
-EXTRA_DIST = gen-ctl-io.in README geom.scm geom-ctl-io-defaults.c nlopt.c
+EXTRA_DIST = gen-ctl-io.in README geom.scm geom-ctl-io-defaults.c nlopt.c ctlgeom-types.h geom-ctl-io.c
 
 libctlgeom_la_SOURCES = geom.c $(top_srcdir)/src/ctl-math.c $(top_srcdir)/src/integrator.c geom-ctl-io.c ctlgeom-types.h
 libctlgeom_la_LDFLAGS = -version-info @SHARED_VERSION_INFO@
@@ -34,7 +39,7 @@ TESTS = test-prism test-mesh
 
 dist_man_MANS = gen-ctl-io.1
 
-BUILT_SOURCES = gen-ctl-io geom-ctl-io.c ctlgeom-types.h nlopt-constants.scm
+BUILT_SOURCES = gen-ctl-io nlopt-constants.scm
 
 nlopt-constants.scm:
 	echo "#include <nlopt.h>" > nlopt-constants.h
@@ -50,18 +55,7 @@ ctl-io.c: geom.scm $(GEN_CTL_IO)
 ctl-io.h: geom.scm $(GEN_CTL_IO)
 	$(GEN_CTL_IO) --c-only --header -o $@ $(srcdir)/geom.scm $(top_srcdir)
 
-ctlgeom-types.h: ctl-io.h
-	sed 's,SCM,void*,;s,ctl\.h,ctl-math.h,' ctl-io.h > $@
-	echo '#ifndef LIBCTL_MAJOR_VERSION' >> $@
-	echo '#  define LIBCTL_MAJOR_VERSION '$(LIBCTL_MAJOR_VERSION) >> $@
-	echo '#  define LIBCTL_MINOR_VERSION '$(LIBCTL_MINOR_VERSION) >> $@
-	echo '#  define LIBCTL_BUGFIX_VERSION '$(LIBCTL_BUGFIX_VERSION) >> $@
-	echo '#endif' >> $@
-
-geom-ctl-io.c: ctl-io.c
-	sed 's,ctl-io\.h,ctlgeom-types.h,;s,/.* Input variables .*/,@#include "geom-ctl-io-defaults.c"@#if 0@,;s,/.* Output variables .*/,#endif@,' ctl-io.c | tr '@' '\n' > $@
-
 endif
 
 clean-local:
-	rm -f ctl-io.[ch] nlopt-constants.scm ctlgeom-types.h geom-ctl-io.c
+	rm -f ctl-io.[ch] nlopt-constants.scm geom-ctl-io.c
