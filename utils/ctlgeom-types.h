@@ -105,27 +105,10 @@ extern		"C" {
 		matrix3x3	m_p2c;
 	}		prism;
 
-	typedef struct mesh_bvh_node {
-		vector3		bbox_low;
-		vector3		bbox_high;
-		int		left_child;
-		int		right_child;
-		int		face_start;
-		int		face_count;
-	}		mesh_bvh_node;
-
 	typedef struct mesh_struct {
 		vector3_list	vertices;
-		int		num_faces;
-		int		*face_indices;
-		vector3		*face_normals;
-		number		*face_areas;
-		int		num_bvh_nodes;
-		mesh_bvh_node	*bvh;
-		int		*bvh_face_ids;
-		boolean		is_closed;
-		vector3		centroid;
-		number		lengthscale;
+		vector3_list	face_indices;
+		void*		internal;
 	}		mesh;
 
 	typedef struct ellipsoid_struct {

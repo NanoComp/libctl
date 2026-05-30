@@ -28,6 +28,7 @@
 #include <string.h>
 
 #include "ctlgeom.h"
+#include "mesh-internal.h"
 
 #define K_PI 3.141592653589793238462643383279502884197
 #define TOLERANCE 1e-6
@@ -441,7 +442,7 @@ static void test_open_mesh(void) {
   };
   geometric_object open = make_mesh(NULL, verts, 4, tris, 4);
   mesh *m = open.subclass.mesh_data;
-  ASSERT_TRUE("open mesh detected as not closed", !m->is_closed);
+  ASSERT_TRUE("open mesh detected as not closed", !mesh_priv(m)->is_closed);
 
   /* point_in_mesh should return false for open meshes. */
   vector3 p = {0.1, 0.1, 0.1};
@@ -458,12 +459,12 @@ static void test_closed_detection(void) {
   printf("test_closed_detection... ");
   geometric_object cube = make_cube_mesh(NULL);
   mesh *m = cube.subclass.mesh_data;
-  ASSERT_TRUE("cube mesh detected as closed", m->is_closed);
+  ASSERT_TRUE("cube mesh detected as closed", mesh_priv(m)->is_closed);
   geometric_object_destroy(cube);
 
   geometric_object tetra = make_tetra_mesh(NULL);
   m = tetra.subclass.mesh_data;
-  ASSERT_TRUE("tetra mesh detected as closed", m->is_closed);
+  ASSERT_TRUE("tetra mesh detected as closed", mesh_priv(m)->is_closed);
   geometric_object_destroy(tetra);
   printf("done\n");
 }
@@ -488,7 +489,7 @@ static void test_boundary_edge(void) {
   };
   geometric_object obj = make_mesh(NULL, verts, 5, tris, 4);
   mesh *m = obj.subclass.mesh_data;
-  ASSERT_TRUE("boundary edge mesh detected as not closed", !m->is_closed);
+  ASSERT_TRUE("boundary edge mesh detected as not closed", !mesh_priv(m)->is_closed);
   geometric_object_destroy(obj);
   printf("done\n");
 }
@@ -514,7 +515,7 @@ static void test_nonmanifold_edge(void) {
   };
   geometric_object obj = make_mesh(NULL, verts, 6, tris, 6);
   mesh *m = obj.subclass.mesh_data;
-  ASSERT_TRUE("non-manifold edge mesh detected as not closed", !m->is_closed);
+  ASSERT_TRUE("non-manifold edge mesh detected as not closed", !mesh_priv(m)->is_closed);
   geometric_object_destroy(obj);
   printf("done\n");
 }
@@ -539,7 +540,7 @@ static void test_isolated_vertex(void) {
   };
   geometric_object obj = make_mesh(NULL, verts, 5, tris, 4);
   mesh *m = obj.subclass.mesh_data;
-  ASSERT_TRUE("mesh with isolated vertex still closed", m->is_closed);
+  ASSERT_TRUE("mesh with isolated vertex still closed", mesh_priv(m)->is_closed);
 
   /* Point inside tetrahedron should still work. */
   vector3 p = {0, 0, 0};
