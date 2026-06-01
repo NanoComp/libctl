@@ -10,7 +10,12 @@ nodist_include_HEADERS = ctlgeom-types.h
 lib_LTLIBRARIES = libctlgeom.la
 noinst_PROGRAMS = geomtst
 
-EXTRA_DIST = gen-ctl-io.in README geom.scm geom-ctl-io-defaults.c nlopt.c
+# geom-ctl-io.c is checked in and hand-maintained — it carries PIMPL
+# lifecycle hooks (extern declarations + calls to mesh_init_internal and
+# mesh_internal_free in mesh_copy / mesh_destroy) that gen-ctl-io does
+# not emit. Treating it as a regular distributed source (not BUILT) keeps
+# Guile-detected builds from regenerating and clobbering those hooks.
+EXTRA_DIST = gen-ctl-io.in README geom.scm geom-ctl-io-defaults.c nlopt.c geom-ctl-io.c
 
 libctlgeom_la_SOURCES = geom.c $(top_srcdir)/src/ctl-math.c $(top_srcdir)/src/integrator.c geom-ctl-io.c ctlgeom-types.h
 libctlgeom_la_LDFLAGS = -version-info @SHARED_VERSION_INFO@
@@ -34,7 +39,7 @@ TESTS = test-prism test-mesh
 
 dist_man_MANS = gen-ctl-io.1
 
-BUILT_SOURCES = gen-ctl-io geom-ctl-io.c ctlgeom-types.h nlopt-constants.scm
+BUILT_SOURCES = gen-ctl-io ctlgeom-types.h nlopt-constants.scm
 
 nlopt-constants.scm:
 	echo "#include <nlopt.h>" > nlopt-constants.h
@@ -58,10 +63,7 @@ ctlgeom-types.h: ctl-io.h
 	echo '#  define LIBCTL_BUGFIX_VERSION '$(LIBCTL_BUGFIX_VERSION) >> $@
 	echo '#endif' >> $@
 
-geom-ctl-io.c: ctl-io.c
-	sed 's,ctl-io\.h,ctlgeom-types.h,;s,/.* Input variables .*/,@#include "geom-ctl-io-defaults.c"@#if 0@,;s,/.* Output variables .*/,#endif@,' ctl-io.c | tr '@' '\n' > $@
-
 endif
 
 clean-local:
-	rm -f ctl-io.[ch] nlopt-constants.scm ctlgeom-types.h geom-ctl-io.c
+	rm -f ctl-io.[ch] nlopt-constants.scm ctlgeom-types.h
