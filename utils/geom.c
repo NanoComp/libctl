@@ -33,7 +33,41 @@
 static void material_type_copy(void **src, void **dest) { *dest = *src; }
 #endif
 #include "ctlgeom.h"
-#include "mesh-internal.h"
+
+/**************************************************************************/
+
+/* Private mesh internals.
+
+   Inlined here rather than placed in a separate header because MPB/meep
+   and the libctl examples/ directory build by copying this geom.c file
+   out of the libctl tree, so any companion header would not travel with
+   it.  Keep this section in sync with any future split if/when those
+   downstreams are taught to link against libctlgeom directly.  */
+
+typedef struct mesh_bvh_node {
+  vector3 bbox_low;
+  vector3 bbox_high;
+  int     left_child;
+  int     right_child;
+  int     face_start;
+  int     face_count;
+} mesh_bvh_node;
+
+typedef struct mesh_internal {
+  int            num_faces;
+  int           *face_indices;    /* unpacked flat: 3 ints per triangle */
+  vector3       *face_normals;
+  number        *face_areas;
+  int            num_bvh_nodes;
+  mesh_bvh_node *bvh;
+  int           *bvh_face_ids;
+  vector3        centroid;
+  number         lengthscale;
+} mesh_internal;
+
+static inline mesh_internal *mesh_priv(const mesh *m) {
+  return (mesh_internal *)m->internal;
+}
 
 #ifdef CXX_CTL_IO
 using namespace ctlio;
@@ -2559,7 +2593,7 @@ static const vector3 mesh_ray_dirs[3] = {
 };
 
 static boolean point_in_mesh(const mesh *m, vector3 p) {
-  if (!mesh_priv(m)->is_closed) return 0;
+  if (!m->is_closed) return 0;
 
   /* Fast path: cast one ray. If no degenerate edge/vertex hits were
      detected during deduplication, trust the result immediately.
@@ -2616,7 +2650,7 @@ static void display_mesh_info(int indentby, const geometric_object *o) {
   const mesh *m = o->subclass.mesh_data;
   ctl_printf("%*s     %d vertices, %d faces, %s\n", indentby, "",
              m->vertices.num_items, mesh_priv(m)->num_faces,
-             mesh_priv(m)->is_closed ? "closed" : "OPEN (WARNING)");
+             m->is_closed ? "closed" : "OPEN (WARNING)");
 }
 
 static double intersect_line_segment_with_mesh(const mesh *m, vector3 p, vector3 d,
@@ -2780,8 +2814,8 @@ static void init_mesh(geometric_object *o) {
     /* Mark empty slots with -1. */
     for (int i = 0; i < htsize; i++) ht_vlo[i] = -1;
 
-    mesh_priv(m)->is_closed = 1;
-    for (int f = 0; f < nf && mesh_priv(m)->is_closed; f++) {
+    m->is_closed = 1;
+    for (int f = 0; f < nf && m->is_closed; f++) {
       for (int e = 0; e < 3; e++) {
         int va = mesh_priv(m)->face_indices[3 * f + e];
         int vb = mesh_priv(m)->face_indices[3 * f + (e + 1) % 3];
@@ -2799,7 +2833,7 @@ static void init_mesh(geometric_object *o) {
           } else if (ht_vlo[h] == vlo && ht_vhi[h] == vhi) {
             /* Found existing edge. */
             ht_cnt[h]++;
-            if (ht_cnt[h] > 2) mesh_priv(m)->is_closed = 0; /* non-manifold edge */
+            if (ht_cnt[h] > 2) m->is_closed = 0; /* non-manifold edge */
             break;
           }
           h = (h + 1) & htmask;
@@ -2807,10 +2841,10 @@ static void init_mesh(geometric_object *o) {
       }
     }
     /* Check that all edges have exactly 2 faces. */
-    if (mesh_priv(m)->is_closed) {
+    if (m->is_closed) {
       for (int i = 0; i < htsize; i++) {
         if (ht_vlo[i] != -1 && ht_cnt[i] != 2) {
-          mesh_priv(m)->is_closed = 0;
+          m->is_closed = 0;
           break;
         }
       }
@@ -2819,7 +2853,7 @@ static void init_mesh(geometric_object *o) {
     free(ht_vhi);
     free(ht_cnt);
 
-    if (!mesh_priv(m)->is_closed)
+    if (!m->is_closed)
       ctl_printf("WARNING: mesh is not closed (not all edges shared by exactly 2 faces).\n"
                  "         point_in_mesh results may be incorrect.\n");
   }

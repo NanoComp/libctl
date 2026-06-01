@@ -108,6 +108,7 @@ extern		"C" {
 	typedef struct mesh_struct {
 		vector3_list	vertices;
 		vector3_list	face_indices;
+		boolean		is_closed;
 		void*		internal;
 	}		mesh;
 

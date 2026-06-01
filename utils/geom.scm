@@ -156,7 +156,10 @@
 ; fields to be filled in by users
   (define-property vertices '() (make-list-type 'vector3))
   (define-property face_indices '() (make-list-type 'vector3))
-; opaque pointer to mesh_internal (face normals, BVH, etc.) — allocated by
+; computed by init_mesh: true if the mesh is watertight (every edge shared
+; by exactly two triangles). Read-only from the user's perspective.
+  (define-property is_closed 0 'boolean)
+; opaque pointer to mesh_internal (face normals, BVH, etc.) allocated by
 ; init_mesh in C and never touched from Scheme. 'SCM becomes void* in
 ; ctlgeom-types.h via the existing sed rule in utils/Makefile.am.
   (define-property internal '() 'SCM))

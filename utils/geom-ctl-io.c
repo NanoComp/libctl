@@ -69,6 +69,7 @@ mesh_copy(const mesh * o0, mesh * o)
 			o->face_indices.items[i_t] = o0->face_indices.items[i_t];
 		}
 	}
+	o->is_closed = o0->is_closed;
 	o->internal = NULL;
 	mesh_init_internal(o);  /* rebuild BVH eagerly; safe under later concurrent queries */
 }
@@ -300,6 +301,8 @@ mesh_equal(const mesh * o0, const mesh * o)
 				return 0;
 		}
 	}
+	if (o->is_closed != o0->is_closed)
+		return 0;
 	;
 	return 1;
 }
