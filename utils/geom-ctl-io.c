@@ -129,14 +129,6 @@ prism_copy(const prism * o0, prism * o)
 		}
 	}
 	o->centroid = o0->centroid;
-	{
-		int		i_t;
-		o->workspace.num_items = o0->workspace.num_items;
-		o->workspace.items = ((number *) malloc(sizeof(number) * (o->workspace.num_items)));
-		for (i_t = 0; i_t < o->workspace.num_items; i_t++) {
-			o->workspace.items[i_t] = o0->workspace.items[i_t];
-		}
-	}
 	o->m_c2p = o0->m_c2p;
 	o->m_p2c = o0->m_p2c;
 }
@@ -372,15 +364,6 @@ prism_equal(const prism * o0, const prism * o)
 	}
 	if (!vector3_equal(o->centroid, o0->centroid))
 		return 0;
-	{
-		int		i_t;
-		if (o->workspace.num_items != o0->workspace.num_items)
-			return 0;
-		for (i_t = 0; i_t < o->workspace.num_items; i_t++) {
-			if (o->workspace.items[i_t] != o0->workspace.items[i_t])
-				return 0;
-		}
-	}
 	if (!matrix3x3_equal(o->m_c2p, o0->m_c2p))
 		return 0;
 	if (!matrix3x3_equal(o->m_p2c, o0->m_p2c))
@@ -574,12 +557,6 @@ prism_destroy(prism o)
 		}
 	}
 	free(o.vertices_top.items);
-	{
-		int		index_t;
-		for (index_t = 0; index_t < o.workspace.num_items; index_t++) {
-		}
-	}
-	free(o.workspace.items);
 }
 
 void 
