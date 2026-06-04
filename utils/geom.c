@@ -2693,10 +2693,8 @@ static void init_mesh(geometric_object *o);
 
 /* Build the opaque mesh_internal cache for a mesh whose public fields
    (vertices, face_indices) have just been populated and whose internal
-   pointer is NULL. Used by the auto-generated mesh_copy in geom-ctl-io.c
-   to eagerly rebuild a copied mesh's BVH so subsequent _fixed_ queries
-   (which skip geom_fix_object_ptr / reinit_mesh) work correctly. */
-void mesh_init_internal(mesh *m) {
+   pointer is NULL. */
+static void mesh_init_internal(mesh *m) {
   geometric_object o;
   /* only need to initialize a single field of o, since that's all init_mesh looks at */
   o.subclass.mesh_data = m;
@@ -2704,9 +2702,8 @@ void mesh_init_internal(mesh *m) {
 }
 
 /* Free the opaque mesh_internal cache and all its nested allocations.
-   Safe on NULL. Called from the auto-generated mesh_destroy in
-   geom-ctl-io.c via the extern declaration there. */
-void mesh_internal_free(void *p) {
+   Safe on NULL. */
+static void mesh_internal_free(void *p) {
   if (!p) return;
   mesh_internal *mi = (mesh_internal *)p;
   free(mi->face_indices);
@@ -2715,6 +2712,20 @@ void mesh_internal_free(void *p) {
   free(mi->bvh);
   free(mi->bvh_face_ids);
   free(mi);
+}
+
+/* Lifecycle hooks invoked by gen-ctl-io from the auto-generated mesh_copy
+   and mesh_destroy. Declared on the mesh class in geom.scm via
+   (after-copy ...) / (after-destroy ...). */
+void mesh_after_copy(mesh *m) {
+  /* The auto-generated mesh_copy shallow-copies internal from the source;
+     discard that pointer so this copy gets its own cache, then build it. */
+  m->internal = NULL;
+  mesh_init_internal(m);
+}
+
+void mesh_after_destroy(mesh *m) {
+  mesh_internal_free(m->internal);
 }
 
 /***************************************************************/

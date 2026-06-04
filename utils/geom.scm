@@ -162,7 +162,14 @@
 ; opaque pointer to mesh_internal (face normals, BVH, etc.) allocated by
 ; init_mesh in C and never touched from Scheme. 'SCM becomes void* in
 ; ctlgeom-types.h via the existing sed rule in utils/Makefile.am.
-  (define-property internal '() 'SCM))
+; Lifecycle is managed via the (after-copy ...) / (after-destroy ...)
+; class hooks below: the auto-generated mesh_copy invokes
+; mesh_after_copy(o) to rebuild the cache for the destination, and
+; mesh_destroy invokes mesh_after_destroy(&o) to free it. Both adapters
+; live in geom.c.
+  (define-property internal '() 'SCM)
+  (after-copy    mesh_after_copy)
+  (after-destroy mesh_after_destroy))
 
 (define-class ellipsoid block
   (define-derived-property inverse-semi-axes 'vector3
