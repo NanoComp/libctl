@@ -397,10 +397,19 @@
 	 (print "\n")
 	 (print "o->which_subclass = "
 		       (class-self-enum-name class) ";\n"))))
+  (let ((hook (class-after-copy class)))
+    (if hook (print hook "(o);\n")))
   (print "}\n\n"))
 
 (define (output-class-copy-functions-header)
   (print "/******* class copy function prototypes *******/\n\n")
+  (for-each
+   (lambda (class)
+     (let ((hook (class-after-copy class)))
+       (if hook
+	   (print "extern void " hook "("
+		  (c-type-string (class-type-name class)) " *);\n"))))
+   class-list)
   (for-each
    (lambda (class)
      (print "extern ") (class-copy-function-decl class "")
@@ -622,10 +631,19 @@
    (if (not (null? subclasses))
        (begin
 	 (print "{ }\n"))))
+  (let ((hook (class-after-destroy class)))
+    (if hook (print hook "(&o);\n")))
   (print "}\n\n"))
 
 (define (output-class-destruction-functions-header)
   (print "/******* class destruction function prototypes *******/\n\n")
+  (for-each
+   (lambda (class)
+     (let ((hook (class-after-destroy class)))
+       (if hook
+	   (print "extern void " hook "("
+		  (c-type-string (class-type-name class)) " *);\n"))))
+   class-list)
   (for-each
    (lambda (class)
      (print "extern ") (class-destroy-function-decl class "")
