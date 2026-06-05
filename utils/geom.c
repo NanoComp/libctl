@@ -34,6 +34,41 @@ static void material_type_copy(void **src, void **dest) { *dest = *src; }
 #endif
 #include "ctlgeom.h"
 
+/**************************************************************************/
+
+/* Private mesh internals.
+
+   Inlined here rather than placed in a separate header because MPB/meep
+   and the libctl examples/ directory build by copying this geom.c file
+   out of the libctl tree, so any companion header would not travel with
+   it.  Keep this section in sync with any future split if/when those
+   downstreams are taught to link against libctlgeom directly.  */
+
+typedef struct mesh_bvh_node {
+  vector3 bbox_low;
+  vector3 bbox_high;
+  int     left_child;
+  int     right_child;
+  int     face_start;
+  int     face_count;
+} mesh_bvh_node;
+
+typedef struct mesh_internal {
+  int            num_faces;
+  int           *face_indices;    /* unpacked flat: 3 ints per triangle */
+  vector3       *face_normals;
+  number        *face_areas;
+  int            num_bvh_nodes;
+  mesh_bvh_node *bvh;
+  int           *bvh_face_ids;
+  vector3        centroid;
+  number         lengthscale;
+} mesh_internal;
+
+static inline mesh_internal *mesh_priv(const mesh *m) {
+  return (mesh_internal *)m->internal;
+}
+
 #ifdef CXX_CTL_IO
 using namespace ctlio;
 #define CTLIO ctlio::
@@ -1969,9 +2004,9 @@ static void bvh_node_set_box(mesh_bvh_node *node, const geom_box *box) {
 /* Fetch the three vertices of a triangle. */
 static void mesh_triangle_vertices(const mesh *m, int face_id,
                                    vector3 *v0, vector3 *v1, vector3 *v2) {
-  *v0 = m->vertices.items[m->face_indices[3 * face_id]];
-  *v1 = m->vertices.items[m->face_indices[3 * face_id + 1]];
-  *v2 = m->vertices.items[m->face_indices[3 * face_id + 2]];
+  *v0 = m->vertices.items[mesh_priv(m)->face_indices[3 * face_id]];
+  *v1 = m->vertices.items[mesh_priv(m)->face_indices[3 * face_id + 1]];
+  *v2 = m->vertices.items[mesh_priv(m)->face_indices[3 * face_id + 2]];
 }
 
 /* Compute the AABB of a single triangle. */
@@ -2058,7 +2093,7 @@ static int mesh_bvh_build(mesh *m, int *face_ids, int start, int count,
   double best_cost = 1e300;
   int best_axis = -1, best_split = -1;
   double parent_area = geom_box_surface_area(&node_box);
-  if (parent_area == 0) parent_area = 1e-30 * m->lengthscale * m->lengthscale;
+  if (parent_area == 0) parent_area = 1e-30 * mesh_priv(m)->lengthscale * mesh_priv(m)->lengthscale;
 
   for (int axis = 0; axis < 3; axis++) {
     double lo, hi;
@@ -2067,7 +2102,7 @@ static int mesh_bvh_build(mesh *m, int *face_ids, int start, int count,
       case 1: lo = node_box.low.y; hi = node_box.high.y; break;
       default: lo = node_box.low.z; hi = node_box.high.z; break;
     }
-    if (hi - lo < 1e-15 * m->lengthscale) continue;
+    if (hi - lo < 1e-15 * mesh_priv(m)->lengthscale) continue;
 
     /* Bin face centroids. */
     int bin_counts[MESH_BVH_NUM_BINS];
@@ -2364,7 +2399,7 @@ static int find_closest_face(const mesh *m, vector3 p, double *dist2) {
 
   while (stack_top > 0) {
     int node_idx = stack[--stack_top];
-    const mesh_bvh_node *node = &m->bvh[node_idx];
+    const mesh_bvh_node *node = &mesh_priv(m)->bvh[node_idx];
 
     /* Compute minimum squared distance from p to the AABB. */
     double dx = fmax(0, fmax(node->bbox_low.x - p.x, p.x - node->bbox_high.x));
@@ -2376,10 +2411,10 @@ static int find_closest_face(const mesh *m, vector3 p, double *dist2) {
     if (node->left_child < 0) {
       /* Leaf: test all faces. */
       for (int i = 0; i < node->face_count; i++) {
-        int fid = m->bvh_face_ids[node->face_start + i];
-        vector3 v0 = m->vertices.items[m->face_indices[3 * fid]];
-        vector3 v1 = m->vertices.items[m->face_indices[3 * fid + 1]];
-        vector3 v2 = m->vertices.items[m->face_indices[3 * fid + 2]];
+        int fid = mesh_priv(m)->bvh_face_ids[node->face_start + i];
+        vector3 v0 = m->vertices.items[mesh_priv(m)->face_indices[3 * fid]];
+        vector3 v1 = m->vertices.items[mesh_priv(m)->face_indices[3 * fid + 1]];
+        vector3 v2 = m->vertices.items[mesh_priv(m)->face_indices[3 * fid + 2]];
         vector3 closest;
         double d2 = closest_point_on_triangle(p, v0, v1, v2, &closest);
         if (d2 < best_dist2) {
@@ -2391,8 +2426,8 @@ static int find_closest_face(const mesh *m, vector3 p, double *dist2) {
       if (stack_top + 2 > 64) continue;
       /* Push the farther child first so the nearer child is popped first,
          giving better pruning of the farther subtree. */
-      const mesh_bvh_node *left = &m->bvh[node->left_child];
-      const mesh_bvh_node *right = &m->bvh[node->right_child];
+      const mesh_bvh_node *left = &mesh_priv(m)->bvh[node->left_child];
+      const mesh_bvh_node *right = &mesh_priv(m)->bvh[node->right_child];
       double ldx = fmax(0, fmax(left->bbox_low.x - p.x, p.x - left->bbox_high.x));
       double ldy = fmax(0, fmax(left->bbox_low.y - p.y, p.y - left->bbox_high.y));
       double ldz = fmax(0, fmax(left->bbox_low.z - p.z, p.z - left->bbox_high.z));
@@ -2462,24 +2497,24 @@ static void mesh_ray_all_intersections(const mesh *m, vector3 origin, vector3 di
   inv_dir.y = (fabs(dir.y) > 1e-30) ? 1.0 / dir.y : 1e30;
   inv_dir.z = (fabs(dir.z) > 1e-30) ? 1.0 / dir.z : 1e30;
 
-  double det_eps = 1e-12 * m->lengthscale * m->lengthscale;
+  double det_eps = 1e-12 * mesh_priv(m)->lengthscale * mesh_priv(m)->lengthscale;
   int stack[64];
   int stack_top = 0;
   stack[stack_top++] = 0;
 
   while (stack_top > 0) {
     int node_idx = stack[--stack_top];
-    const mesh_bvh_node *node = &m->bvh[node_idx];
+    const mesh_bvh_node *node = &mesh_priv(m)->bvh[node_idx];
 
     if (!ray_bvh_node_intersect(origin, inv_dir, node, -1e30, 1e30))
       continue;
 
     if (node->left_child < 0) {
       for (int i = 0; i < node->face_count; i++) {
-        int fid = m->bvh_face_ids[node->face_start + i];
-        vector3 v0 = m->vertices.items[m->face_indices[3 * fid]];
-        vector3 v1 = m->vertices.items[m->face_indices[3 * fid + 1]];
-        vector3 v2 = m->vertices.items[m->face_indices[3 * fid + 2]];
+        int fid = mesh_priv(m)->bvh_face_ids[node->face_start + i];
+        vector3 v0 = m->vertices.items[mesh_priv(m)->face_indices[3 * fid]];
+        vector3 v1 = m->vertices.items[mesh_priv(m)->face_indices[3 * fid + 1]];
+        vector3 v2 = m->vertices.items[mesh_priv(m)->face_indices[3 * fid + 2]];
 
         double t;
         if (ray_triangle_intersect(origin, dir, v0, v1, v2, det_eps, &t, NULL, NULL))
@@ -2523,7 +2558,7 @@ static int count_ray_mesh_intersections_ex(const mesh *m, vector3 origin, vector
   mesh_ray_all_intersections(m, origin, dir, &hits);
 
   /* Keep only forward intersections (t > eps). */
-  double fwd_eps = 1e-12 * m->lengthscale;
+  double fwd_eps = 1e-12 * mesh_priv(m)->lengthscale;
   int nforward = 0;
   for (int i = 0; i < hits.count; i++)
     if (hits.data[i] > fwd_eps)
@@ -2531,7 +2566,7 @@ static int count_ray_mesh_intersections_ex(const mesh *m, vector3 origin, vector
 
   if (nforward > 1) {
     qsort(hits.data, nforward, sizeof(double), mesh_dcmp);
-    double dedup_tol = 1e-10 * m->lengthscale;
+    double dedup_tol = 1e-10 * mesh_priv(m)->lengthscale;
     int deduped = remove_duplicate_intersections(hits.data, nforward, dedup_tol);
     if (had_degenerate) *had_degenerate = (deduped != nforward);
     nforward = deduped;
@@ -2585,13 +2620,13 @@ static vector3 normal_to_mesh(const mesh *m, vector3 p) {
     vector3 zero = {0, 0, 0};
     return zero;
   }
-  return m->face_normals[face];
+  return mesh_priv(m)->face_normals[face];
 }
 
 static void get_mesh_bounding_box(const mesh *m, geom_box *box) {
-  if (m->num_bvh_nodes > 0) {
-    box->low = m->bvh[0].bbox_low;
-    box->high = m->bvh[0].bbox_high;
+  if (mesh_priv(m)->num_bvh_nodes > 0) {
+    box->low = mesh_priv(m)->bvh[0].bbox_low;
+    box->high = mesh_priv(m)->bvh[0].bbox_high;
   } else {
     box->low = box->high = m->vertices.items[0];
     for (int i = 1; i < m->vertices.num_items; i++)
@@ -2602,10 +2637,10 @@ static void get_mesh_bounding_box(const mesh *m, geom_box *box) {
 static double get_mesh_volume(const mesh *m) {
   /* Divergence theorem: sum signed tetrahedron volumes. */
   double vol = 0;
-  for (int f = 0; f < m->num_faces; f++) {
-    vector3 v0 = m->vertices.items[m->face_indices[3 * f]];
-    vector3 v1 = m->vertices.items[m->face_indices[3 * f + 1]];
-    vector3 v2 = m->vertices.items[m->face_indices[3 * f + 2]];
+  for (int f = 0; f < mesh_priv(m)->num_faces; f++) {
+    vector3 v0 = m->vertices.items[mesh_priv(m)->face_indices[3 * f]];
+    vector3 v1 = m->vertices.items[mesh_priv(m)->face_indices[3 * f + 1]];
+    vector3 v2 = m->vertices.items[mesh_priv(m)->face_indices[3 * f + 2]];
     vol += vector3_dot(v0, vector3_cross(v1, v2));
   }
   return fabs(vol) / 6.0;
@@ -2614,7 +2649,7 @@ static double get_mesh_volume(const mesh *m) {
 static void display_mesh_info(int indentby, const geometric_object *o) {
   const mesh *m = o->subclass.mesh_data;
   ctl_printf("%*s     %d vertices, %d faces, %s\n", indentby, "",
-             m->vertices.num_items, m->num_faces,
+             m->vertices.num_items, mesh_priv(m)->num_faces,
              m->is_closed ? "closed" : "OPEN (WARNING)");
 }
 
@@ -2626,7 +2661,7 @@ static double intersect_line_segment_with_mesh(const mesh *m, vector3 p, vector3
 
   if (hits.count > 1) {
     qsort(hits.data, hits.count, sizeof(double), mesh_dcmp);
-    hits.count = remove_duplicate_intersections(hits.data, hits.count, 1e-10 * m->lengthscale);
+    hits.count = remove_duplicate_intersections(hits.data, hits.count, 1e-10 * mesh_priv(m)->lengthscale);
   }
 
   /* The sorted intersection list gives all surface crossings along the
@@ -2653,30 +2688,87 @@ static double intersect_line_segment_with_mesh(const mesh *m, vector3 p, vector3
   return ds > 0.0 ? ds : 0.0;
 }
 
+/* Forward declaration; init_mesh body lives below. */
+static void init_mesh(geometric_object *o);
+
+/* Build the opaque mesh_internal cache for a mesh whose public fields
+   (vertices, face_indices) have just been populated and whose internal
+   pointer is NULL. */
+static void mesh_init_internal(mesh *m) {
+  geometric_object o;
+  /* only need to initialize a single field of o, since that's all init_mesh looks at */
+  o.subclass.mesh_data = m;
+  init_mesh(&o);
+}
+
+/* Free the opaque mesh_internal cache and all its nested allocations.
+   Safe on NULL. */
+static void mesh_internal_free(void *p) {
+  if (!p) return;
+  mesh_internal *mi = (mesh_internal *)p;
+  free(mi->face_indices);
+  free(mi->face_normals);
+  free(mi->face_areas);
+  free(mi->bvh);
+  free(mi->bvh_face_ids);
+  free(mi);
+}
+
+/* Lifecycle hooks invoked by gen-ctl-io from the auto-generated mesh_copy
+   and mesh_destroy. Declared on the mesh class in geom.scm via
+   (after-copy ...) / (after-destroy ...). */
+void mesh_after_copy(mesh *m) {
+  /* The auto-generated mesh_copy shallow-copies internal from the source;
+     discard that pointer so this copy gets its own cache, then build it. */
+  m->internal = NULL;
+  mesh_init_internal(m);
+}
+
+void mesh_after_destroy(mesh *m) {
+  mesh_internal_free(m->internal);
+}
+
 /***************************************************************/
-/* init_mesh: validate, compute normals, build BVH             */
+/* init_mesh: allocate the opaque mesh_internal cache, unpack   */
+/* face_indices into a flat int array, compute face normals,    */
+/* areas, centroid, lengthscale, check closure, and build BVH.  */
 /*                                                              */
-/* NOT THREAD-SAFE: mutates m->face_indices (winding flip),     */
-/* allocates m->face_normals / m->face_areas / m->bvh /         */
-/* m->bvh_face_ids, and writes m->is_closed, m->centroid,       */
-/* m->lengthscale, m->num_bvh_nodes. Only invoked from the      */
-/* mesh constructors (make_mesh / make_mesh_with_center) and    */
-/* from reinit_mesh; both rely on it running single-threaded    */
-/* per mesh.                                                    */
+/* NOT THREAD-SAFE: writes the per-mesh internal cache.         */
+/* Invoked only from the mesh constructors and from reinit_mesh;*/
+/* both rely on it running single-threaded per mesh.            */
 /***************************************************************/
 
 static void init_mesh(geometric_object *o) {
   mesh *m = o->subclass.mesh_data;
   int nv = m->vertices.num_items;
-  int nf = m->num_faces;
+
+  /* Allocate the opaque internal cache. m->internal must be NULL on entry
+     (either the mesh was just constructed, or reinit_mesh cleared it). */
+  mesh_internal *p = (mesh_internal *)calloc(1, sizeof(mesh_internal));
+  CHECK(p, "out of memory");
+  m->internal = p;
+
+  /* Unpack face_indices: the public vector3_list stores 3 ints per
+     triangle packed into a vector3 (x, y, z are the indices as doubles,
+     exactly representable up to 2^53). The internal cache uses a flat
+     int[3*num_faces] for fast indexed access. */
+  int nf = m->face_indices.num_items;
+  p->num_faces = nf;
+  p->face_indices = (int *)malloc(3 * nf * sizeof(int));
+  CHECK(p->face_indices, "out of memory");
+  for (int f = 0; f < nf; f++) {
+    p->face_indices[3 * f]     = (int)m->face_indices.items[f].x;
+    p->face_indices[3 * f + 1] = (int)m->face_indices.items[f].y;
+    p->face_indices[3 * f + 2] = (int)m->face_indices.items[f].z;
+  }
 
   /* Validate. */
   CHECK(nv >= 4, "mesh requires at least 4 vertices");
   CHECK(nf >= 4, "mesh requires at least 4 faces");
   for (int f = 0; f < nf; f++) {
-    CHECK(m->face_indices[3 * f] >= 0 && m->face_indices[3 * f] < nv, "mesh face index out of range");
-    CHECK(m->face_indices[3 * f + 1] >= 0 && m->face_indices[3 * f + 1] < nv, "mesh face index out of range");
-    CHECK(m->face_indices[3 * f + 2] >= 0 && m->face_indices[3 * f + 2] < nv, "mesh face index out of range");
+    CHECK(mesh_priv(m)->face_indices[3 * f] >= 0 && mesh_priv(m)->face_indices[3 * f] < nv, "mesh face index out of range");
+    CHECK(mesh_priv(m)->face_indices[3 * f + 1] >= 0 && mesh_priv(m)->face_indices[3 * f + 1] < nv, "mesh face index out of range");
+    CHECK(mesh_priv(m)->face_indices[3 * f + 2] >= 0 && mesh_priv(m)->face_indices[3 * f + 2] < nv, "mesh face index out of range");
   }
 
   /* Compute characteristic lengthscale from vertex bounding box diagonal. */
@@ -2688,34 +2780,34 @@ static void init_mesh(geometric_object *o) {
       hi.x = fmax(hi.x, v.x); hi.y = fmax(hi.y, v.y); hi.z = fmax(hi.z, v.z);
     }
     double dx = hi.x - lo.x, dy = hi.y - lo.y, dz = hi.z - lo.z;
-    m->lengthscale = sqrt(dx * dx + dy * dy + dz * dz);
-    if (m->lengthscale == 0) m->lengthscale = 1.0;
+    mesh_priv(m)->lengthscale = sqrt(dx * dx + dy * dy + dz * dz);
+    if (mesh_priv(m)->lengthscale == 0) mesh_priv(m)->lengthscale = 1.0;
   }
 
   /* Compute face normals and areas. */
-  m->face_normals = (vector3 *)malloc(nf * sizeof(vector3));
-  CHECK(m->face_normals, "out of memory");
-  m->face_areas = (double *)malloc(nf * sizeof(double));
-  CHECK(m->face_areas, "out of memory");
+  mesh_priv(m)->face_normals = (vector3 *)malloc(nf * sizeof(vector3));
+  CHECK(mesh_priv(m)->face_normals, "out of memory");
+  mesh_priv(m)->face_areas = (double *)malloc(nf * sizeof(double));
+  CHECK(mesh_priv(m)->face_areas, "out of memory");
 
-  double area_eps = 1e-20 * m->lengthscale * m->lengthscale;
+  double area_eps = 1e-20 * mesh_priv(m)->lengthscale * mesh_priv(m)->lengthscale;
   for (int f = 0; f < nf; f++) {
-    vector3 v0 = m->vertices.items[m->face_indices[3 * f]];
-    vector3 v1 = m->vertices.items[m->face_indices[3 * f + 1]];
-    vector3 v2 = m->vertices.items[m->face_indices[3 * f + 2]];
+    vector3 v0 = m->vertices.items[mesh_priv(m)->face_indices[3 * f]];
+    vector3 v1 = m->vertices.items[mesh_priv(m)->face_indices[3 * f + 1]];
+    vector3 v2 = m->vertices.items[mesh_priv(m)->face_indices[3 * f + 2]];
     vector3 e1 = vector3_minus(v1, v0);
     vector3 e2 = vector3_minus(v2, v0);
     vector3 n = vector3_cross(e1, e2);
     double len = vector3_norm(n);
-    m->face_areas[f] = 0.5 * len;
-    m->face_normals[f] = (len > area_eps) ? vector3_scale(1.0 / len, n) : n;
+    mesh_priv(m)->face_areas[f] = 0.5 * len;
+    mesh_priv(m)->face_normals[f] = (len > area_eps) ? vector3_scale(1.0 / len, n) : n;
   }
 
   /* Compute centroid. */
-  m->centroid.x = m->centroid.y = m->centroid.z = 0;
+  mesh_priv(m)->centroid.x = mesh_priv(m)->centroid.y = mesh_priv(m)->centroid.z = 0;
   for (int i = 0; i < nv; i++)
-    m->centroid = vector3_plus(m->centroid, m->vertices.items[i]);
-  m->centroid = vector3_scale(1.0 / nv, m->centroid);
+    mesh_priv(m)->centroid = vector3_plus(mesh_priv(m)->centroid, m->vertices.items[i]);
+  mesh_priv(m)->centroid = vector3_scale(1.0 / nv, mesh_priv(m)->centroid);
 
   /* Check if mesh is closed: every edge must be shared by exactly 2 faces.
      An edge is identified by a sorted pair of vertex indices. We use a
@@ -2736,8 +2828,8 @@ static void init_mesh(geometric_object *o) {
     m->is_closed = 1;
     for (int f = 0; f < nf && m->is_closed; f++) {
       for (int e = 0; e < 3; e++) {
-        int va = m->face_indices[3 * f + e];
-        int vb = m->face_indices[3 * f + (e + 1) % 3];
+        int va = mesh_priv(m)->face_indices[3 * f + e];
+        int vb = mesh_priv(m)->face_indices[3 * f + (e + 1) % 3];
         int vlo = (va < vb) ? va : vb;
         int vhi = (va < vb) ? vb : va;
         unsigned int h = (unsigned int)(vlo * 73856093u ^ vhi * 19349663u) & htmask;
@@ -2799,9 +2891,9 @@ static void init_mesh(geometric_object *o) {
     } while (0)
 
     for (int f = 0; f < nf; f++) {
-      int a = m->face_indices[3 * f];
-      int b = m->face_indices[3 * f + 1];
-      int c = m->face_indices[3 * f + 2];
+      int a = mesh_priv(m)->face_indices[3 * f];
+      int b = mesh_priv(m)->face_indices[3 * f + 1];
+      int c = mesh_priv(m)->face_indices[3 * f + 2];
       /* Union a-b. */
       UF_FIND(a); UF_FIND(b);
       if (a != b) {
@@ -2810,9 +2902,9 @@ static void init_mesh(geometric_object *o) {
         if (uf_rank[a] == uf_rank[b]) uf_rank[a]++;
       }
       /* Union a-c (a is already a root after the above). */
-      a = m->face_indices[3 * f];
+      a = mesh_priv(m)->face_indices[3 * f];
       UF_FIND(a);
-      c = m->face_indices[3 * f + 2];
+      c = mesh_priv(m)->face_indices[3 * f + 2];
       UF_FIND(c);
       if (a != c) {
         if (uf_rank[a] < uf_rank[c]) { int t = a; a = c; c = t; }
@@ -2838,21 +2930,21 @@ static void init_mesh(geometric_object *o) {
     double *comp_vol = (double *)calloc(num_components, sizeof(double));
     CHECK(comp_vol, "out of memory");
     for (int f = 0; f < nf; f++) {
-      vector3 v0 = m->vertices.items[m->face_indices[3 * f]];
-      vector3 v1 = m->vertices.items[m->face_indices[3 * f + 1]];
-      vector3 v2 = m->vertices.items[m->face_indices[3 * f + 2]];
-      int ci = comp_id[m->face_indices[3 * f]];
+      vector3 v0 = m->vertices.items[mesh_priv(m)->face_indices[3 * f]];
+      vector3 v1 = m->vertices.items[mesh_priv(m)->face_indices[3 * f + 1]];
+      vector3 v2 = m->vertices.items[mesh_priv(m)->face_indices[3 * f + 2]];
+      int ci = comp_id[mesh_priv(m)->face_indices[3 * f]];
       comp_vol[ci] += vector3_dot(v0, vector3_cross(v1, v2));
     }
 
     /* Flip faces in components with negative signed volume. */
     for (int f = 0; f < nf; f++) {
-      int ci = comp_id[m->face_indices[3 * f]];
+      int ci = comp_id[mesh_priv(m)->face_indices[3 * f]];
       if (comp_vol[ci] < 0) {
-        int tmp = m->face_indices[3 * f + 1];
-        m->face_indices[3 * f + 1] = m->face_indices[3 * f + 2];
-        m->face_indices[3 * f + 2] = tmp;
-        m->face_normals[f] = vector3_scale(-1.0, m->face_normals[f]);
+        int tmp = mesh_priv(m)->face_indices[3 * f + 1];
+        mesh_priv(m)->face_indices[3 * f + 1] = mesh_priv(m)->face_indices[3 * f + 2];
+        mesh_priv(m)->face_indices[3 * f + 2] = tmp;
+        mesh_priv(m)->face_normals[f] = vector3_scale(-1.0, mesh_priv(m)->face_normals[f]);
       }
     }
 
@@ -2864,15 +2956,15 @@ static void init_mesh(geometric_object *o) {
 
   /* Build BVH. */
   int max_nodes = 2 * nf; /* upper bound on BVH nodes */
-  m->bvh = (mesh_bvh_node *)malloc(max_nodes * sizeof(mesh_bvh_node));
-  CHECK(m->bvh, "out of memory");
-  m->bvh_face_ids = (int *)malloc(nf * sizeof(int));
-  CHECK(m->bvh_face_ids, "out of memory");
+  mesh_priv(m)->bvh = (mesh_bvh_node *)malloc(max_nodes * sizeof(mesh_bvh_node));
+  CHECK(mesh_priv(m)->bvh, "out of memory");
+  mesh_priv(m)->bvh_face_ids = (int *)malloc(nf * sizeof(int));
+  CHECK(mesh_priv(m)->bvh_face_ids, "out of memory");
   for (int i = 0; i < nf; i++)
-    m->bvh_face_ids[i] = i;
+    mesh_priv(m)->bvh_face_ids[i] = i;
 
-  m->num_bvh_nodes = 0;
-  mesh_bvh_build(m, m->bvh_face_ids, 0, nf, m->bvh, &m->num_bvh_nodes);
+  mesh_priv(m)->num_bvh_nodes = 0;
+  mesh_bvh_build(m, mesh_priv(m)->bvh_face_ids, 0, nf, mesh_priv(m)->bvh, &mesh_priv(m)->num_bvh_nodes);
 }
 
 /***************************************************************/
@@ -2881,29 +2973,18 @@ static void init_mesh(geometric_object *o) {
 
 static void reinit_mesh(geometric_object *o) {
   mesh *m = o->subclass.mesh_data;
-  /* Skip rebuild if BVH is already built. Mesh vertices are not part of the
-     documented post-construction API, so a non-NULL bvh implies the cached
-     state is still valid. This preserves the fast path for geom_fix_object_ptr
-     on copied meshes (called hundreds of times during meep's init_sim).
-     NOT THREAD-SAFE for first-time init: the m->bvh != NULL check below is
-     unsynchronized, and init_mesh allocates m->bvh BEFORE populating its
-     contents. Concurrent first-time callers would race both on the check
-     (double-init, leak) and on the post-allocation window (second thread
-     reads bvh != NULL and traverses an empty BVH). Callers must ensure the
-     first reinit_mesh / init_mesh on each mesh runs single-threaded — in
-     practice this is done by calling geom_fix_objects() once at geometry
-     setup, before any parallel queries. After init, all subsequent
-     reinit_mesh calls are pure no-op fast-path returns and safe under
-     concurrency. */
-  if (m->bvh != NULL) return;
-  free(m->face_normals);
-  free(m->face_areas);
-  free(m->bvh);
-  free(m->bvh_face_ids);
-  m->face_normals = NULL;
-  m->face_areas = NULL;
-  m->bvh = NULL;
-  m->bvh_face_ids = NULL;
+  /* Fast path: if the internal cache exists, it is fully built and valid
+     (init_mesh only stores m->internal at the end, atomically from a
+     reader's perspective). mesh_copy clears m->internal to NULL on the
+     copy, which causes the first reinit_mesh on that copy to lazily
+     rebuild here. NOT THREAD-SAFE for first-time init on a given mesh:
+     the m->internal == NULL check below is unsynchronized. Callers must
+     ensure the first reinit_mesh / init_mesh on each mesh runs single-
+     threaded — in practice this is done by calling geom_fix_objects()
+     once at geometry setup, before any parallel queries. After init, all
+     subsequent reinit_mesh calls are no-op fast-path returns and safe
+     under concurrency. */
+  if (m->internal != NULL) return;
   init_mesh(o);
 }
 
@@ -2932,15 +3013,22 @@ geometric_object make_mesh_with_center(material_type material, vector3 center,
   CHECK(m->vertices.items, "out of memory");
   memcpy(m->vertices.items, vertices, num_vertices * sizeof(vector3));
 
-  /* Copy triangle indices. */
-  m->num_faces = num_triangles;
-  m->face_indices = (int *)malloc(3 * num_triangles * sizeof(int));
-  CHECK(m->face_indices, "out of memory");
-  memcpy(m->face_indices, triangles, 3 * num_triangles * sizeof(int));
+  /* Pack triangle indices into the public vector3_list. Each triangle's
+     three ints go into x, y, z of a vector3 (representable as doubles
+     up to 2^53). init_mesh will unpack into a flat int[] in the internal
+     cache for fast indexed access. */
+  m->face_indices.num_items = num_triangles;
+  m->face_indices.items = (vector3 *)malloc(num_triangles * sizeof(vector3));
+  CHECK(m->face_indices.items, "out of memory");
+  for (int t = 0; t < num_triangles; t++) {
+    m->face_indices.items[t].x = (double)triangles[3 * t];
+    m->face_indices.items[t].y = (double)triangles[3 * t + 1];
+    m->face_indices.items[t].z = (double)triangles[3 * t + 2];
+  }
 
-  /* Shift vertices before init so BVH is only built once. */
+  /* Shift vertices before init so the BVH is built around the final
+     positions. */
   if (!mesh_is_auto_center(center)) {
-    /* Compute centroid to determine the shift. */
     vector3 centroid = {0, 0, 0};
     for (int i = 0; i < num_vertices; i++)
       centroid = vector3_plus(centroid, m->vertices.items[i]);
@@ -2950,11 +3038,12 @@ geometric_object make_mesh_with_center(material_type material, vector3 center,
       m->vertices.items[i] = vector3_plus(m->vertices.items[i], shift);
   }
 
-  /* Initialize derived data (normals, closure check, BVH). */
+  /* Initialize derived data (allocates m->internal, computes normals,
+     closure check, BVH). */
   init_mesh(&o);
 
   /* Set center from the (possibly shifted) centroid. */
-  o.center = m->centroid;
+  o.center = mesh_priv(m)->centroid;
 
   return o;
 }
@@ -3266,24 +3355,20 @@ int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist
   if (num_intersections > slist_len) return num_intersections;
 
   qsort((void *)slist, num_intersections, sizeof(double), dcmp);
-  // if num_intersections is zero then just return that
-  if (num_intersections == 0) return num_intersections;
-  else {
-    // remove duplicates from slist
-    double duplicate_tolerance = 1e-3;
-    int num_unique_elements = 1;
-    double slist_unique[num_vertices+2];
-    slist_unique[0] = slist[0];
-    for (nv = 1; nv < num_intersections; nv++) {
-      if (fabs(slist[nv] - slist[nv-1]) > duplicate_tolerance*fabs(slist[nv])) {
-        slist_unique[num_unique_elements] = slist[nv];
-        num_unique_elements++;
-      }
+  // Remove near-duplicates in place: walk the sorted slist with a write
+  // head `iv` and read head `nv`; the write at slist[iv++] is always to a
+  // position <= nv, so the comparison slist[nv-1] reads the original
+  // sorted value (positions [iv..nv-1] are either untouched or written
+  // with their own value as a no-op).
+  double duplicate_tolerance = 1e-3;
+  int iv = num_intersections < 1 ? 0 : 1; /* min(1, num_intersections) */
+  for (nv = 1; nv < num_intersections; nv++) {
+    if (fabs(slist[nv] - slist[nv-1]) > duplicate_tolerance*fabs(slist[nv])) {
+      slist[iv++] = slist[nv];
     }
-    slist = slist_unique;
-    num_intersections = num_unique_elements;
-    return num_intersections;
   }
+  num_intersections = iv;
+  return num_intersections;
 }
 
 /***************************************************************/

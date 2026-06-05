@@ -174,13 +174,25 @@
 		     (property-type-name property)))
 	  (error "invalid value for property" (property-name property))))))
 
-(define (make-class type-name parent . properties)
-  (let ((new-class (list type-name parent properties)))
+(define (make-class type-name parent properties . opts)
+  ; opts is an alist of (option-name . option-value) pairs, e.g.
+  ; ((after-copy . mesh_after_copy) (after-destroy . mesh_after_destroy)).
+  ; Recognised options are 'after-copy and 'after-destroy, each a C function
+  ; name (symbol) that gen-ctl-io invokes from the generated <type>_copy /
+  ; <type>_destroy bodies. Unknown options are accepted and ignored to keep
+  ; this loosely versioned across libctl / gen-ctl-io / consumer combos.
+  (let ((new-class (list type-name parent properties opts)))
     (set! class-list (cons new-class class-list))
     new-class))
 (define (class-type-name class) (first class))
 (define (class-parent class) (second class))
 (define (class-properties class) (third class))
+(define (class-options class)
+  (if (>= (length class) 4) (fourth class) '()))
+(define (class-option class key)
+  (assoc-ref (class-options class) key))
+(define (class-after-copy class) (class-option class 'after-copy))
+(define (class-after-destroy class) (class-option class 'after-destroy))
 (define (class-properties-all class)
   (append (class-properties class)
 	  (let ((parent (class-parent class)))
@@ -276,50 +288,59 @@
 ; code above.
 
 (defmacro-public define-class (class-name parent . properties)
-  (let ((pdefs (map
-		(lambda (p)
-		  (let ((name (cadr p))
-			(type-name (cadddr p)))
-		    `(define ,name
-		       (type-property-value-constructor
-			,type-name (quote ,name)))))
-		(list-transform-positive properties
-		  (lambda (p) (eq? (car p) 'define-property)))))
-	(ppdefs (map
+  (let* ((class-option-form?
+	  (lambda (p) (and (pair? p)
+			   (memq (car p) '(after-copy after-destroy)))))
+	 (option-forms (list-transform-positive properties class-option-form?))
+	 (non-option-forms (list-transform-negative properties class-option-form?))
+	 (pdefs (map
 		 (lambda (p)
 		   (let ((name (cadr p))
-			 (type-name (cadddr p))
-			 (post-process-func (list-ref p 4)))
-		     `(define ,name (post-processing-constructor
-				     ,post-process-func
-				     (type-property-value-constructor
-				      ,type-name (quote ,name))))))
-		 (list-transform-positive properties
-		   (lambda (p)
-		     (eq? (car p) 'define-post-processed-property)))))
-	(props (map
-		(lambda (p)
-		  (cond
-		   ((eq? (car p) 'define-property)
+			 (type-name (cadddr p)))
+		     `(define ,name
+			(type-property-value-constructor
+			 ,type-name (quote ,name)))))
+		 (list-transform-positive non-option-forms
+		   (lambda (p) (eq? (car p) 'define-property)))))
+	 (ppdefs (map
+		  (lambda (p)
 		    (let ((name (cadr p))
-			  (default (caddr p))
 			  (type-name (cadddr p))
-			  (constraints (cddddr p)))
-		      `(make-property (quote ,name) ,type-name ,default
-				      not-derived ,@constraints)))
-		   ((eq? (car p) 'define-post-processed-property)
-		    (let ((name (cadr p))
-			  (default (caddr p))
-			  (type-name (cadddr p))
-			  (post-process-func (list-ref p 4))
-			  (constraints (cdr (cddddr p))))
-		      `(make-property (quote ,name) ,type-name ,default
-				      not-derived ,@constraints)))
-		   (else p)))
-		properties)))
+			  (post-process-func (list-ref p 4)))
+		      `(define ,name (post-processing-constructor
+				      ,post-process-func
+				      (type-property-value-constructor
+				       ,type-name (quote ,name))))))
+		  (list-transform-positive non-option-forms
+		    (lambda (p)
+		      (eq? (car p) 'define-post-processed-property)))))
+	 (props (map
+		 (lambda (p)
+		   (cond
+		    ((eq? (car p) 'define-property)
+		     (let ((name (cadr p))
+			   (default (caddr p))
+			   (type-name (cadddr p))
+			   (constraints (cddddr p)))
+		       `(make-property (quote ,name) ,type-name ,default
+				       not-derived ,@constraints)))
+		    ((eq? (car p) 'define-post-processed-property)
+		     (let ((name (cadr p))
+			   (default (caddr p))
+			   (type-name (cadddr p))
+			   (post-process-func (list-ref p 4))
+			   (constraints (cdr (cddddr p))))
+		       `(make-property (quote ,name) ,type-name ,default
+				       not-derived ,@constraints)))
+		    (else p)))
+		 non-option-forms))
+	 (opt-args (map (lambda (o)
+			  `(cons (quote ,(car o)) (quote ,(cadr o))))
+			option-forms)))
   `(begin
      ,@pdefs
      ,@ppdefs
      (define ,class-name (make-class (quote ,class-name)
 				   ,parent
-				   ,@props)))))
+				   (list ,@props)
+				   ,@opt-args)))))
