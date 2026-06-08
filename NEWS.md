@@ -1,5 +1,17 @@
 # Libctl Release Notes
 
+## libctl 4.7.0
+
+5/12/2026
+
+* New mesh geometry object (#74).
+
+* Bug fixes for thread safety (#75, #81).
+
+* Support for multithreading via configure flag `--enable-openmp` (#79).
+
+* CI workflow via Github Actions (#85).
+
 ## libctl 4.6.0
 
 4/16/2026
