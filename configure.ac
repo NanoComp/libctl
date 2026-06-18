@@ -8,7 +8,7 @@ AM_MAINTAINER_MODE
 # Shared-library version number; indicates api compatibility, and is
 # not the same as the "public" version number.  (Don't worry about this
 # except for public releases.)
-SHARED_VERSION_INFO="10:2:4" # CURRENT:REVISION:AGE
+SHARED_VERSION_INFO="11:0:4" # CURRENT:REVISION:AGE
 
 AM_INIT_AUTOMAKE([foreign])
 AC_SUBST(SHARED_VERSION_INFO)
