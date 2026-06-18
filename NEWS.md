@@ -2,7 +2,7 @@
 
 ## libctl 4.7.0
 
-5/12/2026
+6/18/2026
 
 * New mesh geometry object (#74).
 
