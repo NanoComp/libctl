@@ -8,7 +8,7 @@
 
 * Bug fixes for thread safety (#75, #81).
 
-* Support for multithreading via configure flag `--enable-openmp` (#79).
+* Enable thread-safety tests via configure flag `--enable-openmp` (#79); the library itself is still single-threaded (but many functions of libctlgeom are thread-safe).
 
 * CI workflow via Github Actions (#85).
 
