@@ -4,48 +4,48 @@
 
 6/18/2026
 
-* New mesh geometry object (#74).
+* New mesh geometry object ([#74]).
 
-* Bug fixes for thread safety (#75, #81).
+* Bug fixes for thread safety ([#75], [#81]).
 
-* Enable thread-safety tests via configure flag `--enable-openmp` (#79); the library itself is still single-threaded (but many functions of libctlgeom are thread-safe).
+* Enable thread-safety tests via configure flag `--enable-openmp` ([#79]); the library itself is still single-threaded (but many functions of libctlgeom are thread-safe).
 
-* CI workflow via Github Actions (#85).
+* CI workflow via Github Actions ([#85]).
 
 ## libctl 4.6.0
 
 4/16/2026
 
-* Python-callable extension (#71), currently with limited documentation.
+* Python-callable extension ([#71]), currently with limited documentation.
 
-* Fix memory leak for prism objects (#73).
+* Fix memory leak for prism objects ([#73]).
 
 ## libctl 4.5.1
 
 2/1/22
 
-* Ignore duplicate consecutive prism vertices (#60).
+* Ignore duplicate consecutive prism vertices ([#60]).
 
-* Memory bug fixes (#58, #59).
+* Memory bug fixes ([#58], [#59]).
 
 ## libctl 4.5.0
 
 2/19/20
 
 * New `make_slanted_prism` functions to make a prism with
-  a given sidewall angle (#53).
+  a given sidewall angle ([#53]).
 
 * Defined `LIBCTL_MAJOR_VERSION` etc. in `ctlgeom.h` header file when
   using stand-alone libctlgeom.
 
-* Bugfix in point-in-prism test (#49).
+* Bugfix in point-in-prism test ([#49]).
 
 ## libctl 4.4.0
 
 11/12/19
 
 * `geom_object_volume` function to get the volume of a 3d object
-  (accelerates `box_overlap_with_object` for objects completely within a box) (#45).
+  (accelerates `box_overlap_with_object` for objects completely within a box) ([#45]).
 
 * Bugfix to geometry tree search for empty dimensions.
 
@@ -53,14 +53,14 @@
 
 4/17/19
 
-* `ctl_printf_callback` so that callers can capture stdout (#39).
+* `ctl_printf_callback` so that callers can capture stdout ([#39]).
 
 ## libctl 4.2.0
 
 1/7/19
 
 * Better handling of `center` parameter of prisms, allowing this
-  to be optionally specified (#35).  Deprecates old `geom_fix_object`
+  to be optionally specified ([#35]).  Deprecates old `geom_fix_object`
   and `geom_fix_objects0` functions in favor of `geom_fix_object_ptr`
   and `geom_fix_object_list`.  (In particular, the old `geom_fix_object` routine will not work properly for prisms in
   which the center was not computed.)
@@ -69,7 +69,7 @@
 
 11/16/18
 
- * Work around gcc bug (closes #32).
+ * Work around gcc bug (closes [#32]).
 
  * Allow subclass properties to override defaults (or lack thereof) in parent class.
 
@@ -77,28 +77,28 @@
 
 9/7/2018
 
-* Improved prism handling of points on prism faces (#23) and various cosmetic improvements (#22, #24, #25).
+* Improved prism handling of points on prism faces ([#23]) and various cosmetic improvements ([#22], [#24], [#25]).
 
 ## libctl 4.1.2
 
 7/27/2018
 
-* Bug fix in prism subpixel averaging (#19 and #20), thanks to
+* Bug fix in prism subpixel averaging ([#19] and [#20]), thanks to
   @DerekK88 for the bug report.
 
 ## libctl 4.1.1
 
 6/29/2018
 
-* Bug fix in prism bounding boxes (#17).
+* Bug fix in prism bounding boxes ([#17]).
 
-* Build fix for systems with an old `ctlgeom.h` file installed (#16).
+* Build fix for systems with an old `ctlgeom.h` file installed ([#16]).
 
 ## libctl 4.1
 
 6/7/2018
 
-* New "prism" geometric-object type for polygonal prisms (#13).
+* New "prism" geometric-object type for polygonal prisms ([#13]).
 
 ## libctl 4.0.1
 
@@ -444,3 +444,30 @@
 11/19/1999.
 
   * Initial public release.
+
+<!--- generated links: -->
+[#13]: https://github.com/NanoComp/libctl/issues/13
+[#16]: https://github.com/NanoComp/libctl/issues/16
+[#17]: https://github.com/NanoComp/libctl/issues/17
+[#19]: https://github.com/NanoComp/libctl/issues/19
+[#20]: https://github.com/NanoComp/libctl/issues/20
+[#22]: https://github.com/NanoComp/libctl/issues/22
+[#23]: https://github.com/NanoComp/libctl/issues/23
+[#24]: https://github.com/NanoComp/libctl/issues/24
+[#25]: https://github.com/NanoComp/libctl/issues/25
+[#32]: https://github.com/NanoComp/libctl/issues/32
+[#35]: https://github.com/NanoComp/libctl/issues/35
+[#39]: https://github.com/NanoComp/libctl/issues/39
+[#45]: https://github.com/NanoComp/libctl/issues/45
+[#49]: https://github.com/NanoComp/libctl/issues/49
+[#53]: https://github.com/NanoComp/libctl/issues/53
+[#58]: https://github.com/NanoComp/libctl/issues/58
+[#59]: https://github.com/NanoComp/libctl/issues/59
+[#60]: https://github.com/NanoComp/libctl/issues/60
+[#71]: https://github.com/NanoComp/libctl/issues/71
+[#73]: https://github.com/NanoComp/libctl/issues/73
+[#74]: https://github.com/NanoComp/libctl/issues/74
+[#75]: https://github.com/NanoComp/libctl/issues/75
+[#79]: https://github.com/NanoComp/libctl/issues/79
+[#81]: https://github.com/NanoComp/libctl/issues/81
+[#85]: https://github.com/NanoComp/libctl/issues/85
