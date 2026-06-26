@@ -30,7 +30,7 @@ jobs:
         run: |
           sh autogen.sh --prefix=$PWD/.local --enable-openmp
           make
-          make check
+          make distcheck
           make install
 
       - name: Print test logs on failure
