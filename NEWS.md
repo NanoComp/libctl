@@ -6,7 +6,7 @@
 
 * Bugfix when compiling Scheme C++ projects (e.g. Meep) with libctl geometry utils ([#94]).
 
-* Fix intermittent test failures ([#93]).
+* Reduce intermittent test failures ([#93]).
 
 ## libctl 4.7.0
 
