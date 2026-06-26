@@ -1,5 +1,13 @@
 # Libctl Release Notes
 
+## libctl 4.7.1
+
+6/26/2026
+
+* Bugfix when compiling Scheme C++ projects (e.g. Meep) with libctl geometry utils ([#94]).
+
+* Reduce intermittent test failures ([#93]).
+
 ## libctl 4.7.0
 
 6/18/2026
@@ -471,3 +479,5 @@
 [#79]: https://github.com/NanoComp/libctl/issues/79
 [#81]: https://github.com/NanoComp/libctl/issues/81
 [#85]: https://github.com/NanoComp/libctl/issues/85
+[#93]: https://github.com/NanoComp/libctl/issues/93
+[#94]: https://github.com/NanoComp/libctl/issues/94
