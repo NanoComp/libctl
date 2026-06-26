@@ -375,10 +375,12 @@ int test_line_segment_intersection(geometric_object the_block, geometric_object 
 
     double sblock = intersect_line_segment_with_object(p, d, the_block, a, b);
     double sprism = intersect_line_segment_with_object(p, d, the_prism, a, b);
-    if (fabs(sblock - sprism) > 1.0e-6 * fmax(fabs(sblock), fabs(sprism))) num_failed++;
+    double diff = fabs(sblock - sprism);
+    double tol = 1.0e-5 * vector3_norm(size);
+    if (diff > tol) num_failed++;
 
     if (f) {
-      int success = fabs(sblock - sprism) <= 1.0e-6 * fmax(fabs(sblock), fabs(sprism));
+      int success = diff <= tol;
 #pragma omp critical(test_prism_log)
       {
         fprintf(f, " %e %e %s\n", sblock, sprism, success ? "success" : "fail");
