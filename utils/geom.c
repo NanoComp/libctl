@@ -34,40 +34,10 @@ static void material_type_copy(void **src, void **dest) { *dest = *src; }
 #endif
 #include "ctlgeom.h"
 
-/**************************************************************************/
+#ifndef CTL_H /* nusing scheme interface */
+#define SCM void*
+#endif
 
-/* Private mesh internals.
-
-   Inlined here rather than placed in a separate header because MPB/meep
-   and the libctl examples/ directory build by copying this geom.c file
-   out of the libctl tree, so any companion header would not travel with
-   it.  Keep this section in sync with any future split if/when those
-   downstreams are taught to link against libctlgeom directly.  */
-
-typedef struct mesh_bvh_node {
-  vector3 bbox_low;
-  vector3 bbox_high;
-  int     left_child;
-  int     right_child;
-  int     face_start;
-  int     face_count;
-} mesh_bvh_node;
-
-typedef struct mesh_internal {
-  int            num_faces;
-  int           *face_indices;    /* unpacked flat: 3 ints per triangle */
-  vector3       *face_normals;
-  number        *face_areas;
-  int            num_bvh_nodes;
-  mesh_bvh_node *bvh;
-  int           *bvh_face_ids;
-  vector3        centroid;
-  number         lengthscale;
-} mesh_internal;
-
-static inline mesh_internal *mesh_priv(const mesh *m) {
-  return (mesh_internal *)m->internal;
-}
 
 #ifdef CXX_CTL_IO
 using namespace ctlio;
@@ -105,6 +75,43 @@ using namespace ctlio;
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
+
+/**************************************************************************/
+
+/* Private mesh internals.
+
+   Inlined here rather than placed in a separate header because MPB/meep
+   and the libctl examples/ directory build by copying this geom.c file
+   out of the libctl tree, so any companion header would not travel with
+   it.  Keep this section in sync with any future split if/when those
+   downstreams are taught to link against libctlgeom directly.  */
+
+typedef struct mesh_bvh_node {
+  vector3 bbox_low;
+  vector3 bbox_high;
+  int     left_child;
+  int     right_child;
+  int     face_start;
+  int     face_count;
+} mesh_bvh_node;
+
+typedef struct mesh_internal {
+  int            num_faces;
+  int           *face_indices;    /* unpacked flat: 3 ints per triangle */
+  vector3       *face_normals;
+  number        *face_areas;
+  int            num_bvh_nodes;
+  mesh_bvh_node *bvh;
+  int           *bvh_face_ids;
+  vector3        centroid;
+  number         lengthscale;
+} mesh_internal;
+
+static inline mesh_internal *mesh_priv(const mesh *m) {
+  return (mesh_internal *)m->internal;
+}
+
+/**************************************************************************/
 
 // forward declarations of prism-related routines, at the bottom of this file
 static boolean node_in_polygon(double qx, double qy, vector3 *nodes, int num_nodes);
@@ -2717,14 +2724,14 @@ static void mesh_internal_free(void *p) {
 /* Lifecycle hooks invoked by gen-ctl-io from the auto-generated mesh_copy
    and mesh_destroy. Declared on the mesh class in geom.scm via
    (after-copy ...) / (after-destroy ...). */
-void mesh_after_copy(mesh *m) {
+void CTLIO mesh_after_copy(mesh *m) {
   /* The auto-generated mesh_copy shallow-copies internal from the source;
      discard that pointer so this copy gets its own cache, then build it. */
   m->internal = NULL;
   mesh_init_internal(m);
 }
 
-void mesh_after_destroy(mesh *m) {
+void CTLIO mesh_after_destroy(mesh *m) {
   mesh_internal_free(m->internal);
 }
 
@@ -2746,7 +2753,7 @@ static void init_mesh(geometric_object *o) {
      (either the mesh was just constructed, or reinit_mesh cleared it). */
   mesh_internal *p = (mesh_internal *)calloc(1, sizeof(mesh_internal));
   CHECK(p, "out of memory");
-  m->internal = p;
+  m->internal = (SCM) p;
 
   /* Unpack face_indices: the public vector3_list stores 3 ints per
      triangle packed into a vector3 (x, y, z are the indices as doubles,
@@ -3397,14 +3404,16 @@ double intersect_line_segment_with_prism(prism *prsm, vector3 pc, vector3 dc, do
 
   if (na == -1) goto done;
 
-  int inside = ((na % 2) == 0 ? 0 : 1);
-  double last_s = a;
-  for (ns = na; ns < num_intersections; ns++) {
-    double this_s = fmin(b, slist[ns]);
-    if (inside) ds += (this_s - last_s);
-    if (b < slist[ns]) break;
-    inside = (1 - inside);
-    last_s = this_s;
+  {
+    int inside = ((na % 2) == 0 ? 0 : 1);
+    double last_s = a;
+    for (ns = na; ns < num_intersections; ns++) {
+      double this_s = fmin(b, slist[ns]);
+      if (inside) ds += (this_s - last_s);
+      if (b < slist[ns]) break;
+      inside = (1 - inside);
+      last_s = this_s;
+    }
   }
 
 done:
