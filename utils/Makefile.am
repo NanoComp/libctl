@@ -36,6 +36,8 @@ dist_man_MANS = gen-ctl-io.1
 
 BUILT_SOURCES = gen-ctl-io geom-ctl-io.c ctlgeom-types.h nlopt-constants.scm
 
+DISTCLEANFILES = octagon_c_normal_sidewall_gnu_plot.dat octagon_c_two_half_degree_sidewall_gnu_plot.dat square_normal_sidewall_gnu_plot.dat square_one_degree_sidewall_gnu_plot.dat
+
 nlopt-constants.scm:
 	echo "#include <nlopt.h>" > nlopt-constants.h
 	echo "; AUTOMATICALLY GENERATED - DO NOT EDIT" > $@
