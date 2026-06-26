@@ -375,12 +375,8 @@ int test_line_segment_intersection(geometric_object the_block, geometric_object 
 
     double sblock = intersect_line_segment_with_object(p, d, the_block, a, b);
     double sprism = intersect_line_segment_with_object(p, d, the_prism, a, b);
-    // Relative tolerance plus a floor proportional to the object's size, rather
-    // than a hard-coded length, so a segment that merely grazes the shared
-    // boundary (both intersection lengths ~0) isn't flagged as a spurious fail.
     double diff = fabs(sblock - sprism);
-    double scale = fmax(fabs(sblock), fabs(sprism));
-    double tol = 1.0e-6 * scale + 1.0e-5 * vector3_norm(size);
+    double tol = 1.0e-5 * vector3_norm(size);
     if (diff > tol) num_failed++;
 
     if (f) {
