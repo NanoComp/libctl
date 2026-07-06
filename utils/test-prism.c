@@ -31,6 +31,9 @@
 
 #ifdef _OPENMP
 #include <omp.h>
+#else
+static int omp_get_thread_num(void) { return 0; }
+static int omp_get_max_threads(void) { return 1; }
 #endif
 
 #include "ctlgeom.h"
@@ -117,32 +120,46 @@ static vector3 make_vector3(double x, double y, double z) {
 /************************************************************************/
 /* return a uniform random number in [a,b] */
 /************************************************************************/
-static double urand(double a, double b) { return a + (b - a) * (rand() / ((double)RAND_MAX)); }
+/* Thread-safe: each thread passes a pointer to its own seed (see rand_r),
+ * so results are reproducible and independent of parallel execution order. */
+static double urand(double a, double b, unsigned int *seed) {
+  return a + (b - a) * (rand_r(seed) / ((double)RAND_MAX));
+}
 
-static double drand() { return urand(0.0, 1.0); }
+static double drand(unsigned int *seed) { return urand(0.0, 1.0, seed); }
+
+/* Allocate one PRNG seed per OpenMP thread, seed[tid] = tid (caller frees).
+ * Inside a parallel loop, pass &seed[omp_get_thread_num()] to the random
+ * helpers so each thread draws from its own reproducible, thread-safe stream. */
+static unsigned int *make_thread_seeds(void) {
+  int nthreads = omp_get_max_threads(), t;
+  unsigned int *seed = (unsigned int *)malloc(nthreads * sizeof(unsigned int));
+  for (t = 0; t < nthreads; t++) seed[t] = (unsigned int)t;
+  return seed;
+}
 
 /************************************************************************/
 /* random point uniformly distributed over a parallelepiped             */
 /************************************************************************/
-vector3 random_point_in_box(vector3 min_corner, vector3 max_corner) {
-  return make_vector3(urand(min_corner.x, max_corner.x), urand(min_corner.y, max_corner.y),
-                      urand(min_corner.z, max_corner.z));
+vector3 random_point_in_box(vector3 min_corner, vector3 max_corner, unsigned int *seed) {
+  return make_vector3(urand(min_corner.x, max_corner.x, seed), urand(min_corner.y, max_corner.y, seed),
+                      urand(min_corner.z, max_corner.z, seed));
 }
 
 /************************************************************************/
 /* random point uniformly distributed over a planar polygon             */
 /*  (all z coordinates are 0)                                           */
 /************************************************************************/
-vector3 random_point_in_polygon(prism *prsm) {
+vector3 random_point_in_polygon(prism *prsm, unsigned int *seed) {
   // randomly choose a vertex and generate random point within the triangle
   // formed by that vertex, the next vertex, and the centroid
   vector3 *vertices = prsm->vertices.items;
   int num_vertices = prsm->vertices.num_items;
-  int which_vertex = rand() % num_vertices;
+  int which_vertex = rand_r(seed) % num_vertices;
   vector3 v0 = {0, 0, 0};
   vector3 v1 = vertices[which_vertex];
   vector3 v2 = vertices[(which_vertex + 1) % num_vertices];
-  double xi = urand(0.0, 1.0), eta = urand(0.0, 1.0 - xi);
+  double xi = urand(0.0, 1.0, seed), eta = urand(0.0, 1.0 - xi, seed);
   return vector3_plus(vector3_scale(xi, vector3_minus(v1, v0)),
                       vector3_scale(eta, vector3_minus(v2, v0)));
 }
@@ -150,7 +167,7 @@ vector3 random_point_in_polygon(prism *prsm) {
 /************************************************************************/
 /* random point uniformly distributed over the surface of a prism       */
 /************************************************************************/
-vector3 random_point_on_prism(geometric_object o) {
+vector3 random_point_on_prism(geometric_object o, unsigned int *seed) {
   prism *prsm = o.subclass.prism_data;
   vector3 *vertices = prsm->vertices_p.items;
   int num_vertices = prsm->vertices_p.num_items;
@@ -158,18 +175,18 @@ vector3 random_point_on_prism(geometric_object o) {
 
   // choose a face
   int num_faces = num_vertices + 2;
-  int which_face = rand() % num_faces;
+  int which_face = rand_r(seed) % num_faces;
   if (which_face < num_vertices) // side face
   {
     vector3 min_corner = vertices[which_face];
     vector3 max_corner = vertices[(which_face + 1) % num_vertices];
     max_corner.z = height;
     return random_point_in_box(prism_coordinate_p2c(prsm, min_corner),
-                               prism_coordinate_p2c(prsm, max_corner));
+                               prism_coordinate_p2c(prsm, max_corner), seed);
   }
   else // floor or ceiling
   {
-    vector3 p = random_point_in_polygon(prsm);
+    vector3 p = random_point_in_polygon(prsm, seed);
     if (which_face == num_faces - 1) p.z = height;
     return prism_coordinate_p2c(prsm, p);
   }
@@ -178,9 +195,9 @@ vector3 random_point_on_prism(geometric_object o) {
 /************************************************************************/
 /* random unit vector with direction uniformly distributed over unit sphere*/
 /************************************************************************/
-vector3 random_unit_vector3() {
-  double cos_theta = urand(0.0, 1.0), sin_theta = sqrt(1.0 - cos_theta * cos_theta);
-  double phi = urand(0.0, 2.0 * K_PI);
+vector3 random_unit_vector3(unsigned int *seed) {
+  double cos_theta = urand(0.0, 1.0, seed), sin_theta = sqrt(1.0 - cos_theta * cos_theta);
+  double phi = urand(0.0, 2.0 * K_PI, seed);
   return make_vector3(sin_theta * cos(phi), sin_theta * sin(phi), cos_theta);
 }
 
@@ -284,9 +301,13 @@ int test_point_inclusion(geometric_object the_block, geometric_object the_prism,
   // latter calls geom_fix_object_ptr internally and is not thread-safe.
   // the_block and the_prism were fixed up in run_unit_tests above
   // before this parallel loop runs.
-#pragma omp parallel for schedule(dynamic) reduction(+ : num_failed, num_adjusted)
+  // schedule(static): fixed iteration->thread mapping so per-thread seeds give
+  // reproducible results (dynamic scheduling would reintroduce nondeterminism).
+  unsigned int *seed = make_thread_seeds();
+#pragma omp parallel for schedule(static) reduction(+ : num_failed, num_adjusted)
   for (n = 0; n < num_tests; n++) {
-    vector3 p = random_point_in_box(min_corner, max_corner);
+    unsigned int *s = &seed[omp_get_thread_num()];
+    vector3 p = random_point_in_box(min_corner, max_corner, s);
     boolean in_block = point_in_fixed_objectp(p, the_block);
     boolean in_prism = point_in_fixed_objectp(p, the_prism);
 
@@ -304,6 +325,7 @@ int test_point_inclusion(geometric_object the_block, geometric_object the_prism,
     }
   }
   if (f) fclose(f);
+  free(seed);
 
   printf("point inclusion: %i/%i points failed (%i adjusted)\n", num_failed, num_tests,
          num_adjusted);
@@ -325,14 +347,16 @@ int test_normal_to_object(geometric_object the_block, geometric_object the_prism
   double tolerance = 1.0e-6;
 
   int n;
-#pragma omp parallel for schedule(dynamic) reduction(+ : num_failed)
+  unsigned int *seed = make_thread_seeds();
+#pragma omp parallel for schedule(static) reduction(+ : num_failed)
   for (n = 0; n < num_tests; n++) {
+    unsigned int *s = &seed[omp_get_thread_num()];
     // with probability PFACE, generate random base point lying on one
     //  of the 6 faces of the prism.
     // with probability 1-PFACE, generate random base point lying in the
     //  extended volume (2x volume of block)
-    vector3 p = (urand(0.0, 1.0) < PFACE) ? random_point_on_prism(the_prism)
-                                          : random_point_in_box(min_corner, max_corner);
+    vector3 p = (urand(0.0, 1.0, s) < PFACE) ? random_point_on_prism(the_prism, s)
+                                             : random_point_in_box(min_corner, max_corner, s);
 
     // normal_to_fixed_object instead of normal_to_object: the latter is
     // not thread-safe (calls geom_fix_object_ptr internally).
@@ -348,6 +372,7 @@ int test_normal_to_object(geometric_object the_block, geometric_object the_prism
     }
   }
   if (f) fclose(f);
+  free(seed);
 
   printf("%i/%i normals failed\n", num_failed, num_tests);
   return num_failed;
@@ -365,13 +390,15 @@ int test_line_segment_intersection(geometric_object the_block, geometric_object 
 
   int num_failed = 0;
   int n;
-#pragma omp parallel for schedule(dynamic) reduction(+ : num_failed)
+  unsigned int *seed = make_thread_seeds();
+#pragma omp parallel for schedule(static) reduction(+ : num_failed)
   for (n = 0; n < num_tests; n++) {
+    unsigned int *s = &seed[omp_get_thread_num()];
     // randomly generated base point within enlarged bounding box
-    vector3 p = random_point_in_box(min_corner, max_corner);
-    vector3 d = random_unit_vector3();
-    double a = urand(0.0, 1.0);
-    double b = urand(0.0, 1.0);
+    vector3 p = random_point_in_box(min_corner, max_corner, s);
+    vector3 d = random_unit_vector3(s);
+    double a = urand(0.0, 1.0, s);
+    double b = urand(0.0, 1.0, s);
 
     double sblock = intersect_line_segment_with_object(p, d, the_block, a, b);
     double sprism = intersect_line_segment_with_object(p, d, the_prism, a, b);
@@ -392,6 +419,7 @@ int test_line_segment_intersection(geometric_object the_block, geometric_object 
     }
   }
   if (f) fclose(f);
+  free(seed);
 
   printf("%i/%i segments failed\n", num_failed, num_tests);
   return num_failed;
@@ -1152,8 +1180,9 @@ int run_unit_tests() {
   /* and prism by a random displacement vector                   */
   /***************************************************************/
 #define P_SHIFT 0.75
-  if (urand(0.0, 1.0) < P_SHIFT) {
-    vector3 shift = vector3_scale(urand(0.0, 1.0), random_unit_vector3());
+  unsigned int shift_seed = 0; // single-threaded setup, own seed
+  if (urand(0.0, 1.0, &shift_seed) < P_SHIFT) {
+    vector3 shift = vector3_scale(urand(0.0, 1.0, &shift_seed), random_unit_vector3(&shift_seed));
     the_block.center = vector3_plus(the_block.center, shift);
     the_prism.center = vector3_plus(the_prism.center, shift);
     // Sync each object's internal cache (block projection_matrix, prism
@@ -1209,7 +1238,8 @@ void usage(char *msg) { print_usage(msg, 1); }
 /************************************************************************/
 /************************************************************************/
 int main(int argc, char *argv[]) {
-  srand(time(NULL));
+  // No global srand(): the randomized tests use rand_r with fixed per-thread
+  // seeds (see make_thread_seeds), so runs are deterministic and reproducible.
   geom_initialize();
 
   if (argc <= 1) // if no arguments, run unit tests
