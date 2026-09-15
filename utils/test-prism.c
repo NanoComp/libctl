@@ -661,9 +661,9 @@ int test_helper_functions_on_octagonal_c_prism() {
   point_in_prism_test_points_normal_sidewall.num_items = 25;
   point_in_prism_test_points_normal_sidewall.items = (vector3 *)malloc(point_in_prism_test_points_normal_sidewall.num_items * sizeof(vector3));
   point_in_prism_test_points_normal_sidewall.items[0]  = make_vector3(46.4462, 12.7914, 63.5000); // interior point
-  point_in_prism_test_points_normal_sidewall.items[1]  = make_vector3(127.697, 46.4462, 95.2500); // interior point
+  point_in_prism_test_points_normal_sidewall.items[1]  = make_vector3(127.6965, 46.4462, 95.2500); // point on external side face (midpoint of edge 7-8)
   point_in_prism_test_points_normal_sidewall.items[2]  = make_vector3(70.2439, 0.00000, 31.7500); // point on external side face
-  point_in_prism_test_points_normal_sidewall.items[3]  = make_vector3(101.824, 38.6637, 95.2500); // point on internal side face
+  point_in_prism_test_points_normal_sidewall.items[3]  = make_vector3(101.8242, 38.6637, 95.2500); // point on internal side face (midpoint of edge 6-7)
   point_in_prism_test_points_normal_sidewall.items[4]  = make_vector3(19.1870, 49.0955, 127.000); // point on top face
   point_in_prism_test_points_normal_sidewall.items[5]  = make_vector3(134.092, 96.6909, 0.00000); // point on bottom face
   point_in_prism_test_points_normal_sidewall.items[6]  = make_vector3(127.6965, 94.04175, 127.0); // edge on top

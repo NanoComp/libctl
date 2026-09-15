@@ -3118,6 +3118,10 @@ vector3 prism_vector_c2p(prism *prsm, vector3 vc) {
 /* NON_INTERSECTING  neither of the above                      */
 /***************************************************************/
 #define THRESH 1.0e-5
+/* relative tolerance for "q0 lies on the line through q1, q2", expressed as a
+   fraction of the edge length; matches the 1.0e-10 used just below for the
+   near-parallel test on DetM. */
+#define SEG_PERP_TOL 1.0e-10
 #define NON_INTERSECTING 0
 #define INTERSECTING 1
 #define IN_SEGMENT 2
@@ -3136,7 +3140,14 @@ int intersect_line_with_segment(vector3 q0, vector3 q1, vector3 q2, vector3 u, d
     double q01x = q0.x - q1.x, q01y = q0.y - q1.y, q01 = sqrt(q01x * q01x + q01y * q01y);
     double q02x = q0.x - q2.x, q02y = q0.y - q2.y, q02 = sqrt(q02x * q02x + q02y * q02y);
     double dot = q01x * q02x + q01y * q02y;
-    if (fabs(dot) < (1.0 - THRESH) * q01 * q02)
+    /* q0 lies on the line through q1,q2 iff its perpendicular distance
+       |cross|/sqrt(L2) is negligible. Testing instead the cosine of the angle
+       subtended at q0 against (1-THRESH) -- as this code used to do -- is
+       equivalent to a perpendicular tolerance of sqrt(THRESH/8)*|q1-q2|, i.e.
+       0.22 length units for an edge of length 200, so points well outside the
+       polygon were reported as lying on its boundary. */
+    double cross = M01 * RHSy - M11 *RHSx; /* (q1-q2) x (q1-q0) */
+    if (cross * cross > SEG_PERP_TOL * SEG_PERP_TOL * L2 * L2)
       return NON_INTERSECTING;
     else if (dot < 0.0) {
       if (s) *s = 0.0;
