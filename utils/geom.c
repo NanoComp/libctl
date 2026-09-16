@@ -3146,7 +3146,7 @@ int intersect_line_with_segment(vector3 q0, vector3 q1, vector3 q2, vector3 u, d
        equivalent to a perpendicular tolerance of sqrt(THRESH/8)*|q1-q2|, i.e.
        0.22 length units for an edge of length 200, so points well outside the
        polygon were reported as lying on its boundary. */
-    double cross = M01 * RHSy - M11 *RHSx; /* (q1-q2) x (q1-q0) */
+    double cross = M01 * RHSy - M11 * RHSx; /* (q1-q2) x (q1-q0) */
     if (cross * cross > SEG_PERP_TOL * SEG_PERP_TOL * L2 * L2)
       return NON_INTERSECTING;
     else if (dot < 0.0) {
