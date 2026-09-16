@@ -661,9 +661,9 @@ int test_helper_functions_on_octagonal_c_prism() {
   point_in_prism_test_points_normal_sidewall.num_items = 25;
   point_in_prism_test_points_normal_sidewall.items = (vector3 *)malloc(point_in_prism_test_points_normal_sidewall.num_items * sizeof(vector3));
   point_in_prism_test_points_normal_sidewall.items[0]  = make_vector3(46.4462, 12.7914, 63.5000); // interior point
-  point_in_prism_test_points_normal_sidewall.items[1]  = make_vector3(127.697, 46.4462, 95.2500); // interior point
+  point_in_prism_test_points_normal_sidewall.items[1]  = make_vector3(127.6965, 46.4462, 95.2500); // point on external side face (midpoint of edge 7-8)
   point_in_prism_test_points_normal_sidewall.items[2]  = make_vector3(70.2439, 0.00000, 31.7500); // point on external side face
-  point_in_prism_test_points_normal_sidewall.items[3]  = make_vector3(101.824, 38.6637, 95.2500); // point on internal side face
+  point_in_prism_test_points_normal_sidewall.items[3]  = make_vector3(101.8242, 38.6637, 95.2500); // point on internal side face (midpoint of edge 6-7)
   point_in_prism_test_points_normal_sidewall.items[4]  = make_vector3(19.1870, 49.0955, 127.000); // point on top face
   point_in_prism_test_points_normal_sidewall.items[5]  = make_vector3(134.092, 96.6909, 0.00000); // point on bottom face
   point_in_prism_test_points_normal_sidewall.items[6]  = make_vector3(127.6965, 94.04175, 127.0); // edge on top
@@ -1139,6 +1139,109 @@ int test_helper_functions_on_octagonal_c_prism() {
 }
 
 /***************************************************************/
+/* Check the cross section of a rectangular-base slanted prism */
+/* against its analytic half-widths at several heights.        */
+/*                                                             */
+/* The on-edge test in intersect_line_with_segment() used to   */
+/* compare the cosine of the angle subtended at the query      */
+/* point against (1-THRESH), which amounts to a perpendicular  */
+/* tolerance of sqrt(THRESH/8)*|edge| -- 0.22 length units for */
+/* an edge of length 200. Points that far outside the polygon  */
+/* were reported as lying on its boundary, so point_in_prism() */
+/* returned a cross section too wide by that amount at every   */
+/* height. For an unslanted prism the bounding box clips the   */
+/* halo uniformly and it goes unnoticed; for a slanted prism   */
+/* it turns the cross section into a six-sided polygon, with   */
+/* two spurious vertical walls near the base where the halo is */
+/* clipped.                                                    */
+/*                                                             */
+/* The point probes below are the ones that pin down that      */
+/* tolerance; the chord checks assert the matching behavior    */
+/* of intersect_line_segment_with_object, which reaches the    */
+/* side faces through a different code path.                   */
+/***************************************************************/
+static int test_slanted_prism_cross_section(double half_length_x, const char *label) {
+    void *m = NULL;
+    vector3 xhat = make_vector3(1, 0, 0);
+    vector3 zhat = make_vector3(0, 0, 1);
+
+    double half_width_y = 2.0;
+    double height = 2.0;
+    double sidewall_angle = 30.0 * 2 * K_PI / 360.0;
+    double taper = tan(sidewall_angle);
+    double delta = 1.0e-3;     // distance from the analytic wall at which we probe
+    double tolerance = 1.0e-6; // relative tolerance on chord lengths
+
+    vector3 nodes[4];
+    nodes[0] = make_vector3(+half_length_x, +half_width_y, 0.0);
+    nodes[1] = make_vector3(+half_length_x, -half_width_y, 0.0);
+    nodes[2] = make_vector3(-half_length_x, -half_width_y, 0.0);
+    nodes[3] = make_vector3(-half_length_x, +half_width_y, 0.0);
+
+    geometric_object o = make_slanted_prism(m, nodes, 4, height, zhat, sidewall_angle);
+    geom_fix_object_ptr(&o);
+
+    int num_tests = 0, num_failed = 0;
+    int iz, iy;
+    for (iz = 0; iz < 5; iz++) {
+        double z = 0.1 + 0.45 * iz;            // 0.1, 0.55, 1.0, 1.45, 1.9
+        double wx = half_length_x - z * taper; // analytic half-length at this height
+        double wy = half_width_y - z * taper;  // analytic half-width at this height
+
+        // point_in_fixed_pobjectp must switch from inside to outside at y = +/-wy
+        double probes[4];
+        probes[0] = +(wy - delta);
+        probes[1] = +(wy + delta);
+        probes[2] = -(wy - delta);
+        probes[3] = -(wy + delta);
+        for (iy = 0; iy < 4; iy++) {
+            vector3 p = make_vector3(0.0, probes[iy], z);
+            boolean expected = (iy == 0 || iy == 2) ? 1 : 0;
+            boolean actual = point_in_fixed_pobjectp(p, &o);
+            num_tests++;
+            if (actual != expected) {
+                num_failed++;
+                ctl_printf("\t[%s] at (0, %f, %f) we expected point_in_fixed_objectp to return %i, "
+                           "but instead it returnd %i\n",
+                           label, p.y, p.z, (int)expected, (int)actual);
+            }
+        }
+
+        // a line along xhat must cut a cord of length 2*wx when it passes inside
+        // the cross section and miss the prism entirely when it passes outside
+        double offsets[5];
+        offsets[0] = 0.0;
+        offsets[1] = +0.5 * wy;
+        offsets[2] = -0.5 * wy;
+        offsets[3] = +1.5 * wy;
+        offsets[4] = -1.5 * wy;
+        for (iy = 0; iy < 5; iy++) {
+            vector3 p = make_vector3(0.0, offsets[iy], z);
+            double expected = (fabs(offsets[iy]) < wy) ? 2.0 * wx : 0.0;
+            double actual =
+                intersect_line_segment_with_object(p, xhat, o, -10.0 * half_length_x, 10.0 * half_length_x);
+            num_tests++;
+            if (fabs(actual - expected) > tolerance * fmax(1.0, fabs(expected))) {
+                num_failed++;
+                ctl_printf("\t[%s] the line along xhat through (0, %f, %f) was expected to have\n"
+                           "\t\tintersection length %f but instead had %f\n",
+                           label, p.y, p.z, expected, actual);
+            }
+        }
+    }
+
+    printf("\t\t%i,/%i tests failed with %s\n", num_failed, num_tests, label);
+    return num_failed;
+}
+
+int test_slanted_prism_cross_sections() {
+    printf("slanted prism cross section testing:\n");
+    int num_failed = test_slanted_prism_cross_section(100.0, "elongated 200x4 base");
+    num_failed += test_slanted_prism_cross_section(2.0, "square 4x4 base");
+    return num_failed;
+}
+
+/***************************************************************/
 /* unit tests: create the same parallelepiped two ways (as a   */
 /* block and as a prism) and verify that geometric primitives  */
 /* give identical results                                      */
@@ -1209,8 +1312,10 @@ int run_unit_tests() {
   int num_failed_5 = test_square_base_sidewall_prisms_to_gnuplot();
   int num_failed_6 = test_octagon_c_base_sidewall_prisms_to_gnuplot();
   int num_failed_7 = test_helper_functions_on_octagonal_c_prism();
+  int num_failed_8 = test_slanted_prism_cross_sections();
 
-  return num_failed_1 + num_failed_3 + num_failed_4 + num_failed_5 + num_failed_6 + num_failed_7;
+  return num_failed_1 + num_failed_3 + num_failed_4 + num_failed_5 + num_failed_6 + num_failed_7 +
+      num_failed_8;;
 }
 
 /***************************************************************/
