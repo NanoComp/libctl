@@ -1242,6 +1242,214 @@ int test_slanted_prism_cross_sections() {
 }
 
 /***************************************************************/
+/* Slanted prisms whose base polygon has a vertex on the line  */
+/* between its two neighbors (a collinear vertex), as layout   */
+/* tools and edge subdivision produce.                         */
+/*                                                             */
+/* init_prism() used to place each top vertex at the           */
+/* intersection of the two offset edges that meet there,       */
+/* using the two-point line-line intersection formula. For a   */
+/* collinear vertex the two offset edges are parallel, the     */
+/* formula is 0/0 and the top vertex was NaN; point_in_prism() */
+/* then turned the prism inside out for every z > 0 and        */
+/* normal_to_prism() aborted with "degenerate plane". For a    */
+/* vertex that is collinear only to within rounding the        */
+/* formula cancels catastrophically instead.                   */
+/*                                                             */
+/* Each polygon below is a 4x2 rectangle with extra vertices   */
+/* on its edges -- exactly on them, 1e-11 off them, and first  */
+/* in the vertex list so that the wrap-around is exercised. It */
+/* must have the analytic top polygon, cross section and wall  */
+/* normals of the plain rectangle, which is also checked.      */
+/***************************************************************/
+static double shrink_coordinate(double c, double half_width, double inset) {
+    // a coordinate on the wall at |c| = half_width moves inward by inset; others stay put
+    return fabs(fabs(c) - half_width) < 1.0e-6 ? c - (c > 0 ? inset : -inset) : c;
+}
+
+static int test_slanted_prism_collinear_vertex(const vector3 *nodes, int num_nodes, double sidewall_angle,
+                                               const char *label) {
+    void *m = NULL;
+    vector3 xhat = make_vector3(1, 0, 0);
+    vector3 yhat = make_vector3(0, 1, 0);
+    vector3 zhat = make_vector3(0, 0, 1);
+
+    double half_x = 2.0, half_y = 1.0; // the rectangle every polygon here traces out
+    double height = 0.5;
+    double taper = tan(sidewall_angle); // inward shift of each wall per unit height
+    double delta = 1.0e-3;              // distance from the analytic wall at which we probe
+    double tolerance = 1.0e-6;          // on chord lengths and normal components
+    double vertex_tolerance = 1.0e-9;   // on top-vertex coordinates
+
+    geometric_object o = make_slanted_prism(m, nodes, num_nodes, height, zhat, sidewall_angle);
+    geom_fix_object_ptr(&o);
+    prism *prsm = o.subclass.prism_data;
+
+    int num_tests = 0, num_failed = 0;
+    int nv, iz, ip;
+
+    // the top polygon is the base rectangle shrunk by height*taper, extra vertices included
+    int top_is_finite = 1;
+    for (nv = 0; nv < num_nodes; nv++) {
+        vector3 actual = prsm->vertices_top.items[nv];
+        vector3 expected = make_vector3(shrink_coordinate(nodes[nv].x, half_x, height * taper),
+                                        shrink_coordinate(nodes[nv].y, half_y, height * taper), height);
+        if (!isfinite(actual.x) || !isfinite(actual.y) || !isfinite(actual.z)) top_is_finite = 0;
+        num_tests++;
+        if (!(vector3_norm(vector3_minus(actual, expected)) <= vertex_tolerance)) {
+            num_failed++;
+            ctl_printf("\t[%s] top vertex %i should be (%.12f, %.12f, %.12f) but is (%.12f, %.12f, %.12f)\n",
+                       label, nv, expected.x, expected.y, expected.z, actual.x, actual.y, actual.z);
+        }
+    }
+    if (!top_is_finite) { // normal_to_prism would abort on a non-finite vertex
+        printf("\t\t%i/%i tests failed with %s (non-finite top vertex, remaining tests skipped)\n",
+               num_failed, num_tests, label);
+        return num_failed;
+    }
+
+    for (iz = 0; iz < 3; iz++) {
+        double z = 0.05 + 0.2 * iz; // 0.05, 0.25, 0.45
+        double wx = half_x - z * taper;
+        double wy = half_y - z * taper;
+
+        // points just inside and just outside each wall, on the axes (through the
+        // extra vertices) and off them
+        for (ip = 0; ip < 16; ip++) {
+            int along_x = ip < 8;
+            double w = along_x ? wx : wy;
+            double s = (ip & 1) ? -1.0 : 1.0;
+            double d = (ip & 2) ? +delta : -delta;
+            double other = (ip & 4) ? 0.3 * (along_x ? wy : wx) : 0.0;
+            vector3 p = along_x ? make_vector3(s * (w + d), other, z) : make_vector3(other, s * (w + d), z);
+            boolean expected = d < 0;
+            boolean actual = point_in_fixed_pobjectp(p, &o);
+            num_tests++;
+            if (actual != expected) {
+                num_failed++;
+                ctl_printf("\t[%s] at (%f, %f, %f) we expected point_in_fixed_pobjectp to return %i, "
+                           "but instead it returned %i\n",
+                           label, p.x, p.y, p.z, (int)expected, (int)actual);
+            }
+
+            // just inside a wall the normal is that wall's normal
+            if (d < 0) {
+                vector3 wall = along_x ? make_vector3(s, 0, taper) : make_vector3(0, s, taper);
+                vector3 expected_normal = standardize(wall);
+                vector3 actual_normal = standardize(normal_to_fixed_object(p, o));
+                num_tests++;
+                if (!(vector3_norm(vector3_minus(actual_normal, expected_normal)) <= tolerance)) {
+                    num_failed++;
+                    ctl_printf("\t[%s] at (%f, %f, %f) the normal should be (%f, %f, %f) but is (%f, %f, %f)\n",
+                               label, p.x, p.y, p.z, expected_normal.x, expected_normal.y, expected_normal.z,
+                               actual_normal.x, actual_normal.y, actual_normal.z);
+                }
+            }
+        }
+
+        // chords along x and along y, through the extra vertices and off them; kept
+        // clear of the strips along the walls where intersect_line_with_prism's
+        // parallelogram side faces miss or overhang the true faces (#101)
+        double fractions[4] = {0.0, 0.3, -0.5, 1.5};
+        for (ip = 0; ip < 8; ip++) {
+            int along_x = ip < 4;
+            double f = fractions[ip % 4];
+            vector3 p = along_x ? make_vector3(0, f * wy, z) : make_vector3(f * wx, 0, z);
+            double expected = fabs(f) < 1.0 ? 2.0 * (along_x ? wx : wy) : 0.0;
+            double actual = intersect_line_segment_with_object(p, along_x ? xhat : yhat, o, -10.0, 10.0);
+            num_tests++;
+            if (fabs(actual - expected) > tolerance * fmax(1.0, fabs(expected))) {
+                num_failed++;
+                ctl_printf("\t[%s] the line along %s through (%f, %f, %f) was expected to have\n"
+                           "\t\tintersection length %f but instead had %f\n",
+                           label, along_x ? "xhat" : "yhat", p.x, p.y, p.z, expected, actual);
+            }
+        }
+    }
+
+    printf("\t\t%i/%i tests failed with %s\n", num_failed, num_tests, label);
+    return num_failed;
+}
+
+/***************************************************************/
+/* The same rectangle rotated by phi and translated to (c, c), */
+/* with an extra vertex a fraction f of the way along one      */
+/* edge. In floating point the extra vertex is then collinear  */
+/* with its neighbors only to within rounding; the old         */
+/* line-line intersection formula placed its top vertex up to  */
+/* several units away. Only the top polygon is checked here.   */
+/***************************************************************/
+static int test_slanted_prism_rounded_collinear_vertex(double phi, double c, double f) {
+    void *m = NULL;
+    vector3 zhat = make_vector3(0, 0, 1);
+    double height = 0.5, sidewall_angle = 30.0 * K_PI / 180.0;
+    double inset = height * tan(sidewall_angle);
+    double vertex_tolerance = 1.0e-9 * fmax(1.0, fabs(c));
+    vector3 u = make_vector3(cos(phi), sin(phi), 0); // local x axis
+    vector3 v = make_vector3(-sin(phi), cos(phi), 0); // local y axis
+    double local[5][2] = {{-2, -1}, {2, -1}, {2, -1 + 2 * f}, {2, 1}, {-2, 1}};
+    vector3 nodes[5], expected[5];
+    int nv, num_failed = 0;
+    for (nv = 0; nv < 5; nv++) {
+        double lx = local[nv][0], ly = local[nv][1];
+        nodes[nv] = make_vector3(c + lx * u.x + ly * v.x, c + lx * u.y + ly * v.y, 0);
+        double tx = shrink_coordinate(lx, 2.0, inset), ty = shrink_coordinate(ly, 1.0, inset);
+        expected[nv] = make_vector3(c + tx * u.x + ty * v.x, c + tx * u.y + ty * v.y, height);
+    }
+
+    geometric_object o = make_slanted_prism(m, nodes, 5, height, zhat, sidewall_angle);
+    geom_fix_object_ptr(&o);
+    for (nv = 0; nv < 5; nv++) {
+        vector3 actual = o.subclass.prism_data->vertices_top.items[nv];
+        if (!(vector3_norm(vector3_minus(actual, expected[nv])) <= vertex_tolerance)) {
+            num_failed++;
+            ctl_printf("\t[phi=%g deg, c=%g, f=%g] top vertex %i should be (%.12f, %.12f, %.12f) but is "
+                       "(%.12f, %.12f, %.12f)\n",
+                       phi * 180.0 / K_PI, c, f, nv, expected[nv].x, expected[nv].y, expected[nv].z,
+                       actual.x, actual.y, actual.z);
+        }
+    }
+    return num_failed;
+}
+
+int test_slanted_prism_collinear_vertices() {
+    printf("slanted prism collinear vertex testing:\n");
+    // all are the rectangle [-2,2] x [-1,1], listed counterclockwise
+    vector3 plain[4] = {{-2, -1, 0}, {2, -1, 0}, {2, 1, 0}, {-2, 1, 0}};
+    vector3 midpoint[5] = {{-2, -1, 0}, {2, -1, 0}, {2, 0, 0}, {2, 1, 0}, {-2, 1, 0}};
+    vector3 near_midpoint[5] = {{-2, -1, 0}, {2, -1, 0}, {2 + 1.0e-11, 0, 0}, {2, 1, 0}, {-2, 1, 0}};
+    vector3 midpoint_first[5] = {{0, -1, 0}, {2, -1, 0}, {2, 1, 0}, {-2, 1, 0}, {-2, -1, 0}};
+    vector3 two_midpoints[6] = {{-2, -1, 0}, {2, -1, 0}, {2, 1, 0}, {0, 1, 0}, {-2, 1, 0}, {-2, 0, 0}};
+    double angles[2] = {30.0 * K_PI / 180.0, -30.0 * K_PI / 180.0};
+    const char *angle_labels[2] = {"+30 deg", "-30 deg"};
+    char label[128];
+    int num_failed = 0, ia;
+    for (ia = 0; ia < 2; ia++) {
+        snprintf(label, sizeof(label), "plain rectangle, %s", angle_labels[ia]);
+        num_failed += test_slanted_prism_collinear_vertex(plain, 4, angles[ia], label);
+        snprintf(label, sizeof(label), "vertex at an edge midpoint, %s", angle_labels[ia]);
+        num_failed += test_slanted_prism_collinear_vertex(midpoint, 5, angles[ia], label);
+        snprintf(label, sizeof(label), "vertex 1e-11 off an edge midpoint, %s", angle_labels[ia]);
+        num_failed += test_slanted_prism_collinear_vertex(near_midpoint, 5, angles[ia], label);
+        snprintf(label, sizeof(label), "collinear vertex listed first, %s", angle_labels[ia]);
+        num_failed += test_slanted_prism_collinear_vertex(midpoint_first, 5, angles[ia], label);
+        snprintf(label, sizeof(label), "two collinear vertices, %s", angle_labels[ia]);
+        num_failed += test_slanted_prism_collinear_vertex(two_midpoints, 6, angles[ia], label);
+    }
+
+    double phis[3] = {17.0, 41.3, 73.9}, centers[3] = {0.0, 123.456, 2345.678}, fs[2] = {0.3, 0.71};
+    int ip, ic, jf, num_rounded_failed = 0;
+    for (ip = 0; ip < 3; ip++)
+        for (ic = 0; ic < 3; ic++)
+            for (jf = 0; jf < 2; jf++)
+                num_rounded_failed +=
+                    test_slanted_prism_rounded_collinear_vertex(phis[ip] * K_PI / 180.0, centers[ic], fs[jf]);
+    printf("\t\t%i/90 tests failed with rotated rectangles, vertex collinear to within rounding\n",
+           num_rounded_failed);
+    return num_failed + num_rounded_failed;
+}
+
+/***************************************************************/
 /* unit tests: create the same parallelepiped two ways (as a   */
 /* block and as a prism) and verify that geometric primitives  */
 /* give identical results                                      */
@@ -1313,9 +1521,10 @@ int run_unit_tests() {
   int num_failed_6 = test_octagon_c_base_sidewall_prisms_to_gnuplot();
   int num_failed_7 = test_helper_functions_on_octagonal_c_prism();
   int num_failed_8 = test_slanted_prism_cross_sections();
+  int num_failed_9 = test_slanted_prism_collinear_vertices();
 
   return num_failed_1 + num_failed_3 + num_failed_4 + num_failed_5 + num_failed_6 + num_failed_7 +
-      num_failed_8;;
+      num_failed_8 + num_failed_9;
 }
 
 /***************************************************************/
