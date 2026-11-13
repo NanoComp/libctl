@@ -1242,6 +1242,167 @@ int test_slanted_prism_cross_sections() {
 }
 
 /***************************************************************/
+/* Side faces of slanted prisms near corners.                  */
+/*                                                             */
+/* A side face of a slanted prism is the trapezoid between a   */
+/* bottom edge and the matching top edge, whose ends are       */
+/* offset differently wherever the edge meets its neighbor at  */
+/* an angle. intersect_line_with_prism() and normal_to_prism() */
+/* used to treat it as the parallelogram spanned by the bottom */
+/* edge and the top offset of the edge's first vertex. Near    */
+/* the edge's other end that parallelogram overhangs the face  */
+/* (inward taper) or falls short of it (outward taper):        */
+/*                                                             */
+/*  * a line through an overhang gets a crossing it never      */
+/*    makes, and a line through a shortfall misses one it does */
+/*    make. intersect_line_segment_with_prism() takes the      */
+/*    inside/outside state of a segment from the parity of the */
+/*    crossings before it, so the error shows wherever the     */
+/*    line has further crossings -- including crossings with   */
+/*    parts of the prism far away along the same line, which   */
+/*    made subpixel fill fractions next to a sidewall depend   */
+/*    on distant geometry;                                     */
+/*  * a point beside an overhang was taken to be at its normal */
+/*    distance from the face, and a point over a shortfall to  */
+/*    be off the face, so normal_to_prism() could return the   */
+/*    normal of a face other than the nearest one.             */
+/***************************************************************/
+static int check_segment(geometric_object o, vector3 p, vector3 d, double a, double b, double expected,
+                         const char *label) {
+    double actual = intersect_line_segment_with_object(p, d, o, a, b);
+    if (fabs(actual - expected) <= 1.0e-6 * fmax(1.0, fabs(expected))) return 0;
+    ctl_printf("\t[%s] the segment s in [%g, %g] of the line (%f, %f, %f) + s (%g, %g, %g) was expected\n"
+               "\t\tto have intersection length %f but instead had %f\n",
+               label, a, b, p.x, p.y, p.z, d.x, d.y, d.z, expected, actual);
+    return 1;
+}
+
+static int check_normal(geometric_object o, vector3 p, vector3 expected_direction, const char *label) {
+    vector3 expected = standardize(expected_direction);
+    vector3 actual = standardize(normal_to_fixed_object(p, o));
+    if (vector3_norm(vector3_minus(actual, expected)) <= 1.0e-6) return 0;
+    ctl_printf("\t[%s] at (%f, %f, %f) the normal should be (%f, %f, %f) but is (%f, %f, %f)\n", label, p.x,
+               p.y, p.z, expected.x, expected.y, expected.z, actual.x, actual.y, actual.z);
+    return 1;
+}
+
+int test_slanted_prism_side_faces() {
+    printf("slanted prism side face testing:\n");
+    void *m = NULL;
+    vector3 xhat = make_vector3(1, 0, 0);
+    vector3 yhat = make_vector3(0, 1, 0);
+    vector3 zhat = make_vector3(0, 0, 1);
+    double delta = 1.0e-3; // distance from the analytic wall at which we probe
+    int total_failed = 0, num_tests, num_failed, iz, is;
+
+    // 1. An inward-tapering ridge along x, and the same ridge with a step that widens it on
+    //    the -y side for x > 3; near x = 0 the two are the same solid. A line along x just
+    //    outside the -y wall passes through the overhang of the x = -5 end face, and in the
+    //    stepped ridge it also crosses the step, so the segment near x = 0 counted as inside.
+    {
+        double height = 0.3, sidewall_angle = 35.0 * K_PI / 180.0, half_width = 0.81;
+        double taper = tan(sidewall_angle);
+        vector3 straight[4] = {{-5, -half_width, 0}, {5, -half_width, 0}, {5, half_width, 0}, {-5, half_width, 0}};
+        vector3 stepped[6] = {{-5, -half_width, 0}, {3, -half_width, 0}, {3, -1.5, 0},
+                              {5, -1.5, 0},         {5, half_width, 0},  {-5, half_width, 0}};
+        geometric_object ridges[2];
+        const char *labels[2] = {"straight ridge, +35 deg", "ridge with a step, +35 deg"};
+        ridges[0] = make_slanted_prism(m, straight, 4, height, zhat, sidewall_angle);
+        ridges[1] = make_slanted_prism(m, stepped, 6, height, zhat, sidewall_angle);
+        int ir;
+        for (ir = 0; ir < 2; ir++) {
+            geom_fix_object_ptr(&ridges[ir]);
+            num_tests = num_failed = 0;
+            for (iz = 0; iz < 3; iz++) {
+                double z = 0.05 + 0.11 * iz; // 0.05, 0.16, 0.27
+                double inset = z * taper;
+                double wy = half_width - inset;
+                for (is = 0; is < 4; is++) {
+                    int inside = !(is & 2);
+                    double y = ((is & 1) ? -1 : 1) * (wy + (inside ? -delta : delta));
+                    vector3 p = make_vector3(0, y, z);
+                    // a short segment around x = 0, as in subpixel averaging
+                    num_failed += check_segment(ridges[ir], p, xhat, -0.1, 0.1, inside ? 0.2 : 0.0, labels[ir]);
+                    // the whole line; just outside the -y wall the step spans [3 + inset, 5 - inset]
+                    double chord = inside ? 10 - 2 * inset : (ir == 1 && y < 0) ? 2 - 2 * inset : 0.0;
+                    num_failed += check_segment(ridges[ir], p, xhat, -10, 10, chord, labels[ir]);
+                    num_tests += 2;
+                }
+            }
+            printf("\t\t%i/%i tests failed with %s\n", num_failed, num_tests, labels[ir]);
+            total_failed += num_failed;
+        }
+    }
+
+    // 2. An outward-tapering 4x2 rectangle. A line along x (y) just inside a wall passes
+    //    through the strip where the parallelogram of one end face falls short, so it had a
+    //    single crossing and the whole chord counted as outside.
+    {
+        double height = 0.5, sidewall_angle = -30.0 * K_PI / 180.0;
+        double taper = tan(sidewall_angle);
+        vector3 nodes[4] = {{-2, -1, 0}, {2, -1, 0}, {2, 1, 0}, {-2, 1, 0}};
+        geometric_object o = make_slanted_prism(m, nodes, 4, height, zhat, sidewall_angle);
+        geom_fix_object_ptr(&o);
+        const char *label = "rectangle, -30 deg";
+        num_tests = num_failed = 0;
+        for (iz = 0; iz < 3; iz++) {
+            double z = 0.05 + 0.2 * iz; // 0.05, 0.25, 0.45
+            double wx = 2 - z * taper, wy = 1 - z * taper;
+            for (is = 0; is < 4; is++) {
+                double s = (is & 1) ? -1 : 1;
+                double f = (is & 2) ? 0.5 : 1.0; // just inside the wall, or well inside
+                vector3 px = make_vector3(0, s * (f * wy - delta), z);
+                vector3 py = make_vector3(s * (f * wx - delta), 0, z);
+                num_failed += check_segment(o, px, xhat, -10, 10, 2 * wx, label);
+                num_failed += check_segment(o, py, yhat, -10, 10, 2 * wy, label);
+                num_tests += 2;
+            }
+        }
+        printf("\t\t%i/%i tests failed with %s\n", num_failed, num_tests, label);
+        total_failed += num_failed;
+    }
+
+    // 3. Normals beside the corners of a 4x2 rectangle, at mid-height. With an inward taper,
+    //    a point just outside a side wall and barely in from an end lies beside the overhang
+    //    of the end face, close to its plane, but the side wall is the nearest face. With an
+    //    outward taper, a point just inside an end face near a side wall projects onto the
+    //    end face where its parallelogram fell short, which made the side wall look nearer.
+    {
+        double height = 0.5, z = 0.25;
+        vector3 nodes[4] = {{-2, -1, 0}, {2, -1, 0}, {2, 1, 0}, {-2, 1, 0}};
+        int ia, ic;
+        num_tests = num_failed = 0;
+        for (ia = 0; ia < 2; ia++) {
+            double sidewall_angle = (ia == 0 ? 30.0 : -30.0) * K_PI / 180.0;
+            double taper = tan(sidewall_angle);
+            double wx = 2 - z * taper, wy = 1 - z * taper;
+            const char *label = ia == 0 ? "normals beside corners, +30 deg" : "normals beside corners, -30 deg";
+            geometric_object o = make_slanted_prism(m, nodes, 4, height, zhat, sidewall_angle);
+            geom_fix_object_ptr(&o);
+            for (ic = 0; ic < 4; ic++) { // the four corners
+                double sx = (ic & 1) ? -1 : 1, sy = (ic & 2) ? -1 : 1;
+                vector3 p, wall;
+                if (ia == 0) { // delta outside the side wall, 0.1*delta in from the end
+                    p = make_vector3(sx * (wx - 0.1 * delta), sy * (wy + delta), z);
+                    wall = make_vector3(0, sy, taper);
+                }
+                else { // delta inside the end face, 3*delta in from the side wall
+                    p = make_vector3(sx * (wx - delta), sy * (wy - 3 * delta), z);
+                    wall = make_vector3(sx, 0, taper);
+                }
+                num_failed += check_normal(o, p, wall, label);
+                num_tests++;
+            }
+            printf("\t\t%i/%i tests failed with %s\n", num_failed, num_tests, label);
+            total_failed += num_failed;
+            num_tests = num_failed = 0;
+        }
+    }
+
+    return total_failed;
+}
+
+/***************************************************************/
 /* unit tests: create the same parallelepiped two ways (as a   */
 /* block and as a prism) and verify that geometric primitives  */
 /* give identical results                                      */
@@ -1313,9 +1474,10 @@ int run_unit_tests() {
   int num_failed_6 = test_octagon_c_base_sidewall_prisms_to_gnuplot();
   int num_failed_7 = test_helper_functions_on_octagonal_c_prism();
   int num_failed_8 = test_slanted_prism_cross_sections();
+  int num_failed_9 = test_slanted_prism_side_faces();
 
   return num_failed_1 + num_failed_3 + num_failed_4 + num_failed_5 + num_failed_6 + num_failed_7 +
-      num_failed_8;;
+      num_failed_8 + num_failed_9;
 }
 
 /***************************************************************/

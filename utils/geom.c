@@ -3336,26 +3336,31 @@ int intersect_line_with_prism(prism *prsm, vector3 pc, vector3 dc, double *slist
     int nvp1 = nv + 1;
     if (nvp1 == num_vertices) nvp1 = 0;
 
-    // checks if dp is parallel to the plane of the prism side face under consideration
-    vector3 v1 = vector3_minus(vps_bottom[nvp1], vps_bottom[nv]);
-    vector3 v2 = vector3_minus(vps_top[nv], vps_bottom[nv]);
-    double dot_tolerance = 1e-6;
-    if (fabs(vector3_dot(dp, vector3_cross(v1, v2))) <= dot_tolerance) continue;
-
-    // to find the intersection point pp + s*dp between the line and the
-    // prism side face, we will solve the vector equation
-    //             pp + s*dp = o + t*v1 + u*v2
-    // where o is vps_bottom[nv], v1 is vps_bottom[nvp1]-vps_bottom[nv],
-    // v2 is vps_top[nv]-vps_bottom[nv], and 0 <= t <= 1, 0 <= u <= 1.
-    matrix3x3 M;
-    M.c0 = v1;
-    M.c1 = v2;
-    M.c2 = vector3_scale(-1, dp);
-    vector3 RHS = vector3_minus(pp, vps_bottom[nv]);
-    vector3 tus = matrix3x3_vector3_mult(matrix3x3_inverse(M), RHS);
-    if (tus.x < -tus_tolerance || tus.x > 1+tus_tolerance || tus.y < -tus_tolerance || tus.y > 1+tus_tolerance) continue;
-    double s = tus.z;
-    if (num_intersections++ < slist_len) slist[num_intersections-1] = s;
+    // The side face is the quadrilateral vps_bottom[nv], vps_bottom[nvp1], vps_top[nvp1],
+    // vps_top[nv]. The parallelogram spanned by the bottom edge and vps_top[nv]-vps_bottom[nv]
+    // overhangs it wherever vps_top[nvp1]-vps_bottom[nvp1] differs, i.e. at every corner of a
+    // slanted prism, so test the face as two triangles sharing the diagonal
+    // vps_bottom[nv]-vps_top[nvp1].
+    vector3 o = vps_bottom[nv];
+    vector3 corners[2][2] = {{vector3_minus(vps_bottom[nvp1], o), vector3_minus(vps_top[nvp1], o)},
+                             {vector3_minus(vps_top[nvp1], o), vector3_minus(vps_top[nv], o)}};
+    int tri;
+    for (tri = 0; tri < 2; tri++) {
+      vector3 v1 = corners[tri][0], v2 = corners[tri][1];
+      double dot_tolerance = 1e-6;
+      if (fabs(vector3_dot(dp, vector3_cross(v1, v2))) <= dot_tolerance) continue;
+      matrix3x3 M;
+      M.c0 = v1;
+      M.c1 = v2;
+      M.c2 = vector3_scale(-1, dp);
+      vector3 RHS = vector3_minus(pp, o);
+      vector3 tus = matrix3x3_vector3_mult(matrix3x3_inverse(M), RHS);
+      if (tus.x < -tus_tolerance || tus.y < -tus_tolerance || tus.x + tus.y > 1 + tus_tolerance) continue;
+      // a hit on the shared diagonal (tus.y = 0 in the second triangle) was counted by the first
+      if (tri == 1 && tus.y <= tus_tolerance) continue;
+      double s = tus.z;
+      if (num_intersections++ < slist_len) slist[num_intersections-1] = s;
+    }
   }
 
   // identify intersections with prism ceiling and floor faces
@@ -3499,6 +3504,34 @@ double min_distance_to_quadrilateral(vector3 p, vector3 o, vector3 v1, vector3 v
   return sqrt(s * s + d * d);
 }
 
+// like min_distance_to_quadrilateral, but for the planar convex quadrilateral with
+// corners o, o+v1, o+v12, o+v2 (in that order) and unit normal v3, which need not be a
+// parallelogram: a side face of a slanted prism is a trapezoid, because the two ends of
+// its top edge are offset differently wherever the edge meets a neighbor at an angle
+static double min_distance_to_planar_quadrilateral(vector3 p, vector3 o, vector3 v1, vector3 v12,
+                                                   vector3 v2, vector3 v3) {
+  double s = normal_distance_to_plane(p, o, v1, v2, v3, NULL);
+  vector3 pPlane = vector3_minus(p, vector3_scale(s, v3));
+  vector3 corners[4];
+  corners[0] = o;
+  corners[1] = vector3_plus(o, v1);
+  corners[2] = vector3_plus(o, v12);
+  corners[3] = vector3_plus(o, v2);
+  // pPlane lies in the quadrilateral iff it is on the same side of all four edges
+  int k, num_positive = 0, num_negative = 0;
+  double d = HUGE_VAL;
+  for (k = 0; k < 4; k++) {
+    vector3 a = corners[k], b = corners[(k + 1) % 4];
+    double side = vector3_dot(vector3_cross(vector3_minus(b, a), vector3_minus(pPlane, a)), v3);
+    if (side > 0) num_positive++;
+    if (side < 0) num_negative++;
+    if (vector3_norm(vector3_minus(b, a)) > 0) // the top edge can shrink to a point
+      d = fmin(d, min_distance_to_line_segment(pPlane, a, b));
+  }
+  if (num_positive == 0 || num_negative == 0) return s;
+  return sqrt(s * s + d * d);
+}
+
 // fc==0/1 for floor/ceiling
 double min_distance_to_prism_roof_or_ceiling(vector3 pp, prism *prsm, int fc) {
   int num_vertices = prsm->vertices_p.num_items, i;
@@ -3553,8 +3586,9 @@ vector3 normal_to_prism(prism *prsm, vector3 pc) {
     vector3 v0p = vps_bottom[nv];
     vector3 v1p = vector3_minus(vps_bottom[nvp1], vps_bottom[nv]);
     vector3 v2p = vps_diff_to_top[nv];
+    vector3 v12p = vector3_plus(v1p, vps_diff_to_top[nvp1]); // top corner above vps_bottom[nvp1]
     vector3 v3p = unit_vector3(vector3_cross(v1p, v2p));
-    double s = min_distance_to_quadrilateral(pp, v0p, v1p, v2p, v3p);
+    double s = min_distance_to_planar_quadrilateral(pp, v0p, v1p, v12p, v2p, v3p);
     if (fabs(s) < min_distance) {
       min_distance = fabs(s);
       retval = v3p;
