@@ -3896,8 +3896,8 @@ void init_prism(geometric_object *o) {
   // applied, in conjunction with whether prsm->sidewall_angle is positive or negative
   // (if positive, the offset will be applied in towards the points where
   // node_in_or_on_polygon is true, else the offset will be applied out away from those
-  // points). After the offsets are applied to the edges, the intersections between the
-  // new edges are calculated, which are the new values of vertices_top_p.
+  // points). After the offsets are applied to the edges, the points where consecutive
+  // offset edges meet are calculated, which are the new values of vertices_top_p.
   //
   // Some side notes on the difference vectors:
   //   * The value of each of the top polygon vertices can be found
@@ -3918,6 +3918,7 @@ void init_prism(geometric_object *o) {
   if (prsm->sidewall_angle != 0.0) {
     typedef struct {
       vector3 a1, a2, v;  // v will be defined as a2 - a1
+      vector3 offset;     // in-plane shift of the edge from the bottom to the top polygon
     } edge;
 
     // find the point at the bottom left corner of the polygon
@@ -3966,26 +3967,24 @@ void init_prism(geometric_object *o) {
 
       // positive sidewall angles means the prism tapers in towards the rest of the prism body
       // negative sidewall angles means the prism tapers out away from the rest of the prism body
-      vector3 offset = vector3_scale(prsm->sidewall_angle > 0 ? w : -w, normal_vector);
-      top_polygon_edges[nv].a1 = vector3_plus(top_polygon_edges[nv].a1, offset);
-      top_polygon_edges[nv].a2 = vector3_plus(top_polygon_edges[nv].a2, offset);
+      top_polygon_edges[nv].offset = vector3_scale(prsm->sidewall_angle > 0 ? w : -w, normal_vector);
     }
 
     for (nv = 0; nv < num_vertices; nv++) {
-      number x1 = top_polygon_edges[nv].a1.x;
-      number y1 = top_polygon_edges[nv].a1.y;
-      number x2 = top_polygon_edges[nv].a2.x;
-      number y2 = top_polygon_edges[nv].a2.y;
-      number x3 = top_polygon_edges[(nv + 1 == num_vertices ? 0 : nv + 1)].a1.x;
-      number y3 = top_polygon_edges[(nv + 1 == num_vertices ? 0 : nv + 1)].a1.y;
-      number x4 = top_polygon_edges[(nv + 1 == num_vertices ? 0 : nv + 1)].a2.x;
-      number y4 = top_polygon_edges[(nv + 1 == num_vertices ? 0 : nv + 1)].a2.y;
-
-      // Intersection point calculated with https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_points_on_each_line
-      number px = ((x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4)) / ((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4));
-      number py = ((x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4)) / ((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4));
-      prsm->vertices_top_p.items[nv].x = px;
-      prsm->vertices_top_p.items[nv].y = py;
+      // Top vertex nv is where the offset copies of edge nv (which ends at vertex nv) and
+      // edge nv+1 (which starts there) meet: vertex nv plus the vector m with m.u1 = |u1|^2
+      // and m.u2 = |u2|^2, where u1 and u2 are the two edges' offsets, both of length w:
+      //             m = (u1 + u2) / (1 + u1.u2 / w^2)
+      // Intersecting the two offset lines with the two-point line-line formula instead divides
+      // by the cross product of the edges, which is 0/0 at a vertex collinear with its
+      // neighbors (NaN top vertex) and cancels catastrophically when the vertex is collinear
+      // only to within rounding. The denominator here vanishes only where the polygon doubles
+      // back on itself.
+      vector3 u1 = top_polygon_edges[nv].offset;
+      vector3 u2 = top_polygon_edges[(nv + 1 == num_vertices ? 0 : nv + 1)].offset;
+      vector3 m = vector3_scale(1.0 / (1.0 + vector3_dot(u1, u2) / (w * w)), vector3_plus(u1, u2));
+      prsm->vertices_top_p.items[nv].x += m.x;
+      prsm->vertices_top_p.items[nv].y += m.y;
     }
 
     free(top_polygon_edges);
